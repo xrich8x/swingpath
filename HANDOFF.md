@@ -316,25 +316,34 @@ bucket names shown to the labeler; magnifier loupe; atomic per-click saves),
 per-bucket breakdown). Eval self-check: archive scored against fake gold
 derived from its own locks = 100% hit / 0% FP [MEASURED].
 
-THE USER hand-labeled all 250 frames blind (~15 min): 217 ball + 20 no-ball
-+ 13 unsure (excluded). Labels: `data/gold/yt_rally2.labels.json`
-(commit 66a871e). **These labels are a TEST set — never train on them.**
+THE USER hand-labeled all 250 frames blind (~15 min), then a +50 no-ball
+extension round (tools/extend_noball_frames.py: 25 FP-candidate frames where
+archive/ballnet fire but the gated fresh tracks are silent + 25 near the
+human's confirmed no-ball labels). Final: 300 labels = 258 ball + 26 no-ball
++ 16 unsure (excluded). Labels: `data/gold/yt_rally2.labels.json`.
+**These labels are a TEST set — never train on them.**
+Notable: even in the frames selected as likely-no-ball, the human found a
+visible ball in 41/50 — this clip has almost no true dead time, and the
+"eager" tracks were often RIGHT to fire where the gated ones were silent.
 
-Results [MEASURED — first non-self-graded numbers in the project]:
+Results [MEASURED — first non-self-graded numbers in the project; 284
+scored frames]. CAVEAT: buckets deliberately oversample hard/disagreement
+frames (incl. frames chosen BECAUSE the fresh tracks were silent), so
+overall percentages compare tracks; they are not clip-wide uniform rates:
 
 | track | hit@10 | wrong>10 | miss | hit@5 | hit@25 | med.err | FP (no-ball) |
 |---|---|---|---|---|---|---|---|
-| archive968 | 63.1% | 19.8% | 17.1% | 52.1% | 69.1% | 3.1px | 55.0% |
-| fusion746 | 46.1% | 25.3% | 28.6% | 30.9% | 51.2% | 6.3px | 40.0% |
-| tracknet686 | 44.7% | 21.2% | 34.1% | 33.2% | 48.4% | 5.0px | 30.0% |
-| ballnet990 | 65.0% | 18.4% | 16.6% | 49.8% | 68.7% | 3.9px | 60.0% |
+| archive968 | 65.5% | 19.8% | 14.7% | 56.2% | 71.3% | 2.8px | 61.5% |
+| fusion746 | 43.0% | 23.3% | 33.7% | 30.2% | 48.1% | 6.1px | 26.9% |
+| tracknet686 | 41.5% | 20.2% | 38.4% | 31.8% | 45.7% | 4.7px | 19.2% |
+| ballnet990 | 65.9% | 19.0% | 15.1% | 51.2% | 69.8% | 3.8px | 65.4% |
 
 | track (hit@10 per bucket) | serve | near | far | disagree | noball | noball-FP |
 |---|---|---|---|---|---|---|
-| archive968 | 75.0% | 91.5% | 64.3% | 53.7% | 23.1% | 40.0% |
-| fusion746 | 66.7% | 87.2% | 31.0% | 19.5% | 15.4% | 10.0% |
-| tracknet686 | 64.6% | 87.2% | 31.0% | 19.5% | 10.3% | 10.0% |
-| ballnet990 | 68.8% | 83.0% | 76.2% | 61.0% | 30.8% | 40.0% |
+| archive968 | 75.0% | 91.5% | 64.3% | 53.7% | 51.2% | 58.8% |
+| fusion746 | 66.7% | 87.2% | 31.0% | 19.5% | 21.2% | 5.9% |
+| tracknet686 | 64.6% | 87.2% | 31.0% | 19.5% | 17.5% | 5.9% |
+| ballnet990 | 68.8% | 83.0% | 76.2% | 61.0% | 51.2% | 58.8% |
 
 VERDICTS [MEASURED unless noted]:
 1. §10's open question is ANSWERED: the archive's extra far-court locks were
@@ -356,9 +365,15 @@ VERDICTS [MEASURED unless noted]:
    (x≈1–12). These regions are the hard-negative shopping list for BallNet v2.
 5. Honest headline: the best track finds the ball within 10px on ~65% of
    human-verified frames. The self-graded "84.7%" was flattery, as §4 warned.
+6. Precision/recall split, cleanly measured on true dead time (round-2
+   no-ball frames): gated fresh tracks false-fire 5.9%, archive/ballnet
+   58.8%. Recall vs restraint is THE axis: the eager tracks find more real
+   ball everywhere AND fire at over half of genuinely empty frames.
 
-Caveats: FP rates rest on only 20 no-ball frames (5%/frame granularity);
-one clip, one camera angle; hit@10 at 1280x720 (far-court ball is ~4-6px).
+Caveats: FP rates rest on 26 no-ball frames (~4%/frame granularity);
+one clip, one camera angle; hit@10 at 1280x720 (far-court ball is ~4-6px);
+ballnet trained on this clip's frames w/ archive labels (indoor_elev
+dataset) — home-field advantage; v2 must exclude yt_rally2 from training.
 
 Implication for the roadmap: BallNet v2 with hard negatives (fix 1.2) is now
 clearly the highest-value move — v1 already beats everything at finding the
