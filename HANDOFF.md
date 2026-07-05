@@ -298,3 +298,9 @@ Still open (unchanged from §8 roadmap, now sharper):
 - A static-lock gate in the pipeline (this session's junk filter, ~20 lines)
   would remove 103-183 false locks from every run and should precede any
   BallNet v2 training on pseudo-labels (the junk is in the labels too).
+  -> DONE later the same day (commit after this one): BallTracker
+  static_step_px=3/static_min_run=5 gate + fixture blacklist. MEASURED on
+  yt_rally2 cuda: tracknet 686 locks / 0 static junk / ball-only 678->686
+  (real ball RECOVERED where the track had been HUD-glued); fusion 746 / 0
+  junk (vs 747 ball-only ungated). Params recorded in cache provenance.
+  Pseudo-label REGENERATION for BallNet v2 should rerun with this gate on.

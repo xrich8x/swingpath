@@ -410,7 +410,8 @@ class BallTracker:
                  max_coast: int = 8, max_bg_run: int = 5, fg_thresh: int = 28,
                  max_fg_ratio: float = 0.25, box_pad: float = 24.0,
                  homography=None, acquire_bound_m: float = 4.0,
-                 continue_bound_m: float = 10.0, rescue: bool = False):
+                 continue_bound_m: float = 10.0, rescue: bool = False,
+                 static_step_px: float = 3.0, static_min_run: int = 5):
         # One detector or several (e.g. TrackNet + WASB). Several are FUSED: each is
         # queried every frame (to keep its 3-frame buffer current) and the candidate
         # most consistent with the predicted path wins — their failure modes differ,
@@ -446,6 +447,20 @@ class BallTracker:
         # off-path) — coverage fell 968 -> 781. Off until the detector can rank
         # weak candidates more reliably (hard-negative retrain).
         self.rescue = rescue
+        # Static-lock gate: a rally ball never sits still, but burned-in HUD
+        # graphics (SwingVision MPH labels / logo on sourced test clips), net
+        # posts and other fixtures do — and detectors DO fire on them (measured
+        # on yt_rally2: 103-183 of the locks per run were <3px/frame for >=5
+        # frames). After static_min_run near-motionless emissions the "track"
+        # is declared a fixture: dropped, its spot remembered (bounded list),
+        # and no candidate near a known fixture may seed or extend a track
+        # again — so the tracker goes back to looking for the real ball.
+        # Costs nothing on clean footage: moving balls never trip it.
+        self.static_step_px = static_step_px
+        self.static_min_run = static_min_run
+        self.static_run = 0
+        self.static_anchors: list = []
+        self.n_static = 0   # fixture zones found (for the analyze log)
 
     def _court_ok(self, pt, acquiring: bool) -> bool:
         """Court-plausibility of an image-space candidate: its ground back-projection
@@ -461,6 +476,14 @@ class BallTracker:
         x, y = q[0] / q[2], q[1] / q[2]
         b = self.acquire_bound_m if acquiring else self.continue_bound_m
         return (-b <= x <= court.DOUBLES_WIDTH + b) and (-b <= y <= court.LENGTH + b)
+
+    def _static_ok(self, pt) -> bool:
+        """False if the candidate sits in a known static-fixture zone (a spot
+        where a previous track froze for static_min_run frames — HUD graphic,
+        net post). A real ball only passes through; it never lives there."""
+        r = 4.0 * self.static_step_px
+        return all(np.hypot(pt[0] - a[0], pt[1] - a[1]) > r
+                   for a in self.static_anchors)
 
     def _bg_candidates(self, frame, exclude_boxes=None):
         import cv2
@@ -496,7 +519,8 @@ class BallTracker:
         # Court-plausibility gate: drop candidates whose ground back-projection is
         # nowhere near the court (crowd, scoreboard, birds) BEFORE the velocity
         # logic sees them — smooth off-court drift must never extend a track.
-        model_cands = [d for d in dets if d is not None and self._court_ok(d, acquiring)]
+        model_cands = [d for d in dets if d is not None and self._court_ok(d, acquiring)
+                       and self._static_ok(d)]
         pred = None
         if self.last is not None:
             pred = (self.last[0] + self.vel[0], self.last[1] + self.vel[1])
@@ -521,6 +545,7 @@ class BallTracker:
             subs = [getattr(d, "last_sub", None) for d in self.detectors]
             subs = [s for s in subs
                     if s is not None and self._court_ok(s, acquiring=False)
+                    and self._static_ok(s)
                     and not _in_any_box(s[0], s[1], exclude_boxes, self.box_pad)]
             if subs:
                 subs.sort(key=lambda c: np.hypot(c[0] - pred[0], c[1] - pred[1]))
@@ -532,7 +557,7 @@ class BallTracker:
         if (chosen is None and self.use_bgsub and pred is not None
                 and self.bg_run < self.max_bg_run):
             cands = [c for c in self._bg_candidates(frame, exclude_boxes)
-                     if self._court_ok(c, acquiring=False)]
+                     if self._court_ok(c, acquiring=False) and self._static_ok(c)]
             if cands:
                 cands.sort(key=lambda c: np.hypot(c[0] - pred[0], c[1] - pred[1]))
                 if np.hypot(cands[0][0] - pred[0], cands[0][1] - pred[1]) <= self.gate * (1 + self.miss):
@@ -540,6 +565,27 @@ class BallTracker:
                     self.n_bg += 1
         if chosen is not None:
             c = np.asarray(chosen, dtype=float)
+            # Static-lock gate: count consecutive near-motionless steps; at
+            # static_min_run the track is a fixture, not a ball — drop it,
+            # remember the spot (so it can't be re-locked), report nothing.
+            # The first static_min_run-1 emissions necessarily leak (can't
+            # know a lock is frozen until it has been frozen for a while).
+            if (self.last is not None
+                    and np.hypot(c[0] - self.last[0], c[1] - self.last[1])
+                    < self.static_step_px):
+                self.static_run += 1
+                if self.static_run >= self.static_min_run - 1:
+                    self.static_anchors.append((float(c[0]), float(c[1])))
+                    del self.static_anchors[:-8]   # bounded fixture memory
+                    self.n_static += 1
+                    self.static_run = 0
+                    self.last = None
+                    self.vel = np.zeros(2)
+                    self.miss = 0
+                    self.bg_run = 0
+                    return None
+            else:
+                self.static_run = 0
             if self.last is not None:
                 self.vel = 0.5 * self.vel + 0.5 * (c - np.asarray(self.last))
             self.last = (float(c[0]), float(c[1]))

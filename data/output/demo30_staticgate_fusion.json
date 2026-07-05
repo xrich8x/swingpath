@@ -1,0 +1,584 @@
+{
+  "video": {
+    "filename": "yt_rally2.mp4",
+    "fps": 30.0,
+    "width": 1280,
+    "height": 720,
+    "duration_s": 36.9
+  },
+  "players": [
+    {
+      "id": "A",
+      "name": "Player A (near)"
+    },
+    {
+      "id": "B",
+      "name": "Player B (far)"
+    }
+  ],
+  "shots": [
+    {
+      "id": 0,
+      "rally_id": 0,
+      "player": "A",
+      "type": "serve",
+      "t_hit_s": 0.43,
+      "speed_kmh": 13.0,
+      "hit_xy": [
+        10.147,
+        3.452
+      ],
+      "bounce_xy": [
+        8.314,
+        3.232
+      ],
+      "bounce_t_s": 2.4,
+      "is_in": false,
+      "call": "out",
+      "spin_rpm": 0.0,
+      "topspin_rpm": 0.0,
+      "spin_style": "",
+      "speed_source": "approx",
+      "speed_confident": false,
+      "call_confident": true
+    },
+    {
+      "id": 1,
+      "rally_id": 1,
+      "player": "A",
+      "type": "forehand",
+      "t_hit_s": 15.5,
+      "speed_kmh": 36.8,
+      "hit_xy": [
+        7.348,
+        5.596
+      ],
+      "bounce_xy": [
+        8.48,
+        -0.817
+      ],
+      "bounce_t_s": 16.2,
+      "is_in": false,
+      "call": "out",
+      "spin_rpm": 0.0,
+      "topspin_rpm": 0.0,
+      "spin_style": "flat",
+      "speed_source": "approx",
+      "speed_confident": false,
+      "call_confident": false
+    },
+    {
+      "id": 2,
+      "rally_id": 2,
+      "player": "A",
+      "type": "forehand",
+      "t_hit_s": 19.2,
+      "speed_kmh": 33.7,
+      "hit_xy": [
+        8.378,
+        1.939
+      ],
+      "bounce_xy": [
+        9.304,
+        -0.462
+      ],
+      "bounce_t_s": 19.5,
+      "is_in": false,
+      "call": "out",
+      "spin_rpm": 0.0,
+      "topspin_rpm": 0.0,
+      "spin_style": "flat",
+      "speed_source": "approx",
+      "speed_confident": false,
+      "call_confident": false
+    },
+    {
+      "id": 3,
+      "rally_id": 3,
+      "player": "A",
+      "type": "forehand",
+      "t_hit_s": 30.0,
+      "speed_kmh": 22.4,
+      "hit_xy": [
+        8.975,
+        1.805
+      ],
+      "bounce_xy": [
+        8.748,
+        0.795
+      ],
+      "bounce_t_s": 30.17,
+      "is_in": true,
+      "call": "in",
+      "spin_rpm": 0.0,
+      "topspin_rpm": 0.0,
+      "spin_style": "flat",
+      "speed_source": "approx",
+      "speed_confident": true,
+      "call_confident": false
+    }
+  ],
+  "rallies": [
+    {
+      "id": 0,
+      "start_s": 0.43,
+      "end_s": 2.4,
+      "shot_ids": [
+        0
+      ],
+      "winner": "B",
+      "ball_track": [
+        {
+          "t_s": 0.3,
+          "xy": [
+            10.142,
+            3.452
+          ]
+        },
+        {
+          "t_s": 0.4,
+          "xy": [
+            10.142,
+            3.452
+          ]
+        },
+        {
+          "t_s": 0.5,
+          "xy": [
+            10.118,
+            3.442
+          ]
+        },
+        {
+          "t_s": 0.6,
+          "xy": [
+            10.038,
+            3.57
+          ]
+        },
+        {
+          "t_s": 0.7,
+          "xy": [
+            10.145,
+            4.069
+          ]
+        },
+        {
+          "t_s": 0.8,
+          "xy": [
+            10.109,
+            4.468
+          ]
+        },
+        {
+          "t_s": 0.9,
+          "xy": [
+            10.03,
+            4.765
+          ]
+        },
+        {
+          "t_s": 1.0,
+          "xy": [
+            9.883,
+            4.894
+          ]
+        },
+        {
+          "t_s": 1.1,
+          "xy": [
+            9.739,
+            5.028
+          ]
+        },
+        {
+          "t_s": 1.2,
+          "xy": [
+            9.594,
+            5.161
+          ]
+        },
+        {
+          "t_s": 1.3,
+          "xy": [
+            9.449,
+            5.294
+          ]
+        },
+        {
+          "t_s": 1.4,
+          "xy": [
+            9.304,
+            5.428
+          ]
+        },
+        {
+          "t_s": 1.5,
+          "xy": [
+            9.16,
+            5.561
+          ]
+        },
+        {
+          "t_s": 1.6,
+          "xy": [
+            9.015,
+            5.695
+          ]
+        },
+        {
+          "t_s": 1.7,
+          "xy": [
+            8.87,
+            5.828
+          ]
+        },
+        {
+          "t_s": 1.8,
+          "xy": [
+            8.726,
+            5.962
+          ]
+        },
+        {
+          "t_s": 1.9,
+          "xy": [
+            8.581,
+            6.095
+          ]
+        },
+        {
+          "t_s": 2.0,
+          "xy": [
+            8.436,
+            6.229
+          ]
+        },
+        {
+          "t_s": 2.1,
+          "xy": [
+            8.281,
+            6.398
+          ]
+        },
+        {
+          "t_s": 2.2,
+          "xy": [
+            8.252,
+            6.107
+          ]
+        },
+        {
+          "t_s": 2.3,
+          "xy": [
+            8.316,
+            4.23
+          ]
+        },
+        {
+          "t_s": 2.4,
+          "xy": [
+            8.314,
+            3.232
+          ]
+        },
+        {
+          "t_s": 2.5,
+          "xy": [
+            8.324,
+            3.25
+          ]
+        },
+        {
+          "t_s": 2.6,
+          "xy": [
+            8.316,
+            3.267
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "start_s": 15.5,
+      "end_s": 16.2,
+      "shot_ids": [
+        1
+      ],
+      "winner": "B",
+      "ball_track": [
+        {
+          "t_s": 15.3,
+          "xy": [
+            7.356,
+            5.417
+          ]
+        },
+        {
+          "t_s": 15.4,
+          "xy": [
+            7.348,
+            5.434
+          ]
+        },
+        {
+          "t_s": 15.5,
+          "xy": [
+            7.348,
+            5.596
+          ]
+        },
+        {
+          "t_s": 15.6,
+          "xy": [
+            7.25,
+            4.027
+          ]
+        },
+        {
+          "t_s": 15.7,
+          "xy": [
+            7.254,
+            2.163
+          ]
+        },
+        {
+          "t_s": 15.8,
+          "xy": [
+            7.601,
+            2.247
+          ]
+        },
+        {
+          "t_s": 15.9,
+          "xy": [
+            7.932,
+            1.986
+          ]
+        },
+        {
+          "t_s": 16.0,
+          "xy": [
+            8.242,
+            1.249
+          ]
+        },
+        {
+          "t_s": 16.1,
+          "xy": [
+            8.41,
+            0.168
+          ]
+        },
+        {
+          "t_s": 16.2,
+          "xy": [
+            8.48,
+            -0.817
+          ]
+        },
+        {
+          "t_s": 16.3,
+          "xy": [
+            8.471,
+            -0.681
+          ]
+        },
+        {
+          "t_s": 16.4,
+          "xy": [
+            8.468,
+            -0.591
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "start_s": 19.2,
+      "end_s": 19.5,
+      "shot_ids": [
+        2
+      ],
+      "winner": "B",
+      "ball_track": [
+        {
+          "t_s": 19.0,
+          "xy": [
+            8.39,
+            1.736
+          ]
+        },
+        {
+          "t_s": 19.1,
+          "xy": [
+            8.387,
+            1.825
+          ]
+        },
+        {
+          "t_s": 19.2,
+          "xy": [
+            8.378,
+            1.939
+          ]
+        },
+        {
+          "t_s": 19.3,
+          "xy": [
+            8.659,
+            1.046
+          ]
+        },
+        {
+          "t_s": 19.4,
+          "xy": [
+            9.041,
+            -0.379
+          ]
+        },
+        {
+          "t_s": 19.5,
+          "xy": [
+            9.304,
+            -0.462
+          ]
+        },
+        {
+          "t_s": 19.6,
+          "xy": [
+            9.272,
+            -0.45
+          ]
+        },
+        {
+          "t_s": 19.7,
+          "xy": [
+            9.269,
+            -0.428
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "start_s": 30.0,
+      "end_s": 30.17,
+      "shot_ids": [
+        3
+      ],
+      "winner": "A",
+      "ball_track": [
+        {
+          "t_s": 29.8,
+          "xy": [
+            8.973,
+            1.714
+          ]
+        },
+        {
+          "t_s": 29.9,
+          "xy": [
+            8.97,
+            1.735
+          ]
+        },
+        {
+          "t_s": 30.0,
+          "xy": [
+            8.975,
+            1.805
+          ]
+        },
+        {
+          "t_s": 30.1,
+          "xy": [
+            8.864,
+            1.285
+          ]
+        },
+        {
+          "t_s": 30.2,
+          "xy": [
+            8.738,
+            0.782
+          ]
+        },
+        {
+          "t_s": 30.3,
+          "xy": [
+            8.75,
+            0.823
+          ]
+        }
+      ]
+    }
+  ],
+  "score": {
+    "final": "0-0",
+    "sets": [],
+    "games": [
+      0,
+      0
+    ],
+    "timeline": [
+      {
+        "shot_id": 0,
+        "rally_id": 0,
+        "point_winner": "B",
+        "display": "0-15",
+        "games_display": "0-0",
+        "sets_display": "0-0"
+      },
+      {
+        "shot_id": 1,
+        "rally_id": 1,
+        "point_winner": "B",
+        "display": "0-30",
+        "games_display": "0-0",
+        "sets_display": "0-0"
+      },
+      {
+        "shot_id": 2,
+        "rally_id": 2,
+        "point_winner": "B",
+        "display": "0-40",
+        "games_display": "0-0",
+        "sets_display": "0-0"
+      },
+      {
+        "shot_id": 3,
+        "rally_id": 3,
+        "point_winner": "A",
+        "display": "15-40",
+        "games_display": "0-0",
+        "sets_display": "0-0"
+      }
+    ]
+  },
+  "stats": {
+    "shot_count": 4,
+    "rally_count": 4,
+    "avg_speed_kmh": 22.4,
+    "top_speed_kmh": 22.4,
+    "shot_mix": {
+      "serve": 1,
+      "forehand": 3
+    },
+    "line_calls": {
+      "in": 1,
+      "out": 3
+    },
+    "distance_run_m": {
+      "A": 62.3,
+      "B": 0.0
+    }
+  },
+  "schema_version": "1.0",
+  "court": {
+    "length_m": 23.77,
+    "width_m": 10.97,
+    "singles_width_m": 8.23,
+    "service_line_from_net_m": 6.4
+  }
+}

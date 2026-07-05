@@ -128,3 +128,66 @@ def test_tracker_rescue_respects_player_boxes():
     box = (100, 400, 400, 600)   # player box covering the weak candidates
     pts = [tr.update(frame, exclude_boxes=[box]) for _ in range(6)]
     assert tr.n_sub == 0, "rescue must not fire inside a player box"
+
+
+def test_tracker_static_lock_gate():
+    """A detection that sits still for static_min_run frames is a fixture
+    (burned-in HUD graphic, logo, net post), not a ball: the track is dropped,
+    the spot is remembered, and the tracker never re-locks there."""
+    from swingvision.ball import BallTracker
+
+    class _StuckDet:
+        def detect(self, frame):
+            return (400.0, 200.0)   # HUD logo: never moves
+
+    tr = BallTracker(_StuckDet(), (1920, 1080), use_bgsub=False)
+    frame = np.zeros((4, 4, 3), dtype=np.uint8)
+    pts = [tr.update(frame) for _ in range(20)]
+    # The first static_min_run-1 emissions necessarily leak (a frozen lock is
+    # only knowable in hindsight); everything after is suppressed for good.
+    assert all(p is not None for p in pts[:4])
+    assert all(p is None for p in pts[4:])
+    assert tr.n_static == 1
+
+
+def test_tracker_static_gate_spares_moving_ball():
+    """Clean footage (no burned-in HUD): a normally moving ball never trips
+    the static gate — output is identical to a gate-less tracker."""
+    from swingvision.ball import BallTracker
+
+    class _MovingDet:
+        def __init__(self):
+            self.t = -1
+
+        def detect(self, frame):
+            self.t += 1
+            return (100.0 + 20.0 * self.t, 500.0)
+
+    tr = BallTracker(_MovingDet(), (1920, 1080), use_bgsub=False)
+    frame = np.zeros((4, 4, 3), dtype=np.uint8)
+    pts = [tr.update(frame) for _ in range(15)]
+    assert all(p is not None for p in pts)
+    assert tr.n_static == 0 and not tr.static_anchors
+
+
+def test_tracker_reacquires_real_ball_after_fixture():
+    """After a fixture is suppressed the tracker is free again: a moving ball
+    appearing elsewhere is acquired immediately."""
+    from swingvision.ball import BallTracker
+
+    class _HudThenBall:
+        def __init__(self):
+            self.t = -1
+
+        def detect(self, frame):
+            self.t += 1
+            if self.t < 8:
+                return (400.0, 200.0)              # stuck on the HUD
+            return (800.0 + 25.0 * self.t, 600.0)  # the real ball, moving
+
+    tr = BallTracker(_HudThenBall(), (1920, 1080), use_bgsub=False)
+    frame = np.zeros((4, 4, 3), dtype=np.uint8)
+    pts = [tr.update(frame) for _ in range(16)]
+    assert all(p is None for p in pts[4:8]), "fixture stays suppressed"
+    assert all(p is not None for p in pts[8:]), "real ball reacquired"
+    assert tr.n_static == 1

@@ -74,10 +74,15 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   code that no longer exists. Full verdict + numbers: HANDOFF.md par.10. The
   canonical demo30 dashboard build still uses the archived cache, unchanged.
   Known issue made explicit by the investigation: BOTH old and new trackers
-  sometimes lock onto SwingVision's burned-in HUD graphics; a static-lock gate
-  in the pipeline (locks that do not move for ~5 frames are not a ball) is the
-  cheap next fix, and the gold-label set remains the only way to score
-  far-court coverage properly.
+  sometimes lock onto SwingVision's burned-in HUD graphics (sourced test clips
+  only — the user's real recordings have no HUD, but net posts/fixtures fool
+  detectors the same way). FIXED same day: BallTracker static-lock gate
+  (a lock moving <3px/frame for 5 frames is a fixture: track dropped, spot
+  blacklisted, ball re-acquired). Measured on yt_rally2: tracknet 686 locks
+  with ZERO static junk (vs 781 incl. 103 junk; ball-only coverage UP
+  678->686), fusion 746 with zero junk (747 before). Gate params are in the
+  cache provenance stamp; 57 tests. The gold-label set remains the only way
+  to score far-court coverage properly.
 
 ## Conventions
 

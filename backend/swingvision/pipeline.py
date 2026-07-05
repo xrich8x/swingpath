@@ -531,7 +531,8 @@ def _git_commit():
 
 
 def _build_provenance(ball_model, weight_files, pose_model, device,
-                      camera_hfov_deg, cam_h, gate_on, H):
+                      camera_hfov_deg, cam_h, gate_on, H,
+                      static_gate=(3.0, 5)):
     """The 'how was this cache built' stamp stored inside every new cache."""
     return {
         "ball_model": ball_model,
@@ -541,6 +542,7 @@ def _build_provenance(ball_model, weight_files, pose_model, device,
         "device": device,
         "camera_hfov_deg": round(float(camera_hfov_deg), 2),
         "court_gate_min_cam_h_m": COURT_GATE_MIN_CAM_H,
+        "static_gate_step_px_min_run": [float(static_gate[0]), int(static_gate[1])],
         "camera_height_m": round(float(cam_h), 2) if cam_h is not None else None,
         "court_gate_on": bool(gate_on),
         "homography_sha256": _homography_fingerprint(H),
@@ -743,7 +745,8 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
         print(f"[analyze] perceived {processed} frames in {elapsed:.0f}s "
               f"({processed / elapsed:.2f} fps, {elapsed / processed:.2f}s/frame)")
     print(f"[analyze] ball locked via model={tracker.n_tnet}, "
-          f"background-recovered={tracker.n_bg}")
+          f"background-recovered={tracker.n_bg}, "
+          f"static-fixtures-suppressed={tracker.n_static}")
 
     if cache_path:
         with open(cache_path, "w", encoding="utf-8") as f:
@@ -756,7 +759,8 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                     "ball_model": ball_model,
                     "provenance": _build_provenance(
                         ball_model, weight_files, pose_model, device,
-                        camera_hfov_deg, cam_h, gate_H is not None, H),
+                        camera_hfov_deg, cam_h, gate_H is not None, H,
+                        static_gate=(tracker.static_step_px, tracker.static_min_run)),
                     "ball_px": [list(p) if p else None for p in ball_px],
                     "near_court": [list(p) if p else None for p in near_court],
                     "far_court": [list(p) if p else None for p in far_court],
