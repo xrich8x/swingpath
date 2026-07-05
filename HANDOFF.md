@@ -239,4 +239,62 @@ corner-drag per new angle; optional 240fps rally.
 - Training logs: scratchpad `tasks/` dir of session cf49ba9e… (may be
   cleaned by OS; key numbers are transcribed in §4 and in memory files).
 - **No git repo — nothing is version-controlled. Strongly consider `git init`
-  + first commit before further changes.**
+  + first commit before further changes.** (Done 2026-07-05 — see §10.)
+
+## 10. Session 2026-07-05 — §6 regression investigated: VERDICT
+
+Session scope: git init (commits e223d40, 39782a3, 4f6464b + this doc commit),
+provenance stamping for all new perception caches (§6 suspect 1's "cache keys
+don't record H/device" is fixed for the future; tests 50 -> 54), then the §6
+experiments in the prescribed order. Archived caches and canonical demo30
+outputs untouched (enforced by git — they are committed and show no diff).
+
+Experiments (yt_rally2.mp4 + user corner calibration, frame_step 2, pose
+accurate, bgsub on — matching every demo30 cache; outputs demo30_exp_*):
+
+| run                                   | total locks | static junk | ball-only |
+|---------------------------------------|------------|-------------|-----------|
+| ARCHIVE demo30.perception.json        | 968        | 183 (19%)   | 785       |
+| fresh tracknet cuda (NEW781)          | 781        | 103 (13%)   | 678       |
+| 3a tracknet cuda hfov=70 gate=4.0m    | 781        | 103         | 678       |
+| 3a fusion   cuda hfov=70 gate=4.0m    | 862        | 115         | 747       |
+| 3b tracknet CPU  hfov=70 gate=4.0m    | 781        | 103         | 678       |
+
+("static junk" = locks that move <3 px/frame for >=5 consecutive frames —
+a ball never does that; these sit on SwingVision's burned-in HUD labels,
+its logo, and net posts. Filter is analysis-side only, not in the pipeline.)
+
+MEASURED facts:
+- 3a tracknet is bit-identical to NEW781 on all 1108 frames: forcing the old
+  hfov (70 vs self-cal 93.5) and old gate threshold (4.0 vs 3.0 m) changes
+  NOTHING. §6 suspects 1(partial: hfov/gate state) and 4 are ruled out.
+- 3b CPU: 1098/1108 frames exactly identical to cuda, all 781 locks within
+  2 px (one lock flipped model<->bg attribution). §6 suspect 2 ruled out.
+- Rescue was already ruled out in-session last time (§6 fact a).
+- The archive's extra 240 locks vs fresh: 99% in the far half (y median 200),
+  in 48 sustained streaks (longest 24 processed frames ~0.8 s).
+- The visual diff (data/output/regression_diff.jpg, 6 frames) shows fresh781
+  stuck on the 61 MPH HUD box at t=1.2 s (archive plausibly on the ball) BUT
+  ALSO the archive stuck on a 50 MPH HUD box at t~18.5-18.9 s. Neither track
+  is pristine; §6's "where they disagree, OLD is on the real ball" was
+  over-generous to the archive.
+
+VERDICT [INFERRED from the above]: the archive was built by a pre-git version
+of the code that no longer exists. No configuration of current code
+(tracknet/fusion x cpu/cuda x old/new hfov+gate x rescue on/off) reproduces
+it, and current code is bit-deterministic, so the difference is code, not
+settings or hardware. That older code kept weak far-court detections that
+current code rejects — real ball AND HUD junk alike (its junk rate is higher:
+19% vs 13%). The headline regression was ~half illusory: 968 vs 781 is
+785 vs 678 ball-only (gap 107), and current FUSION reaches 747 (gap 38).
+The archive's recorded ball_model=tracknet was written by that unknown code
+and cannot be verified [UNKNOWN]; fusion's ball-only count being far closer
+to the archive's is weak evidence the archive build was fusion-like.
+
+Still open (unchanged from §8 roadmap, now sharper):
+- Gold-label set (fix 1.4) is the only way to decide whether the archive's
+  107 extra ball-only locks are real ball or residual junk — i.e. whether
+  ANYTHING was actually lost.
+- A static-lock gate in the pipeline (this session's junk filter, ~20 lines)
+  would remove 103-183 false locks from every run and should precede any
+  BallNet v2 training on pseudo-labels (the junk is in the labels too).

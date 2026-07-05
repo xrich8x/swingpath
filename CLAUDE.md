@@ -60,6 +60,24 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
 - Phase 1 done: calibration + a verifiable court overlay. detect_court_keypoints
   has a clearly-marked seam to swap the classical baseline for a learned
   keypoint model; low-confidence detection falls back to a manual keypoints JSON.
+- Session 2026-07-05: git repo initialized (one commit per step; weights/datasets
+  gitignored with documented reasons, but in-house trained weights and the
+  data/output JSON evidence caches ARE committed). Perception caches now carry a
+  provenance stamp (model names, weight-file hashes, device, hfov, court-gate
+  threshold, homography hash, git commit); loading a cache under different
+  settings prints a plain-English warning (pipeline.py, tests/test_provenance.py).
+  The demo30 968-lock archive regression (HANDOFF.md par.6) is RESOLVED as far as
+  it can be: hfov/gate/device/rescue all ruled out by experiment (current code is
+  bit-deterministic at 781 tracknet locks), 183 of the archive's 968 locks are
+  static junk (SwingVision HUD/logo/net posts), the real ball-only gap is
+  785-vs-678 (107, or just 38 vs fusion), and the archive was built by pre-git
+  code that no longer exists. Full verdict + numbers: HANDOFF.md par.10. The
+  canonical demo30 dashboard build still uses the archived cache, unchanged.
+  Known issue made explicit by the investigation: BOTH old and new trackers
+  sometimes lock onto SwingVision's burned-in HUD graphics; a static-lock gate
+  in the pipeline (locks that do not move for ~5 frames are not a ball) is the
+  cheap next fix, and the gold-label set remains the only way to score
+  far-court coverage properly.
 
 ## Conventions
 
