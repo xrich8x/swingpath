@@ -1,0 +1,511 @@
+{
+  "video": {
+    "filename": "yt_rally2.mp4",
+    "fps": 30.0,
+    "width": 1280,
+    "height": 720,
+    "duration_s": 36.9
+  },
+  "players": [
+    {
+      "id": "A",
+      "name": "Player A (near)"
+    },
+    {
+      "id": "B",
+      "name": "Player B (far)"
+    }
+  ],
+  "shots": [
+    {
+      "id": 0,
+      "rally_id": 0,
+      "player": "A",
+      "type": "serve",
+      "t_hit_s": 0.43,
+      "speed_kmh": 8.8,
+      "hit_xy": [
+        10.147,
+        3.452
+      ],
+      "bounce_xy": [
+        8.262,
+        6.618
+      ],
+      "bounce_t_s": 2.07,
+      "is_in": true,
+      "call": "in",
+      "spin_rpm": 0.0,
+      "topspin_rpm": 0.0,
+      "spin_style": "",
+      "speed_source": "approx",
+      "speed_confident": false,
+      "call_confident": true
+    },
+    {
+      "id": 1,
+      "rally_id": 0,
+      "player": "A",
+      "type": "backhand",
+      "t_hit_s": 2.1,
+      "speed_kmh": 33.4,
+      "hit_xy": [
+        8.208,
+        6.617
+      ],
+      "bounce_xy": [
+        8.328,
+        3.221
+      ],
+      "bounce_t_s": 2.47,
+      "is_in": true,
+      "call": "in",
+      "spin_rpm": 0.0,
+      "topspin_rpm": 0.0,
+      "spin_style": "flat",
+      "speed_source": "approx",
+      "speed_confident": true,
+      "call_confident": true
+    },
+    {
+      "id": 2,
+      "rally_id": 1,
+      "player": "A",
+      "type": "forehand",
+      "t_hit_s": 15.5,
+      "speed_kmh": 33.9,
+      "hit_xy": [
+        7.357,
+        5.309
+      ],
+      "bounce_xy": [
+        8.48,
+        -0.833
+      ],
+      "bounce_t_s": 16.23,
+      "is_in": false,
+      "call": "out",
+      "spin_rpm": 0.0,
+      "topspin_rpm": 0.0,
+      "spin_style": "flat",
+      "speed_source": "approx",
+      "speed_confident": false,
+      "call_confident": false
+    },
+    {
+      "id": 3,
+      "rally_id": 2,
+      "player": "A",
+      "type": "forehand",
+      "t_hit_s": 30.0,
+      "speed_kmh": 22.6,
+      "hit_xy": [
+        8.971,
+        1.807
+      ],
+      "bounce_xy": [
+        8.745,
+        0.788
+      ],
+      "bounce_t_s": 30.17,
+      "is_in": true,
+      "call": "in",
+      "spin_rpm": 0.0,
+      "topspin_rpm": 0.0,
+      "spin_style": "flat",
+      "speed_source": "approx",
+      "speed_confident": true,
+      "call_confident": false
+    }
+  ],
+  "rallies": [
+    {
+      "id": 0,
+      "start_s": 0.43,
+      "end_s": 2.47,
+      "shot_ids": [
+        0,
+        1
+      ],
+      "winner": "A",
+      "ball_track": [
+        {
+          "t_s": 0.3,
+          "xy": [
+            10.142,
+            3.452
+          ]
+        },
+        {
+          "t_s": 0.4,
+          "xy": [
+            10.142,
+            3.452
+          ]
+        },
+        {
+          "t_s": 0.5,
+          "xy": [
+            10.118,
+            3.442
+          ]
+        },
+        {
+          "t_s": 0.6,
+          "xy": [
+            10.038,
+            3.57
+          ]
+        },
+        {
+          "t_s": 0.7,
+          "xy": [
+            10.145,
+            4.069
+          ]
+        },
+        {
+          "t_s": 0.8,
+          "xy": [
+            10.109,
+            4.468
+          ]
+        },
+        {
+          "t_s": 0.9,
+          "xy": [
+            10.028,
+            4.771
+          ]
+        },
+        {
+          "t_s": 1.0,
+          "xy": [
+            9.875,
+            4.922
+          ]
+        },
+        {
+          "t_s": 1.1,
+          "xy": [
+            9.725,
+            5.076
+          ]
+        },
+        {
+          "t_s": 1.2,
+          "xy": [
+            9.574,
+            5.23
+          ]
+        },
+        {
+          "t_s": 1.3,
+          "xy": [
+            9.424,
+            5.385
+          ]
+        },
+        {
+          "t_s": 1.4,
+          "xy": [
+            9.273,
+            5.539
+          ]
+        },
+        {
+          "t_s": 1.5,
+          "xy": [
+            9.123,
+            5.693
+          ]
+        },
+        {
+          "t_s": 1.6,
+          "xy": [
+            8.972,
+            5.847
+          ]
+        },
+        {
+          "t_s": 1.7,
+          "xy": [
+            8.821,
+            6.002
+          ]
+        },
+        {
+          "t_s": 1.8,
+          "xy": [
+            8.671,
+            6.156
+          ]
+        },
+        {
+          "t_s": 1.9,
+          "xy": [
+            8.52,
+            6.31
+          ]
+        },
+        {
+          "t_s": 2.0,
+          "xy": [
+            8.37,
+            6.465
+          ]
+        },
+        {
+          "t_s": 2.1,
+          "xy": [
+            8.208,
+            6.617
+          ]
+        },
+        {
+          "t_s": 2.2,
+          "xy": [
+            8.256,
+            5.899
+          ]
+        },
+        {
+          "t_s": 2.3,
+          "xy": [
+            8.316,
+            4.177
+          ]
+        },
+        {
+          "t_s": 2.4,
+          "xy": [
+            8.324,
+            3.271
+          ]
+        },
+        {
+          "t_s": 2.5,
+          "xy": [
+            8.324,
+            3.248
+          ]
+        },
+        {
+          "t_s": 2.6,
+          "xy": [
+            8.316,
+            3.263
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "start_s": 15.5,
+      "end_s": 16.23,
+      "shot_ids": [
+        2
+      ],
+      "winner": "B",
+      "ball_track": [
+        {
+          "t_s": 15.3,
+          "xy": [
+            7.364,
+            5.16
+          ]
+        },
+        {
+          "t_s": 15.4,
+          "xy": [
+            7.356,
+            5.175
+          ]
+        },
+        {
+          "t_s": 15.5,
+          "xy": [
+            7.357,
+            5.309
+          ]
+        },
+        {
+          "t_s": 15.6,
+          "xy": [
+            7.252,
+            3.947
+          ]
+        },
+        {
+          "t_s": 15.7,
+          "xy": [
+            7.257,
+            2.137
+          ]
+        },
+        {
+          "t_s": 15.8,
+          "xy": [
+            7.6,
+            2.255
+          ]
+        },
+        {
+          "t_s": 15.9,
+          "xy": [
+            7.932,
+            1.986
+          ]
+        },
+        {
+          "t_s": 16.0,
+          "xy": [
+            8.238,
+            1.274
+          ]
+        },
+        {
+          "t_s": 16.1,
+          "xy": [
+            8.425,
+            0.085
+          ]
+        },
+        {
+          "t_s": 16.2,
+          "xy": [
+            8.478,
+            -0.815
+          ]
+        },
+        {
+          "t_s": 16.3,
+          "xy": [
+            8.48,
+            -0.775
+          ]
+        },
+        {
+          "t_s": 16.4,
+          "xy": [
+            8.484,
+            -0.757
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "start_s": 30.0,
+      "end_s": 30.17,
+      "shot_ids": [
+        3
+      ],
+      "winner": "A",
+      "ball_track": [
+        {
+          "t_s": 29.8,
+          "xy": [
+            8.956,
+            1.721
+          ]
+        },
+        {
+          "t_s": 29.9,
+          "xy": [
+            8.959,
+            1.739
+          ]
+        },
+        {
+          "t_s": 30.0,
+          "xy": [
+            8.971,
+            1.807
+          ]
+        },
+        {
+          "t_s": 30.1,
+          "xy": [
+            8.863,
+            1.282
+          ]
+        },
+        {
+          "t_s": 30.2,
+          "xy": [
+            8.735,
+            0.774
+          ]
+        },
+        {
+          "t_s": 30.3,
+          "xy": [
+            8.747,
+            0.816
+          ]
+        }
+      ]
+    }
+  ],
+  "score": {
+    "final": "0-0",
+    "sets": [],
+    "games": [
+      0,
+      0
+    ],
+    "timeline": [
+      {
+        "shot_id": 1,
+        "rally_id": 0,
+        "point_winner": "A",
+        "display": "15-0",
+        "games_display": "0-0",
+        "sets_display": "0-0"
+      },
+      {
+        "shot_id": 2,
+        "rally_id": 1,
+        "point_winner": "B",
+        "display": "15-15",
+        "games_display": "0-0",
+        "sets_display": "0-0"
+      },
+      {
+        "shot_id": 3,
+        "rally_id": 2,
+        "point_winner": "A",
+        "display": "30-15",
+        "games_display": "0-0",
+        "sets_display": "0-0"
+      }
+    ]
+  },
+  "stats": {
+    "shot_count": 4,
+    "rally_count": 3,
+    "avg_speed_kmh": 28.0,
+    "top_speed_kmh": 33.4,
+    "shot_mix": {
+      "serve": 1,
+      "backhand": 1,
+      "forehand": 2
+    },
+    "line_calls": {
+      "in": 3,
+      "out": 1
+    },
+    "distance_run_m": {
+      "A": 62.3,
+      "B": 0.0
+    }
+  },
+  "schema_version": "1.0",
+  "court": {
+    "length_m": 23.77,
+    "width_m": 10.97,
+    "singles_width_m": 8.23,
+    "service_line_from_net_m": 6.4
+  }
+}

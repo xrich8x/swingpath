@@ -34,6 +34,8 @@ data/output/*
 # ball-track regression (HANDOFF.md §6): archived perception caches + match
 # outputs must be recoverable. Videos/images in data/output stay ignored.
 !data/output/*.json
+# ...and the one evidence image from the 2026-07-05 regression investigation.
+!data/output/regression_diff.jpg
 data/*.mp4
 data/*.mov
 
