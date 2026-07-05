@@ -45,6 +45,11 @@ data/train_clips/
 data/ball_dataset/
 data/court_dataset/
 
+# Gold-label frame extracts (regenerable from the source video via
+# tools/select_gold_frames.py --extract-only; the manifest + labels JSON in
+# data/gold/ ARE committed — they are the human benchmark, HANDOFF §8 fix 1.4)
+data/gold/frames/
+
 # Editor / OS
 .DS_Store
 Thumbs.db
