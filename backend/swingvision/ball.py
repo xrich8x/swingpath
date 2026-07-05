@@ -137,6 +137,7 @@ class BallDetector:
 
         torch.set_num_threads(os.cpu_count() or torch.get_num_threads())
         self.device = device
+        self.weights_path = weights   # recorded in the perception-cache provenance
         self.in_h, self.in_w = 360, 640  # TrackNet input size (matched to weights)
         self.model = BallTrackerNet(out_channels=256)
         self.model.load_state_dict(torch.load(weights, map_location=device))
@@ -227,6 +228,7 @@ class OurBallDetector:
 
         torch.set_num_threads(os.cpu_count() or torch.get_num_threads())
         self.device = device
+        self.weights_path = weights   # recorded in the perception-cache provenance
         self.score_thresh = score_thresh
         self.model = BallNet()
         ckpt = torch.load(weights, map_location=device, weights_only=False)
@@ -285,6 +287,7 @@ class WASBDetector:
 
         torch.set_num_threads(os.cpu_count() or torch.get_num_threads())
         self.device = device
+        self.weights_path = weights   # recorded in the perception-cache provenance
         self.score_thresh = score_thresh
         self.model = HRNet(in_channels=9, out_channels=3, stem_strides=(1, 1))
         ckpt = torch.load(weights, map_location=device, weights_only=False)

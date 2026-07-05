@@ -15,8 +15,11 @@ exercises the same code a real clip would.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import subprocess
+from datetime import datetime, timezone
 from typing import Optional
 
 import numpy as np
@@ -485,6 +488,95 @@ def _estimate_cam_step(prev_gray, gray, boxes, scale: float = 0.25):
         return np.eye(3)
 
 
+# --- Perception-cache provenance --------------------------------------------
+# The archived demo30 cache (HANDOFF.md §6) could not be traced back to the
+# model/device/calibration that built it. Every cache written from now on
+# records how it was built; loading one under different settings warns out loud
+# instead of silently reusing a track the current settings would not reproduce.
+
+COURT_GATE_MIN_CAM_H = 3.0  # metres; court-plausibility gate needs this camera height
+
+
+def _file_fingerprint(path):
+    """Short sha256 (12 hex chars) of a file, or None if it can't be read."""
+    try:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                h.update(chunk)
+        return h.hexdigest()[:12]
+    except OSError:
+        return None
+
+
+def _homography_fingerprint(H):
+    """Short sha256 of the normalized court homography — ties a cache to the
+    exact calibration it was built under (homographies are scale-free, so
+    normalize by H[2,2] before hashing)."""
+    Hn = np.asarray(H, dtype=np.float64)
+    if Hn[2, 2]:
+        Hn = Hn / Hn[2, 2]
+    return hashlib.sha256(np.round(Hn, 6).tobytes()).hexdigest()[:12]
+
+
+def _git_commit():
+    """Repo commit id ('-dirty' suffix if there are uncommitted edits), or None."""
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    try:
+        out = subprocess.run(["git", "describe", "--always", "--dirty"],
+                             cwd=root, capture_output=True, text=True, timeout=10)
+        return out.stdout.strip() or None
+    except Exception:
+        return None
+
+
+def _build_provenance(ball_model, weight_files, pose_model, device,
+                      camera_hfov_deg, cam_h, gate_on, H):
+    """The 'how was this cache built' stamp stored inside every new cache."""
+    return {
+        "ball_model": ball_model,
+        "pose_model": pose_model,
+        "weights": {name: {"path": p, "sha256": _file_fingerprint(p)}
+                    for name, p in weight_files.items() if p},
+        "device": device,
+        "camera_hfov_deg": round(float(camera_hfov_deg), 2),
+        "court_gate_min_cam_h_m": COURT_GATE_MIN_CAM_H,
+        "camera_height_m": round(float(cam_h), 2) if cam_h is not None else None,
+        "court_gate_on": bool(gate_on),
+        "homography_sha256": _homography_fingerprint(H),
+        "git_commit": _git_commit(),
+        "created_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+
+
+def _provenance_mismatches(prov, device, camera_hfov_deg, H):
+    """Compare a cache's recorded build parameters against the current run.
+    Returns plain-English difference lines (empty list = everything matches)."""
+    diffs = []
+    if prov.get("device") and prov["device"] != device:
+        diffs.append(f"device: cache was built on {prov['device']}, "
+                     f"this run uses {device}")
+    rec_hfov = prov.get("camera_hfov_deg")
+    if rec_hfov is not None and abs(rec_hfov - float(camera_hfov_deg)) > 0.05:
+        diffs.append(f"camera hfov: cache was built at {rec_hfov} deg, "
+                     f"this run uses {float(camera_hfov_deg):.2f} deg")
+    rec_gate = prov.get("court_gate_min_cam_h_m")
+    if rec_gate is not None and abs(rec_gate - COURT_GATE_MIN_CAM_H) > 1e-9:
+        diffs.append(f"court-gate height threshold: cache used {rec_gate} m, "
+                     f"the code now uses {COURT_GATE_MIN_CAM_H} m")
+    rec_h = prov.get("homography_sha256")
+    if rec_h and rec_h != _homography_fingerprint(H):
+        diffs.append("court calibration: the homography/keypoints differ from "
+                     "the ones the cache was built under")
+    for name, w in (prov.get("weights") or {}).items():
+        if w.get("sha256") and w.get("path"):
+            now = _file_fingerprint(w["path"])
+            if now is not None and now != w["sha256"]:
+                diffs.append(f"model weights: {name} ({w['path']}) has CHANGED "
+                             f"on disk since the cache was built")
+    return diffs
+
+
 def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
               max_frames, frame_step, cache_path, use_bgsub=True, ball_model="tracknet",
               camera_hfov_deg=70.0):
@@ -511,6 +603,25 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                 and (ball_model == "auto" or c.get("ball_model", "tracknet") == ball_model)
                 and "cam_motion" in c):
             print(f"[analyze] loaded cached perception <- {cache_path}")
+            prov = c.get("provenance")
+            if not prov:
+                print("[analyze] NOTE: this cache predates provenance stamping - "
+                      "there is no record of the model/device/calibration that "
+                      "built it, so reproducibility cannot be checked.")
+            else:
+                diffs = _provenance_mismatches(prov, device, camera_hfov_deg, H)
+                if diffs:
+                    print("[analyze] WARNING: reusing a cached perception that "
+                          "was built under DIFFERENT settings:")
+                    for d in diffs:
+                        print(f"[analyze]   - {d}")
+                    print(f"[analyze] The cached ball/player track may not match "
+                          f"what this run would produce. Delete {cache_path} to "
+                          f"redo perception under the current settings.")
+                cur = _git_commit()
+                if prov.get("git_commit") and cur and prov["git_commit"] != cur:
+                    print(f"[analyze] note: cache was built at code version "
+                          f"{prov['git_commit']}; you are now on {cur}")
             tup = lambda v: tuple(v) if v else None
             n = len(c["ball_px"])
             return ([tup(p) for p in c["ball_px"]],
@@ -532,17 +643,28 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
         ball_model = _probe_ball_model(video_path, ball_weights, device,
                                        frame_step, max_frames)
     detectors = []
+    weight_files = {}   # name -> weight file actually loaded (provenance stamp)
     if ball_model in ("tracknet", "fusion", "all"):
-        detectors.append(BallDetector(ball_weights, device=device))
+        d = BallDetector(ball_weights, device=device)
+        detectors.append(d)
+        weight_files["tracknet"] = getattr(d, "weights_path", ball_weights)
     if ball_model in ("wasb", "fusion", "all"):
-        detectors.append(WASBDetector(device=device))
+        d = WASBDetector(device=device)
+        detectors.append(d)
+        weight_files["wasb"] = getattr(d, "weights_path", None)
     if ball_model in ("ours", "all"):
         from .ball import OurBallDetector
-        detectors.append(OurBallDetector(device=device))
+        d = OurBallDetector(device=device)
+        detectors.append(d)
+        weight_files["ballnet"] = getattr(d, "weights_path", None)
     if not detectors:
         raise ValueError(f"unknown ball_model {ball_model!r}")
     print(f"[analyze] ball model: {ball_model} ({len(detectors)} detector(s))")
     estimator = pose_mod.PoseEstimator(quality=pose_quality, device=device)
+    pose_w, pose_imgsz = pose_mod.QUALITY_PRESETS.get(
+        pose_quality, pose_mod.QUALITY_PRESETS["fast"])
+    pose_model = f"{pose_w}@{pose_imgsz}"
+    weight_files["pose"] = pose_w  # auto-downloaded next to run.py on first use
     cap = cv2.VideoCapture(video_path)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -561,7 +683,7 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
     # 4.4 -> 3.3 m), and the gate is empirically sound there — while a true phone
     # mount (~2 m) still reads well below 3.
     cam_h = calibration.camera_height_m(H, (width, height), camera_hfov_deg)
-    gate_H = H if (cam_h is not None and cam_h >= 3.0) else None
+    gate_H = H if (cam_h is not None and cam_h >= COURT_GATE_MIN_CAM_H) else None
     print(f"[analyze] camera height ~{cam_h:.1f} m -> court gate "
           f"{'ON' if gate_H is not None else 'OFF (low camera)'}"
           if cam_h is not None else "[analyze] camera height unknown -> court gate OFF")
@@ -632,6 +754,9 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                     "bgsub": bool(use_bgsub),
                     "pose_quality": pose_quality,
                     "ball_model": ball_model,
+                    "provenance": _build_provenance(
+                        ball_model, weight_files, pose_model, device,
+                        camera_hfov_deg, cam_h, gate_H is not None, H),
                     "ball_px": [list(p) if p else None for p in ball_px],
                     "near_court": [list(p) if p else None for p in near_court],
                     "far_court": [list(p) if p else None for p in far_court],
