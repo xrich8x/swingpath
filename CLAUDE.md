@@ -83,6 +83,18 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   678->686), fusion 746 with zero junk (747 before). Gate params are in the
   cache provenance stamp; 57 tests. The gold-label set remains the only way
   to score far-court coverage properly.
+- Session 2 (2026-07-05 evening): the gold-label benchmark EXISTS (HANDOFF
+  §11). tools/{select_gold_frames,gold_label_server,eval_gold}.py; the user
+  hand-labeled 250 stratified yt_rally2 frames blind (217 ball / 20 no-ball /
+  13 unsure) -> data/gold/yt_rally2.labels.json. These labels are a TEST set
+  — NEVER train on them. First honest numbers (hit@10px vs human clicks):
+  ballnet 65.0% / archive 63.1% / fusion 46.1% / tracknet 44.7%; far court is
+  the whole gap (ballnet 76.2%, fresh runs 31.0%). The §10 verdict is now
+  settled: the archive's extra far-court locks were mostly real ball. BallNet
+  v1 is the best ball-finder but worst false-firer (60% FP when no ball) —
+  so BallNet v2 with hard negatives (HUD box, above-far-curtain, frame edges)
+  is the top roadmap item, scored against eval_gold.py from now on. To label
+  more clips: run select_gold_frames.py on the clip, then gold_label_server.py.
 
 ## Conventions
 

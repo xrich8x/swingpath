@@ -304,3 +304,64 @@ Still open (unchanged from §8 roadmap, now sharper):
   (real ball RECOVERED where the track had been HUD-glued); fusion 746 / 0
   junk (vs 747 ball-only ungated). Params recorded in cache provenance.
   Pseudo-label REGENERATION for BallNet v2 should rerun with this gate on.
+
+## 11. Session 2 (2026-07-05 evening) — the FIRST human gold benchmark
+
+Fix 1.4 is DONE. Tools (commit 733b374): `tools/select_gold_frames.py`
+(stratified 250-frame selection: 50 each of serve / near / far / disagree /
+noball buckets, manifest carries video sha1 + params),
+`tools/gold_label_server.py` (blind browser labeler — no model output or
+bucket names shown to the labeler; magnifier loupe; atomic per-click saves),
+`tools/eval_gold.py` (hit@radius, miss vs wrong split, no-ball FP rate,
+per-bucket breakdown). Eval self-check: archive scored against fake gold
+derived from its own locks = 100% hit / 0% FP [MEASURED].
+
+THE USER hand-labeled all 250 frames blind (~15 min): 217 ball + 20 no-ball
++ 13 unsure (excluded). Labels: `data/gold/yt_rally2.labels.json`
+(commit 66a871e). **These labels are a TEST set — never train on them.**
+
+Results [MEASURED — first non-self-graded numbers in the project]:
+
+| track | hit@10 | wrong>10 | miss | hit@5 | hit@25 | med.err | FP (no-ball) |
+|---|---|---|---|---|---|---|---|
+| archive968 | 63.1% | 19.8% | 17.1% | 52.1% | 69.1% | 3.1px | 55.0% |
+| fusion746 | 46.1% | 25.3% | 28.6% | 30.9% | 51.2% | 6.3px | 40.0% |
+| tracknet686 | 44.7% | 21.2% | 34.1% | 33.2% | 48.4% | 5.0px | 30.0% |
+| ballnet990 | 65.0% | 18.4% | 16.6% | 49.8% | 68.7% | 3.9px | 60.0% |
+
+| track (hit@10 per bucket) | serve | near | far | disagree | noball | noball-FP |
+|---|---|---|---|---|---|---|
+| archive968 | 75.0% | 91.5% | 64.3% | 53.7% | 23.1% | 40.0% |
+| fusion746 | 66.7% | 87.2% | 31.0% | 19.5% | 15.4% | 10.0% |
+| tracknet686 | 64.6% | 87.2% | 31.0% | 19.5% | 10.3% | 10.0% |
+| ballnet990 | 68.8% | 83.0% | 76.2% | 61.0% | 30.8% | 40.0% |
+
+VERDICTS [MEASURED unless noted]:
+1. §10's open question is ANSWERED: the archive's extra far-court locks were
+   largely REAL ball. On disagreement frames the archive hits 53.7% vs the
+   fresh runs' 19.5%. The pre-git code genuinely tracked the far court
+   better; something real WAS lost.
+2. §6's dismissal of BallNet v1 ("locks the adjacent court's ball / HUD") is
+   PARTLY RETRACTED: per human truth it is the best ball-FINDER overall
+   (65.0% hit@10) and by far the best far-court (76.2%). Its real defect is
+   precision-when-no-ball (60% FP) — it fires at something whenever play
+   stops. The misattributed-shots finding (§6) still stands; the cause is
+   [INFERRED] its no-play FPs feeding events.py, not bad ball-finding.
+3. Near court is near-solved for every track (83–92%); the far court is the
+   entire battleground (31% fresh vs 76% ballnet).
+4. HUD/adjacent-court per FP location analysis: at frame 1602 ALL FOUR
+   tracks (incl. static-gated) lock the burned-in HUD box — the static gate
+   kills sustained HUD glue but not brief flickers. Other shared FP sites:
+   above the far curtain (adjacent-court motion, y≈200) and the frame edge
+   (x≈1–12). These regions are the hard-negative shopping list for BallNet v2.
+5. Honest headline: the best track finds the ball within 10px on ~65% of
+   human-verified frames. The self-graded "84.7%" was flattery, as §4 warned.
+
+Caveats: FP rates rest on only 20 no-ball frames (5%/frame granularity);
+one clip, one camera angle; hit@10 at 1280x720 (far-court ball is ~4-6px).
+
+Implication for the roadmap: BallNet v2 with hard negatives (fix 1.2) is now
+clearly the highest-value move — v1 already beats everything at finding the
+ball and only needs its false-fire problem trained out. Regenerate pseudo-
+labels with the static gate ON, add negatives from the FP regions above, and
+score v2 against THIS benchmark (eval_gold.py), never against pseudo-labels.
