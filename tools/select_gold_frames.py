@@ -21,8 +21,11 @@ Outputs (under --out, default data/gold/):
                                 regenerable from the video with --extract-only)
 
 Degrades gracefully for future clips: no --match json -> no serve bucket;
-fewer than 2 caches -> no disagree bucket; no caches at all -> uniform sampling.
-Run from the repo root with the backend venv python:
+fewer than 2 caches -> no disagree bucket. With NO caches at all the
+stratification signals don't exist, so selection is plain UNIFORM over the
+whole clip (single bucket "uniform") — statistically the cleanest option for
+a generalization test set; per-region analysis happens post-hoc from the
+human's clicks. Run from the repo root with the backend venv python:
 
   backend/.venv/Scripts/python.exe tools/select_gold_frames.py
 """
@@ -177,7 +180,9 @@ def main() -> None:
         tracks = [c["ball_px"][:n_idx] for c in caches]
         stat = [static_flags(t) for t in tracks]
     else:
-        step, n_idx, tracks, stat = 2, n_video // 2, [], []
+        # no caches: index every video frame (perception on ~30fps footage
+        # uses frame_step 1, so future caches will align frame-for-frame)
+        step, n_idx, tracks, stat = 1, n_video, [], []
 
     # Homography for the near/far split (image -> court metres, same math as
     # the pipeline). Optional: without it near/far falls back to image-y median.
@@ -205,6 +210,12 @@ def main() -> None:
         any_static.append(any(t[i] is not None and s[i] for t, s in zip(tracks, stat)))
 
     # --- bucket candidates (cache indices) ---------------------------------
+    if not tracks:
+        buckets = {"uniform": spread(list(range(n_idx)), args.target)}
+        write_outputs(args, manifest_path, frames_dir, video_path, buckets,
+                      step, n_video, fps, width, height)
+        return
+
     quota = args.target // 5
     taken: set[int] = set()
 
@@ -276,6 +287,14 @@ def main() -> None:
             else:
                 buckets["near"].append(i)
 
+    write_outputs(args, manifest_path, frames_dir, video_path, buckets,
+                  step, n_video, fps, width, height)
+
+
+def write_outputs(args, manifest_path: Path, frames_dir: Path,
+                  video_path: Path, buckets: dict[str, list[int]],
+                  step: int, n_video: int, fps: float,
+                  width: int, height: int) -> None:
     frames = sorted(
         ({"frame": i * step, "bucket": name}
          for name, idxs in buckets.items() for i in idxs),
@@ -304,7 +323,7 @@ def main() -> None:
         "bucket_counts": {k: len(v) for k, v in buckets.items()},
         "frames": frames,
     }
-    out_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=1)
 
