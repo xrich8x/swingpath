@@ -1,0 +1,50 @@
+# Python
+backend/.venv/
+backend/.venv-train/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Model weights (large; download separately — see requirements-ml.txt)
+backend/weights/*.pt
+*.pt
+backend/yolo*.pt
+backend/weights/*.pth.tar
+# EXCEPT weights trained in-house on our GPU — these are NOT re-downloadable;
+# losing them means losing the training runs (see HANDOFF.md §4).
+!backend/weights/ballnet.pt
+!backend/weights/ballnet_v0.pt
+!backend/weights/courtnet_ft.pt
+!backend/weights/courtnet_ft_v0_notready.pt
+
+# Exported mobile models (regenerate with mobile/export_tracknet.py)
+mobile/models/*.onnx
+mobile/models/*.onnx.data
+mobile/node_modules/
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+.vite/
+
+# Data & analysis output (keep the demo sample_match.json tracked)
+data/output/*
+!data/output/.gitkeep
+# EXCEPT JSON outputs — small, and they are the EVIDENCE for the unresolved
+# ball-track regression (HANDOFF.md §6): archived perception caches + match
+# outputs must be recoverable. Videos/images in data/output stay ignored.
+!data/output/*.json
+data/*.mp4
+data/*.mov
+
+# Raw training media + derived datasets (large; regenerable — clips re-download
+# from YouTube ids in HANDOFF.md §4, datasets rebuild via the labeler scripts)
+data/train_clips/
+data/ball_dataset/
+data/court_dataset/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

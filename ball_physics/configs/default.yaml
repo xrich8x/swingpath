@@ -1,0 +1,53 @@
+# Default configuration for the tennis speed/spin framework.
+# All physical quantities are SI unless noted.
+
+physics:
+  drag_cd: 0.55           # tennis-ball drag coefficient (calibrate to your ball/air)
+  lift_cl_max: 1.0        # CL(S) = cl_max * S / (sat*S + 1)
+  lift_cl_sat: 2.0
+  bounce:
+    e_normal: 0.75        # coefficient of restitution (hard court; lower for clay/grass)
+    e_tangent: 0.0
+    friction: 0.25
+
+camera:                   # courtside phone-on-tripod defaults
+  width: 1280
+  height: 720
+  hfov_deg: 70.0
+  height_m: 4.0           # camera height above court
+  behind_m: 8.0           # distance behind the baseline
+  side_m: 0.0
+  fps: 60.0
+
+detector:                 # TrackNet-style heatmap detector
+  in_frames: 3
+  out_frames: 3
+  input_size: [360, 640]  # H, W (divisible by 8)
+  heatmap_sigma: 3.0
+  score_threshold: 0.5
+  # weights: runs/tracknet/best.pt
+  # Alternatives with public weights: WASB (nttcom/WASB-SBDT), BlurBall (cogsys-tuebingen/blurball)
+
+tracking:
+  link_gate_px: 80.0
+  max_gap: 5              # frames of occlusion to interpolate across
+  kalman: {q: 2.0, r: 3.0}
+  bounce_drop_px: 6.0     # row rise required after a bounce
+  min_arc_frames: 3
+
+spin_net:                 # learned synthetic-to-real estimator
+  max_len: 80
+  hidden: 128
+  layers: 2
+  # weights: runs/spinnet/best.pt
+
+synthetic:                # data generation ranges (see data/synthesize.py)
+  speed_mps: [18.0, 55.0]
+  topspin_rpm: [-1500, 3500]
+  sidespin_rpm: [-1200, 1200]
+  pixel_noise: 1.5
+  dropout: 0.1
+
+estimator:
+  use_spin_net_init: true   # warm-start the physics fit with SpinNet
+  refine_with_fit: true     # always refine SpinNet output with the physics fit

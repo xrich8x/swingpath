@@ -1,0 +1,13 @@
+# Core (physics, synthetic data, estimator, calibration, tracking, eval)
+numpy>=1.24
+scipy>=1.10
+opencv-python>=4.8
+matplotlib>=3.7
+pyyaml>=6.0
+
+# Deep-learning components (detector + learned SpinNet). Install the build that
+# matches your CUDA/CPU setup: https://pytorch.org/get-started/locally/
+torch>=2.1
+
+# Optional: YOLO-based ball/court detection as an alternative to TrackNet
+# ultralytics>=8.0

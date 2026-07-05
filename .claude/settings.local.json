@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(py --version)",
+      "Bash(where python *)",
+      "Bash(py -c \"import numpy, scipy; print\\('numpy', numpy.__version__, 'scipy', scipy.__version__\\)\")",
+      "Bash(py -m pytest --version)",
+      "Bash(./.venv/Scripts/python.exe -c \"import numpy, scipy; print\\('numpy', numpy.__version__, 'scipy', scipy.__version__\\)\")",
+      "Bash(./.venv/Scripts/python.exe run.py demo --out ../frontend/src/data/sample_match.json)",
+      "Bash(./.venv/Scripts/python.exe -c ' *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(./.venv/Scripts/python.exe -c \"import sys,sysconfig; print\\(sys.version\\); print\\(sysconfig.get_platform\\(\\)\\)\")",
+      "Bash(./.venv/Scripts/python.exe -m pip install --dry-run opencv-python)",
+      "Bash(./.venv/Scripts/python.exe -m pip install --dry-run torch)",
+      "Bash(./.venv/Scripts/python.exe -m pip install opencv-python -q)",
+      "Bash(./.venv/Scripts/python.exe -c \"import cv2; print\\('opencv', cv2.__version__\\)\")",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/ -q)",
+      "WebSearch",
+      "Bash(curl -s \"https://api.github.com/repos/ArtLabss/tennis-tracking/contents/VideoInput\")",
+      "Bash(curl -sL -o tennis_sample.mp4 \"https://raw.githubusercontent.com/ArtLabss/tennis-tracking/main/VideoInput/video_input5.mp4\")",
+      "Bash(curl -sL -o tennis_sample_short.mp4 \"https://raw.githubusercontent.com/ArtLabss/tennis-tracking/main/VideoInput/video_input3.mp4\")",
+      "Bash(file *.mp4)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/yastrebksv/TennisProject/main/README.md\")",
+      "Bash(curl -s \"https://api.github.com/repos/yastrebksv/TennisProject/releases\")",
+      "Bash(mkdir -p weights)",
+      "Bash(./.venv/Scripts/python.exe -m pip install gdown -q)",
+      "Bash(./.venv/Scripts/python.exe -m gdown \"1XEYZ4myUN7QT-NeBYJI0xteLsvs-ZAOl\" -O weights/tracknet.pt)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/yastrebksv/TrackNet/main/model.py\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/yastrebksv/TrackNet/main/infer_on_video.py\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/yastrebksv/TrackNet/main/general.py\")",
+      "Bash(tail -6 \"C:/Users/richm/AppData/Local/Temp/claude/E--Claude-Outputs-Cowork-Tasks-Swing-Vision/cf49ba9e-92cd-43d1-ac36-637f2d70db3d/tasks/bmyojmgzc.output\")",
+      "Bash(tail -6 \"C:/Users/richm/AppData/Local/Temp/claude/E--Claude-Outputs-Cowork-Tasks-Swing-Vision/cf49ba9e-92cd-43d1-ac36-637f2d70db3d/tasks/bddgo8ecw.output\")"
+    ]
+  }
+}

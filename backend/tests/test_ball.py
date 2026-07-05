@@ -1,0 +1,130 @@
+"""Trajectory smoothing: gap filling and denoising (ball.smooth_and_fill)."""
+
+import numpy as np
+
+from swingvision.ball import smooth_and_fill
+
+
+def test_fills_interior_gap():
+    # A straight track with a missing middle frame should be linearly filled.
+    positions = [(0.0, 0.0), None, (2.0, 2.0)]
+    out = smooth_and_fill(positions, window=3, polyorder=1)
+    assert out.shape == (3, 2)
+    assert not np.isnan(out).any()
+    assert np.allclose(out[1], (1.0, 1.0), atol=1e-6)
+
+
+def test_edge_fill_and_shape():
+    positions = [None, (1.0, 5.0), (2.0, 6.0), None]
+    out = smooth_and_fill(positions, window=3, polyorder=1)
+    assert out.shape == (4, 2)
+    assert not np.isnan(out).any()
+
+
+def test_smoothing_reduces_noise():
+    rng = np.random.default_rng(1)
+    n = 60
+    t = np.linspace(0, 1, n)
+    clean = np.column_stack([t * 10.0, t * 5.0])
+    noisy = clean + rng.normal(scale=0.2, size=clean.shape)
+    out = smooth_and_fill([tuple(p) for p in noisy], window=11, polyorder=2)
+    # Smoothed track should be closer to the underlying line than the raw noise.
+    assert np.abs(out - clean).mean() < np.abs(noisy - clean).mean()
+
+
+def test_empty_track():
+    out = smooth_and_fill([])
+    assert out.shape == (0, 2)
+
+
+def test_tracker_court_gate():
+    """BallTracker._court_ok: candidates back-projecting far off-court are rejected;
+    the acquire bound is stricter than the continue bound."""
+    from swingvision.ball import BallTracker
+    from swingvision import court
+
+    # Simple metric homography: image px = 10 * court metres (no perspective).
+    H = np.diag([10.0, 10.0, 1.0])
+
+    class _NoopDet:
+        def detect(self, frame):
+            return None
+
+    tr = BallTracker(_NoopDet(), (1920, 1080), homography=H)
+    centre = (10 * court.DOUBLES_WIDTH / 2, 10 * court.LENGTH / 2)
+    assert tr._court_ok(centre, acquiring=True)
+    # 6 m behind the baseline: too far to START a track, fine to CONTINUE one.
+    deep = (10 * court.DOUBLES_WIDTH / 2, 10 * (court.LENGTH + 6.0))
+    assert not tr._court_ok(deep, acquiring=True)
+    assert tr._court_ok(deep, acquiring=False)
+    # 30 m beyond the baseline (the crowd): rejected in every state.
+    crowd = (10 * court.DOUBLES_WIDTH / 2, 10 * (court.LENGTH + 30.0))
+    assert not tr._court_ok(crowd, acquiring=False)
+    # Without a homography the gate is disabled.
+    tr2 = BallTracker(_NoopDet(), (1920, 1080))
+    assert tr2._court_ok(crowd, acquiring=True)
+
+
+def test_tracker_subthreshold_rescue():
+    """While coasting mid-track, the tracker may accept a detector's best
+    below-threshold response (last_sub) if it lies on the predicted path — but
+    never to START a track, and never from inside a player box."""
+    from swingvision.ball import BallTracker
+
+    class _ScriptedDet:
+        """Confident detections for a few frames, then only weak responses that
+        continue the same motion."""
+        def __init__(self):
+            self.t = -1
+            self.last_sub = None
+
+        def detect(self, frame):
+            self.t += 1
+            x = 100.0 + 20.0 * self.t
+            if self.t < 3:
+                self.last_sub = None
+                return (x, 500.0)
+            self.last_sub = (x, 500.0)   # weak but on-path
+            return None
+
+    tr = BallTracker(_ScriptedDet(), (1920, 1080), use_bgsub=False, rescue=True)
+    frame = np.zeros((4, 4, 3), dtype=np.uint8)
+    pts = [tr.update(frame) for _ in range(6)]
+    # Locked through the weak frames instead of dropping out.
+    assert all(p is not None for p in pts[1:]), pts
+    assert tr.n_sub >= 2
+    # But rescue never STARTS a track: weak-only from frame 0 stays unlocked.
+    class _WeakOnly:
+        def __init__(self):
+            self.last_sub = (200.0, 200.0)
+
+        def detect(self, frame):
+            return None
+
+    tr2 = BallTracker(_WeakOnly(), (1920, 1080), use_bgsub=False, rescue=True)
+    assert all(tr2.update(frame) is None for _ in range(5))
+    assert tr2.n_sub == 0
+
+
+def test_tracker_rescue_respects_player_boxes():
+    from swingvision.ball import BallTracker
+
+    class _Det:
+        def __init__(self):
+            self.t = -1
+            self.last_sub = None
+
+        def detect(self, frame):
+            self.t += 1
+            x = 100.0 + 20.0 * self.t
+            if self.t < 3:
+                self.last_sub = None
+                return (x, 500.0)
+            self.last_sub = (x, 500.0)
+            return None
+
+    tr = BallTracker(_Det(), (1920, 1080), use_bgsub=False, rescue=True)
+    frame = np.zeros((4, 4, 3), dtype=np.uint8)
+    box = (100, 400, 400, 600)   # player box covering the weak candidates
+    pts = [tr.update(frame, exclude_boxes=[box]) for _ in range(6)]
+    assert tr.n_sub == 0, "rescue must not fire inside a player box"

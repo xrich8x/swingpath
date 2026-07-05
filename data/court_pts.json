@@ -1,0 +1,18 @@
+{
+  "near_bl_doubles": [
+    250,
+    738
+  ],
+  "near_br_doubles": [
+    1690,
+    738
+  ],
+  "far_bl_doubles": [
+    505,
+    212
+  ],
+  "far_br_doubles": [
+    1405,
+    212
+  ]
+}
