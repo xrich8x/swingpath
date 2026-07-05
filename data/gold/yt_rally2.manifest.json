@@ -25,7 +25,7 @@
  "bucket_counts": {
   "serve": 50,
   "disagree": 50,
-  "noball": 50,
+  "noball": 100,
   "near": 50,
   "far": 50
  },
@@ -37,6 +37,22 @@
   {
    "frame": 4,
    "bucket": "far"
+  },
+  {
+   "frame": 6,
+   "bucket": "noball"
+  },
+  {
+   "frame": 12,
+   "bucket": "noball"
+  },
+  {
+   "frame": 18,
+   "bucket": "noball"
+  },
+  {
+   "frame": 24,
+   "bucket": "noball"
   },
   {
    "frame": 26,
@@ -53,6 +69,10 @@
   {
    "frame": 34,
    "bucket": "near"
+  },
+  {
+   "frame": 50,
+   "bucket": "noball"
   },
   {
    "frame": 52,
@@ -77,6 +97,10 @@
   {
    "frame": 72,
    "bucket": "near"
+  },
+  {
+   "frame": 74,
+   "bucket": "noball"
   },
   {
    "frame": 76,
@@ -151,6 +175,10 @@
    "bucket": "disagree"
   },
   {
+   "frame": 160,
+   "bucket": "noball"
+  },
+  {
    "frame": 166,
    "bucket": "far"
   },
@@ -175,6 +203,10 @@
    "bucket": "far"
   },
   {
+   "frame": 222,
+   "bucket": "noball"
+  },
+  {
    "frame": 236,
    "bucket": "far"
   },
@@ -197,6 +229,10 @@
   {
    "frame": 284,
    "bucket": "near"
+  },
+  {
+   "frame": 286,
+   "bucket": "noball"
   },
   {
    "frame": 294,
@@ -224,6 +260,10 @@
   },
   {
    "frame": 360,
+   "bucket": "noball"
+  },
+  {
+   "frame": 364,
    "bucket": "noball"
   },
   {
@@ -255,6 +295,10 @@
    "bucket": "far"
   },
   {
+   "frame": 440,
+   "bucket": "noball"
+  },
+  {
    "frame": 458,
    "bucket": "far"
   },
@@ -269,6 +313,10 @@
   {
    "frame": 492,
    "bucket": "near"
+  },
+  {
+   "frame": 498,
+   "bucket": "noball"
   },
   {
    "frame": 504,
@@ -299,6 +347,10 @@
    "bucket": "disagree"
   },
   {
+   "frame": 562,
+   "bucket": "noball"
+  },
+  {
    "frame": 572,
    "bucket": "far"
   },
@@ -315,6 +367,10 @@
    "bucket": "far"
   },
   {
+   "frame": 620,
+   "bucket": "noball"
+  },
+  {
    "frame": 624,
    "bucket": "noball"
   },
@@ -329,6 +385,10 @@
   {
    "frame": 664,
    "bucket": "far"
+  },
+  {
+   "frame": 680,
+   "bucket": "noball"
   },
   {
    "frame": 684,
@@ -363,6 +423,10 @@
    "bucket": "disagree"
   },
   {
+   "frame": 746,
+   "bucket": "noball"
+  },
+  {
    "frame": 750,
    "bucket": "far"
   },
@@ -379,6 +443,10 @@
    "bucket": "far"
   },
   {
+   "frame": 804,
+   "bucket": "noball"
+  },
+  {
    "frame": 808,
    "bucket": "disagree"
   },
@@ -392,6 +460,10 @@
   },
   {
    "frame": 852,
+   "bucket": "noball"
+  },
+  {
+   "frame": 862,
    "bucket": "noball"
   },
   {
@@ -413,6 +485,10 @@
   {
    "frame": 920,
    "bucket": "serve"
+  },
+  {
+   "frame": 922,
+   "bucket": "noball"
   },
   {
    "frame": 926,
@@ -487,6 +563,10 @@
    "bucket": "noball"
   },
   {
+   "frame": 1010,
+   "bucket": "noball"
+  },
+  {
    "frame": 1014,
    "bucket": "noball"
   },
@@ -519,6 +599,10 @@
    "bucket": "noball"
   },
   {
+   "frame": 1076,
+   "bucket": "noball"
+  },
+  {
    "frame": 1082,
    "bucket": "noball"
   },
@@ -529,6 +613,10 @@
   {
    "frame": 1096,
    "bucket": "disagree"
+  },
+  {
+   "frame": 1098,
+   "bucket": "noball"
   },
   {
    "frame": 1100,
@@ -619,6 +707,10 @@
    "bucket": "serve"
   },
   {
+   "frame": 1178,
+   "bucket": "noball"
+  },
+  {
    "frame": 1180,
    "bucket": "serve"
   },
@@ -671,6 +763,10 @@
    "bucket": "far"
   },
   {
+   "frame": 1266,
+   "bucket": "noball"
+  },
+  {
    "frame": 1280,
    "bucket": "far"
   },
@@ -679,12 +775,24 @@
    "bucket": "disagree"
   },
   {
+   "frame": 1300,
+   "bucket": "noball"
+  },
+  {
    "frame": 1302,
+   "bucket": "noball"
+  },
+  {
+   "frame": 1316,
    "bucket": "noball"
   },
   {
    "frame": 1318,
    "bucket": "far"
+  },
+  {
+   "frame": 1324,
+   "bucket": "noball"
   },
   {
    "frame": 1340,
@@ -723,6 +831,10 @@
    "bucket": "noball"
   },
   {
+   "frame": 1418,
+   "bucket": "noball"
+  },
+  {
    "frame": 1434,
    "bucket": "disagree"
   },
@@ -733,6 +845,10 @@
   {
    "frame": 1454,
    "bucket": "far"
+  },
+  {
+   "frame": 1474,
+   "bucket": "noball"
   },
   {
    "frame": 1476,
@@ -753,6 +869,10 @@
   {
    "frame": 1522,
    "bucket": "far"
+  },
+  {
+   "frame": 1536,
+   "bucket": "noball"
   },
   {
    "frame": 1544,
@@ -783,6 +903,10 @@
    "bucket": "noball"
   },
   {
+   "frame": 1600,
+   "bucket": "noball"
+  },
+  {
    "frame": 1602,
    "bucket": "disagree"
   },
@@ -801,6 +925,10 @@
   {
    "frame": 1642,
    "bucket": "disagree"
+  },
+  {
+   "frame": 1660,
+   "bucket": "noball"
   },
   {
    "frame": 1662,
@@ -827,8 +955,20 @@
    "bucket": "far"
   },
   {
+   "frame": 1722,
+   "bucket": "noball"
+  },
+  {
+   "frame": 1732,
+   "bucket": "noball"
+  },
+  {
    "frame": 1736,
    "bucket": "far"
+  },
+  {
+   "frame": 1738,
+   "bucket": "noball"
   },
   {
    "frame": 1754,
@@ -907,12 +1047,28 @@
    "bucket": "serve"
   },
   {
+   "frame": 1852,
+   "bucket": "noball"
+  },
+  {
    "frame": 1856,
    "bucket": "far"
   },
   {
    "frame": 1860,
    "bucket": "disagree"
+  },
+  {
+   "frame": 1862,
+   "bucket": "noball"
+  },
+  {
+   "frame": 1868,
+   "bucket": "noball"
+  },
+  {
+   "frame": 1874,
+   "bucket": "noball"
   },
   {
    "frame": 1880,
@@ -923,20 +1079,48 @@
    "bucket": "far"
   },
   {
+   "frame": 1908,
+   "bucket": "noball"
+  },
+  {
    "frame": 1924,
    "bucket": "far"
+  },
+  {
+   "frame": 1930,
+   "bucket": "noball"
+  },
+  {
+   "frame": 1936,
+   "bucket": "noball"
+  },
+  {
+   "frame": 1942,
+   "bucket": "noball"
   },
   {
    "frame": 1944,
    "bucket": "disagree"
   },
   {
+   "frame": 1950,
+   "bucket": "noball"
+  },
+  {
    "frame": 1954,
    "bucket": "near"
   },
   {
+   "frame": 1958,
+   "bucket": "noball"
+  },
+  {
    "frame": 1962,
    "bucket": "far"
+  },
+  {
+   "frame": 1966,
+   "bucket": "noball"
   },
   {
    "frame": 1992,
@@ -953,6 +1137,10 @@
   {
    "frame": 2018,
    "bucket": "near"
+  },
+  {
+   "frame": 2024,
+   "bucket": "noball"
   },
   {
    "frame": 2030,
@@ -987,6 +1175,10 @@
    "bucket": "noball"
   },
   {
+   "frame": 2092,
+   "bucket": "noball"
+  },
+  {
    "frame": 2098,
    "bucket": "near"
   },
@@ -1015,6 +1207,10 @@
    "bucket": "noball"
   },
   {
+   "frame": 2156,
+   "bucket": "noball"
+  },
+  {
    "frame": 2158,
    "bucket": "noball"
   },
@@ -1029,6 +1225,19 @@
   {
    "frame": 2196,
    "bucket": "noball"
+  },
+  {
+   "frame": 2214,
+   "bucket": "noball"
+  }
+ ],
+ "extensions": [
+  {
+   "date": "2026-07-05 23:53:34",
+   "tool": "extend_noball_frames.py",
+   "added": 50,
+   "fp_candidates": 25,
+   "seeded": 25
   }
  ]
 }
