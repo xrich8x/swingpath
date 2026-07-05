@@ -1,5 +1,5 @@
 """Train OUR ball detector (swingvision._ballnet.BallNet) on the pseudo-label
-dataset built by build_ball_dataset.py.
+dataset built by build_ball_dataset.py / relabel_train_clips.py.
 
     .venv-train/Scripts/python.exe train_ballnet.py --epochs 40
 
@@ -8,6 +8,15 @@ heatmap at the tracker's pseudo-label. Temporal split per clip: the last 20% of
 labeled frames are validation (no leakage from smoothing/augmentation). Metric is
 localization: predicted heatmap peak vs label (median px + hit-rate within 10px).
 Best checkpoint -> weights/ballnet.pt.
+
+v2 additions (HANDOFF §11): datasets may carry "negatives" — frame indices with
+NO ball, trained against an all-zero heatmap. v1 never saw a negative, which is
+why it fires at junk whenever play stops (60% FP on the human gold benchmark).
+Val negatives report the false-fire rate (peak >= 0.5, the OurBallDetector
+default score_thresh); model selection uses hit@10 minus false-fire so a
+checkpoint can't win by firing everywhere. --exclude skips clips: indoor_elev
+(= yt_rally2) is excluded BY DEFAULT — it is the human gold benchmark clip and
+must never be trained on.
 """
 
 from __future__ import annotations
@@ -40,10 +49,13 @@ def gaussian_heatmap(x, y, w=IN_W, h=IN_H, sigma=SIGMA):
 
 
 class BallWindows(Dataset):
-    def __init__(self, root, split="train", val_frac=0.2, augment=True):
-        self.samples = []   # (clip_dir, frame_idx, x, y)
+    def __init__(self, root, split="train", val_frac=0.2, augment=True,
+                 exclude=()):
+        self.samples = []   # (clip_dir, frame_idx, x, y); x is None => negative
         self.augment = augment and split == "train"
         for tag in sorted(os.listdir(root)):
+            if tag in exclude:
+                continue
             d = os.path.join(root, tag)
             lp = os.path.join(d, "labels.json")
             if not os.path.isfile(lp):
@@ -55,6 +67,15 @@ class BallWindows(Dataset):
             keep = items[:-n_val] if split == "train" else items[-n_val:]
             for idx, (x, y) in keep:
                 self.samples.append((d, idx, float(x), float(y)))
+            negs = sorted(meta.get("negatives", []))
+            if negs:
+                n_val = max(1, int(len(negs) * val_frac))
+                nkeep = negs[:-n_val] if split == "train" else negs[-n_val:]
+                self.samples += [(d, idx, None, None) for idx in nkeep]
+
+    def counts(self):
+        n_neg = sum(1 for s in self.samples if s[2] is None)
+        return len(self.samples) - n_neg, n_neg
 
     def __len__(self):
         return len(self.samples)
@@ -68,11 +89,13 @@ class BallWindows(Dataset):
     def __getitem__(self, k):
         d, i, x, y = self.samples[k]
         frames = [self._frame(d, i), self._frame(d, i - 1), self._frame(d, i - 2)]
+        negative = x is None
 
         if self.augment:
             if random.random() < 0.5:     # horizontal flip
                 frames = [cv2.flip(f, 1) for f in frames]
-                x = IN_W - 1 - x
+                if not negative:
+                    x = IN_W - 1 - x
             if random.random() < 0.5:     # brightness / contrast jitter
                 a = 1.0 + random.uniform(-0.25, 0.25)
                 b = random.uniform(-20, 20)
@@ -81,29 +104,44 @@ class BallWindows(Dataset):
                 tx, ty = random.randint(-24, 24), random.randint(-16, 16)
                 M = np.float32([[1, 0, tx], [0, 1, ty]])
                 frames = [cv2.warpAffine(f, M, (IN_W, IN_H)) for f in frames]
-                x, y = x + tx, y + ty
-                x = min(max(x, 0), IN_W - 1)
-                y = min(max(y, 0), IN_H - 1)
+                if not negative:
+                    x, y = x + tx, y + ty
+                    x = min(max(x, 0), IN_W - 1)
+                    y = min(max(y, 0), IN_H - 1)
 
         arr = np.concatenate(frames, axis=2).astype(np.float32) / 255.0
         inp = np.ascontiguousarray(np.rollaxis(arr, 2, 0))
-        hm = gaussian_heatmap(x, y)[None]
+        if negative:
+            hm = np.zeros((1, IN_H, IN_W), dtype=np.float32)
+            x = y = -1.0   # sentinel: evaluate() separates negatives on x < 0
+        else:
+            hm = gaussian_heatmap(x, y)[None]
         return torch.from_numpy(inp), torch.from_numpy(hm), torch.tensor([x, y])
 
 
-def evaluate(model, loader, device):
+def evaluate(model, loader, device, fire_thresh=0.5):
+    """Positives: localization (median px error, hit@10). Negatives (xy < 0
+    sentinel): false-fire rate — fraction whose peak clears fire_thresh, the
+    OurBallDetector default score_thresh."""
     model.eval()
-    errs = []
+    errs, fires = [], []
     with torch.no_grad():
         for inp, _, xy in loader:
             out = torch.sigmoid(model(inp.to(device)))[:, 0]
             B, H, W = out.shape
-            flat = out.reshape(B, -1).argmax(dim=1).cpu()
-            px = (flat % W).float()
-            py = (flat // W).float()
-            errs += torch.hypot(px - xy[:, 0], py - xy[:, 1]).tolist()
+            flat = out.reshape(B, -1)
+            peak = flat.max(dim=1).values.cpu()
+            idx = flat.argmax(dim=1).cpu()
+            px = (idx % W).float()
+            py = (idx // W).float()
+            neg = xy[:, 0] < 0
+            errs += torch.hypot(px - xy[:, 0], py - xy[:, 1])[~neg].tolist()
+            fires += (peak[neg] >= fire_thresh).tolist()
     errs = np.array(errs)
-    return float(np.median(errs)), float((errs <= 10).mean())
+    med = float(np.median(errs)) if len(errs) else float("nan")
+    hit10 = float((errs <= 10).mean()) if len(errs) else 0.0
+    ff = float(np.mean(fires)) if fires else 0.0
+    return med, hit10, ff
 
 
 def main():
@@ -114,11 +152,16 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--out", default="weights/ballnet.pt")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--exclude", nargs="*", default=["indoor_elev"],
+                    help="dataset dirs to skip (default: the gold benchmark clip)")
     args = ap.parse_args()
 
-    train_ds = BallWindows(args.data, "train")
-    val_ds = BallWindows(args.data, "val", augment=False)
-    print(f"train {len(train_ds)} / val {len(val_ds)} samples | device {args.device}")
+    train_ds = BallWindows(args.data, "train", exclude=args.exclude)
+    val_ds = BallWindows(args.data, "val", augment=False, exclude=args.exclude)
+    tp, tn = train_ds.counts()
+    vp, vn = val_ds.counts()
+    print(f"train {tp}+{tn}neg / val {vp}+{vn}neg | device {args.device} | "
+          f"excluded {args.exclude}")
     train_ld = DataLoader(train_ds, batch_size=args.batch, shuffle=True, num_workers=2,
                           pin_memory=(args.device == "cuda"))
     val_ld = DataLoader(val_ds, batch_size=args.batch, num_workers=2)
@@ -142,16 +185,20 @@ def main():
             opt.step()
             tot += float(loss)
         sched.step()
-        med, hit10 = evaluate(model, val_ld, args.device)
+        med, hit10, ff = evaluate(model, val_ld, args.device)
+        # selection: find the ball AND shut up when there is none — a model
+        # can't win the checkpoint race by firing everywhere
+        score = hit10 - ff
         marker = ""
-        if hit10 > best:
-            best = hit10
+        if score > best:
+            best = score
             os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
             torch.save({"model_state_dict": model.state_dict()}, args.out)
             marker = "  <- saved"
         print(f"epoch {ep:3d}  loss {tot/max(len(train_ld),1):.4f}  "
-              f"val median {med:.1f}px  within10px {hit10*100:.1f}%{marker}", flush=True)
-    print(f"best within-10px: {best*100:.1f}%  -> {args.out}")
+              f"val median {med:.1f}px  within10px {hit10*100:.1f}%  "
+              f"false-fire {ff*100:.1f}%{marker}", flush=True)
+    print(f"best (hit@10 - false-fire): {best*100:.1f}%  -> {args.out}")
 
 
 if __name__ == "__main__":
