@@ -109,3 +109,37 @@ def test_focal_self_calibration_wide_lens():
     f = calibration.focal_from_homography(H, (1280, 720))
     assert f is not None
     assert abs(f - 700.0) / 700.0 < 0.02, f"recovered {f:.0f}px, want ~700px"
+
+
+def test_broadcast_court_detector_and_coverage():
+    """PRO profile court auto-calibration: from a generic broadcast seed, the
+    line-snap recovers a synthetic court, and line_coverage separates a good fit
+    from a skewed one (the accept/refuse gate)."""
+    import cv2
+    import numpy as np
+
+    from swingvision import court
+
+    w, h = 1280, 720
+    corners = {"near_bl_doubles": [150, 660], "near_br_doubles": [1130, 655],
+               "far_bl_doubles": [360, 250], "far_br_doubles": [970, 248]}
+    names = list(corners)
+    H_true = calibration.compute_homography(
+        [court.LANDMARKS[n] for n in names], [corners[n] for n in names])
+    img = np.full((h, w, 3), 100, np.uint8)
+    for a, b in court.LINES:
+        p = calibration.court_to_image(H_true, [a])[0]
+        q = calibration.court_to_image(H_true, [b])[0]
+        cv2.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), (255, 255, 255), 2)
+
+    skew = H_true @ np.array([[1, 0.15, 0], [0, 1, 0], [0, 0, 1.0]])
+    assert calibration.line_coverage(img, H_true, tol_px=5) > 0.6
+    assert calibration.line_coverage(img, skew, tol_px=5) < 0.5
+
+    det = calibration.detect_court_broadcast(img)
+    assert det is not None, "should recover the synthetic broadcast court"
+    assert det.confidence > 0.6
+    # recovered corners land near the truth
+    for n in names:
+        gx, gy = calibration.court_to_image(det.homography, [court.LANDMARKS[n]])[0]
+        assert np.hypot(gx - corners[n][0], gy - corners[n][1]) < 25

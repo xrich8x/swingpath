@@ -585,6 +585,59 @@ def refine_homography(
     return H, out, float(res.fun)
 
 
+# Standard behind-the-baseline broadcast framing: the four doubles corners as
+# fractions of (width, height). A fixed seed the line-snap refines per clip —
+# broadcast cameras are similar enough that this converges without any manual
+# click, which is what makes the PRO court path automatic.
+BROADCAST_SEED_FRAC: dict[str, tuple[float, float]] = {
+    "near_bl_doubles": (0.12, 0.93), "near_br_doubles": (0.88, 0.91),
+    "far_bl_doubles": (0.28, 0.35), "far_br_doubles": (0.76, 0.34),
+}
+
+
+def line_coverage(frame: np.ndarray, H: np.ndarray, tol_px: float = 4.0) -> float:
+    """Fraction of projected court-line points that land within tol_px of a real
+    white-line pixel — an interpretable calibration self-check (1.0 = perfect).
+    Used to ACCEPT or REFUSE an auto fit instead of emitting a wrong overlay."""
+    import cv2
+
+    mask = white_line_mask(frame)
+    dt = cv2.distanceTransform(255 - mask, cv2.DIST_L2, 5)
+    h, w = mask.shape
+    proj = court_to_image(H, _sample_court_lines())
+    xs, ys = proj[:, 0], proj[:, 1]
+    inside = (xs >= 0) & (xs < w) & (ys >= 0) & (ys < h)
+    if inside.sum() == 0:
+        return 0.0
+    near = dt[ys[inside].astype(np.intp), xs[inside].astype(np.intp)] <= tol_px
+    return float(near.sum()) / float(len(proj))   # off-frame points count as misses
+
+
+def detect_court_broadcast(
+    frame: np.ndarray, min_coverage: float = 0.6, tol_px: float = 5.0
+) -> Optional["CourtDetection"]:
+    """Automatic court calibration for PROFESSIONAL/broadcast footage (pro profile).
+
+    Broadcast courts are a fixed high camera with clean, straight white lines —
+    ideal for a line-snap fit. We seed a canonical behind-the-baseline framing
+    (BROADCAST_SEED_FRAC), refine all four corners onto the detected white lines
+    (refine_homography, reusing the ArtLabss-derived line helpers), then GATE on
+    line_coverage: if too few projected lines land on real lines the fit is
+    refused (returns None -> caller falls back to manual/learned) rather than
+    emitting the kind of skewed overlay the classical detector produces here.
+    """
+    h_img, w_img = frame.shape[:2]
+    seed = {n: [fx * w_img, fy * h_img]
+            for n, (fx, fy) in BROADCAST_SEED_FRAC.items()}
+    H, refined, _ = refine_homography(frame, seed)
+    cov = line_coverage(frame, H, tol_px=tol_px)
+    if cov < min_coverage:
+        return None
+    kpts = {n: tuple(float(v) for v in court_to_image(H, [court.LANDMARKS[n]])[0])
+            for n in court.LANDMARKS}
+    return CourtDetection(keypoints=kpts, homography=H, confidence=cov)
+
+
 # --- Learned court-keypoint model (the accurate calibration) ----------------
 # The 14 model output channels, in order, mapped to our named landmarks. The
 # model (yastrebksv/TennisCourtDetector) predicts these in image space; the
