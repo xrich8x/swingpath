@@ -218,7 +218,7 @@ class OurBallDetector:
 
     in_w, in_h = 512, 288
 
-    def __init__(self, weights: str = "weights/ballnet.pt", device: str = "cpu",
+    def __init__(self, weights: str | None = None, device: str = "cpu",
                  score_thresh: float = 0.5) -> None:
         import os
 
@@ -226,6 +226,11 @@ class OurBallDetector:
 
         from ._ballnet import BallNet
 
+        # Weights precedence: explicit arg > BALLNET_WEIGHTS env > default v1.
+        # The env hook lets a benchmark run point at ballnet_v2.pt without
+        # touching the shipped ballnet.pt or the pipeline call chain; the
+        # chosen file is recorded in the perception-cache provenance below.
+        weights = weights or os.environ.get("BALLNET_WEIGHTS", "weights/ballnet.pt")
         torch.set_num_threads(os.cpu_count() or torch.get_num_threads())
         self.device = device
         self.weights_path = weights   # recorded in the perception-cache provenance
