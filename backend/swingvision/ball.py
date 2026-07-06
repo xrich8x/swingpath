@@ -96,6 +96,74 @@ def cap_court_jumps(
     return out
 
 
+def filter_live_ball(
+    positions: Sequence[Optional[Sequence[float]]],
+    homography=None,
+    *,
+    min_run: int = 4,
+    min_net_disp_px: float = 12.0,
+    play_margin_m: float = 2.0,
+) -> list[Optional[list[float]]]:
+    """Keep only contiguous track segments that behave like a LIVE, in-play ball.
+
+    The per-frame court gate and static-lock gate (BallTracker) run online and
+    judge one detection at a time; this offline pass judges each contiguous
+    locked run as a whole and nulls the ones that aren't a struck ball:
+
+      - brief low-motion flickers: a run shorter than `min_run` frames whose net
+        displacement is under `min_net_disp_px` — a detector twitch on a graphic
+        or fixture that the 5-frame static-gate window let slip. A real ball,
+        even in a 2-3 frame blur, travels much further than a flicker.
+      - off-court runs (needs `homography`): a run whose court-plane projection
+        never reaches the play area (doubles court + `play_margin_m` metres) — an
+        adjacent-court ball or crowd motion that stayed inside the loose
+        per-frame continue-bound but never actually got to the court. A real
+        rally passes through the court, so at least one of its points lands in.
+
+    Returns a new same-length list; dropped frames become None. Without a
+    homography only the motion test applies (on an uncalibrated clip a *moving*
+    off-court ball cannot be rejected geometrically — that needs the court).
+    """
+    out: list[Optional[list[float]]] = [
+        None if p is None else [float(p[0]), float(p[1])] for p in positions
+    ]
+    Hinv = None if homography is None else np.linalg.inv(np.asarray(homography, float))
+    if Hinv is not None:
+        from . import court
+        x_lo, x_hi = -play_margin_m, court.DOUBLES_WIDTH + play_margin_m
+        y_lo, y_hi = -play_margin_m, court.LENGTH + play_margin_m
+
+    def reaches_court(run_pts) -> bool:
+        for x, y in run_pts:
+            q = Hinv @ np.array([x, y, 1.0])
+            if abs(q[2]) < 1e-9:
+                continue
+            cx, cy = q[0] / q[2], q[1] / q[2]
+            if x_lo <= cx <= x_hi and y_lo <= cy <= y_hi:
+                return True
+        return False
+
+    i, n = 0, len(out)
+    while i < n:
+        if out[i] is None:
+            i += 1
+            continue
+        j = i
+        while j < n and out[j] is not None:
+            j += 1
+        run = list(range(i, j))               # contiguous locked segment [i, j)
+        pts = [out[k] for k in run]
+        net = float(np.hypot(pts[-1][0] - pts[0][0], pts[-1][1] - pts[0][1]))
+        drop = len(run) < min_run and net < min_net_disp_px
+        if not drop and Hinv is not None and not reaches_court(pts):
+            drop = True
+        if drop:
+            for k in run:
+                out[k] = None
+        i = j
+    return out
+
+
 def _interp_nan(a: np.ndarray) -> np.ndarray:
     """Linearly interpolate NaNs in a 1-D array; edge-fill the ends."""
     idx = np.arange(len(a))

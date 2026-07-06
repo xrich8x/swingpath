@@ -191,3 +191,32 @@ def test_tracker_reacquires_real_ball_after_fixture():
     assert all(p is None for p in pts[4:8]), "fixture stays suppressed"
     assert all(p is not None for p in pts[8:]), "real ball reacquired"
     assert tr.n_static == 1
+
+
+def test_filter_live_ball_motion():
+    """Offline live-ball filter: a moving run is kept; a brief low-motion
+    flicker (a detector twitch on a graphic) is dropped. No homography -> only
+    the motion test applies."""
+    from swingvision.ball import filter_live_ball
+
+    moving = [[100.0 + 15 * i, 200.0 + 5 * i] for i in range(6)]   # real ball
+    flick = [[600.0, 50.0], [601.0, 50.3], [600.4, 49.6]]         # 3-frame twitch
+    track = [None] + moving + [None] + flick + [None]
+    out = filter_live_ball(track)
+    assert out[1:7] == moving, "a clearly moving run must be kept"
+    assert all(p is None for p in out[8:11]), "a short low-motion flicker is dropped"
+
+
+def test_filter_live_ball_offcourt():
+    """With a homography, a run that never reaches the play area (adjacent
+    court) is dropped even though it moves like a ball; an on-court run is
+    kept."""
+    from swingvision import court
+    from swingvision.ball import filter_live_ball
+
+    H = np.diag([10.0, 10.0, 1.0])   # court metres -> image px * 10
+    on = [[10 * (2.0 + 0.3 * i), 10 * (11.0 + 0.2 * i)] for i in range(6)]        # over the court
+    off = [[10 * (2.0 + 0.3 * i), 10 * (court.LENGTH + 12.0)] for i in range(6)]  # adjacent court
+    out = filter_live_ball(on + [None] + off, homography=H)
+    assert out[0:6] == on, "an on-court moving run must be kept"
+    assert all(p is None for p in out[7:13]), "an off-court run is dropped"
