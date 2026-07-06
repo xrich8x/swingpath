@@ -626,11 +626,26 @@ def detect_court_broadcast(
     refused (returns None -> caller falls back to manual/learned) rather than
     emitting the kind of skewed overlay the classical detector produces here.
     """
+    import cv2
+
     h_img, w_img = frame.shape[:2]
     seed = {n: [fx * w_img, fy * h_img]
             for n, (fx, fy) in BROADCAST_SEED_FRAC.items()}
-    H, refined, _ = refine_homography(frame, seed)
-    cov = line_coverage(frame, H, tol_px=tol_px)
+    names = list(seed)
+    H_seed = compute_homography([court.LANDMARKS[n] for n in names],
+                                [seed[n] for n in names])
+    # Restrict the line-snap to the court region (doubles rectangle + a small
+    # margin, projected through the seed): otherwise the optimiser stretches a
+    # corner out to grab white furniture just off court — the umpire chair, the
+    # tramline extensions — which bulges the sideline (measured on Wimbledon).
+    m, W, Ln = 1.6, court.DOUBLES_WIDTH, court.LENGTH
+    poly = court_to_image(H_seed, [(-m, -m), (W + m, -m), (W + m, Ln + m), (-m, Ln + m)])
+    roi = np.zeros((h_img, w_img), np.uint8)
+    cv2.fillConvexPoly(roi, poly.astype(np.int32), 255)
+    masked = frame.copy()
+    masked[roi == 0] = 0
+    H, refined, _ = refine_homography(masked, seed)
+    cov = line_coverage(frame, H, tol_px=tol_px)   # scored on the real frame
     if cov < min_coverage:
         return None
     kpts = {n: tuple(float(v) for v in court_to_image(H, [court.LANDMARKS[n]])[0])
