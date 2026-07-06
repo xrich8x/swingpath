@@ -43,6 +43,8 @@ class GoldStore:
     def clips(self) -> list[dict]:
         out = []
         for mpath in sorted(self.gold_dir.glob("*.manifest.json")):
+            if mpath.name.endswith(".court.manifest.json"):
+                continue   # court manifests are listed by court_clips()
             man = json.loads(mpath.read_text(encoding="utf-8"))
             labels = self.load_labels(man["clip"])["labels"]
             out.append({
@@ -52,6 +54,49 @@ class GoldStore:
                                if str(f["frame"]) in labels),
             })
         return out
+
+    # --- court quality: parallel store, *.court.manifest.json / *.court.labels.json
+    def court_clips(self) -> list[dict]:
+        out = []
+        for mpath in sorted(self.gold_dir.glob("*.court.manifest.json")):
+            man = json.loads(mpath.read_text(encoding="utf-8"))
+            labels = self.load_court_labels(man["clip"])["labels"]
+            out.append({
+                "clip": man["clip"],
+                "total": len(man["frames"]),
+                "labeled": sum(1 for f in man["frames"]
+                               if str(f["frame"]) in labels),
+            })
+        return out
+
+    def court_manifest(self, clip: str) -> dict:
+        path = self.gold_dir / f"{clip}.court.manifest.json"
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def court_labels_path(self, clip: str) -> Path:
+        return self.gold_dir / f"{clip}.court.labels.json"
+
+    def load_court_labels(self, clip: str) -> dict:
+        path = self.court_labels_path(clip)
+        if path.exists():
+            return json.loads(path.read_text(encoding="utf-8"))
+        return {"clip": clip, "created": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "tool": "gold_label_server court v1", "labels": {}}
+
+    def set_court_label(self, clip: str, frame: int, label: dict | None) -> int:
+        with LOCK:
+            data = self.load_court_labels(clip)
+            key = str(frame)
+            if label is None:
+                data["labels"].pop(key, None)
+            else:
+                label["t"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                data["labels"][key] = label
+            data["updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            tmp = self.court_labels_path(clip).with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(data, indent=1), encoding="utf-8")
+            os.replace(tmp, self.court_labels_path(clip))
+            return len(data["labels"])
 
     def manifest(self, clip: str) -> dict:
         path = self.gold_dir / f"{clip}.manifest.json"
@@ -109,8 +154,12 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         if url.path == "/":
             self._send(200, PAGE.encode("utf-8"), "text/html; charset=utf-8")
+        elif url.path == "/court":
+            self._send(200, PAGE_COURT.encode("utf-8"), "text/html; charset=utf-8")
         elif url.path == "/api/clips":
             self._json(self.store.clips())
+        elif url.path == "/api/court_clips":
+            self._json(self.store.court_clips())
         elif url.path == "/api/state":
             clip = parse_qs(url.query).get("clip", [""])[0]
             try:
@@ -118,6 +167,13 @@ class Handler(BaseHTTPRequestHandler):
                             "labels": self.store.load_labels(clip)["labels"]})
             except FileNotFoundError:
                 self._json({"error": f"no manifest for clip {clip!r}"}, 404)
+        elif url.path == "/api/court_state":
+            clip = parse_qs(url.query).get("clip", [""])[0]
+            try:
+                self._json({"manifest": self.store.court_manifest(clip),
+                            "labels": self.store.load_court_labels(clip)["labels"]})
+            except FileNotFoundError:
+                self._json({"error": f"no court manifest for clip {clip!r}"}, 404)
         elif url.path.startswith("/frames/"):
             rel = url.path[len("/frames/"):]
             path = (self.store.gold_dir / "frames" / rel).resolve()
@@ -132,13 +188,17 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, b"not found", "text/plain")
 
     def do_POST(self):
-        if self.path != "/api/label":
+        if self.path not in ("/api/label", "/api/court_label"):
             self._send(404, b"not found", "text/plain")
             return
         n = int(self.headers.get("Content-Length", 0))
         req = json.loads(self.rfile.read(n))
-        labeled = self.store.set_label(req["clip"], int(req["frame"]),
-                                       req.get("label"))
+        if self.path == "/api/court_label":
+            labeled = self.store.set_court_label(req["clip"], int(req["frame"]),
+                                                 req.get("label"))
+        else:
+            labeled = self.store.set_label(req["clip"], int(req["frame"]),
+                                           req.get("label"))
         self._json({"ok": True, "labeled": labeled})
 
 
@@ -186,6 +246,7 @@ PAGE = r"""<!DOCTYPE html>
 <body>
 <header>
   <h1>Gold ball labeler</h1>
+  <a href="/court" style="color:#8fd6ff;text-decoration:none;font-weight:600">Court quality &rarr;</a>
   <select id="clip"></select>
   <span id="count">–</span>
   <div id="bar"><div id="fill"></div></div>
@@ -380,6 +441,345 @@ window.addEventListener("resize", render);
 """
 
 
+PAGE_COURT = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Gold court labeler</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #14171c; color: #dfe4ea;
+         font: 14px/1.45 system-ui, sans-serif; user-select: none; }
+  header { display: flex; align-items: center; gap: 14px; padding: 10px 16px;
+           background: #1d2129; flex-wrap: wrap; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  a.nav { color:#8fd6ff; text-decoration:none; font-weight:600; }
+  select, button { font: inherit; border-radius: 6px; border: 1px solid #39404d;
+                   background: #262c37; color: #dfe4ea; padding: 6px 12px;
+                   cursor: pointer; }
+  button:hover { background: #313949; }
+  button.bad { background: #7c2d2d; border-color: #a33; font-weight: 700; }
+  button.bad:hover { background: #943636; }
+  #bar { flex: 1 1 160px; height: 10px; background: #262c37; border-radius: 5px;
+         min-width: 120px; }
+  #fill { height: 100%; width: 0; background: #4caf7d; border-radius: 5px;
+          transition: width .15s; }
+  #stage { position: relative; margin: 12px auto; width: fit-content; }
+  #view { display: block; cursor: crosshair; border: 1px solid #39404d;
+          border-radius: 4px; }
+  #loupe { position: fixed; width: 184px; height: 184px; border-radius: 50%;
+           border: 2px solid #9ab; pointer-events: none; display: none;
+           z-index: 10; box-shadow: 0 4px 18px rgba(0,0,0,.6); }
+  #status { text-align: center; min-height: 22px; font-size: 15px; }
+  #status .ok { color: #7fd6a4; } #status .bad { color: #ff9c9c; }
+  #status .todo { color: #e6d38a; }
+  footer { text-align: center; color: #8b93a1; padding: 8px 16px 20px; font-size: 13px; }
+  kbd { background: #262c37; border: 1px solid #39404d; border-radius: 4px;
+        padding: 0 5px; font-family: inherit; }
+  #done { display: none; text-align: center; font-size: 17px; color: #7fd6a4; padding: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Gold court labeler</h1>
+  <a class="nav" href="/">&larr; Ball</a>
+  <select id="clip"></select>
+  <span id="count">-</span>
+  <div id="bar"><div id="fill"></div></div>
+  <button id="prev" title="left arrow">&#9664; Prev</button>
+  <button id="next" title="right arrow">Next &#9654;</button>
+  <button id="reset" title="R">Reset corners (R)</button>
+  <button id="bad" class="bad" title="G">Court not usable (G)</button>
+</header>
+<div id="done">All frames labeled - you can close this window. The file is saved.</div>
+<div id="stage">
+  <canvas id="view"></canvas>
+  <canvas id="loupe" width="184" height="184"></canvas>
+</div>
+<div id="status"></div>
+<footer>
+  <b>Click the 4 baseline corners in order</b> (highlighted) - place them on the TRUE
+  corner even if the line is faded or hidden. The full court is drawn from your clicks;
+  <b>drag any corner</b> to fit. Next frame pre-loads the last court - just nudge for drift.
+  <kbd>R</kbd> re-place corners &middot; <kbd>G</kbd> court not usable &middot;
+  <kbd>&larr;</kbd><kbd>&rarr;</kbd> move &middot; <kbd>+</kbd>/<kbd>&minus;</kbd> zoom
+</footer>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const view = $("view"), vctx = view.getContext("2d");
+const loupe = $("loupe"), lctx = loupe.getContext("2d");
+
+// Court geometry in metres (mirrors backend court.py / frontend court.js).
+const CORNERS = [
+  { key: "near_bl_doubles", short: "1 - NEAR-LEFT",  m: [0, 0] },
+  { key: "near_br_doubles", short: "2 - NEAR-RIGHT", m: [10.97, 0] },
+  { key: "far_br_doubles",  short: "3 - FAR-RIGHT",  m: [10.97, 23.77] },
+  { key: "far_bl_doubles",  short: "4 - FAR-LEFT",   m: [0, 23.77] },
+];
+const KP = {
+  far_bl_doubles: [0, 23.77], far_br_doubles: [10.97, 23.77],
+  near_bl_doubles: [0, 0], near_br_doubles: [10.97, 0],
+  far_bl_singles: [1.37, 23.77], near_bl_singles: [1.37, 0],
+  far_br_singles: [9.6, 23.77], near_br_singles: [9.6, 0],
+  far_sl_left: [1.37, 18.285], far_sl_right: [9.6, 18.285],
+  near_sl_left: [1.37, 5.485], near_sl_right: [9.6, 5.485],
+  far_t: [5.485, 18.285], near_t: [5.485, 5.485],
+};
+const LINES = [
+  [[0,0],[10.97,0]], [[0,23.77],[10.97,23.77]],
+  [[0,0],[0,23.77]], [[10.97,0],[10.97,23.77]],
+  [[1.37,0],[1.37,23.77]], [[9.6,0],[9.6,23.77]],
+  [[1.37,5.485],[9.6,5.485]], [[1.37,18.285],[9.6,18.285]],
+  [[5.485,5.485],[5.485,18.285]],
+];
+const NET = [[0,11.885],[10.97,11.885]];
+
+// Solve a 3x3 homography mapping 4 metre points -> 4 image points (8x8 linear).
+function solveH(src, dst) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [X, Y] = src[i], [u, v] = dst[i];
+    A.push([X, Y, 1, 0, 0, 0, -X*u, -Y*u]); b.push(u);
+    A.push([0, 0, 0, X, Y, 1, -X*v, -Y*v]); b.push(v);
+  }
+  // Gaussian elimination with partial pivoting.
+  for (let c = 0; c < 8; c++) {
+    let p = c;
+    for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]]; [b[c], b[p]] = [b[p], b[c]];
+    if (Math.abs(A[c][c]) < 1e-12) return null;
+    for (let r = 0; r < 8; r++) {
+      if (r === c) continue;
+      const f = A[r][c] / A[c][c];
+      for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k];
+      b[r] -= f * b[c];
+    }
+  }
+  const h = b.map((v, i) => v / A[i][i]);
+  return [[h[0], h[1], h[2]], [h[3], h[4], h[5]], [h[6], h[7], 1]];
+}
+function applyH(H, X, Y) {
+  const d = H[2][0]*X + H[2][1]*Y + 1;
+  return [(H[0][0]*X + H[0][1]*Y + H[0][2]) / d,
+          (H[1][0]*X + H[1][1]*Y + H[1][2]) / d];
+}
+
+let clip = null, frames = [], labels = {}, cur = 0, zoom = 4;
+let corners = [null, null, null, null];   // image-px per CORNERS index
+let placed = 0, drag = null, scale = 1, lastCorners = null;
+const imgs = new Map();
+
+function imgFor(f, cb) {
+  if (imgs.has(f)) { const im = imgs.get(f); im.complete ? cb(im) : im.addEventListener("load", () => cb(im)); return; }
+  const im = new Image();
+  im.src = `/frames/${clip}/f${String(f).padStart(5, "0")}.jpg`;
+  imgs.set(f, im);
+  if (imgs.size > 30) imgs.delete(imgs.keys().next().value);
+  im.addEventListener("load", () => cb(im));
+}
+function fitScale(im) { return Math.min(im.naturalWidth, window.innerWidth - 40) / im.naturalWidth; }
+
+function render() {
+  const f = frames[cur];
+  imgFor(f, im => {
+    if (frames[cur] !== f) return;
+    scale = fitScale(im);
+    view.width = Math.round(im.naturalWidth * scale);
+    view.height = Math.round(im.naturalHeight * scale);
+    vctx.drawImage(im, 0, 0, view.width, view.height);
+    const s = scale;
+    if (placed === 4) {
+      const H = solveH(CORNERS.map(c => c.m), corners);
+      if (H) {
+        vctx.lineWidth = 2; vctx.strokeStyle = "rgba(120,220,160,.95)";
+        for (const [a, b] of LINES) {
+          const p = applyH(H, a[0], a[1]), q = applyH(H, b[0], b[1]);
+          vctx.beginPath(); vctx.moveTo(p[0]*s, p[1]*s); vctx.lineTo(q[0]*s, q[1]*s); vctx.stroke();
+        }
+        vctx.strokeStyle = "rgba(255,210,120,.95)";
+        const n0 = applyH(H, NET[0][0], NET[0][1]), n1 = applyH(H, NET[1][0], NET[1][1]);
+        vctx.beginPath(); vctx.moveTo(n0[0]*s, n0[1]*s); vctx.lineTo(n1[0]*s, n1[1]*s); vctx.stroke();
+        vctx.fillStyle = "rgba(140,200,255,.9)";
+        for (const k in KP) { const p = applyH(H, KP[k][0], KP[k][1]);
+          vctx.beginPath(); vctx.arc(p[0]*s, p[1]*s, 2.5, 0, 7); vctx.fill(); }
+      }
+    }
+    // corner handles
+    for (let i = 0; i < 4; i++) {
+      if (!corners[i]) continue;
+      const x = corners[i][0]*s, y = corners[i][1]*s;
+      vctx.fillStyle = "#ffd24a"; vctx.strokeStyle = "#14171c"; vctx.lineWidth = 2;
+      vctx.beginPath(); vctx.arc(x, y, 7, 0, 7); vctx.fill(); vctx.stroke();
+      vctx.fillStyle = "#14171c"; vctx.font = "bold 11px system-ui";
+      vctx.fillText(String(i+1), x-3, y+4);
+    }
+    updateStatus();
+    for (const g of [frames[cur+1], frames[cur+2]]) if (g !== undefined) imgFor(g, () => {});
+  });
+}
+
+function updateStatus() {
+  const f = frames[cur], lab = labels[f];
+  let s = `Frame ${cur+1} of ${frames.length}`;
+  if (lab && lab.court === false) s += ' - <span class="bad">court not usable</span>';
+  else if (placed === 4) s += ' - <span class="ok">court set (drag to fit, or Next)</span>';
+  else s += ` - <span class="todo">click corner ${CORNERS[placed].short}</span>`;
+  $("status").innerHTML = s;
+  const n = Object.keys(labels).length;
+  $("count").textContent = `${n} / ${frames.length} labeled`;
+  $("fill").style.width = (100 * n / frames.length) + "%";
+  $("done").style.display = n >= frames.length ? "block" : "none";
+}
+
+function firstUnlabeled(from = 0) {
+  for (let i = 0; i < frames.length; i++) {
+    const k = (from + i) % frames.length;
+    if (labels[frames[k]] === undefined) return k;
+  }
+  return null;
+}
+
+function cornersToLabel() {
+  const H = solveH(CORNERS.map(c => c.m), corners);
+  const cobj = {}, kobj = {};
+  CORNERS.forEach((c, i) => cobj[c.key] = [Math.round(corners[i][0]*10)/10, Math.round(corners[i][1]*10)/10]);
+  if (H) for (const k in KP) { const p = applyH(H, KP[k][0], KP[k][1]);
+    kobj[k] = [Math.round(p[0]*10)/10, Math.round(p[1]*10)/10]; }
+  return { court: true, corners: cobj, keypoints: kobj };
+}
+
+async function post(frame, label) {
+  if (label) labels[frame] = label; else delete labels[frame];
+  updateStatus();
+  await fetch("/api/court_label", { method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clip, frame, label }) });
+}
+function saveCourt() {
+  if (placed !== 4) return;
+  const lab = cornersToLabel();
+  lastCorners = corners.map(c => c.slice());
+  post(frames[cur], lab);
+}
+
+function loadFrameState() {
+  const lab = labels[frames[cur]];
+  if (lab && lab.court && lab.corners) {
+    corners = CORNERS.map(c => (lab.corners[c.key] || null));
+    placed = corners.every(Boolean) ? 4 : 0;
+  } else if (lab && lab.court === false) {
+    corners = [null,null,null,null]; placed = 0;
+  } else if (lastCorners) {                 // seed an unlabeled frame from the last court
+    corners = lastCorners.map(c => c.slice()); placed = 4;
+  } else { corners = [null,null,null,null]; placed = 0; }
+}
+
+function nav(d) {
+  cur = Math.min(frames.length - 1, Math.max(0, cur + d));
+  loupe.style.display = "none"; drag = null;
+  loadFrameState(); render();
+}
+
+function toImg(e, im) {
+  const r = view.getBoundingClientRect();
+  return [(e.clientX - r.left) * im.naturalWidth / r.width,
+          (e.clientY - r.top) * im.naturalHeight / r.height];
+}
+function nearestCorner(x, y) {
+  let best = null, bd = 18 / scale;   // ~18 screen px
+  for (let i = 0; i < 4; i++) if (corners[i]) {
+    const d = Math.hypot(corners[i][0]-x, corners[i][1]-y);
+    if (d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+
+view.addEventListener("mousedown", e => {
+  const f = frames[cur];
+  imgFor(f, im => {
+    const [x, y] = toImg(e, im);
+    if (placed === 4) { const c = nearestCorner(x, y); if (c !== null) { drag = c; return; } }
+    if (placed < 4) { corners[placed] = [x, y]; placed++; render();
+      if (placed === 4) saveCourt(); }
+  });
+});
+view.addEventListener("mousemove", e => {
+  const f = frames[cur];
+  imgFor(f, im => {
+    if (frames[cur] !== f) return;
+    const [x, y] = toImg(e, im);
+    if (drag !== null) { corners[drag] = [x, y]; render(); }
+    // magnifier loupe
+    const L = loupe.width, src = L / zoom;
+    lctx.imageSmoothingEnabled = zoom <= 2;
+    lctx.fillStyle = "#000"; lctx.fillRect(0, 0, L, L);
+    lctx.drawImage(im, x - src/2, y - src/2, src, src, 0, 0, L, L);
+    lctx.strokeStyle = "rgba(120,220,160,.9)"; lctx.lineWidth = 1;
+    lctx.beginPath(); lctx.moveTo(L/2-12, L/2); lctx.lineTo(L/2+12, L/2);
+    lctx.moveTo(L/2, L/2-12); lctx.lineTo(L/2, L/2+12); lctx.stroke();
+    let lx = e.clientX + 26, ly = e.clientY + 26;
+    if (lx + L + 8 > window.innerWidth) lx = e.clientX - L - 26;
+    if (ly + L + 8 > window.innerHeight) ly = e.clientY - L - 26;
+    loupe.style.left = lx + "px"; loupe.style.top = ly + "px"; loupe.style.display = "block";
+  });
+});
+window.addEventListener("mouseup", () => { if (drag !== null) { drag = null; saveCourt(); } });
+view.addEventListener("mouseleave", () => loupe.style.display = "none");
+
+function resetCorners() { corners = [null,null,null,null]; placed = 0; drag = null;
+  post(frames[cur], null); render(); }
+
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "SELECT") return;
+  if (e.repeat) return;
+  const k = e.key.toLowerCase();
+  if (k === "arrowright" || k === ".") nav(1);
+  else if (k === "arrowleft" || k === ",") nav(-1);
+  else if (k === "g") { corners = [null,null,null,null]; placed = 0; post(frames[cur], { court: false, unusable: true }); render(); }
+  else if (k === "r") resetCorners();
+  else if (k === "+" || k === "=") zoom = Math.min(10, zoom + 1);
+  else if (k === "-") zoom = Math.max(2, zoom - 1);
+  else return;
+  e.preventDefault();
+});
+$("prev").onclick = () => nav(-1);
+$("next").onclick = () => nav(1);
+$("reset").onclick = resetCorners;
+$("bad").onclick = () => { corners = [null,null,null,null]; placed = 0; post(frames[cur], { court: false, unusable: true }); render(); };
+
+async function loadClip(name) {
+  const st = await (await fetch(`/api/court_state?clip=${encodeURIComponent(name)}`)).json();
+  clip = name;
+  frames = st.manifest.frames.map(r => r.frame);
+  labels = {};
+  for (const [k, v] of Object.entries(st.labels)) labels[Number(k)] = v;
+  imgs.clear(); lastCorners = null;
+  cur = firstUnlabeled() ?? 0;
+  loadFrameState(); render();
+}
+
+(async () => {
+  const clips = await (await fetch("/api/court_clips")).json();
+  const sel = $("clip");
+  for (const c of clips) {
+    const o = document.createElement("option");
+    o.value = c.clip; o.textContent = `${c.clip} (${c.labeled}/${c.total})`;
+    sel.appendChild(o);
+  }
+  sel.onchange = () => loadClip(sel.value);
+  const start = clips.find(c => c.labeled < c.total) || clips[0];
+  if (!start) { $("status").innerHTML = 'No court clips yet - run <kbd>tools/court_gold_frames.py your_clip.mp4</kbd> then refresh.'; return; }
+  sel.value = start.clip;
+  await loadClip(start.clip);
+})();
+window.addEventListener("resize", render);
+</script>
+</body>
+</html>
+"""
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--gold-dir", default=str(REPO / "data" / "gold"))
@@ -389,12 +789,19 @@ def main() -> None:
 
     Handler.store = GoldStore(Path(args.gold_dir))
     clips = Handler.store.clips()
+    court_clips = Handler.store.court_clips()
     url = f"http://127.0.0.1:{args.port}/"
     print(f"Gold labeler running at {url}")
+    print("  BALL clips (page /):")
     for c in clips:
-        print(f"  {c['clip']}: {c['labeled']}/{c['total']} labeled")
+        print(f"    {c['clip']}: {c['labeled']}/{c['total']} labeled")
     if not clips:
-        print("  (no manifests found — run select_gold_frames.py first)")
+        print("    (none — run select_gold_frames.py first)")
+    print(f"  COURT clips (page /court):")
+    for c in court_clips:
+        print(f"    {c['clip']}: {c['labeled']}/{c['total']} labeled")
+    if not court_clips:
+        print("    (none — run tools/court_gold_frames.py <clip.mp4> first)")
     print("Press Ctrl+C in this window to stop. Progress is saved on every click.")
     if not args.no_browser:
         threading.Timer(0.6, webbrowser.open, [url]).start()
