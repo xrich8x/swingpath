@@ -29,7 +29,7 @@ FRAME_EVERY = 5   # sample every Nth processed frame (adjacent frames are near-i
 
 # (video, corners JSON or "learned", perception cache with cam_motion, tag)
 CLIPS = [
-    ("../data/tennis_sample.mp4", "learned", "../data/output/real_match.perception.json", "broadcast"),
+    ("../data/tennis_sample.mp4", "learned", "../data/output/real_match.perception.json", "highangle"),
     ("../data/yt_rally.mp4", "../data/yt_court_pts.json", "../data/output/yt_match.perception.json", "indoor_low"),
     ("../data/yt_rally2.mp4", "../data/yt_rally2_pts.json", "../data/output/demo30.perception.json", "indoor_elev"),
 ]

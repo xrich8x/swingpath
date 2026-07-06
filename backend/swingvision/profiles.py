@@ -1,42 +1,24 @@
-"""Two capture profiles — PRO (broadcast) and AMATEUR (phone) — one codebase.
+"""Capture profile — AMATEUR (phone) footage. One codebase, one focus.
 
-Broadcast and amateur footage are different domains and want different
-perception. This module is the single place that declares how each profile
-configures the pipeline; the geometry (homography, projection, speed) and the
-logic (scoring, rallies) are shared and identical for both.
+The product hyperfocuses on amateur footage: phone/practice clips, low OR high
+mount, 720p, motion blur, non-standard courts. This module is the single place
+that declares how that profile configures the pipeline; the geometry (homography,
+projection, speed) and the logic (scoring, rallies) are shared.
 
-  pro      official/broadcast: fixed high camera, clean lines, standard courts
-  amateur  phone/practice: low mount, 720p, motion blur, non-standard courts
+  amateur  phone/practice: any mount height, 720p, motion blur, non-standard courts
 
-Rationale per field lives inline. Callers: calibration.calibrate_for_profile
-(court method) and pipeline/run.py (ball + gates + bounce). Fields that name a
-not-yet-built component (bounce="classifier") are the roadmap for the pro path
-(reimplement ArtLabss's trajectory bounce classifier); until then the caller
-falls back to the shared heuristic.
+Note: for HIGH-angle amateur clips with clean straight lines, the classical
+auto court-setup in calibration.detect_court_broadcast is a candidate automatic
+path (it snaps four corners onto detected white lines); low/oblique phone angles
+still fall back to a manual corner-drag or the learned CourtNet.
 """
 
 from __future__ import annotations
 
 PROFILES: dict[str, dict] = {
-    "pro": {
-        # Court: automatic broadcast line-snap (calibration.detect_court_broadcast).
-        # Clean straight lines on a fixed camera fit precisely; refuses + falls
-        # back if coverage is low, never emits a skewed overlay.
-        "court": "broadcast",
-        # Ball: TrackNet+WASB fusion — TrackNet's training domain is broadcast.
-        "ball_model": "fusion",
-        "pose_quality": "accurate",
-        # High camera: an airborne ball projects only slightly past the court, so
-        # the court-plausibility gate is sound.
-        "court_gate": True,
-        "live_ball_filter": True,
-        # Bounce: reimplement ArtLabss's trained trajectory classifier (98%/83%).
-        # NOT built yet -> caller uses the shared heuristic until it exists.
-        "bounce": "classifier",
-    },
     "amateur": {
-        # Court: manual corner-drag or learned CourtNet — broadcast auto-detect
-        # fails on low/oblique phone angles (measured).
+        # Court: manual corner-drag or learned CourtNet. High-angle clips can also
+        # try calibration.detect_court_broadcast; low/oblique angles need corners.
         "court": "manual",
         # Ball: fusion + BallNet v2 available; the live-ball filter does the heavy
         # lifting on false-fire once corners exist.

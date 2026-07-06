@@ -24,9 +24,10 @@ IN_W, IN_H = 512, 288
 # (video, perception cache, tag). Add clips here as more footage gets analyzed —
 # every new analyzed video is free training data.
 CLIPS = [
-    ("../data/tennis_sample.mp4", "../data/output/real_match.perception.json", "broadcast"),
+    ("../data/tennis_sample.mp4", "../data/output/real_match.perception.json", "highangle"),
     ("../data/yt_rally.mp4", "../data/output/yt_match.perception.json", "amateur"),
-    ("../data/yt_rally2.mp4", "../data/output/demo30.perception.json", "indoor_elev"),
+    # NOTE: yt_rally2 is the human gold BALL benchmark clip (data/gold/) — it must
+    # NEVER be added here as training data (train/test leak). Removed 2026-07-07.
 ]
 
 
