@@ -14,6 +14,7 @@ backend/weights/*.pth.tar
 # losing them means losing the training runs (see HANDOFF.md §4).
 !backend/weights/ballnet.pt
 !backend/weights/ballnet_v0.pt
+!backend/weights/ballnet_v2.pt
 !backend/weights/courtnet_ft.pt
 !backend/weights/courtnet_ft_v0_notready.pt
 

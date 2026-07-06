@@ -99,6 +99,21 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   labels, yt_rally2 EXCLUDED from training; backend/relabel_train_clips.py +
   train_ballnet.py --exclude) is the top item, scored via eval_gold.py only.
   To label more clips: select_gold_frames.py then gold_label_server.py.
+- Session 3 (2026-07-06): 2nd gold clip yt_match40 (300 uniform frames, cold —
+  in NO training set) + BallNet v2 (negatives, yt_rally2 excluded) + the
+  offline live-ball trajectory filter (ball.filter_live_ball; tools/
+  {ball_perception,filter_cache}.py). HANDOFF §12. HONEST verdicts vs human
+  clicks: (1) the LIVE-BALL FILTER is the biggest false-fire win — yt_rally2
+  archive FP 61.5%->7.7%, v1 65.4%->34.6%, far-court recall unchanged (needs
+  calibration for the off-court test). (2) v2 beats v1 only MODESTLY, measured
+  fairly: on cold yt_match40 recall is tied (v1 65.2 / v2 63.6) and v2
+  false-fires less (75%->62.5%); v1's big yt_rally2 lead was a data leak
+  (trained on that clip). (3) HUMBLING: on unseen footage custom BallNet does
+  NOT beat off-the-shelf TrackNet — all four cluster 61-65% recall and TrackNet
+  false-fires LEAST (50%); prior BallNet leads were overfitting. (4) dead-time
+  negatives were the wrong negatives; v2.1 needs HARD negatives (HUD/adjacent/
+  edges) + a far-court recipe (sharper input, real far labels). Not "more
+  epochs". weights/ballnet_v2.pt shipped as baseline; v1 kept for reference.
 
 ## Conventions
 

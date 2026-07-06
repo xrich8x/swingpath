@@ -380,3 +380,62 @@ clearly the highest-value move — v1 already beats everything at finding the
 ball and only needs its false-fire problem trained out. Regenerate pseudo-
 labels with the static gate ON, add negatives from the FP regions above, and
 score v2 against THIS benchmark (eval_gold.py), never against pseudo-labels.
+
+## 12. Session 3 (2026-07-06) — BallNet v2, live-ball filter, 2nd gold clip
+
+Built this session: 2nd gold clip yt_match40 (300 UNIFORM frames, real match
+w/ changeovers, NO calibration — a cold generalization set neither v1 nor v2
+trained on; 184 ball/24 no-ball/92 unsure). Regenerated pseudo-labels gated +
+with negatives (relabel_train_clips.py; 21,591 labels + 2,783 negatives over 9
+clips, yt_rally2 excluded). Trained BallNet v2 (train_ballnet.py, negatives,
+selection = hit@10 − false-fire; val proxy ended 84% hit / 49% false-fire).
+Built ball.filter_live_ball (offline live-ball trajectory filter) +
+tools/{ball_perception.py, filter_cache.py}. Fixed a latent trainer crash
+(xy tensor dtype). 57 backend tests pass.
+
+**Result A — the live-ball filter is the session's biggest false-fire win**
+[MEASURED, yt_rally2 gold, raw → +live]:
+| track | hit@10 | FP(no-ball) | far-court |
+|---|---|---|---|
+| archive | 65.5% → 62.4% | 61.5% → **7.7%** | 64.3% → 64.3% |
+| ballnet_v1 | 65.9% → 64.7% | 65.4% → **34.6%** | 76.2% → 76.2% |
+Strips off-court + flicker segments; far-court recall UNCHANGED. Needs
+calibration for the off-court test (motion-only without it).
+
+**Result B — v2 vs v1, the honest read.** On yt_rally2 v2 looks far worse
+(hit 47.7 vs 65.9, far 40.5 vs 76.2) — but that gap is almost entirely
+**v1's data leak**: v1 trained on yt_rally2 (indoor_elev/archive labels), v2
+did not. On the COLD clip yt_match40 (neither trained on it; uniform sample;
+no calibration → no court gate/live filter) the truth [MEASURED]:
+| track (cold) | hit@10 | hit@25 | FP(no-ball) |
+|---|---|---|---|
+| tracknet | 64.1% | 65.8% | 50.0% |
+| fusion | 60.9% | 65.8% | 58.3% |
+| ballnet_v1 | 65.2% | 66.8% | 75.0% |
+| ballnet_v2 | 63.6% | 65.2% | 62.5% |
+
+VERDICTS [MEASURED]:
+1. v2 is a real but MODEST win over v1: on the fair clip, recall is tied
+   (65.2 vs 63.6, within noise) and v2 false-fires less (75.0% → 62.5%). The
+   "v2 regressed" story on yt_rally2 was v1's home-field advantage; the
+   benchmark caught a ~11–18 pt data leak. v2 is the new honest baseline.
+2. HUMBLING: on UNSEEN footage our custom BallNet does NOT beat off-the-shelf
+   TrackNet — recall clusters 61–65% for all four, and TrackNet actually
+   false-fires LEAST (50%) while v1 fires MOST (75%). BallNet's big prior
+   leads were overfitting to its training clips. Custom training has not yet
+   earned its keep on new footage.
+3. The dead-time negatives only nudged false-fire (v1→v2 on cold clip 75→62%,
+   on yt_rally2 gold 65.4→61.5%). They were the WRONG negatives — quiet
+   frames, not the confusers (HUD/adjacent court/edges). §11 fix stands: mine
+   HARD negatives from the FP regions. That is v2.1.
+4. Far court still unsolved by training (v2 cold has no per-bucket split, but
+   yt_rally2 far 40.5% cold). Needs the far-court recipe: sharper model input
+   (far ball is ~2px at the 512-wide model input) + real far labels (the
+   archive's verified far locks), NOT more epochs.
+
+Net: the two proven levers are (a) the live-ball filter for false-fire [built,
+needs calibration on new clips], (b) a far-court-specific retrain for recall
+[designed, not built]. Ship v2 as baseline; keep v1 for reference. Artifacts:
+weights/ballnet_v2.pt; data/output/yt_{rally2,match40}_*.perception.json;
+data/gold/yt_match40.benchmark.md. Deferred tracker work (live-ball gate +
+hit-anchored arc, TODO.md) unchanged; the filter is the offline first half.
