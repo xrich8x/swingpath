@@ -116,7 +116,10 @@ class BallWindows(Dataset):
             x = y = -1.0   # sentinel: evaluate() separates negatives on x < 0
         else:
             hm = gaussian_heatmap(x, y)[None]
-        return torch.from_numpy(inp), torch.from_numpy(hm), torch.tensor([x, y])
+        # dtype pinned: augmentation clamps can make x/y ints, and a batch that
+        # mixes Long and Float xy tensors fails to collate (torch.stack).
+        return (torch.from_numpy(inp), torch.from_numpy(hm),
+                torch.tensor([x, y], dtype=torch.float32))
 
 
 def evaluate(model, loader, device, fire_thresh=0.5):
@@ -183,7 +186,7 @@ def main():
             loss = crit(model(inp), hm)
             loss.backward()
             opt.step()
-            tot += float(loss)
+            tot += loss.item()
         sched.step()
         med, hit10, ff = evaluate(model, val_ld, args.device)
         # selection: find the ball AND shut up when there is none — a model
