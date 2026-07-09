@@ -498,10 +498,12 @@ PAGE_COURT = r"""<!DOCTYPE html>
 </div>
 <div id="status"></div>
 <footer>
-  <b>Click the 4 baseline corners in order</b> (highlighted) - place them on the TRUE
-  corner even if the line is faded or hidden. The full court is drawn from your clicks;
-  <b>drag any corner</b> to fit. Next frame pre-loads the last court - just nudge for drift.
-  <kbd>R</kbd> re-place corners &middot; <kbd>G</kbd> court not usable &middot;
+  <b>Click the 4 baseline corners in order.</b> If a corner is <b>off the edge of the
+  frame</b>, click/drag it out into the dark margin - the drawn lines that ARE visible
+  should sit on the real lines; the geometry extrapolates the rest. Off-frame corners
+  show <span style="color:#ff9c4a">hollow orange with a *</span>. <b>Drag any corner</b> to fit.
+  Next frame pre-loads the last court - just nudge for drift.
+  <kbd>R</kbd> re-place &middot; <kbd>G</kbd> court not usable &middot;
   <kbd>&larr;</kbd><kbd>&rarr;</kbd> move &middot; <kbd>+</kbd>/<kbd>&minus;</kbd> zoom
 </footer>
 <script>
@@ -566,9 +568,14 @@ function applyH(H, X, Y) {
 }
 
 let clip = null, frames = [], labels = {}, cur = 0, zoom = 4;
-let corners = [null, null, null, null];   // image-px per CORNERS index
+let corners = [null, null, null, null];   // image-px per CORNERS index (may be off-frame)
 let placed = 0, drag = null, scale = 1, lastCorners = null;
+let padx = 0, pady = 0, natW = 0, natH = 0;   // extrapolation margin + frame size
+const PADF = 0.35;   // margin as a fraction of the image on each side (room for off-frame corners)
 const imgs = new Map();
+
+// A corner is "estimated" when it lies outside the real frame (extrapolated).
+function isOff(c) { return !c || c[0] < 0 || c[1] < 0 || c[0] > natW || c[1] > natH; }
 
 function imgFor(f, cb) {
   if (imgs.has(f)) { const im = imgs.get(f); im.complete ? cb(im) : im.addEventListener("load", () => cb(im)); return; }
@@ -578,41 +585,53 @@ function imgFor(f, cb) {
   if (imgs.size > 30) imgs.delete(imgs.keys().next().value);
   im.addEventListener("load", () => cb(im));
 }
-function fitScale(im) { return Math.min(im.naturalWidth, window.innerWidth - 40) / im.naturalWidth; }
+function fitScale(im) {
+  const avail = Math.max(320, (window.innerWidth || 1000) - 40);
+  const s = avail / (im.naturalWidth * (1 + 2 * PADF));
+  return Math.min(Math.max(s, 0.1), 1);   // clamp: never <=0, never upscale past native
+}
 
 function render() {
   const f = frames[cur];
   imgFor(f, im => {
     if (frames[cur] !== f) return;
     scale = fitScale(im);
-    view.width = Math.round(im.naturalWidth * scale);
-    view.height = Math.round(im.naturalHeight * scale);
-    vctx.drawImage(im, 0, 0, view.width, view.height);
     const s = scale;
+    natW = im.naturalWidth; natH = im.naturalHeight;
+    padx = Math.round(PADF * natW * s); pady = Math.round(PADF * natH * s);
+    const iw = Math.round(natW * s), ih = Math.round(natH * s);
+    view.width = iw + 2 * padx; view.height = ih + 2 * pady;
+    // margin (extrapolation zone) then the real frame inside it
+    vctx.fillStyle = "#0c0e12"; vctx.fillRect(0, 0, view.width, view.height);
+    vctx.drawImage(im, padx, pady, iw, ih);
+    vctx.strokeStyle = "rgba(255,255,255,.28)"; vctx.lineWidth = 1;
+    vctx.strokeRect(padx + 0.5, pady + 0.5, iw, ih);   // frame edge; corners may go outside
+    const P = (X, Y, H) => { const p = applyH(H, X, Y); return [padx + p[0]*s, pady + p[1]*s]; };
     if (placed === 4) {
       const H = solveH(CORNERS.map(c => c.m), corners);
       if (H) {
         vctx.lineWidth = 2; vctx.strokeStyle = "rgba(120,220,160,.95)";
         for (const [a, b] of LINES) {
-          const p = applyH(H, a[0], a[1]), q = applyH(H, b[0], b[1]);
-          vctx.beginPath(); vctx.moveTo(p[0]*s, p[1]*s); vctx.lineTo(q[0]*s, q[1]*s); vctx.stroke();
+          const p = P(a[0], a[1], H), q = P(b[0], b[1], H);
+          vctx.beginPath(); vctx.moveTo(p[0], p[1]); vctx.lineTo(q[0], q[1]); vctx.stroke();
         }
         vctx.strokeStyle = "rgba(255,210,120,.95)";
-        const n0 = applyH(H, NET[0][0], NET[0][1]), n1 = applyH(H, NET[1][0], NET[1][1]);
-        vctx.beginPath(); vctx.moveTo(n0[0]*s, n0[1]*s); vctx.lineTo(n1[0]*s, n1[1]*s); vctx.stroke();
+        const n0 = P(NET[0][0], NET[0][1], H), n1 = P(NET[1][0], NET[1][1], H);
+        vctx.beginPath(); vctx.moveTo(n0[0], n0[1]); vctx.lineTo(n1[0], n1[1]); vctx.stroke();
         vctx.fillStyle = "rgba(140,200,255,.9)";
-        for (const k in KP) { const p = applyH(H, KP[k][0], KP[k][1]);
-          vctx.beginPath(); vctx.arc(p[0]*s, p[1]*s, 2.5, 0, 7); vctx.fill(); }
+        for (const k in KP) { const p = P(KP[k][0], KP[k][1], H);
+          vctx.beginPath(); vctx.arc(p[0], p[1], 2.5, 0, 7); vctx.fill(); }
       }
     }
-    // corner handles
+    // corner handles (hollow orange = extrapolated, outside the frame)
     for (let i = 0; i < 4; i++) {
       if (!corners[i]) continue;
-      const x = corners[i][0]*s, y = corners[i][1]*s;
-      vctx.fillStyle = "#ffd24a"; vctx.strokeStyle = "#14171c"; vctx.lineWidth = 2;
-      vctx.beginPath(); vctx.arc(x, y, 7, 0, 7); vctx.fill(); vctx.stroke();
-      vctx.fillStyle = "#14171c"; vctx.font = "bold 11px system-ui";
-      vctx.fillText(String(i+1), x-3, y+4);
+      const x = padx + corners[i][0]*s, y = pady + corners[i][1]*s, off = isOff(corners[i]);
+      vctx.lineWidth = off ? 2.5 : 2;
+      vctx.strokeStyle = off ? "#ff9c4a" : "#14171c"; vctx.fillStyle = "#ffd24a";
+      vctx.beginPath(); vctx.arc(x, y, 7, 0, 7); if (!off) vctx.fill(); vctx.stroke();
+      vctx.fillStyle = off ? "#ff9c4a" : "#14171c"; vctx.font = "bold 11px system-ui";
+      vctx.fillText(String(i+1) + (off ? "*" : ""), x - 3, off ? y - 11 : y + 4);
     }
     updateStatus();
     for (const g of [frames[cur+1], frames[cur+2]]) if (g !== undefined) imgFor(g, () => {});
@@ -642,11 +661,14 @@ function firstUnlabeled(from = 0) {
 
 function cornersToLabel() {
   const H = solveH(CORNERS.map(c => c.m), corners);
-  const cobj = {}, kobj = {};
-  CORNERS.forEach((c, i) => cobj[c.key] = [Math.round(corners[i][0]*10)/10, Math.round(corners[i][1]*10)/10]);
+  const cobj = {}, kobj = {}, est = [];
+  CORNERS.forEach((c, i) => {
+    cobj[c.key] = [Math.round(corners[i][0]*10)/10, Math.round(corners[i][1]*10)/10];
+    if (isOff(corners[i])) est.push(c.key);   // corner extrapolated outside the frame
+  });
   if (H) for (const k in KP) { const p = applyH(H, KP[k][0], KP[k][1]);
     kobj[k] = [Math.round(p[0]*10)/10, Math.round(p[1]*10)/10]; }
-  return { court: true, corners: cobj, keypoints: kobj };
+  return { court: true, corners: cobj, keypoints: kobj, estimated_corners: est };
 }
 
 async function post(frame, label) {
@@ -683,8 +705,9 @@ function nav(d) {
 
 function toImg(e, im) {
   const r = view.getBoundingClientRect();
-  return [(e.clientX - r.left) * im.naturalWidth / r.width,
-          (e.clientY - r.top) * im.naturalHeight / r.height];
+  const cx = (e.clientX - r.left) * view.width / r.width;    // client -> canvas px
+  const cy = (e.clientY - r.top) * view.height / r.height;
+  return [(cx - padx) / scale, (cy - pady) / scale];         // canvas -> image px (may be off-frame)
 }
 function nearestCorner(x, y) {
   let best = null, bd = 18 / scale;   // ~18 screen px
