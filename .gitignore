@@ -43,6 +43,7 @@ data/*.mov
 # Raw training media + derived datasets (large; regenerable — clips re-download
 # from YouTube ids in HANDOFF.md §4, datasets rebuild via the labeler scripts)
 data/train_clips/
+data/amateur_clips/
 data/ball_dataset/
 data/court_dataset/
 
