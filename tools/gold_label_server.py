@@ -502,9 +502,10 @@ PAGE_COURT = r"""<!DOCTYPE html>
   frame</b>, click/drag it out into the dark margin - the drawn lines that ARE visible
   should sit on the real lines; the geometry extrapolates the rest. Off-frame corners
   show <span style="color:#ff9c4a">hollow orange with a *</span>. <b>Drag any corner</b> to fit.
-  Next frame pre-loads the last court - just nudge for drift.
+  Next frame pre-loads the last court - just nudge for drift, then press
+  <kbd>Enter</kbd>. <b><kbd>Enter</kbd> = confirm &amp; jump to next unlabeled</b> (the fast path).
   <kbd>R</kbd> re-place &middot; <kbd>G</kbd> court not usable &middot;
-  <kbd>&larr;</kbd><kbd>&rarr;</kbd> move &middot; <kbd>+</kbd>/<kbd>&minus;</kbd> zoom
+  <kbd>&larr;</kbd><kbd>&rarr;</kbd> review &middot; <kbd>+</kbd>/<kbd>&minus;</kbd> zoom
 </footer>
 <script>
 "use strict";
@@ -697,6 +698,13 @@ function loadFrameState() {
   } else { corners = [null,null,null,null]; placed = 0; }
 }
 
+function saveAndNext() {          // confirm this court, jump to next UNLABELED (Enter)
+  if (placed === 4) saveCourt();
+  const nxt = firstUnlabeled(cur + 1);
+  if (nxt !== null) { cur = nxt; loupe.style.display = "none"; drag = null; loadFrameState(); render(); }
+  else { updateStatus(); }
+}
+
 function nav(d) {
   cur = Math.min(frames.length - 1, Math.max(0, cur + d));
   loupe.style.display = "none"; drag = null;
@@ -757,7 +765,8 @@ document.addEventListener("keydown", e => {
   if (e.target.tagName === "SELECT") return;
   if (e.repeat) return;
   const k = e.key.toLowerCase();
-  if (k === "arrowright" || k === ".") nav(1);
+  if (k === "enter" || k === " ") saveAndNext();
+  else if (k === "arrowright" || k === ".") nav(1);
   else if (k === "arrowleft" || k === ",") nav(-1);
   else if (k === "g") { corners = [null,null,null,null]; placed = 0; post(frames[cur], { court: false, unusable: true }); render(); }
   else if (k === "r") resetCorners();
@@ -778,6 +787,10 @@ async function loadClip(name) {
   labels = {};
   for (const [k, v] of Object.entries(st.labels)) labels[Number(k)] = v;
   imgs.clear(); lastCorners = null;
+  for (const g of frames) imgFor(g, () => {});    // warm every frame up front (all tiny)
+  // seed the carry-over court from the last already-labeled frame, if any
+  for (const f of frames) { const l = labels[f];
+    if (l && l.court && l.corners) lastCorners = CORNERS.map(c => l.corners[c.key]); }
   cur = firstUnlabeled() ?? 0;
   loadFrameState(); render();
 }
