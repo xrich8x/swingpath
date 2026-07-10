@@ -674,6 +674,14 @@ def court_lock_step(frame: np.ndarray, H_prev: np.ndarray, boxes=None,
     identity and hard-bounded so it can only make small per-frame corrections
     (never the degenerate collapse a blind line-snap can produce). Returns
     (A_step 3x3 image-space correction, cost) — identity when no improvement.
+
+    KNOWN LIMITATION (verified 2026-07-11, synthetic pan): this reliably STABILISES
+    a static camera (freezes to the calibration, 0 jitter) but does NOT track a
+    sustained pan. The ridge dt landscape is shallow (a full 8px offset only moves
+    the cost ~3.9->2.7), so the local Nelder-Mead optimiser stays near identity and
+    the court drifts with the pan. Fine for amateur fixed-camera footage (the
+    target); tracking panning/handheld/broadcast motion needs a stronger search
+    (coarse-grid seed) or a peaked line-distance signal -- an open item.
     """
     import cv2
     from scipy.optimize import minimize
