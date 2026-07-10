@@ -439,7 +439,7 @@ def _court_line_samples(per_metre: float = 3.0) -> np.ndarray:
     return _COURT_LINE_SAMPLES
 
 
-def line_ridge_mask(frame: np.ndarray, tau: int = 18, sat_max: int = 90) -> np.ndarray:
+def line_ridge_mask(frame: np.ndarray, tau: int = 9, sat_max: int = 90) -> np.ndarray:
     """White-line mask robust to amateur/indoor lighting (used by the self-check).
 
     A court line is a bright RIDGE: brighter than the surface a few pixels to its
@@ -448,6 +448,12 @@ def line_ridge_mask(frame: np.ndarray, tau: int = 18, sat_max: int = 90) -> np.n
     tophat+global-Otsu `white_line_mask` collapses. A low-saturation constraint
     (S < sat_max) keeps genuine white lines and drops coloured ridges (fence bars,
     court-colour seams). Line width scales with frame width.
+
+    tau=9 (was 18): the higher bar missed faint/compressed amateur lines, so
+    correct courts on some clips scored near-zero coverage and were wrongly
+    refused. A tau sweep on the gold set showed 9 recovers those clips
+    (e.g. am_classB 0.20->0.63, am_ntrp30 0.60->0.87) while a wrong court's
+    coverage rises only ~0.27->0.34 — still clear of the 0.40 accept gate.
     """
     import cv2
 
