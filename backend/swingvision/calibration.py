@@ -654,7 +654,8 @@ def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: floa
 
 def court_lock_step(frame: np.ndarray, H_prev: np.ndarray, boxes=None,
                     max_shift_px: float = 14.0, max_scale: float = 0.03,
-                    max_rot_deg: float = 1.2):
+                    max_rot_deg: float = 1.2, mask_fn=None,
+                    min_shift_px: float = 0.6):
     """Track the court between frames by SNAPPING the previous homography onto the
     white lines of the current frame (small bounded similarity correction).
 
@@ -671,7 +672,7 @@ def court_lock_step(frame: np.ndarray, H_prev: np.ndarray, boxes=None,
     import cv2
     from scipy.optimize import minimize
 
-    mask = white_line_mask(frame)
+    mask = (mask_fn or line_ridge_mask)(frame)
     for b in boxes or []:
         if b is None:
             continue
@@ -708,7 +709,12 @@ def court_lock_step(frame: np.ndarray, H_prev: np.ndarray, boxes=None,
     res = minimize(cost, [0.0, 0.0, 0.0, 0.0], method="Nelder-Mead",
                    options={"maxiter": 80, "xatol": 0.05, "fatol": 0.01})
     tx, ty, ls, rot = res.x
-    if (res.fun >= c0 - 1e-3 or abs(tx) > max_shift_px or abs(ty) > max_shift_px
+    # Mean displacement this correction would apply to the court points. Below the
+    # deadband it's jitter (or a static camera) -> freeze at identity so a locked
+    # court never wobbles; only real motion (> min_shift_px) is tracked.
+    disp = float(np.hypot(*(apply_params(res.x) - base).T).mean())
+    if (res.fun >= c0 - 1e-3 or disp < min_shift_px
+            or abs(tx) > max_shift_px or abs(ty) > max_shift_px
             or abs(ls) > max_scale or abs(rot) > math.radians(max_rot_deg)):
         return np.eye(3), c0
     s = math.exp(ls)
