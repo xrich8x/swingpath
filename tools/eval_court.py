@@ -109,7 +109,19 @@ def dist(p, q) -> float:
     return ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2) ** 0.5
 
 
-def score_clip(clip: str, tol: float, min_conf: float | None) -> dict | None:
+_WEIGHTS = str(REPO / "backend" / "weights" / "court_detector.pt")
+
+
+def _detect(calibration, img, learned: bool, kw: dict):
+    """Return the 14-keypoint dict from the chosen detector, or None."""
+    if learned:
+        det = calibration.detect_court_learned(img, weights=_WEIGHTS)
+        return det.keypoints if det is not None else None
+    return calibration.detect_court_keypoints(img, **kw)
+
+
+def score_clip(clip: str, tol: float, min_conf: float | None,
+               learned: bool = False) -> dict | None:
     man_path = GOLD / f"{clip}.court.manifest.json"
     lab_path = GOLD / f"{clip}.court.labels.json"
     if not man_path.exists():
@@ -137,7 +149,7 @@ def score_clip(clip: str, tol: float, min_conf: float | None) -> dict | None:
         img = cv2.imread(str(frames_dir / f"f{int(key):05d}.jpg"))
         if img is None:
             continue
-        pred = calibration.detect_court_keypoints(img, **kw)
+        pred = _detect(calibration, img, learned, kw)
         if pred is None:
             continue
         detected += 1
@@ -157,7 +169,7 @@ def score_clip(clip: str, tol: float, min_conf: float | None) -> dict | None:
         img = cv2.imread(str(frames_dir / f"f{int(key):05d}.jpg"))
         if img is None:
             continue
-        if calibration.detect_court_keypoints(img, **kw) is not None:
+        if _detect(calibration, img, learned, kw) is not None:
             false_court += 1
 
     return {
@@ -185,6 +197,9 @@ def main() -> None:
     ap.add_argument("--tol", type=float, default=8.0, help="within-tolerance px (default 8)")
     ap.add_argument("--min-confidence", type=float, default=None,
                     help="override the detector confidence gate")
+    ap.add_argument("--learned", action="store_true",
+                    help="test the learned CourtNet (detect_court_learned) instead "
+                         "of the classical detector")
     ap.add_argument("--markdown", default=None)
     args = ap.parse_args()
 
@@ -195,7 +210,8 @@ def main() -> None:
     if not clips:
         raise SystemExit("no court-labeled clips found (label some first, then re-run)")
 
-    rows = [r for c in clips if (r := score_clip(c, args.tol, args.min_confidence))]
+    rows = [r for c in clips
+            if (r := score_clip(c, args.tol, args.min_confidence, args.learned))]
     if not rows:
         raise SystemExit("no scorable clips (need at least one with labels)")
 

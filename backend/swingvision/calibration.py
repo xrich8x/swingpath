@@ -482,6 +482,13 @@ def court_line_coverage(frame: np.ndarray, H: np.ndarray,
     if tol_px is None:
         tol_px = max(2.0, w * 0.006)
     dt = cv2.distanceTransform(255 - mask, cv2.DIST_L2, 5)
+    return _coverage_from_dt(dt, H, w, h, tol_px)
+
+
+def _coverage_from_dt(dt: np.ndarray, H: np.ndarray, w: int, h: int,
+                      tol_px: float) -> tuple[float, float]:
+    """coverage, visible_frac for H against a precomputed distance-to-line map.
+    Separated so a candidate search can score many courts on ONE distance map."""
     img = court_to_image(H, _court_line_samples())
     x = np.round(img[:, 0]).astype(int)
     y = np.round(img[:, 1]).astype(int)
@@ -520,6 +527,77 @@ def verify_court(frame: np.ndarray, H: np.ndarray, *,
     cen = court_centrality(frame, H)
     ok = cov >= min_coverage and vis >= min_visible and cen >= min_centrality
     return CourtCheck(ok=ok, coverage=cov, centrality=cen, visible_frac=vis)
+
+
+_AM_CORNER_NAMES = ("far_bl_doubles", "far_br_doubles",
+                    "near_bl_doubles", "near_br_doubles")
+
+
+def detect_court_amateur(frame: np.ndarray, max_lines: int = 6,
+                         verify: bool = True) -> Optional[CourtDetection]:
+    """Classical court detector for amateur footage (no weights).
+
+    Detects white lines with the ridge mask, clusters them into candidate
+    baselines (horizontal) and sidelines (vertical), then tries every pair x pair
+    as the doubles-court bounds and keeps the candidate whose FULL projected
+    template best lands on the lines AND sits centrally (coverage x centrality).
+
+    This directly implements the two amateur asks:
+      * "pick the central court, not a random one" — centrality is in the score,
+        so a background/adjacent court loses to the main one;
+      * "continue lines that cut off" — bounding lines are intersected
+        analytically, so a corner that falls OUTSIDE the frame is still recovered
+        as long as the two lines forming it are visible (heatmap models can't do
+        this). The full-template score also disambiguates which lines are the
+        court bounds vs the service/centre lines.
+
+    Returns a CourtDetection (or None). `verify` applies the white-line
+    self-check so a weak best-candidate is refused rather than trusted.
+    """
+    import cv2
+
+    mask = line_ridge_mask(frame)
+    h, w = mask.shape[:2]
+    segs = _hough_segments(mask)
+    horiz = _cluster_lines([s for s in segs if _is_horizontalish(s)], True, frame.shape)
+    vert = _cluster_lines([s for s in segs if not _is_horizontalish(s)], False, frame.shape)
+    if len(horiz) < 2 or len(vert) < 2:
+        return None
+
+    dt = cv2.distanceTransform(255 - mask, cv2.DIST_L2, 5)
+    tol = max(2.0, w * 0.006)
+    Hs, Vs = horiz[:max_lines], vert[:max_lines]
+    court_pts = [court.LANDMARKS[n] for n in _AM_CORNER_NAMES]
+
+    best: Optional[tuple[float, np.ndarray, float]] = None
+    for i in range(len(Hs)):
+        for j in range(i + 1, len(Hs)):           # Hs[i]=far (higher), Hs[j]=near
+            for a in range(len(Vs)):
+                for b in range(a + 1, len(Vs)):    # Vs[a]=left, Vs[b]=right
+                    pts = [_intersect(Hs[i], Vs[a]), _intersect(Hs[i], Vs[b]),
+                           _intersect(Hs[j], Vs[a]), _intersect(Hs[j], Vs[b])]
+                    if any(p is None for p in pts):
+                        continue
+                    try:
+                        H = compute_homography(court_pts, pts)
+                    except (ValueError, np.linalg.LinAlgError):
+                        continue
+                    cov, vis = _coverage_from_dt(dt, H, w, h, tol)
+                    if vis < 0.30:
+                        continue
+                    score = cov * court_centrality(frame, H)
+                    if best is None or score > best[0]:
+                        best = (score, H, cov)
+
+    if best is None:
+        return None
+    _, H, cov = best
+    if verify and not verify_court(frame, H).ok:
+        return None
+    names = court.landmark_names()
+    named = {n: tuple(map(float, court_to_image(H, [court.LANDMARKS[n]])[0]))
+             for n in names}
+    return CourtDetection(keypoints=named, homography=H, confidence=cov)
 
 
 # --- Homography refinement (snap the overlay onto the real lines) ------------

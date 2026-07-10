@@ -49,9 +49,11 @@ def heatmaps(kps, w=IN_W, h=IN_H, sigma=SIGMA):
 
 class CourtFrames(Dataset):
     def __init__(self, root, split="train", val_frac=0.2, augment=True,
-                 oversample={"broadcast": 8}):
-        # `oversample` repeats under-represented domains so fine-tuning doesn't
-        # forget them (catastrophic forgetting broke v0's broadcast calibration).
+                 balance_to=60):
+        # Balance domains: each clip is repeated up to ~balance_to training frames
+        # so a big single-calibration clip (indoor_elev, 222) can't drown the small
+        # hand-labelled amateur clips (~15 each), and broadcast isn't forgotten.
+        # Random-perspective augmentation turns the repeats into distinct samples.
         self.samples = []
         self.augment = augment and split == "train"
         for tag in sorted(os.listdir(root)):
@@ -62,7 +64,7 @@ class CourtFrames(Dataset):
             items = sorted(((int(k), v) for k, v in meta["labels"].items()))
             n_val = max(1, int(len(items) * val_frac))
             keep = items[:-n_val] if split == "train" else items[-n_val:]
-            reps = oversample.get(tag, 1) if split == "train" else 1
+            reps = max(1, round(balance_to / max(1, len(keep)))) if split == "train" else 1
             for idx, kps in keep:
                 for _ in range(reps):
                     self.samples.append((os.path.join(root, tag), idx, np.asarray(kps, np.float32)))
