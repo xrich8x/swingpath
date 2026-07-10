@@ -388,17 +388,138 @@ def detect_court(frame: np.ndarray) -> Optional[CourtDetection]:
 
 
 def detect_court_keypoints(
-    frame: np.ndarray, min_confidence: float = COURT_DETECTION_MIN_CONFIDENCE
+    frame: np.ndarray, min_confidence: float = COURT_DETECTION_MIN_CONFIDENCE,
+    verify: bool = True,
 ) -> Optional[dict[str, tuple[float, float]]]:
     """Detect the 14 named court keypoints in a frame.
 
     Returns a {landmark_name: (x_px, y_px)} mapping, or None when detection is
-    low-confidence — the caller then falls back to a manual calibration JSON.
+    low-confidence OR fails the white-line self-check (verify_court) — the caller
+    then falls back to a manual calibration JSON instead of trusting a court that
+    isn't on the real lines.
     """
     det = detect_court(frame)
     if det is None or det.confidence < min_confidence:
         return None
+    if verify and not verify_court(frame, det.homography).ok:
+        return None
     return det.keypoints
+
+
+# --- White-line self-check: is a candidate court real, and is it the right one? ---
+@dataclass
+class CourtCheck:
+    """Verdict from verify_court. `ok` is the accept/refuse gate."""
+    ok: bool
+    coverage: float       # fraction of the visible projected court lines on white
+    centrality: float     # 0..1, 1 = court centre projects to the frame centre
+    visible_frac: float   # fraction of the projected court that is inside the frame
+
+
+_COURT_LINE_SAMPLES: Optional[np.ndarray] = None
+
+
+def _court_line_samples(per_metre: float = 3.0) -> np.ndarray:
+    """Points sampled densely along every court line, in metres (cached).
+
+    This is the rigid tennis-court template — projecting ALL of it means we know
+    where each line SHOULD be even where the real paint is faded, cracked, or
+    occluded. Coverage below then measures how much of that shape the image
+    actually supports; it never needs a line to be unbroken.
+    """
+    global _COURT_LINE_SAMPLES
+    if _COURT_LINE_SAMPLES is None:
+        pts = []
+        for a, b in court.LINES:
+            seglen = math.hypot(b[0] - a[0], b[1] - a[1])
+            n = max(2, int(seglen * per_metre))
+            for t in np.linspace(0.0, 1.0, n):
+                pts.append((a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])))
+        _COURT_LINE_SAMPLES = np.asarray(pts, dtype=np.float64)
+    return _COURT_LINE_SAMPLES
+
+
+def line_ridge_mask(frame: np.ndarray, tau: int = 18, sat_max: int = 90) -> np.ndarray:
+    """White-line mask robust to amateur/indoor lighting (used by the self-check).
+
+    A court line is a bright RIDGE: brighter than the surface a few pixels to its
+    left+right, OR above+below, by `tau`. That test is invariant to global
+    brightness, so it survives dim indoor courts and bright ceilings where the
+    tophat+global-Otsu `white_line_mask` collapses. A low-saturation constraint
+    (S < sat_max) keeps genuine white lines and drops coloured ridges (fence bars,
+    court-colour seams). Line width scales with frame width.
+    """
+    import cv2
+
+    d = max(2, int(round(frame.shape[1] * 0.006)))   # ~ line half-width
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.int16)
+    sat = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)[:, :, 1]
+
+    def sh(a, dx, dy):
+        return np.roll(np.roll(a, dy, axis=0), dx, axis=1)
+
+    bright_h = (gray - sh(gray, d, 0) > tau) & (gray - sh(gray, -d, 0) > tau)
+    bright_v = (gray - sh(gray, 0, d) > tau) & (gray - sh(gray, 0, -d) > tau)
+    mask = ((bright_h | bright_v) & (sat < sat_max)).astype(np.uint8) * 255
+    return cv2.morphologyEx(mask, cv2.MORPH_OPEN,
+                            cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)))
+
+
+def court_line_coverage(frame: np.ndarray, H: np.ndarray,
+                        tol_px: Optional[float] = None) -> tuple[float, float]:
+    """(coverage, visible_frac) for a candidate court.
+
+    coverage     = fraction of the IN-FRAME projected court lines that land within
+                   tol_px of a real white-line pixel.
+    visible_frac = fraction of the whole projected court that is inside the frame
+                   (amateur courts often run off the edge; only the visible part
+                   can be checked).
+    """
+    import cv2
+
+    mask = line_ridge_mask(frame)
+    h, w = mask.shape[:2]
+    if tol_px is None:
+        tol_px = max(2.0, w * 0.006)
+    dt = cv2.distanceTransform(255 - mask, cv2.DIST_L2, 5)
+    img = court_to_image(H, _court_line_samples())
+    x = np.round(img[:, 0]).astype(int)
+    y = np.round(img[:, 1]).astype(int)
+    inb = (x >= 0) & (x < w) & (y >= 0) & (y < h)
+    n = int(inb.sum())
+    if n == 0:
+        return 0.0, 0.0
+    on = dt[y[inb], x[inb]] <= tol_px
+    return float(on.sum()) / n, n / len(img)
+
+
+def court_centrality(frame: np.ndarray, H: np.ndarray) -> float:
+    """1.0 when the court centre (net midpoint) projects to the frame centre,
+    dropping to 0 at the corners / off-frame. A real main court sits centrally;
+    a background or adjacent court projects off to the side."""
+    h, w = frame.shape[:2]
+    c = court_to_image(H, [(court.DOUBLES_WIDTH / 2.0, court.NET_Y)])[0]
+    dx = (c[0] - w / 2.0) / (w / 2.0)
+    dy = (c[1] - h / 2.0) / (h / 2.0)
+    return float(max(0.0, 1.0 - math.hypot(dx, dy) / math.sqrt(2.0)))
+
+
+def verify_court(frame: np.ndarray, H: np.ndarray, *,
+                 min_coverage: float = 0.40, min_visible: float = 0.30,
+                 min_centrality: float = 0.70,
+                 tol_px: Optional[float] = None) -> CourtCheck:
+    """Accept/refuse a candidate court against the real white lines.
+
+    Guards two failure modes the reprojection/keypoint-count gates miss:
+      * a self-consistent but WRONG court that doesn't lie on any white lines
+        (low coverage), and
+      * a lock onto a real but OFF-CENTRE background/adjacent court (low
+        centrality).
+    """
+    cov, vis = court_line_coverage(frame, H, tol_px)
+    cen = court_centrality(frame, H)
+    ok = cov >= min_coverage and vis >= min_visible and cen >= min_centrality
+    return CourtCheck(ok=ok, coverage=cov, centrality=cen, visible_frac=vis)
 
 
 # --- Homography refinement (snap the overlay onto the real lines) ------------
@@ -742,6 +863,7 @@ def detect_court_learned(
     weights: str = "weights/court_detector.pt",
     device: str = "cpu",
     min_points: int = 6,
+    verify: bool = True,
 ) -> Optional[CourtDetection]:
     """Detect the court with the learned keypoint model (the accurate path).
 
@@ -808,5 +930,7 @@ def detect_court_learned(
     err = reprojection_error(H, src[inl], dst[inl])
     if err > 0.015 * max(w_img, h_img):
         return None
+    if verify and not verify_court(frame, H).ok:
+        return None   # self-consistent fit, but not on the real white lines / off-centre
     kept = {n: named[n] for n, keep in zip(names, inl) if keep}
     return CourtDetection(keypoints=kept, homography=H, confidence=len(kept) / 14.0)
