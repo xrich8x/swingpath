@@ -156,8 +156,9 @@ def build_parser() -> argparse.ArgumentParser:
                          help="also render an annotated overlay video (court + players + "
                               "ball + shot labels) next to the match.json")
     analyze.add_argument("--doubles", action="store_true", dest="doubles",
-                         help="call lines against the doubles court (default singles); "
-                              "note: player tracking still resolves two players")
+                         help="force doubles line calls (outer alleys). Default: "
+                              "auto-detect singles vs doubles from on-court player "
+                              "count. Either way, player tracking resolves two players")
     analyze.set_defaults(func=_cmd_analyze)
 
     check = sub.add_parser("check", help="pre-flight: grade your court framing before analyzing")

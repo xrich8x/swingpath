@@ -631,7 +631,8 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                     [tup(p) for p in c["far_court"]],
                     c.get("near_kpts", [None] * n),
                     c.get("far_kpts", [None] * n),
-                    c["cam_motion"])
+                    c["cam_motion"],
+                    c.get("player_counts", []))
 
     from .ball import BallDetector, WASBDetector, BallTracker, median_background
     from . import pose as pose_mod
@@ -697,6 +698,7 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
     ball_px, near_court, far_court = [], [], []
     near_kpts, far_kpts = [], []   # striker keypoints (image px) for shot-type classification
     cam_motion = []                # per-frame 3x3 camera motion vs frame 0 (rows 0-1 stored)
+    player_counts = []             # (near, far) on-court people per pose frame -> singles/doubles
     A = np.eye(3)
     last_near = last_far = None
     last_near_kp = last_far_kp = None
@@ -724,7 +726,9 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                 last_near = last_far = None
                 last_near_kp = last_far_kp = None
                 last_boxes = []
-                for p, cxy in pose_mod.select_players_on_court(estimator.estimate(frame), H_t):
+                _poses = estimator.estimate(frame)
+                player_counts.append(list(pose_mod.count_on_court(_poses, H_t)))
+                for p, cxy in pose_mod.select_players_on_court(_poses, H_t):
                     last_boxes.append(tuple(float(v) for v in p.box))
                     if cxy[1] < court.NET_Y:
                         last_near = cxy
@@ -767,11 +771,12 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                     "near_kpts": near_kpts,
                     "far_kpts": far_kpts,
                     "cam_motion": cam_motion,
+                    "player_counts": player_counts,
                 },
                 f,
             )
         print(f"[analyze] cached perception -> {cache_path}")
-    return ball_px, near_court, far_court, near_kpts, far_kpts, cam_motion
+    return ball_px, near_court, far_court, near_kpts, far_kpts, cam_motion, player_counts
 
 
 def analyze_video(
@@ -842,10 +847,19 @@ def analyze_video(
     # Perception (ball + pose) is the expensive part — cache it next to the output
     # so downstream tuning (events/speed/scoring) doesn't re-run inference.
     cache_path = (os.path.splitext(out_path)[0] + ".perception.json") if out_path else None
-    ball_px, near_court, far_court, near_kpts, far_kpts, cam_motion = _perceive(
+    ball_px, near_court, far_court, near_kpts, far_kpts, cam_motion, player_counts = _perceive(
         video_path, H, ball_weights, pose_quality, pose_every, device,
         max_frames, frame_step, cache_path, use_bgsub, ball_model, camera_hfov_deg
     )
+    # Singles vs doubles: --doubles forces it; otherwise auto-detect from how many
+    # players are on court (2 each side => doubles). Only the line-call boundary
+    # changes; player tracking stays two-slot (near/far).
+    from . import pose as _pose
+    auto_doubles = _pose.infer_doubles(player_counts)
+    use_doubles = bool(doubles) or auto_doubles
+    print(f"[analyze] match type: {'doubles' if use_doubles else 'singles'}"
+          f"{' (auto-detected)' if auto_doubles and not doubles else ''}"
+          f"{' (forced)' if doubles else ''}")
     # A "player" that never moves is a person-shaped fixture (poster, bag, chair)
     # that selection fell back to when the real player was missed — a real player
     # never stands still for a whole clip. Wipe such tracks (positions + keypoints).
@@ -915,7 +929,7 @@ def analyze_video(
 
     match = _build_match_from_events(
         track, hit_idx, bounce_idx, near_court, far_court, fps_eff, width, height,
-        video_path, physics_shots, ball_conf, near_kpts, far_kpts, H, singles=not doubles
+        video_path, physics_shots, ball_conf, near_kpts, far_kpts, H, singles=not use_doubles
     )
 
     if out_path:

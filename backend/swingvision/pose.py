@@ -184,6 +184,35 @@ def select_two_players(
     return chosen
 
 
+def count_on_court(poses, homography, court_margin_m: float = 1.5,
+                   runoff_m: float = 7.0) -> tuple[int, int]:
+    """(near, far): how many people have feet on the court, per half. Used to tell
+    singles (1 each side) from doubles (2 each side) for the line-call boundary."""
+    from . import calibration, court
+
+    nn = nf = 0
+    for p in poses:
+        cx, cy = calibration.image_to_court(homography, [p.feet()])[0]
+        if (-court_margin_m <= cx <= court.DOUBLES_WIDTH + court_margin_m
+                and -runoff_m <= cy <= court.LENGTH + runoff_m):
+            if cy < court.NET_Y:
+                nn += 1
+            else:
+                nf += 1
+    return nn, nf
+
+
+def infer_doubles(counts, min_frac: float = 0.35) -> bool:
+    """Given per-frame (near, far) on-court counts, decide doubles vs singles.
+    Doubles when a meaningful fraction of sampled frames show >=2 players on BOTH
+    halves (a lone extra detection or a briefly-occluded partner won't flip it)."""
+    counts = [c for c in counts if c is not None]
+    if not counts:
+        return False
+    both_two = sum(1 for nn, nf in counts if nn >= 2 and nf >= 2)
+    return both_two >= max(1, int(min_frac * len(counts)))
+
+
 def select_players_on_court(
     poses: Sequence[PlayerPose],
     homography: np.ndarray,
