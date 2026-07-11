@@ -52,6 +52,50 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_check(args: argparse.Namespace) -> int:
+    """Pre-flight: grade the court framing before analyzing (SwingVision-style:
+    a good, full-court setup is what makes the rest reliable)."""
+    import json
+
+    import cv2
+
+    from swingvision import calibration
+
+    cap = cv2.VideoCapture(args.video)
+    ok, frame = cap.read()
+    cap.release()
+    if not ok:
+        print(f"could not read {args.video}")
+        return 1
+
+    H, src = None, ""
+    if args.keypoints:
+        with open(args.keypoints, "r", encoding="utf-8") as f:
+            H = calibration.homography_from_landmarks(json.load(f))
+        src = "your corners"
+    else:
+        det = (calibration.detect_court_learned(frame, weights=args.court_weights,
+                                                verify=False)
+               or calibration.detect_court(frame))
+        if det is not None:
+            H, src = det.homography, "auto-detected court"
+
+    if H is None:
+        print("Framing check: could NOT find the court automatically.")
+        print("  - The whole court is probably not in view, or the lines are unclear.")
+        print("  - Fix: set corners manually (--keypoints), or re-record with the full")
+        print("    court in frame, camera ~5 ft up behind the baseline.")
+        return 0
+
+    r = calibration.framing_report(frame, H)
+    label = {"good": "OK", "warn": "WARN", "poor": "POOR"}[r.level]
+    print(f"Framing check ({src}): [{label}]  corners {r.corners_visible}/4 in frame, "
+          f"centred {r.centrality:.2f}, lines {r.coverage:.2f}, elevation {r.elevation:.2f}")
+    for m in r.messages:
+        print(f"  - {m}")
+    return 0
+
+
 def _cmd_live(args: argparse.Namespace) -> int:
     import json
 
@@ -115,6 +159,13 @@ def build_parser() -> argparse.ArgumentParser:
                          help="call lines against the doubles court (default singles); "
                               "note: player tracking still resolves two players")
     analyze.set_defaults(func=_cmd_analyze)
+
+    check = sub.add_parser("check", help="pre-flight: grade your court framing before analyzing")
+    check.add_argument("video", help="input video path")
+    check.add_argument("--keypoints", help="court calibration JSON (else auto-detect the court)")
+    check.add_argument("--court-weights", default="weights/court_detector.pt",
+                       dest="court_weights", help="learned court model checkpoint")
+    check.set_defaults(func=_cmd_check)
 
     live_p = sub.add_parser("live", help="stream live IN/OUT line calls from a video or webcam")
     live_p.add_argument("video", help="video path, or 0 for a webcam")

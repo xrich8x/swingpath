@@ -535,6 +535,75 @@ def verify_court(frame: np.ndarray, H: np.ndarray, *,
     return CourtCheck(ok=ok, coverage=cov, centrality=cen, visible_frac=vis)
 
 
+# --- Guided-framing setup (SwingVision-style: control the input, not the model) ---
+_DBL_CORNERS = ("far_bl_doubles", "far_br_doubles",
+                "near_bl_doubles", "near_br_doubles")
+_CORNER_PRETTY = {"far_bl_doubles": "far-left", "far_br_doubles": "far-right",
+                  "near_bl_doubles": "near-left", "near_br_doubles": "near-right"}
+
+
+@dataclass
+class FramingReport:
+    """Plain-English quality grade of a court setup, so the app can guide framing
+    (SwingVision's approach: require a canonical full-court view rather than solve
+    detection from any angle). `level` is good | warn | poor."""
+    level: str
+    corners_visible: int      # of the 4 doubles corners, how many are inside the frame
+    centrality: float         # court centred in the frame (1 = dead centre)
+    coverage: float           # lines land on real white pixels
+    elevation: float          # far/near baseline width ratio; low => flat/low camera
+    messages: list
+
+    @property
+    def ok(self) -> bool:
+        return self.level == "good"
+
+
+def framing_report(frame: np.ndarray, H: np.ndarray, *,
+                   min_coverage: float = 0.40, min_centrality: float = 0.60,
+                   min_elevation: float = 0.28) -> FramingReport:
+    """Grade how well a clip is framed for reliable analysis, given a court
+    calibration H (auto-detected or manual). Checks SwingVision's canonical-setup
+    requirements: all 4 corners in frame, court centred, camera high enough (the
+    far half not crushed), and lines actually detectable. Returns actionable
+    guidance. Runs on one frame, so it works both offline and (later) live.
+    """
+    h, w = frame.shape[:2]
+    pts = {n: court_to_image(H, [court.LANDMARKS[n]])[0] for n in _DBL_CORNERS}
+    visible = {n: (0 <= p[0] < w and 0 <= p[1] < h) for n, p in pts.items()}
+    n_vis = sum(visible.values())
+    cen = court_centrality(frame, H)
+    cov, _ = court_line_coverage(frame, H)
+    near_w = math.dist(pts["near_bl_doubles"], pts["near_br_doubles"])
+    far_w = math.dist(pts["far_bl_doubles"], pts["far_br_doubles"])
+    elev = far_w / near_w if near_w > 1 else 0.0
+
+    msgs: list[str] = []
+    if n_vis < 4:
+        off = ", ".join(_CORNER_PRETTY[n] for n, ok in visible.items() if not ok)
+        msgs.append(f"Corner(s) off-screen: {off} - zoom out or reposition so the "
+                    f"whole court is in the frame.")
+    if cen < min_centrality:
+        msgs.append("Court is off-centre - aim the camera at the middle of the court.")
+    if elev < min_elevation:
+        msgs.append("Camera looks low/flat - mount it higher (~5 ft, behind the "
+                    "baseline) so the far half isn't crushed.")
+    if cov < min_coverage:
+        msgs.append("Court lines are hard to detect - set the corners manually, or "
+                    "improve lighting/framing.")
+
+    if n_vis < 3:
+        level = "poor"   # can't even see the court -> a real framing problem
+    elif (n_vis == 4 and cen >= min_centrality and elev >= min_elevation
+          and cov >= min_coverage):
+        level = "good"
+        msgs.insert(0, "Framing looks good - whole court visible, centred, lines clear.")
+    else:
+        level = "warn"   # usable, but a fixable issue (corner, angle, or faint lines)
+    return FramingReport(level=level, corners_visible=n_vis, centrality=cen,
+                         coverage=cov, elevation=elev, messages=msgs)
+
+
 _AM_CORNER_NAMES = ("far_bl_doubles", "far_br_doubles",
                     "near_bl_doubles", "near_br_doubles")
 

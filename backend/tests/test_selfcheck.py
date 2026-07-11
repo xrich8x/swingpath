@@ -66,3 +66,22 @@ def test_verify_refuses_a_misaligned_court():
     shifted = C.verify_court(frame, _H([(230, 330), (560, 320), (470, 110), (315, 105)]))
     assert shifted.coverage < good.coverage
     assert not shifted.ok
+
+
+def test_framing_report_good_when_whole_court_in_frame():
+    H = _H(TRUE_PTS)                       # all 4 corners well inside 640x360
+    frame = _draw_court(H)
+    r = C.framing_report(frame, H)
+    assert r.corners_visible == 4
+    assert r.level == "good"
+    assert r.ok
+
+
+def test_framing_report_flags_offscreen_corners():
+    # push the near baseline below the frame -> near corners off-screen
+    H = _H([(120, 470), (520, 470), (400, 95), (240, 95)])
+    frame = _draw_court(H)
+    r = C.framing_report(frame, H)
+    assert r.corners_visible < 4
+    assert r.level == "poor"
+    assert any("off-screen" in m for m in r.messages)
