@@ -1158,7 +1158,15 @@ def _build_match_from_events(
         # court band, not a far-baseline frame grazing the horizon.
         land_scale = scale_at(land)
         real_landing = land < n_track - 1 and real_continuation(land) >= 0.4  # bounce, not drop-out
-        speed_confident = real_fraction(h, land) >= 0.5 and real_landing
+        # Without a physics fit (which needs the true camera FOV — see
+        # speed-physics-diagnosis: monocular optics are ill-conditioned on arbitrary
+        # footage), the naive average OVER-reads airborne balls (a serve/lob projects
+        # long on the flat ground) and any implausibly fast shot on one camera. Trust
+        # it only for a well-observed, plausible GROUND shot; a validated physics arc
+        # (below) re-confirms speed it actually measured.
+        PLAUSIBLE_KMH = 160.0   # amateur ground strokes rarely exceed this on a phone
+        speed_confident = (real_fraction(h, land) >= 0.5 and real_landing
+                           and not p["is_serve"] and speed <= PLAUSIBLE_KMH)
         call_confident = (land_scale is not None and land_scale <= UNRELIABLE_SCALE
                           and real_landing)
         if p["ends_point"]:
@@ -1196,6 +1204,7 @@ def _build_match_from_events(
                 s.spin_rpm = best["spin_rpm"]
                 s.topspin_rpm = best["topspin_rpm"]
                 s.speed_source = "physics"
+                s.speed_confident = True   # a bounce-anchored fit is a real measurement
                 # A measured arc outranks the pose heuristic for stroke style.
                 if s.type in ("forehand", "backhand") and abs(best["topspin_rpm"]) > 300:
                     s.spin_style = "topspin" if best["topspin_rpm"] > 0 else "slice"
