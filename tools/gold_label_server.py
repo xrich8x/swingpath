@@ -706,6 +706,10 @@ function saveAndNext() {          // confirm this court, jump to next UNLABELED 
 }
 
 function nav(d) {
+  if (placed === 4) saveCourt();   // persist the fitted court when leaving a frame,
+                                   // so Next/arrows save like Enter does (not just
+                                   // hand-placed frames) — on a fixed camera the
+                                   // carried-over court is correct for every frame.
   cur = Math.min(frames.length - 1, Math.max(0, cur + d));
   loupe.style.display = "none"; drag = null;
   loadFrameState(); render();
