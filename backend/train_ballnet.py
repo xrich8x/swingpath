@@ -38,6 +38,12 @@ from swingvision._ballnet import BallNet
 
 IN_W, IN_H = 512, 288
 SIGMA = 3.0
+# Visibility-weighted loss (TOTNet §ablation): occlusion augmentation ALONE makes
+# tracking WORSE; it only helps when the occluded (hard) samples are weighted higher
+# so the model is forced to recover the ball from temporal context instead of the
+# missing current-frame pixels. Synthetic-occlusion frames are our "fully occluded"
+# visibility level and carry OCC_WEIGHT; everything else is 1.0.
+OCC_WEIGHT = 3.0
 
 
 def gaussian_heatmap(x, y, w=IN_W, h=IN_H, sigma=SIGMA):
@@ -46,6 +52,16 @@ def gaussian_heatmap(x, y, w=IN_W, h=IN_H, sigma=SIGMA):
     gx = np.exp(-((xs - x) ** 2) / (2 * sigma * sigma))
     gy = np.exp(-((ys - y) ** 2) / (2 * sigma * sigma))
     return np.outer(gy, gx)
+
+
+def _motion_blur_kernel(size, angle_deg):
+    """A directional line kernel — simulates a fast ball / camera motion streak."""
+    k = np.zeros((size, size), np.float32)
+    k[size // 2, :] = 1.0
+    M = cv2.getRotationMatrix2D((size / 2 - 0.5, size / 2 - 0.5), angle_deg, 1.0)
+    k = cv2.warpAffine(k, M, (size, size))
+    s = k.sum()
+    return k / s if s > 0 else k
 
 
 class BallWindows(Dataset):
@@ -90,6 +106,7 @@ class BallWindows(Dataset):
         d, i, x, y = self.samples[k]
         frames = [self._frame(d, i), self._frame(d, i - 1), self._frame(d, i - 2)]
         negative = x is None
+        occluded = False
 
         if self.augment:
             if random.random() < 0.5:     # horizontal flip
@@ -108,6 +125,20 @@ class BallWindows(Dataset):
                     x, y = x + tx, y + ty
                     x = min(max(x, 0), IN_W - 1)
                     y = min(max(y, 0), IN_H - 1)
+            if random.random() < 0.35:    # MOTION BLUR — fast ball / camera (BlurBall)
+                ker = _motion_blur_kernel(random.choice([5, 7, 9, 11]),
+                                          random.uniform(0, 180))
+                frames = [cv2.filter2D(f, -1, ker) for f in frames]
+            if not negative and random.random() < 0.30:
+                # OCCLUSION (TOTNet): hide the ball in the NEWEST frame only, keeping
+                # the target at its true spot. The prior two frames still show it, so
+                # the model must learn to carry the ball through a brief occlusion
+                # (a player/racket/net crossing) instead of dropping it.
+                r = random.randint(8, 26)
+                xi, yi = int(round(x)), int(round(y))
+                col = tuple(int(v) for v in np.random.randint(0, 256, 3))
+                cv2.rectangle(frames[0], (xi - r, yi - r), (xi + r, yi + r), col, -1)
+                occluded = True
 
         arr = np.concatenate(frames, axis=2).astype(np.float32) / 255.0
         inp = np.ascontiguousarray(np.rollaxis(arr, 2, 0))
@@ -118,8 +149,10 @@ class BallWindows(Dataset):
             hm = gaussian_heatmap(x, y)[None]
         # dtype pinned: augmentation clamps can make x/y ints, and a batch that
         # mixes Long and Float xy tensors fails to collate (torch.stack).
+        w = OCC_WEIGHT if occluded else 1.0
         return (torch.from_numpy(inp), torch.from_numpy(hm),
-                torch.tensor([x, y], dtype=torch.float32))
+                torch.tensor([x, y], dtype=torch.float32),
+                torch.tensor(w, dtype=torch.float32))
 
 
 def evaluate(model, loader, device, fire_thresh=0.5):
@@ -129,7 +162,7 @@ def evaluate(model, loader, device, fire_thresh=0.5):
     model.eval()
     errs, fires = [], []
     with torch.no_grad():
-        for inp, _, xy in loader:
+        for inp, _, xy, _ in loader:
             out = torch.sigmoid(model(inp.to(device)))[:, 0]
             B, H, W = out.shape
             flat = out.reshape(B, -1)
@@ -174,16 +207,22 @@ def main():
     print(f"BallNet params: {n_par/1e6:.2f}M")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs)
-    crit = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(100.0, device=args.device))
+    # reduction='none' so we can weight each sample by its visibility (OCC_WEIGHT for
+    # synthetic-occlusion frames) before averaging — the TOTNet fix that turns
+    # occlusion augmentation from a regression into a gain.
+    crit = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(100.0, device=args.device),
+                                reduction="none")
 
     best = -1.0
     for ep in range(1, args.epochs + 1):
         model.train()
         tot = 0.0
-        for inp, hm, _ in train_ld:
-            inp, hm = inp.to(args.device), hm.to(args.device)
+        for inp, hm, _, w in train_ld:
+            inp, hm, w = inp.to(args.device), hm.to(args.device), w.to(args.device)
             opt.zero_grad()
-            loss = crit(model(inp), hm)
+            per_px = crit(model(inp), hm)            # [B,1,H,W]
+            per_sample = per_px.mean(dim=(1, 2, 3))  # [B]
+            loss = (per_sample * w).mean()
             loss.backward()
             opt.step()
             tot += loss.item()
