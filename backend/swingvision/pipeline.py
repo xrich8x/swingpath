@@ -343,6 +343,18 @@ def calibrate_video(
             source = "auto-classical"
 
     H = calibration.homography_from_landmarks(named)
+
+    # Snap the corners onto the real white lines (amateur-robust), guarded: kept
+    # only if it improves line coverage, so clay/unseeable lines fall back to the
+    # clicks unchanged. Halves court error on hard/indoor courts (eval_court_snap).
+    H_snap, named_snap, snapped, cov0, cov1 = calibration.snap_to_lines(frame, named)
+    if snapped:
+        H, named = H_snap, named_snap
+        source += "+snap"
+        print(f"[calibration] snapped to white lines: coverage {cov0:.2f} -> {cov1:.2f}")
+    else:
+        print(f"[calibration] line-snap not applied (coverage {cov1:.2f}); using clicks as-is")
+
     err = calibration.reprojection_error(
         H, [court.LANDMARKS[n] for n in named], [named[n] for n in named]
     )

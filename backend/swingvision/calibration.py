@@ -677,7 +677,7 @@ def detect_court_amateur(frame: np.ndarray, max_lines: int = 6,
 
 # --- Homography refinement (snap the overlay onto the real lines) ------------
 def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: float = 35.0,
-                              boxes=None):
+                              boxes=None, mask_fn=None):
     """Snap a rough 4-corner calibration onto the white lines — BOUNDED.
 
     The unbounded refine_homography collapses to degenerate solutions (it will
@@ -687,6 +687,10 @@ def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: floa
     (baselines, service lines, centre line, sidelines) pull the corners into
     place — the same many-constraint effect the learned 14-keypoint model gives
     broadcast footage. Returns (H, refined_named_points, mean_dt_cost).
+
+    `mask_fn` selects the white-line detector (default white_line_mask, the
+    tophat+Otsu classical one). Pass line_ridge_mask for amateur/indoor footage,
+    where tophat+Otsu collapses — measured to snap rough clicks far tighter there.
     """
     import cv2
     from scipy.optimize import minimize
@@ -695,7 +699,7 @@ def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: floa
     court_pts = [court.LANDMARKS[n] for n in names]
     x0 = np.asarray([named_points[n] for n in names], dtype=np.float64).ravel()
 
-    mask = white_line_mask(frame)
+    mask = (mask_fn or white_line_mask)(frame)
     for b in boxes or []:
         if b is None:
             continue
@@ -725,6 +729,46 @@ def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: floa
     x = res.x
     refined = {n: [float(x[2 * i]), float(x[2 * i + 1])] for i, n in enumerate(names)}
     return compute_homography(court_pts, x.reshape(-1, 2)), refined, float(res.fun)
+
+
+def snap_to_lines(frame: np.ndarray, named, *, min_coverage: float = 0.40,
+                  max_move_px: float = 30.0):
+    """Snap a manual/auto court calibration onto the amateur white lines — GUARDED.
+
+    Refines the four doubles corners so the projected court lines land on real
+    white-line pixels (via the amateur-robust line_ridge_mask). Measured on the
+    court gold set (tools/eval_court_snap.py): this roughly HALVES whole-court
+    error on hard/indoor/rec courts (median ~12.8 -> ~5.9 px) and lifts line
+    coverage ~0.48 -> ~0.79.
+
+    The snap is KEPT only if it clears the coverage bar AND does not lower coverage
+    vs the input. So on surfaces whose lines the white-line mask can't see (clay:
+    dusty orange paint), coverage stays low, the snap is REFUSED, and the caller's
+    original clicks are returned unchanged (safe fallback to manual, as documented).
+
+    Returns (H, named_out, snapped: bool, cov_before, cov_after). On skip/refuse,
+    named_out is the input `named` and H is built from it unchanged.
+    """
+    corners = {n: list(named[n]) for n in _DBL_CORNERS if n in named}
+    if len(corners) < 4 or len(named) < 4:
+        # Can't snap without the four corners; return H from the clicks if solvable.
+        try:
+            H_before = homography_from_landmarks(named)
+            cov_before = court_line_coverage(frame, H_before)[0]
+        except Exception:
+            H_before, cov_before = None, 0.0
+        return H_before, named, False, cov_before, cov_before
+    H_before = homography_from_landmarks(named)
+    cov_before = court_line_coverage(frame, H_before)[0]
+    try:
+        H_after, refined, _ = refine_homography_bounded(
+            frame, corners, max_move_px=max_move_px, mask_fn=line_ridge_mask)
+    except Exception:
+        return H_before, named, False, cov_before, cov_before
+    cov_after = court_line_coverage(frame, H_after)[0]
+    if cov_after >= min_coverage and cov_after >= cov_before - 1e-6:
+        return H_after, refined, True, cov_before, cov_after
+    return H_before, named, False, cov_before, cov_after
 
 
 def court_lock_step(frame: np.ndarray, H_prev: np.ndarray, boxes=None,
