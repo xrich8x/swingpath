@@ -29,6 +29,23 @@ sys.path.insert(0, str(REPO / "tools"))
 
 DBL = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"]
 
+
+def auto_fit(frame):
+    """Auto-detect the court, then snap it onto the lines. Returns {corner:[x,y]}
+    (the fitted overlay) or None if the detector couldn't lock a court."""
+    from swingvision import calibration, court
+    import eval_court_autodetect as ad
+    res = ad.autodetect(frame, calibration, court)
+    if res is None:
+        return None
+    _, _, ref = res
+    named = {k: [float(ref[k][0]), float(ref[k][1])] for k in DBL}
+    _, out, _snapped, _c0, c1 = calibration.snap_to_lines(
+        frame, named, min_coverage=0.0, max_move_px=60.0)
+    use = out if all(k in out for k in DBL) else named
+    print(f"[setup] auto-fit court (coverage {c1:.2f})")
+    return {k: [float(use[k][0]), float(use[k][1])] for k in DBL}
+
 PAGE = r"""<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Court Setup</title>
@@ -278,7 +295,8 @@ def main():
     ap.add_argument("--frame", help="path to a single image")
     ap.add_argument("--video", help="path to a video (uses the first frame)")
     ap.add_argument("--out", default="court_pts.json", help="where Save writes the keypoints")
-    ap.add_argument("--seed", action="store_true", help="auto-detect a seed court at startup")
+    ap.add_argument("--no-auto", action="store_true",
+                    help="skip the auto-detect+snap at startup (start from a plain overlay)")
     ap.add_argument("--port", type=int, default=8770)
     ap.add_argument("--no-browser", action="store_true")
     args = ap.parse_args()
@@ -286,14 +304,10 @@ def main():
     frame = load_frame(args)
     state = {"frame": frame, "out": args.out, "seed": None}
 
-    if args.seed:
-        from swingvision import calibration, court
-        import eval_court_autodetect as ad
-        res = ad.autodetect(frame, calibration, court)
-        if res is not None:
-            _, _, ref = res
-            state["seed"] = {k: [float(ref[k][0]), float(ref[k][1])] for k in DBL}
-            print("[setup] seeded overlay from auto-detect")
+    # Auto-fit on startup by default: detect the court, then snap it onto the lines,
+    # so the overlay opens already fitted and the user only nudges if it's off.
+    if not args.no_auto:
+        state["seed"] = auto_fit(frame)
 
     Handler = build_handler(state)
     url = f"http://127.0.0.1:{args.port}/"
