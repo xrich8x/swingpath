@@ -158,7 +158,8 @@ def _corners(cx, yn, yf, wn, wf):
 _PRIOR_PATH = REPO / "data" / "court_pose_prior.json"
 _PRIOR = None
 PRIOR_TEMP = 6.0        # softens the plausibility weight used for ranking
-PRIOR_MAHA_MAX = 40.0   # reject camera poses this far outside the learned spread
+PRIOR_MAHA_MAX = 55.0   # reject camera poses this far outside the learned spread
+PRIOR_SAMPLES = 500     # Monte-Carlo court seeds drawn from the learned prior
 
 
 def _load_prior():
@@ -166,7 +167,8 @@ def _load_prior():
     if _PRIOR is None:
         if _PRIOR_PATH.exists():
             d = json.loads(_PRIOR_PATH.read_text())
-            _PRIOR = (np.asarray(d["mean"]), np.linalg.inv(np.asarray(d["cov"])))
+            mu, cov = np.asarray(d["mean"]), np.asarray(d["cov"])
+            _PRIOR = (mu, np.linalg.inv(cov), cov)   # mean, inverse-cov, cov
         else:
             _PRIOR = False
     return _PRIOR
@@ -217,10 +219,33 @@ def _scan(axes, calibration, court, court_pts, dt, cos2, sin2, w, h, tol, athr, 
     return out
 
 
-def autodetect(frame, calibration, court, *, grid=4, topk=10,
-               athr=0.80, accept=0.45, use_prior=True):
-    """Coarse grid -> local refine -> snap -> structural+plausibility gate. Returns
-    (H, score, corners) or None (falls back to manual)."""
+def _prior_seeds(prior, calibration, court, court_pts, dt, cos2, sin2, w, h, tol, athr):
+    """Monte-Carlo court seeds drawn straight from the learned camera-angle prior,
+    so most seeds already sit on a plausible court -> far higher lock rate on the
+    typical amateur framings than a blind grid, and each is already plausible."""
+    rng = np.random.default_rng(0)
+    out = []
+    for s in rng.multivariate_normal(prior[0], prior[2], PRIOR_SAMPLES):
+        cx, yn, yf = s[0]*w, s[1]*h, s[2]*h
+        wn, wf = s[3]*w, s[4]*w
+        if yf >= yn - 20 or wf >= wn or wn <= 0:
+            continue
+        try:
+            H = calibration.compute_homography(
+                court_pts, [_corners(cx, yn, yf, wn, wf)[n] for n in DBL])
+        except Exception:
+            continue
+        g, nl, _ = _ori_detail(H, calibration, court, dt, cos2, sin2, w, h, tol, athr)
+        if g > 0:
+            m = _maha((cx, yn, yf, wn, wf), w, h, prior)
+            out.append((g * np.exp(-0.5 * m / PRIOR_TEMP), g, nl, (cx, yn, yf, wn, wf), m))
+    return out
+
+
+def autodetect(frame, calibration, court, *, grid=4, topk=12,
+               athr=0.80, accept=0.33, use_prior=True):
+    """Prior-sampled + grid seeds -> local refine -> snap -> structural+plausibility
+    gate. Returns (H, score, corners) or None (falls back to manual)."""
     dt, cos2, sin2, w, h = _precompute(frame, calibration)
     tol = max(2.0, w * 0.006)
     court_pts = [court.LANDMARKS[n] for n in DBL]
@@ -231,6 +256,10 @@ def autodetect(frame, calibration, court, *, grid=4, topk=10,
               [0.20, 0.27, 0.35, 0.42])
     ax = tuple(np.asarray(v) * (w if i in (0, 3, 4) else h) for i, v in enumerate(coarse))
     ranked = _scan(ax, calibration, court, court_pts, dt, cos2, sin2, w, h, tol, athr, prior)
+    if prior:
+        ranked += _prior_seeds(prior, calibration, court, court_pts,
+                               dt, cos2, sin2, w, h, tol, athr)
+        ranked.sort(key=lambda t: t[0], reverse=True)
 
     # coarse-to-fine: local grid around the top-3 (plausibility-ranked) coarse seeds
     steps = [(coarse[i][1]-coarse[i][0]) * (w if i in (0, 3, 4) else h) for i in range(5)]
@@ -250,14 +279,16 @@ def autodetect(frame, calibration, court, *, grid=4, topk=10,
         tried += 1
         try:
             Hs, ref, _ = calibration.refine_homography_bounded(
-                frame, _corners(*p), max_move_px=40.0, mask_fn=calibration.line_ridge_mask)
+                frame, _corners(*p), max_move_px=55.0, mask_fn=calibration.line_ridge_mask)
         except Exception:
             continue
         g, nl, nseen = _ori_detail(Hs, calibration, court, dt, cos2, sin2, w, h, tol, athr)
         maha = _maha(_params_from_corners(ref), w, h, prior)
-        # accept gate: good support, enough DISTINCT court lines (>=half in-frame,
-        # min 5), a PLAUSIBLE camera pose (prior), and the coverage/centrality check.
-        need = max(5, int(0.5 * nseen))
+        # accept gate: enough DISTINCT court lines (>=40% in-frame, min 4), a
+        # PLAUSIBLE camera pose (prior), and the coverage/centrality check. Tuned to
+        # LOCK often (the overlay lets the user nudge a rough fit) while still
+        # refusing true non-court frames (they support few oriented lines).
+        need = max(4, int(0.4 * nseen))
         if g >= accept and nl >= need and maha <= PRIOR_MAHA_MAX \
                 and calibration.verify_court(frame, Hs).ok and (best is None or g > best[1]):
             best = (Hs, g, ref)
