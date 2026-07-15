@@ -150,15 +150,22 @@ def _precompute(frame, calibration):
     return dt, np.cos(2*lang), np.sin(2*lang), w, h, _detect_lines(mask, w)
 
 
-def _ori_detail(H, calibration, court, dt, cos2, sin2, w, h, tol, athr):
-    """Returns (global_score, n_lines_supported, n_lines_in_frame).
+EVID_BAND = 5.0     # "is there ANY paint near this line?" band, in units of tol
+EVID_MIN = 0.20     # a line counts as measurable if this much of it has paint nearby
 
-    A projected court-line sample is SUPPORTED if it lands on a real line pixel
-    (<=tol) AND the local ridge orientation matches the projected line's direction
-    (align>=athr). global_score = supported fraction. Per court line we also compute
-    its own supported fraction; n_lines_supported counts distinct lines that clear
-    0.5 — a structural check a court hallucinated onto clutter can't fake, because
-    it would need MANY differently-oriented lines to line up at once."""
+
+def _ori_detail(H, calibration, court, dt, cos2, sin2, w, h, tol, athr):
+    """Returns (agreement, n_lines_supported, n_lines_with_evidence).
+
+    EVIDENCE-BASED, not model-recall. A court is a regulation shape, so a line with
+    no paint (worn clay, covered, repainted over) is MISSING EVIDENCE — not proof the
+    fit is wrong. Scoring "what fraction of my lines did I find?" punishes a faded
+    court for being faded. So:
+      * a line with NO paint anywhere near it is UNMEASURABLE -> excluded entirely
+      * among lines that DO have paint, we score how well the paint agrees
+    A sample agrees if it sits on a line pixel (<=tol) AND the local ridge
+    orientation matches the projected line. Absence of evidence is never a penalty;
+    disagreeing evidence is."""
     S, lid, EA, EB = _court_samples(court)
     P = calibration.court_to_image(H, S)
     pa = calibration.court_to_image(H, EA)
@@ -167,18 +174,24 @@ def _ori_detail(H, calibration, court, dt, cos2, sin2, w, h, tol, athr):
     c2, s2 = np.cos(2*ang)[lid], np.sin(2*ang)[lid]
     x, y = np.round(P[:, 0]).astype(int), np.round(P[:, 1]).astype(int)
     inb = (x >= 0) & (x < w) & (y >= 0) & (y < h)
-    nin = int(inb.sum())
-    if nin < len(P) * 0.30:
+    if int(inb.sum()) < len(P) * 0.30:
         return 0.0, 0, 0
     xi, yi = np.clip(x, 0, w-1), np.clip(y, 0, h-1)
     align = cos2[yi, xi]*c2 + sin2[yi, xi]*s2
-    sup = inb & (dt[yi, xi] <= tol) & (align >= athr)
+    d = dt[yi, xi]
+    sup = inb & (d <= tol) & (align >= athr)      # paint here, and it agrees
+    near = inb & (d <= tol * EVID_BAND)           # paint anywhere near -> measurable
     nL = int(lid.max()) + 1
     inb_cnt = np.bincount(lid, weights=inb.astype(float), minlength=nL)
     sup_cnt = np.bincount(lid, weights=sup.astype(float), minlength=nL)
+    near_cnt = np.bincount(lid, weights=near.astype(float), minlength=nL)
     seen = inb_cnt >= 3                                   # line meaningfully in frame
+    ev = seen & (near_cnt / np.maximum(inb_cnt, 1) >= EVID_MIN)   # paint exists here
+    if not ev.any():
+        return 0.0, 0, 0
+    agree = float(sup_cnt[ev].sum()) / float(max(1.0, inb_cnt[ev].sum()))
     frac = np.where(seen, sup_cnt / np.maximum(inb_cnt, 1), 0.0)
-    return float(sup.sum()) / nin, int((frac >= 0.5).sum()), int(seen.sum())
+    return agree, int((frac >= 0.5).sum()), int(ev.sum())
 
 
 def _corners(cx, yn, yf, wn, wf):
@@ -212,34 +225,59 @@ def _norm_form(pa, pb):
     return float(np.mod(n, np.pi)), float(rho)
 
 
-def _structure(H, lines, calibration, w, h):
-    """Fraction of the court's structural lines that each match their OWN distinct
-    real line. Returns (score, n_expected). Greedy: a real line can only be claimed
-    once, so a court that piles two of its lines onto one real line is penalised."""
+def _structure(H, lines, calibration, dt, w, h, tol):
+    """Do the court's structural lines each claim their OWN distinct real line?
+
+    EVIDENCE-BASED (see _ori_detail): a structural line with no paint anywhere near
+    it is UNMEASURABLE and is skipped — a worn clay line is missing evidence, not a
+    wrong fit. Only lines that HAVE paint are judged, and each must match a distinct
+    real line (greedy) — a shifted court that piles its baseline onto the real
+    service line loses, because two of its lines fight over one real line.
+
+    Returns (agreement, n_matched, n_measurable, n_across, n_lengthwise). The last
+    two give the SUFFICIENCY test: 4 lines with >=2 in each direction is the
+    geometric minimum that determines a homography."""
     if not lines:
-        return 0.0, 0
-    used, matched, expected = set(), 0, 0
+        return 0.0, 0, 0, 0, 0
+    used, matched, measurable = set(), 0, 0
+    n_across = n_len = 0
     ang_tol, rho_tol = np.deg2rad(7), max(8.0, w * 0.018)
-    for a, b in STRUCT_LINES:
+    ts = np.linspace(0.0, 1.0, 30)[:, None]
+    for i, (a, b) in enumerate(STRUCT_LINES):
         pa = calibration.court_to_image(H, [a])[0]
         pb = calibration.court_to_image(H, [b])[0]
         mid = (pa + pb) / 2.0
         if not (-w*0.1 <= mid[0] <= w*1.1 and -h*0.1 <= mid[1] <= h*1.1):
             continue                      # not really in frame -> can't be judged
-        expected += 1
+        pts = pa + ts * (pb - pa)         # the projected line is straight
+        xs = np.round(pts[:, 0]).astype(int)
+        ys = np.round(pts[:, 1]).astype(int)
+        ok = (xs >= 0) & (xs < w) & (ys >= 0) & (ys < h)
+        if ok.sum() < 5:
+            continue
+        painted = (dt[np.clip(ys, 0, h-1), np.clip(xs, 0, w-1)][ok]
+                   <= tol * EVID_BAND).mean()
+        if painted < EVID_MIN:
+            continue                      # no paint here at all -> unmeasurable
+        measurable += 1
         n, rho = _norm_form(pa, pb)
         best, bestd = None, 1e9
-        for i, (ln, lr, _lw) in enumerate(lines):
-            if i in used:
+        for j, (ln, lr, _lw) in enumerate(lines):
+            if j in used:
                 continue
             dth = abs(np.mod(n - ln + np.pi/2, np.pi) - np.pi/2)
             drho = abs(rho - lr)
             if dth <= ang_tol and drho <= rho_tol and drho < bestd:
-                best, bestd = i, drho
+                best, bestd = j, drho
         if best is not None:
             used.add(best)
             matched += 1
-    return (matched / expected if expected else 0.0), expected
+            if i < 4:
+                n_across += 1
+            else:
+                n_len += 1
+    return ((matched / measurable if measurable else 0.0),
+            matched, measurable, n_across, n_len)
 
 
 # --- Camera-angle prior (tools/build_pose_prior.py) -------------------------
@@ -371,18 +409,21 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
                 frame, _corners(*p), max_move_px=55.0, mask_fn=calibration.line_ridge_mask)
         except Exception:
             continue
-        g, nl, nseen = _ori_detail(Hs, calibration, court, dt, cos2, sin2, w, h, tol, athr)
+        g, nl, n_ev = _ori_detail(Hs, calibration, court, dt, cos2, sin2, w, h, tol, athr)
         maha = _maha(_params_from_corners(ref), w, h, prior)
-        st, st_n = _structure(Hs, lines, calibration, w, h)
-        # accept gate: enough DISTINCT court lines (>=40% in-frame, min 4), a
-        # PLAUSIBLE camera pose (prior), the court's STRUCTURE actually present (each
-        # of the 4-across/4-lengthwise lines on its OWN real line - this is what a
-        # shifted wrong-rung court cannot fake), and the coverage/centrality check.
-        need = max(4, int(0.4 * nseen))
-        ok_struct = st >= STRUCT_MIN or st_n < 3      # can't judge with <3 lines in frame
-        # rank by line support x structure so a structurally-correct court wins
+        st, st_m, st_ev, n_across, n_len = _structure(Hs, lines, calibration, dt, w, h, tol)
+        # Accept gate, evidence-based. We never punish a line for having no paint —
+        # a regulation court's lines exist whether or not the surface still shows
+        # them. We require instead:
+        #   SUFFICIENCY  enough VISIBLE lines to actually determine the shape:
+        #                4 matched with >=2 in each direction (the geometric minimum
+        #                for a homography). This replaces "found most of my lines".
+        #   AGREEMENT    where paint IS visible, it agrees (g, st)
+        #   PLAUSIBILITY a sane camera pose (prior) + coverage/centrality check
+        sufficient = (st_m >= 4 and n_across >= 2 and n_len >= 2) or nl >= 5
+        ok_struct = st >= STRUCT_MIN or st_ev < 3     # can't judge with <3 measurable
         rankv = g * (0.5 + 0.5 * st)
-        if g >= accept and nl >= need and maha <= PRIOR_MAHA_MAX and ok_struct \
+        if g >= accept and sufficient and maha <= PRIOR_MAHA_MAX and ok_struct \
                 and calibration.verify_court(frame, Hs).ok and (best is None or rankv > best[1]):
             best = (Hs, rankv, ref)
     return best
