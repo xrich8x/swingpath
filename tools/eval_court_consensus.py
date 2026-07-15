@@ -53,6 +53,35 @@ def consensus(fits):
                 float(np.median([g[n][1] for g in best]))] for n in DBL}, best_n
 
 
+def stacked_clay_fit(imgs, calibration, court):
+    """Clay/shell rescue: STACK line evidence across frames, then fit ONCE.
+
+    Per-frame clay fits wobble because each frame's Hough pass recovers a different
+    subset of the broken orange lines. But the court is static and its lines are
+    straight, so accumulating the cleaned masks across frames makes the true lines
+    reinforce while players/shadows/per-frame noise wash out. Fit on a synthetic
+    frame whose 'paint' is the pixels seen as line in >=30% of frames."""
+    import cv2
+    import numpy as np
+    import eval_court_autodetect as ad
+
+    acc = None
+    for _k, im in imgs:
+        m = (ad._clay_mask(im, calibration) > 0).astype(np.float32)
+        acc = m if acc is None else acc + m
+    if acc is None:
+        return None
+    stable = ((acc / len(imgs)) >= 0.30).astype(np.uint8) * 255
+    if int(stable.sum() // 255) < 200:
+        return None
+    synth = np.zeros((*stable.shape, 3), np.uint8)
+    synth[stable > 0] = 255                       # white paint on black
+    res = ad.autodetect(synth, calibration, court,
+                        mask_fn=lambda f: cv2.cvtColor(f, cv2.COLOR_BGR2GRAY),
+                        _fallback=False)
+    return None if res is None else res[2]
+
+
 def score_clip(clip, k, save_dir=None):
     import cv2
     from swingvision import calibration, court
@@ -79,6 +108,16 @@ def score_clip(clip, k, save_dir=None):
     n_lock_single = sum(1 for f in fits if f)
     court_pts, votes = consensus(fits)
 
+    stacked = False
+    if court_pts is None and len(imgs) >= 6:
+        # No agreeing court from per-frame fits — clay/shell territory. Stack the
+        # line evidence across all frames and fit once on what persists. Needs
+        # enough frames that persistence MEANS something: stacking 2 frames is a
+        # coin flip, not evidence (measured: a 2-frame stack "rescued" an 82px
+        # wrong court). Real clips give hundreds of frames, so >=6 costs nothing.
+        court_pts = stacked_clay_fit(imgs, calibration, court)
+        stacked = court_pts is not None
+
     if court_pts is None:
         return {"clip": clip, "lock": False, "err": None, "votes": votes,
                 "frames": len(fits), "single": n_lock_single}
@@ -96,7 +135,8 @@ def score_clip(clip, k, save_dir=None):
             cv2.line(vis, (int(pa[0]), int(pa[1])), (int(pb[0]), int(pb[1])),
                      (90, 235, 120), 2, cv2.LINE_AA)
         cv2.imwrite(str(save_dir / f"{clip}_lock.jpg"), vis)
-    return {"clip": clip, "lock": True, "err": float(np.median(errs)), "votes": votes,
+    return {"clip": clip, "lock": True, "err": float(np.median(errs)),
+            "votes": (votes if not stacked else "stk"),
             "frames": len(fits), "single": n_lock_single}
 
 
