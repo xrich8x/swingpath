@@ -395,6 +395,52 @@ def _prior_seeds(prior, calibration, court, court_pts, dt, cos2, sin2, w, h, tol
     return out
 
 
+def _lowcam_seeds(calibration, court, court_pts, dt, cos2, sin2, w, h, tol, athr):
+    """SYNTHETIC court-level seed mode — computed, not learned.
+
+    The learned prior only knows elevated framings (what people upload), so a
+    chest-height camera looks 'implausible' and never gets seeded. But a camera is
+    just position+height+lens: project the court through phone-like poses at
+    1.0-2.6m height, 1-7m behind the baseline, and we get exactly the trapezoids a
+    court-level recording produces. Pure geometry — no training data needed."""
+    import itertools
+    out = []
+    L, Wd = 23.77, 10.97
+    for cam_h, back, f_px in itertools.product(
+            (1.0, 1.6, 2.6), (1.0, 3.0, 7.0), (w*0.7, w*1.1)):
+        # camera on the court's centreline, `back` metres behind the near baseline,
+        # looking at the far half. Court frame: X across [0,10.97], Y depth.
+        cx3, cy3 = Wd/2.0, -back
+        look_y = L*0.45
+        import numpy as _np
+        fwd = _np.array([0.0, look_y-cy3, -cam_h]); fwd /= _np.linalg.norm(fwd)
+        right = _np.array([1.0, 0.0, 0.0])
+        up = _np.cross(fwd, right); up /= _np.linalg.norm(up)
+        def proj(X, Y):
+            p = _np.array([X-cx3, Y-cy3, 0.0-cam_h])
+            z = p @ fwd
+            if z <= 0.1:
+                return None
+            return (w/2.0 + f_px*(p@right)/z, h/2.0 - f_px*(p@up)/z)
+        cs = [proj(*court.LANDMARKS[n]) for n in DBL]
+        if any(c is None for c in cs):
+            continue
+        corners = dict(zip(DBL, [[c[0], c[1]] for c in cs]))
+        # keep only poses where a useful part of the court is actually in frame
+        xs = [c[0] for c in cs]; ys = [c[1] for c in cs]
+        if max(ys) < h*0.5 or min(ys) > h*1.6 or max(xs)-min(xs) < w*0.5:
+            continue
+        try:
+            H = calibration.compute_homography(court_pts, [corners[n] for n in DBL])
+        except Exception:
+            continue
+        g, nl, _ = _ori_detail(H, calibration, court, dt, cos2, sin2, w, h, tol, athr)
+        if g > 0:
+            p = _params_from_corners(corners)
+            out.append((g, g, nl, p, 0.0))    # rank by support; maha not applicable
+    return out
+
+
 def autodetect(frame, calibration, court, *, grid=4, topk=12,
                athr=0.80, accept=0.33, use_prior=True, mask_fn=None, _fallback=True):
     """Prior-sampled + grid seeds -> local refine -> snap -> structural+plausibility
@@ -419,7 +465,9 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
     if prior:
         ranked += _prior_seeds(prior, calibration, court, court_pts,
                                dt, cos2, sin2, w, h, tol, athr)
-        ranked.sort(key=lambda t: t[0], reverse=True)
+    ranked += _lowcam_seeds(calibration, court, court_pts,
+                            dt, cos2, sin2, w, h, tol, athr)
+    ranked.sort(key=lambda t: t[0], reverse=True)
 
     # coarse-to-fine: local grid around the top-3 (plausibility-ranked) coarse seeds
     steps = [(coarse[i][1]-coarse[i][0]) * (w if i in (0, 3, 4) else h) for i in range(5)]
@@ -471,7 +519,14 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
         else:
             ok_struct = st >= STRUCT_MIN or st_ev < 3   # can't judge with <3 measurable
             rankv = g * (0.5 + 0.5 * st)
-            ok = (g >= accept and sufficient and maha <= PRIOR_MAHA_MAX and ok_struct
+            # The learned prior only knows elevated framings. A COURT-LEVEL camera
+            # fails the maha test through no fault of its own, so a pose outside
+            # the prior is allowed IF the court structure is unambiguous (5+ lines
+            # each on their own real line, both directions) — prior breaks ties,
+            # overwhelming structure overrides it.
+            pose_ok = (maha <= PRIOR_MAHA_MAX
+                       or (st >= 0.70 and st_m >= 5 and n_across >= 2 and n_len >= 2))
+            ok = (g >= accept and sufficient and pose_ok and ok_struct
                   and calibration.verify_court(frame, Hs).ok)
         if ok and (best is None or rankv > best[1]):
             best = (Hs, rankv, ref)
