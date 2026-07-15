@@ -46,7 +46,7 @@ CANDIDATES: dict[str, tuple[str, str]] = {
     "am_clay_test":      ("e6FldS-3MMU", "artificial clay court"),
 }
 
-_FMT = "18/bestvideo[height<=480][vcodec^=avc1]/best[height<=480]"
+_FMT = "22/136/bestvideo[height<=720][vcodec^=avc1]/18"   # prefer 720p (user rule)
 
 
 def stream_url(vid: str) -> str | None:

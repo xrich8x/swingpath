@@ -615,13 +615,12 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
         if ok and (best is None or rankv > best[1]):
             best = (Hs, rankv, ref)
     if best is not None:
-        # Re-fit the WINNER as a physical camera view: the court's shape is ALWAYS
-        # regulation, so only camera pose+zoom may vary (roll~0). This kills the
-        # distorted quads the free 8-DOF corner snap produces on one-sided
-        # evidence — measured: am_indoor_hard2 47->12px, IoU 0.67->0.93.
+        # HARD RULE: the output must be a real camera's view of a regulation court.
+        # Re-fit the winner as camera pose+zoom (roll~0); if NO physical camera can
+        # produce this quad (stage-1 residual > 40px), REFUSE rather than ship a
+        # shape that isn't remotely a tennis court. No free-quad fallback.
         cam = _cam_refine(frame, best[2], calibration, court, dt, w, h)
-        if cam is not None:
-            best = (cam[0], best[1], cam[1])
+        best = (cam[0], best[1], cam[1]) if cam is not None else None
     if best is None and _fallback and mask_fn is None:
         # nothing with the "white lines" mask -> the surface may be clay/shell.
         # Retry hue-agnostic; the structure verifier keeps this honest.
