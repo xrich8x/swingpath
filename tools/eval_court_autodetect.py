@@ -104,9 +104,41 @@ def _court_samples(court):
     return _S, _LINE_ID, _EA, _EB
 
 
+def _detect_lines(mask, w):
+    """The REAL straight lines in the frame, as distinct infinite lines.
+
+    Hough gives segments; segments of the same painted line are merged into ONE line
+    (normal form rho/theta) so we can ask the structural question: does each court
+    line land on its OWN real line? Returns [(theta, rho, weight)]."""
+    import cv2
+    segs = cv2.HoughLinesP(mask, 1, np.pi/180, threshold=45,
+                           minLineLength=max(25, int(w*0.05)), maxLineGap=12)
+    if segs is None:
+        return []
+    raw = []
+    for x1, y1, x2, y2 in segs[:, 0]:
+        th = np.arctan2(y2-y1, x2-x1)              # direction
+        n = th + np.pi/2.0                         # normal
+        rho = x1*np.cos(n) + y1*np.sin(n)
+        if rho < 0:                                # canonical sign
+            n, rho = n + np.pi, -rho
+        raw.append((np.mod(n, np.pi), rho, float(np.hypot(x2-x1, y2-y1))))
+    merged = []
+    for n, rho, wt in sorted(raw, key=lambda r: -r[2]):
+        for i, (mn, mr, mw) in enumerate(merged):
+            dth = abs(np.mod(n - mn + np.pi/2, np.pi) - np.pi/2)
+            if dth < np.deg2rad(4) and abs(rho - mr) < max(6.0, w*0.012):
+                tot = mw + wt
+                merged[i] = ((mn*mw + n*wt)/tot, (mr*mw + rho*wt)/tot, tot)
+                break
+        else:
+            merged.append((n, rho, wt))
+    return merged
+
+
 def _precompute(frame, calibration):
-    """Per-frame maps: distance-to-line + the local LINE ORIENTATION (double-angle
-    cos/sin, so 0 and 180deg are the same line) from image gradients."""
+    """Per-frame maps: distance-to-line, the local LINE ORIENTATION (double-angle
+    cos/sin, so 0 and 180deg are the same line), and the DISTINCT real lines."""
     import cv2
     mask = calibration.line_ridge_mask(frame)
     h, w = mask.shape[:2]
@@ -115,7 +147,7 @@ def _precompute(frame, calibration):
     gx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
     gy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
     lang = np.arctan2(gy, gx) + np.pi / 2.0        # line dir = perpendicular to gradient
-    return dt, np.cos(2*lang), np.sin(2*lang), w, h
+    return dt, np.cos(2*lang), np.sin(2*lang), w, h, _detect_lines(mask, w)
 
 
 def _ori_detail(H, calibration, court, dt, cos2, sin2, w, h, tol, athr):
@@ -154,12 +186,69 @@ def _corners(cx, yn, yf, wn, wf):
             "far_br_doubles": [cx+wf, yf], "far_bl_doubles": [cx-wf, yf]}
 
 
+# --- Structure: a court is 4 lines ACROSS and 4 lines LENGTHWISE, in a known order.
+# Every one must land on its OWN real line. A shifted/wrong-rung court fails this:
+# its baseline lands on the real SERVICE line, so two model lines fight over one
+# real line and the outer ones match nothing. Pure line-support can't see that;
+# distinct correspondence can.
+STRUCT_LINES = [
+    ((0, 0), (10.97, 0)),              # near baseline
+    ((1.37, 5.485), (9.6, 5.485)),     # near service line
+    ((1.37, 18.285), (9.6, 18.285)),   # far service line
+    ((0, 23.77), (10.97, 23.77)),      # far baseline
+    ((0, 0), (0, 23.77)),              # left doubles sideline
+    ((1.37, 0), (1.37, 23.77)),        # left singles sideline
+    ((9.6, 0), (9.6, 23.77)),          # right singles sideline
+    ((10.97, 0), (10.97, 23.77)),      # right doubles sideline
+]
+
+
+def _norm_form(pa, pb):
+    """Image line through 2 points -> canonical (theta_normal, rho)."""
+    n = np.arctan2(pb[1]-pa[1], pb[0]-pa[0]) + np.pi/2.0
+    rho = pa[0]*np.cos(n) + pa[1]*np.sin(n)
+    if rho < 0:
+        n, rho = n + np.pi, -rho
+    return float(np.mod(n, np.pi)), float(rho)
+
+
+def _structure(H, lines, calibration, w, h):
+    """Fraction of the court's structural lines that each match their OWN distinct
+    real line. Returns (score, n_expected). Greedy: a real line can only be claimed
+    once, so a court that piles two of its lines onto one real line is penalised."""
+    if not lines:
+        return 0.0, 0
+    used, matched, expected = set(), 0, 0
+    ang_tol, rho_tol = np.deg2rad(7), max(8.0, w * 0.018)
+    for a, b in STRUCT_LINES:
+        pa = calibration.court_to_image(H, [a])[0]
+        pb = calibration.court_to_image(H, [b])[0]
+        mid = (pa + pb) / 2.0
+        if not (-w*0.1 <= mid[0] <= w*1.1 and -h*0.1 <= mid[1] <= h*1.1):
+            continue                      # not really in frame -> can't be judged
+        expected += 1
+        n, rho = _norm_form(pa, pb)
+        best, bestd = None, 1e9
+        for i, (ln, lr, _lw) in enumerate(lines):
+            if i in used:
+                continue
+            dth = abs(np.mod(n - ln + np.pi/2, np.pi) - np.pi/2)
+            drho = abs(rho - lr)
+            if dth <= ang_tol and drho <= rho_tol and drho < bestd:
+                best, bestd = i, drho
+        if best is not None:
+            used.add(best)
+            matched += 1
+    return (matched / expected if expected else 0.0), expected
+
+
 # --- Camera-angle prior (tools/build_pose_prior.py) -------------------------
 _PRIOR_PATH = REPO / "data" / "court_pose_prior.json"
 _PRIOR = None
 PRIOR_TEMP = 6.0        # softens the plausibility weight used for ranking
 PRIOR_MAHA_MAX = 55.0   # reject camera poses this far outside the learned spread
 PRIOR_SAMPLES = 500     # Monte-Carlo court seeds drawn from the learned prior
+STRUCT_MIN = 0.55       # min fraction of court lines that must match their OWN real line
 
 
 def _load_prior():
@@ -246,7 +335,7 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
                athr=0.80, accept=0.33, use_prior=True):
     """Prior-sampled + grid seeds -> local refine -> snap -> structural+plausibility
     gate. Returns (H, score, corners) or None (falls back to manual)."""
-    dt, cos2, sin2, w, h = _precompute(frame, calibration)
+    dt, cos2, sin2, w, h, lines = _precompute(frame, calibration)
     tol = max(2.0, w * 0.006)
     court_pts = [court.LANDMARKS[n] for n in DBL]
     prior = _load_prior() if use_prior else False
@@ -284,14 +373,18 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
             continue
         g, nl, nseen = _ori_detail(Hs, calibration, court, dt, cos2, sin2, w, h, tol, athr)
         maha = _maha(_params_from_corners(ref), w, h, prior)
+        st, st_n = _structure(Hs, lines, calibration, w, h)
         # accept gate: enough DISTINCT court lines (>=40% in-frame, min 4), a
-        # PLAUSIBLE camera pose (prior), and the coverage/centrality check. Tuned to
-        # LOCK often (the overlay lets the user nudge a rough fit) while still
-        # refusing true non-court frames (they support few oriented lines).
+        # PLAUSIBLE camera pose (prior), the court's STRUCTURE actually present (each
+        # of the 4-across/4-lengthwise lines on its OWN real line - this is what a
+        # shifted wrong-rung court cannot fake), and the coverage/centrality check.
         need = max(4, int(0.4 * nseen))
-        if g >= accept and nl >= need and maha <= PRIOR_MAHA_MAX \
-                and calibration.verify_court(frame, Hs).ok and (best is None or g > best[1]):
-            best = (Hs, g, ref)
+        ok_struct = st >= STRUCT_MIN or st_n < 3      # can't judge with <3 lines in frame
+        # rank by line support x structure so a structurally-correct court wins
+        rankv = g * (0.5 + 0.5 * st)
+        if g >= accept and nl >= need and maha <= PRIOR_MAHA_MAX and ok_struct \
+                and calibration.verify_court(frame, Hs).ok and (best is None or rankv > best[1]):
+            best = (Hs, rankv, ref)
     return best
 
 
