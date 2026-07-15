@@ -136,11 +136,32 @@ def _detect_lines(mask, w):
     return merged
 
 
-def _precompute(frame, calibration):
+def _clay_mask(frame, calibration):
+    """Hue-agnostic, structure-cleaned line mask for clay/shell.
+
+    Two problems with clay: (1) the default mask demands sat<90 ("must be WHITE") and
+    clay lines are lighter-but-ORANGE, so it sees nothing; (2) the clay surface itself
+    is speckly, so a permissive mask returns the lines PLUS a storm of texture noise.
+    Fix (1) with sat_max=255. Fix (2) by trusting STRUCTURE: court lines are long and
+    continuous, texture noise is short and isolated — so keep only pixels that belong
+    to a long straight segment (Hough), which erases the speckle and leaves clean
+    lines for the snap to lock onto."""
+    import cv2
+    raw = calibration.line_ridge_mask(frame, tau=12, sat_max=255)
+    segs = cv2.HoughLinesP(raw, 1, np.pi/180, threshold=50,
+                           minLineLength=max(40, int(frame.shape[1] * 0.08)), maxLineGap=14)
+    clean = np.zeros_like(raw)
+    if segs is not None:
+        for x1, y1, x2, y2 in segs[:, 0]:
+            cv2.line(clean, (int(x1), int(y1)), (int(x2), int(y2)), 255, 2)
+    return clean
+
+
+def _precompute(frame, calibration, mask_fn=None):
     """Per-frame maps: distance-to-line, the local LINE ORIENTATION (double-angle
     cos/sin, so 0 and 180deg are the same line), and the DISTINCT real lines."""
     import cv2
-    mask = calibration.line_ridge_mask(frame)
+    mask = (mask_fn or calibration.line_ridge_mask)(frame)
     h, w = mask.shape[:2]
     dt = cv2.distanceTransform(255 - mask, cv2.DIST_L2, 5)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float32)
@@ -197,6 +218,11 @@ def _ori_detail(H, calibration, court, dt, cos2, sin2, w, h, tol, athr):
 def _corners(cx, yn, yf, wn, wf):
     return {"near_bl_doubles": [cx-wn, yn], "near_br_doubles": [cx+wn, yn],
             "far_br_doubles": [cx+wf, yf], "far_bl_doubles": [cx-wf, yf]}
+
+
+def court_centrality_ok(frame, H, calibration, min_centrality: float = 0.55):
+    """Pose sanity for the clay path (verify_court is white-mask-blind there)."""
+    return calibration.court_centrality(frame, H) >= min_centrality
 
 
 # --- Structure: a court is 4 lines ACROSS and 4 lines LENGTHWISE, in a known order.
@@ -370,10 +396,17 @@ def _prior_seeds(prior, calibration, court, court_pts, dt, cos2, sin2, w, h, tol
 
 
 def autodetect(frame, calibration, court, *, grid=4, topk=12,
-               athr=0.80, accept=0.33, use_prior=True):
+               athr=0.80, accept=0.33, use_prior=True, mask_fn=None, _fallback=True):
     """Prior-sampled + grid seeds -> local refine -> snap -> structural+plausibility
-    gate. Returns (H, score, corners) or None (falls back to manual)."""
-    dt, cos2, sin2, w, h, lines = _precompute(frame, calibration)
+    gate. Returns (H, score, corners) or None (falls back to manual).
+
+    If the default "white lines" mask yields nothing acceptable, retries ONCE with a
+    hue-agnostic mask (clay/shell). Only safe because the verifier is STRUCTURAL: a
+    court must claim 4 distinct real lines at regulation spacing with a plausible
+    camera pose, so the extra noise a permissive mask lets in is rejected on
+    geometry, not on colour."""
+    mf = mask_fn or calibration.line_ridge_mask
+    dt, cos2, sin2, w, h, lines = _precompute(frame, calibration, mf)
     tol = max(2.0, w * 0.006)
     court_pts = [court.LANDMARKS[n] for n in DBL]
     prior = _load_prior() if use_prior else False
@@ -406,7 +439,7 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
         tried += 1
         try:
             Hs, ref, _ = calibration.refine_homography_bounded(
-                frame, _corners(*p), max_move_px=55.0, mask_fn=calibration.line_ridge_mask)
+                frame, _corners(*p), max_move_px=55.0, mask_fn=mf)
         except Exception:
             continue
         g, nl, n_ev = _ori_detail(Hs, calibration, court, dt, cos2, sin2, w, h, tol, athr)
@@ -421,11 +454,33 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
         #   AGREEMENT    where paint IS visible, it agrees (g, st)
         #   PLAUSIBILITY a sane camera pose (prior) + coverage/centrality check
         sufficient = (st_m >= 4 and n_across >= 2 and n_len >= 2) or nl >= 5
-        ok_struct = st >= STRUCT_MIN or st_ev < 3     # can't judge with <3 measurable
-        rankv = g * (0.5 + 0.5 * st)
-        if g >= accept and sufficient and maha <= PRIOR_MAHA_MAX and ok_struct \
-                and calibration.verify_court(frame, Hs).ok and (best is None or rankv > best[1]):
+        if mask_fn is not None:
+            # STRUCTURE-PRIMARY clay path (user's principle: once lines are matched
+            # as court lines, regulation spacing determines everything). On clay the
+            # per-pixel agreement g and the white-mask verify_court are BLIND — but
+            # the true court still claims 6+ distinct straight lines at regulation
+            # spacing, which speckle can't fake. Judged by structure + pose only, so
+            # the bar is HIGHER than the white path (measured: the true clay court
+            # matches 6 lines at 0.86 agreement; hallucinations on no-court frames
+            # scrape 4 — requiring 5+ at 0.70 separates them).
+            rankv = st
+            ok = (sufficient and st_m >= 5 and st >= 0.70
+                  and n_across >= 2 and n_len >= 2
+                  and maha <= PRIOR_MAHA_MAX
+                  and court_centrality_ok(frame, Hs, calibration))
+        else:
+            ok_struct = st >= STRUCT_MIN or st_ev < 3   # can't judge with <3 measurable
+            rankv = g * (0.5 + 0.5 * st)
+            ok = (g >= accept and sufficient and maha <= PRIOR_MAHA_MAX and ok_struct
+                  and calibration.verify_court(frame, Hs).ok)
+        if ok and (best is None or rankv > best[1]):
             best = (Hs, rankv, ref)
+    if best is None and _fallback and mask_fn is None:
+        # nothing with the "white lines" mask -> the surface may be clay/shell.
+        # Retry hue-agnostic; the structure verifier keeps this honest.
+        return autodetect(frame, calibration, court, grid=grid, topk=topk, athr=athr,
+                          accept=accept, use_prior=use_prior,
+                          mask_fn=lambda f: _clay_mask(f, calibration), _fallback=False)
     return best
 
 
