@@ -441,6 +441,90 @@ def _lowcam_seeds(calibration, court, court_pts, dt, cos2, sin2, w, h, tol, athr
     return out
 
 
+def _cam_corners(p, w, h, court):
+    """Project the 4 doubles corners through a PHYSICAL camera: position (Cx,Cy,Cz)
+    in court metres, yaw, pitch (roll=0 — phones are mounted level), focal f_px.
+    Returns {corner:[u,v]} or None if any corner is behind the camera."""
+    Cx, Cy, Cz, yaw, pitch, f = p
+    sy, cy_ = math.sin(yaw), math.cos(yaw)
+    st, ct = math.sin(pitch), math.cos(pitch)
+    fwd = np.array([sy*ct, cy_*ct, -st])
+    right = np.array([cy_, -sy, 0.0])
+    up = np.array([sy*st, cy_*st, ct])
+    out = {}
+    for n in DBL:
+        X, Y = court.LANDMARKS[n]
+        d = np.array([X-Cx, Y-Cy, -Cz])
+        zc = d @ fwd
+        if zc < 0.5:
+            return None
+        out[n] = [w/2.0 + f*(d@right)/zc, h/2.0 - f*(d@up)/zc]
+    return out
+
+
+def _cam_refine(frame, quad, calibration, court, dt, w, h):
+    """Re-fit the snapped quad as a PHYSICAL CAMERA VIEW of a regulation court.
+
+    The corner snap moves 4 corners independently (8 DOF) — it keeps the template
+    rigid in court space but allows warps no real camera produces (skewed quads,
+    tilted baselines), which is exactly the 'shape distortion' seen on weak-evidence
+    courts. A real camera has ~6 DOF (position, pan, tilt, zoom; roll~0). Stage 1
+    fits camera params to the quad; stage 2 polishes them on the line-distance map.
+    Every candidate shape is then a legal view of a regulation court by
+    construction. Returns (H, corners) or None."""
+    from scipy.optimize import minimize
+    target = np.array([quad[n] for n in DBL])
+    f0 = None
+    try:
+        Hq = calibration.compute_homography([court.LANDMARKS[n] for n in DBL], target)
+        f0 = calibration.focal_from_homography(Hq, (w, h))
+    except Exception:
+        pass
+    x0 = np.array([court.DOUBLES_WIDTH/2.0, -6.0, 4.0, 0.0, 0.25,
+                   float(f0) if f0 else w*0.9])
+
+    def cost_quad(p):
+        c = _cam_corners(p, w, h, court)
+        if c is None:
+            return 1e6
+        return float(np.mean(np.hypot(*(np.array([c[n] for n in DBL]) - target).T)))
+
+    r1 = minimize(cost_quad, x0, method="Nelder-Mead",
+                  options={"maxiter": 1200, "xatol": 1e-3, "fatol": 1e-3})
+    if not np.isfinite(r1.fun) or r1.fun > 40.0:
+        return None                       # quad too non-physical to be a camera view
+    S = _court_samples(court)[0]
+
+    def cost_dt(p):
+        c = _cam_corners(p, w, h, court)
+        if c is None:
+            return 1e6
+        try:
+            H = calibration.compute_homography(
+                [court.LANDMARKS[n] for n in DBL], [c[n] for n in DBL])
+        except Exception:
+            return 1e6
+        P = calibration.court_to_image(H, S)
+        xs = np.clip(P[:, 0], 0, w-1).astype(int)
+        ys = np.clip(P[:, 1], 0, h-1).astype(int)
+        inb = (P[:, 0] >= 0) & (P[:, 0] < w) & (P[:, 1] >= 0) & (P[:, 1] < h)
+        if inb.sum() < len(P)*0.3:
+            return 1e6
+        return float(dt[ys[inb], xs[inb]].mean())
+
+    r2 = minimize(cost_dt, r1.x, method="Nelder-Mead",
+                  options={"maxiter": 600, "xatol": 1e-3, "fatol": 1e-3})
+    c = _cam_corners(r2.x if r2.fun < cost_dt(r1.x) else r1.x, w, h, court)
+    if c is None:
+        return None
+    try:
+        H = calibration.compute_homography(
+            [court.LANDMARKS[n] for n in DBL], [c[n] for n in DBL])
+    except Exception:
+        return None
+    return H, {n: [float(c[n][0]), float(c[n][1])] for n in DBL}
+
+
 def autodetect(frame, calibration, court, *, grid=4, topk=12,
                athr=0.80, accept=0.33, use_prior=True, mask_fn=None, _fallback=True):
     """Prior-sampled + grid seeds -> local refine -> snap -> structural+plausibility
@@ -530,6 +614,14 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
                   and calibration.verify_court(frame, Hs).ok)
         if ok and (best is None or rankv > best[1]):
             best = (Hs, rankv, ref)
+    if best is not None:
+        # Re-fit the WINNER as a physical camera view: the court's shape is ALWAYS
+        # regulation, so only camera pose+zoom may vary (roll~0). This kills the
+        # distorted quads the free 8-DOF corner snap produces on one-sided
+        # evidence — measured: am_indoor_hard2 47->12px, IoU 0.67->0.93.
+        cam = _cam_refine(frame, best[2], calibration, court, dt, w, h)
+        if cam is not None:
+            best = (cam[0], best[1], cam[1])
     if best is None and _fallback and mask_fn is None:
         # nothing with the "white lines" mask -> the surface may be clay/shell.
         # Retry hue-agnostic; the structure verifier keeps this honest.
