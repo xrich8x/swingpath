@@ -31,8 +31,9 @@ def test_physical_quad_passes_through():
     q = _physical_quad()
     res = ad.cam_fit_quad(q, calibration, court, _W, _H)
     assert res is not None
-    _, locked, fit_px = res
+    _, locked, fit_px, cam = res
     assert fit_px < 1.0
+    assert cam[5] > 0          # a real focal length rides along
     for k in ad.DBL:
         assert abs(locked[k][0] - q[k][0]) < 3.0
         assert abs(locked[k][1] - q[k][1]) < 3.0
@@ -44,7 +45,7 @@ def test_impossible_quad_is_corrected_to_a_legal_shape():
     q["far_bl_doubles"][1] += 40.0
     res = ad.cam_fit_quad(q, calibration, court, _W, _H)
     assert res is not None
-    _, locked, fit_px = res
+    _, locked, fit_px = res[:3]
     assert fit_px > 8.0              # the distortion was recognised, not kept
     res2 = ad.cam_fit_quad(locked, calibration, court, _W, _H)
     assert res2 is not None

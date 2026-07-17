@@ -38,7 +38,7 @@ CLIPS = [
 def base_homography(video_path, source):
     if source == "learned":
         from swingvision import pipeline
-        H, err, src, _ = pipeline.calibrate_video(video_path)
+        H, err, src, _, _ = pipeline.calibrate_video(video_path)
         print(f"  learned base H ({src}, {err:.1f}px)")
         return H
     with open(source, "r", encoding="utf-8") as f:

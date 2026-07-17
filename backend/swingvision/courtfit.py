@@ -509,7 +509,18 @@ def _cam_refine(frame, quad, calibration, court, dt, w, h):
 
     r2 = minimize(cost_dt, r1.x, method="Nelder-Mead",
                   options={"maxiter": 600, "xatol": 1e-3, "fatol": 1e-3})
-    c = _cam_corners(r2.x if r2.fun < cost_dt(r1.x) else r1.x, w, h, court)
+    # TETHERED polish (same fix as cam_fit_quad): dt sinks far from the court
+    # (banner/fence rows) can drag the polish into a collapsed sliver. A polish
+    # that moves the corners >30px mean is no longer polishing - discard it.
+    use_x = r1.x
+    if np.isfinite(r2.fun) and r2.fun < cost_dt(r1.x):
+        c1 = _cam_corners(r1.x, w, h, court)
+        c2 = _cam_corners(r2.x, w, h, court)
+        if c1 is not None and c2 is not None and float(np.mean(
+                [math.hypot(c2[n][0]-c1[n][0], c2[n][1]-c1[n][1])
+                 for n in DBL])) <= 30.0:
+            use_x = r2.x
+    c = _cam_corners(use_x, w, h, court)
     if c is None:
         return None
     try:
@@ -563,9 +574,11 @@ def cam_fit_quad(quad, calibration, court, w, h, dt=None):
     dt: optional line-distance map; when given, a second stage polishes the
     camera onto the paint (use for Snap, omit for a pure shape lock on Save).
 
-    Returns (H, corners, fit_px) or None. fit_px = mean px between the input
-    quad and the nearest physical view: ~0 when the input was already a real
-    camera shape, large when it was impossible and got corrected."""
+    Returns (H, corners, fit_px, cam_params) or None. fit_px = mean px between
+    the input quad and the nearest physical view: ~0 when the input was already
+    a real camera shape, large when it was impossible and got corrected.
+    cam_params = (Cx, Cy, Cz, yaw, pitch, focal_px) - the actual camera; the
+    focal is the honest lens zoom (feeds speed physics downstream)."""
     from scipy.optimize import minimize
     target = np.array([quad[n] for n in DBL], float)
 
@@ -631,8 +644,18 @@ def cam_fit_quad(quad, calibration, court, w, h, dt=None):
 
         r2 = minimize(cost_dt, px, method="Nelder-Mead",
                       options={"maxiter": 600, "xatol": 1e-3, "fatol": 1e-3})
+        # TETHERED polish: the dt map has sinks far from the court (banner and
+        # fence edge rows) - an unbounded polish can walk the camera to one and
+        # collapse the court to a sliver (seen live). Keep the polish only if
+        # it stays a POLISH: corners move <=30px mean from the stage-1 shape.
         if np.isfinite(r2.fun) and r2.fun < cost_dt(px):
-            px = r2.x
+            c1 = _cam_corners(px, w, h, court)
+            c2 = _cam_corners(r2.x, w, h, court)
+            if c1 is not None and c2 is not None:
+                drift = float(np.mean([math.hypot(c2[n][0]-c1[n][0],
+                                                  c2[n][1]-c1[n][1]) for n in DBL]))
+                if drift <= 30.0:
+                    px = r2.x
 
     c = _cam_corners(px, w, h, court)
     if c is None:
@@ -642,7 +665,8 @@ def cam_fit_quad(quad, calibration, court, w, h, dt=None):
             [court.LANDMARKS[n] for n in DBL], [c[n] for n in DBL])
     except Exception:
         return None
-    return H, {n: [float(c[n][0]), float(c[n][1])] for n in DBL}, fit_px
+    return (H, {n: [float(c[n][0]), float(c[n][1])] for n in DBL}, fit_px,
+            tuple(float(v) for v in px))
 
 
 def autodetect(frame, calibration, court, *, grid=4, topk=12,
@@ -694,8 +718,17 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
                 frame, _corners(*p), max_move_px=55.0, mask_fn=mf)
         except Exception:
             continue
+        # DEGENERACY FLOOR (the "not even remotely a court" rule applied to
+        # SCALE): near a frame's horizon, banner/fence edges can satisfy the
+        # structural gates because every court line collapses into the same
+        # horizontal band (seen live: a 70x3px "court" on the fence banners).
+        # A usable recording shows the court at size - floor the apparent
+        # near-baseline width and depth.
+        p5 = _params_from_corners(ref)
+        if p5[3] * 2.0 < 0.15 * w or abs(p5[1] - p5[2]) < 0.06 * h:
+            continue
         g, nl, n_ev = _ori_detail(Hs, calibration, court, dt, cos2, sin2, w, h, tol, athr)
-        maha = _maha(_params_from_corners(ref), w, h, prior)
+        maha = _maha(p5, w, h, prior)
         st, st_m, st_ev, n_across, n_len = _structure(Hs, lines, calibration, dt, w, h, tol)
         # Accept gate, evidence-based. We never punish a line for having no paint —
         # a regulation court's lines exist whether or not the surface still shows

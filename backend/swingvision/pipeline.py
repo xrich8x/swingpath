@@ -326,9 +326,11 @@ def calibrate_video(
     keypoints_path: Optional[str] = None,
     overlay_path: Optional[str] = None,
 ):
-    """Calibrate a clip: build the court homography from a manual keypoints JSON
-    or, failing that, auto-detection on the first frame. Optionally writes an
-    overlay preview. Returns (H, reprojection_error_px, source)."""
+    """Calibrate a clip: manual keypoints JSON, else tiered auto-detection
+    (consensus line-fit -> learned -> classical -> refuse). Optionally writes an
+    overlay preview. Returns (H, reprojection_error_px, source, named_corners,
+    cam_hfov_deg) - cam_hfov_deg is the lens field-of-view from the physical
+    camera lock (None when the lock could not be applied)."""
     from . import calibration
 
     frame = _read_first_frame(video_path)
@@ -408,10 +410,16 @@ def calibrate_video(
         H, [court.LANDMARKS[n]])[0]] for n in courtfit.DBL}
     lock = courtfit.cam_fit_quad(quad, calibration, court,
                                  frame.shape[1], frame.shape[0])
+    cam_hfov_deg = None
     if lock is not None and lock[2] <= 40.0:
         # a physical camera reproduces this shape closely -> use the exact
-        # physical version (moves <1px when the input was already physical)
+        # physical version (moves <1px when the input was already physical),
+        # and keep its focal: the honest lens zoom for the speed physics
+        # (focal_from_homography is degenerate on telephoto views).
         H = lock[0]
+        f_px = lock[3][5]
+        cam_hfov_deg = float(np.degrees(2.0 * np.arctan(
+            frame.shape[1] / (2.0 * f_px))))
         moved = max(float(np.hypot(lock[1][n][0] - quad[n][0],
                                    lock[1][n][1] - quad[n][1]))
                     for n in courtfit.DBL)
@@ -438,7 +446,7 @@ def calibrate_video(
 
         overlay_mod.render_overlay_image(frame, H, overlay_path)
         print(f"[calibration] overlay preview -> {overlay_path}")
-    return H, err, source, named
+    return H, err, source, named, cam_hfov_deg
 
 
 def _probe_ball_model(video_path, ball_weights, device, frame_step, max_frames,
@@ -899,7 +907,8 @@ def analyze_video(
     from . import pose as pose_mod
 
     overlay_path = os.path.splitext(out_path)[0] + ".overlay.png" if out_path else None
-    H, err, source, named_corners = calibrate_video(video_path, keypoints_path, overlay_path)
+    H, err, source, named_corners, cam_hfov_deg = calibrate_video(
+        video_path, keypoints_path, overlay_path)
 
     cap = cv2.VideoCapture(video_path)
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
@@ -907,10 +916,14 @@ def analyze_video(
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
 
-    # Field of view: prefer SELF-CALIBRATION from the court homography (the court
-    # is a known-size object in frame, so H pins the focal length) over the old
-    # fixed 70° guess — the guess was the dominant error in the physics speed fit.
-    # An explicit --camera-hfov still wins (a phone whose fov the user knows).
+    # Field of view priority: explicit --camera-hfov (a phone whose fov the user
+    # knows) > the PHYSICAL CAMERA LOCK's focal (works on every view, including
+    # the telephoto broadcasts where focal_from_homography is degenerate) >
+    # focal self-calibration from H > the old fixed 70° guess.
+    if camera_hfov_deg is None and cam_hfov_deg is not None:
+        camera_hfov_deg = float(cam_hfov_deg)
+        print(f"[analyze] lens from the physical camera fit -> "
+              f"hfov {camera_hfov_deg:.1f}deg")
     if camera_hfov_deg is None:
         f_est = calibration.focal_from_homography(H, (width, height)) if H is not None else None
         if f_est:
