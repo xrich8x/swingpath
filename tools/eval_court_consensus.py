@@ -29,63 +29,12 @@ sys.path.insert(0, str(REPO / "tools"))
 
 GOLD = REPO / "data" / "gold"
 DBL = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"]
-AGREE_PX = 30.0     # two courts "agree" when their corners sit within this
-MIN_VOTES = 2       # need at least this many frames agreeing to trust a court
 
-
-def _corner_dist(a, b):
-    return float(np.mean([np.hypot(a[n][0]-b[n][0], a[n][1]-b[n][1]) for n in DBL]))
-
-
-def consensus(fits):
-    """fits: list of {corner:[x,y]} (or None). Returns (court, votes) or (None, 0)."""
-    valid = [f for f in fits if f]
-    if not valid:
-        return None, 0
-    best, best_n = None, 0
-    for f in valid:
-        group = [g for g in valid if _corner_dist(f, g) <= AGREE_PX]
-        if len(group) > best_n:
-            best, best_n = group, len(group)
-    if best_n < MIN_VOTES:
-        return None, best_n
-    return {n: [float(np.median([g[n][0] for g in best])),
-                float(np.median([g[n][1] for g in best]))] for n in DBL}, best_n
-
-
-def stacked_clay_fit(imgs, calibration, court):
-    """Clay/shell rescue: STACK line evidence across frames, then fit ONCE.
-
-    Per-frame clay fits wobble because each frame's Hough pass recovers a different
-    subset of the broken orange lines. But the court is static and its lines are
-    straight, so accumulating the cleaned masks across frames makes the true lines
-    reinforce while players/shadows/per-frame noise wash out. Fit on a synthetic
-    frame whose 'paint' is the pixels seen as line in >=30% of frames."""
-    import cv2
-    import numpy as np
-    import eval_court_autodetect as ad
-
-    acc = None
-    for _k, im in imgs:
-        m = (ad._clay_mask(im, calibration) > 0).astype(np.float32)
-        acc = m if acc is None else acc + m
-    if acc is None:
-        return None
-    stable = ((acc / len(imgs)) >= 0.30).astype(np.uint8) * 255
-    if int(stable.sum() // 255) < 200:
-        return None
-    synth = np.zeros((*stable.shape, 3), np.uint8)
-    synth[stable > 0] = 255                       # white paint on black
-    res = ad.autodetect(synth, calibration, court,
-                        mask_fn=lambda f: cv2.cvtColor(f, cv2.COLOR_BGR2GRAY),
-                        _fallback=False)
-    return None if res is None else res[2]
-
+from swingvision.courtfit import DBL, auto_fit_frame, consensus, stacked_clay_fit  # noqa: F401,E501
 
 def score_clip(clip, k, save_dir=None):
     import cv2
     from swingvision import calibration, court
-    import court_setup_server as cs
 
     lab_path = GOLD / f"{clip}.court.labels.json"
     if not lab_path.exists():
@@ -104,7 +53,7 @@ def score_clip(clip, k, save_dir=None):
         if im is None:
             continue
         imgs.append((kk, im))
-        fits.append(cs.auto_fit(im))
+        fits.append(auto_fit_frame(im, calibration, court))
     n_lock_single = sum(1 for f in fits if f)
     court_pts, votes = consensus(fits)
 

@@ -31,26 +31,14 @@ DBL = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"]
 
 
 def auto_fit(frame):
-    """Auto-detect the court, then snap it onto the lines. Returns {corner:[x,y]}
-    (the fitted overlay) or None if the detector couldn't lock a court."""
-    from swingvision import calibration, court
-    import eval_court_autodetect as ad
-    res = ad.autodetect(frame, calibration, court)
-    if res is None:
+    """Auto-detect the court, snap it onto the lines, re-lock the shape to a real
+    camera view (courtfit.auto_fit_frame — the same recipe the pipeline and the
+    eval scorecards use). Returns {corner:[x,y]} or None if no lock."""
+    from swingvision import calibration, court, courtfit
+    use = courtfit.auto_fit_frame(frame, calibration, court)
+    if use is None:
         return None
-    _, _, ref = res
-    named = {k: [float(ref[k][0]), float(ref[k][1])] for k in DBL}
-    _, out, _snapped, _c0, c1 = calibration.snap_to_lines(
-        frame, named, min_coverage=0.0, max_move_px=60.0)
-    use = out if all(k in out for k in DBL) else named
-    # The free corner-snap can undo the detector's physical gate (it moves the 4
-    # corners independently) — re-lock the snapped quad to a real camera view.
-    h, w = frame.shape[:2]
-    dt = ad._precompute(frame, calibration)[0]
-    r = ad.cam_fit_quad(use, calibration, court, w, h, dt=dt)
-    if r is not None:
-        use = r[1]
-    print(f"[setup] auto-fit court (coverage {c1:.2f})")
+    print("[setup] auto-fit court")
     return {k: [float(use[k][0]), float(use[k][1])] for k in DBL}
 
 PAGE = r"""<!doctype html><html><head><meta charset="utf-8">
@@ -217,7 +205,7 @@ def build_handler(state):
     import cv2
     import numpy as np
     from swingvision import calibration, court
-    import eval_court_autodetect as ad
+    from swingvision import courtfit as ad
 
     frame = state["frame"]
     h, w = frame.shape[:2]

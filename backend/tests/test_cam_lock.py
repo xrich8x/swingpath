@@ -1,4 +1,4 @@
-"""Physical shape lock (tools/eval_court_autodetect.cam_fit_quad).
+"""Physical shape lock (swingvision.courtfit.cam_fit_quad).
 
 The manual overlay lets a human drag 4 corners freely (8 DOF); cam_fit_quad must
 project any such quad onto the closest 6-DOF physical camera view of a
@@ -8,18 +8,13 @@ regulation court. Two guarantees are tested:
      re-fitting the OUTPUT finds a ~0px camera residual.
 """
 
-import sys
-from pathlib import Path
-
 import pytest
 
 pytest.importorskip("cv2")
 pytest.importorskip("scipy")
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
-
-import eval_court_autodetect as ad  # noqa: E402
 from swingvision import calibration, court  # noqa: E402
+from swingvision import courtfit as ad  # noqa: E402
 
 _W, _H = 1280, 720
 # elevated behind-baseline pose: (Cx, Cy, Cz, yaw, pitch, focal_px)

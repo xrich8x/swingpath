@@ -303,6 +303,24 @@ def _read_first_frame(video_path: str):
     return frame
 
 
+def _sample_calib_frames(video_path: str, k: int = 8):
+    """K frames spread across the clip (2%..98%) for consensus calibration."""
+    import cv2
+
+    cap = cv2.VideoCapture(video_path)
+    n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
+    idxs = (np.linspace(0.02 * n, max(0.02 * n, 0.98 * n - 1), k).astype(int)
+            if n > k else [0])
+    frames = []
+    for i in idxs:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(i))
+        ok, im = cap.read()
+        if ok:
+            frames.append(im)
+    cap.release()
+    return frames
+
+
 def calibrate_video(
     video_path: str,
     keypoints_path: Optional[str] = None,
@@ -321,26 +339,52 @@ def calibrate_video(
         with open(keypoints_path, "r", encoding="utf-8") as f:
             named = json.load(f)
     else:
-        # Prefer the learned keypoint model (accurate on broadcast-style footage);
-        # it self-rejects when unreliable (amateur angles) -> then classical -> ask.
-        det = None
-        try:
-            det = calibration.detect_court_learned(frame)
-        except FileNotFoundError:
-            det = None
-        if det is not None:
-            named = {n: list(xy) for n, xy in det.keypoints.items()}
-            source = "learned"
+        # TIER 1: line-fit CONSENSUS auto-calibration (courtfit; the measured
+        # best on amateur footage). The court is static, so fit K frames
+        # independently and trust only a court that reproduces. >=6/8 agreeing
+        # frames has always been a correct court on the gold set + cold tests;
+        # anything below is NOT auto-accepted (overlay confirm instead).
+        from . import courtfit
+
+        frames = _sample_calib_frames(video_path, k=8)
+        pts, votes, tag = None, 0, None
+        if frames:
+            print(f"[calibration] auto-detecting the court on {len(frames)} "
+                  "frames (one-time)...")
+            pts, votes, tag = courtfit.fit_video_frames(frames, calibration, court)
+        if pts is not None and tag == "vote" and votes >= 6:
+            named = pts
+            source = f"auto-court({votes}/{len(frames)})"
         else:
-            detected = calibration.detect_court_keypoints(frame)
-            if detected is None:
-                raise ValueError(
-                    "auto court detection was low-confidence (learned model "
-                    "rejected, classical failed); pass --keypoints with a manual "
-                    "calibration JSON (see calibrate.py)."
-                )
-            named = {n: list(xy) for n, xy in detected.items()}
-            source = "auto-classical"
+            # TIER 2 fallbacks: learned keypoint model (broadcast framings;
+            # self-rejects when unsure) -> classical detector -> refuse with the
+            # exact overlay-tool command (it opens PRE-FITTED, so confirming a
+            # low-confidence court takes seconds).
+            det = None
+            try:
+                det = calibration.detect_court_learned(frame)
+            except FileNotFoundError:
+                det = None
+            if det is not None:
+                named = {n: list(xy) for n, xy in det.keypoints.items()}
+                source = "learned"
+            else:
+                detected = calibration.detect_court_keypoints(frame)
+                if detected is None:
+                    hint = (
+                        f"the best court was confirmed on only {votes} of "
+                        f"{len(frames)} frames (needs 6)" if pts is not None
+                        else "no court could be confirmed across frames")
+                    raise ValueError(
+                        f"auto court calibration did not reach high confidence "
+                        f"({hint}). Set the court once with the overlay tool:\n"
+                        f'  backend/.venv/Scripts/python.exe tools/court_setup_server.py '
+                        f'--video "{video_path}" --out court_pts.json\n'
+                        "(opens pre-fitted - drag to adjust, Snap, Save), then "
+                        "re-run with --keypoints court_pts.json"
+                    )
+                named = {n: list(xy) for n, xy in detected.items()}
+                source = "auto-classical"
 
     H = calibration.homography_from_landmarks(named)
 
@@ -354,6 +398,35 @@ def calibrate_video(
         print(f"[calibration] snapped to white lines: coverage {cov0:.2f} -> {cov1:.2f}")
     else:
         print(f"[calibration] line-snap not applied (coverage {cov1:.2f}); using clicks as-is")
+
+    # HARD SHAPE RULE (every source, manual clicks included): never ship a court
+    # no real camera could see. Project the homography's corners onto the closest
+    # physical 6-DOF camera view; an already-physical placement moves <1px.
+    from . import courtfit
+
+    quad = {n: [float(v) for v in calibration.court_to_image(
+        H, [court.LANDMARKS[n]])[0]] for n in courtfit.DBL}
+    lock = courtfit.cam_fit_quad(quad, calibration, court,
+                                 frame.shape[1], frame.shape[0])
+    if lock is not None and lock[2] <= 40.0:
+        # a physical camera reproduces this shape closely -> use the exact
+        # physical version (moves <1px when the input was already physical)
+        H = lock[0]
+        moved = max(float(np.hypot(lock[1][n][0] - quad[n][0],
+                                   lock[1][n][1] - quad[n][1]))
+                    for n in courtfit.DBL)
+        if moved > 3.0:
+            print(f"[calibration] shape-locked to a physical camera view "
+                  f"(corners moved up to {moved:.1f}px - the input shape was "
+                  "not quite a real camera's view of a regulation court)")
+    else:
+        # No physical camera lands near this shape. For a manual calibration
+        # the user's placement stays authoritative - but say so plainly rather
+        # than silently "correcting" toward a possibly-wrong court.
+        gap = f" (nearest physical view is {lock[2]:.0f}px away)" if lock else ""
+        print("[calibration] WARNING: this court shape could not be verified as "
+              f"a real camera's view of a regulation court{gap}; keeping it "
+              "as given - re-check the overlay preview")
 
     err = calibration.reprojection_error(
         H, [court.LANDMARKS[n] for n in named], [named[n] for n in named]
