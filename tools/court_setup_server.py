@@ -43,6 +43,13 @@ def auto_fit(frame):
     _, out, _snapped, _c0, c1 = calibration.snap_to_lines(
         frame, named, min_coverage=0.0, max_move_px=60.0)
     use = out if all(k in out for k in DBL) else named
+    # The free corner-snap can undo the detector's physical gate (it moves the 4
+    # corners independently) — re-lock the snapped quad to a real camera view.
+    h, w = frame.shape[:2]
+    dt = ad._precompute(frame, calibration)[0]
+    r = ad.cam_fit_quad(use, calibration, court, w, h, dt=dt)
+    if r is not None:
+        use = r[1]
     print(f"[setup] auto-fit court (coverage {c1:.2f})")
     return {k: [float(use[k][0]), float(use[k][1])] for k in DBL}
 
@@ -162,7 +169,11 @@ view.addEventListener("pointermove",e=>{if(!mode)return;const[x,y]=toImg(e);
   if(mode==="corner"){corners[drag]=[x,y];}
   else{const dx=x-last[0],dy=y-last[1];for(const c of corners){c[0]+=dx;c[1]+=dy;}last=[x,y];}
   render();});
-function endDrag(){mode=null;drag=null;view.classList.remove("grabbing");}
+async function regularize(){const r=await api("/api/regularize",{corners:corDict()});
+  if(r.corners){setDict(r.corners);render();
+    if(r.moved>3)setStatus('Shape locked to a <b>real camera view</b> (adjusted '+r.moved.toFixed(0)+'px). Courts can’t warp — drag corners to steer, the shape stays legal.');}}
+function endDrag(){const wasCorner=(mode==="corner");mode=null;drag=null;
+  view.classList.remove("grabbing");if(wasCorner)regularize();}
 view.addEventListener("pointerup",endDrag);view.addEventListener("pointercancel",endDrag);
 
 function scaleBy(f){const[cx,cy]=centroid();for(const c of corners){c[0]=cx+(c[0]-cx)*f;c[1]=cy+(c[1]-cy)*f;}render();}
@@ -184,7 +195,11 @@ $("snap").onclick=async()=>{setStatus("Snapping to the white lines...");$("snap"
     setStatus(r.snapped?'<span class="g">Snapped onto the lines</span> (coverage '+(r.coverage*100|0)+'%). Adjust if needed, then <b>Save</b>.'
       :'<span class="w">Snap didn’t improve the fit</span> (coverage '+(r.coverage*100|0)+'%) - nudge it closer and try again.');}};
 $("save").onclick=async()=>{const r=await api("/api/save",{corners:corDict()});
-  setStatus(r.ok?'<span class="g">Saved</span> to <b>'+r.path+'</b> - use it with <kbd>run.py analyze --keypoints</kbd>.':'Save failed.');};
+  if(r.ok){if(r.corners){setDict(r.corners);render();}
+    setStatus('<span class="g">Saved</span> to <b>'+r.path+'</b>'+
+      (r.moved>3?' (shape locked to a real camera view, adjusted '+r.moved.toFixed(0)+'px)':'')+
+      ' - use it with <kbd>run.py analyze --keypoints</kbd>.');}
+  else setStatus('Save failed.');};
 
 fetch("/api/meta").then(r=>r.json()).then(m=>{W=m.w;H=m.h;
   img.onload=()=>{fit();
@@ -197,6 +212,8 @@ window.addEventListener("resize",()=>{if(W){fit();render();}});
 
 
 def build_handler(state):
+    import math
+
     import cv2
     import numpy as np
     from swingvision import calibration, court
@@ -206,9 +223,22 @@ def build_handler(state):
     h, w = frame.shape[:2]
     ok, buf = cv2.imencode(".jpg", frame)
     jpg = buf.tobytes()
+    dt = ad._precompute(frame, calibration)[0]   # line-distance map for Snap's polish
 
     def corners_named(d):
         return {k: [float(d[k][0]), float(d[k][1])] for k in DBL}
+
+    def lock_shape(named, use_dt=False):
+        """Project a (possibly hand-warped) quad onto the closest physical camera
+        view of a regulation court. Returns (locked_corners, moved_px)."""
+        r = ad.cam_fit_quad(named, calibration, court, w, h,
+                            dt=dt if use_dt else None)
+        if r is None:
+            return named, 0.0
+        locked = r[1]
+        moved = max(math.hypot(locked[k][0] - named[k][0],
+                               locked[k][1] - named[k][1]) for k in DBL)
+        return locked, moved
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -253,13 +283,28 @@ def build_handler(state):
                 # looking at the result). Wider basin than the pipeline default.
                 Hs, out, snapped, c0, c1 = calibration.snap_to_lines(
                     frame, named, min_coverage=0.0, max_move_px=60.0)
-                self._send(200, {"corners": corners_named(out) if all(k in out for k in DBL)
-                                 else named, "snapped": bool(snapped), "coverage": float(c1)})
+                use = out if all(k in out for k in DBL) else named
+                # The corner-snap moves 4 corners independently — re-lock to a
+                # physical camera view (with the paint polish) before returning.
+                use, _ = lock_shape(use, use_dt=True)
+                self._send(200, {"corners": corners_named(use),
+                                 "snapped": bool(snapped), "coverage": float(c1)})
+            elif self.path == "/api/regularize":
+                # After a corner drag: keep the user's steering but resolve the
+                # whole overlay as a rigid regulation court seen from a camera.
+                named = corners_named(self._body()["corners"])
+                locked, moved = lock_shape(named, use_dt=False)
+                self._send(200, {"corners": corners_named(locked), "moved": float(moved)})
             elif self.path == "/api/save":
                 named = corners_named(self._body()["corners"])
+                # Never save an impossible court: pure shape lock (no paint pull —
+                # at Save time the user's placement is the authority).
+                locked, moved = lock_shape(named, use_dt=False)
                 Path(state["out"]).parent.mkdir(parents=True, exist_ok=True)
-                Path(state["out"]).write_text(json.dumps(named, indent=2), encoding="utf-8")
-                self._send(200, {"ok": True, "path": state["out"]})
+                Path(state["out"]).write_text(
+                    json.dumps(corners_named(locked), indent=2), encoding="utf-8")
+                self._send(200, {"ok": True, "path": state["out"],
+                                 "corners": corners_named(locked), "moved": float(moved)})
             else:
                 self._send(404, {"error": "not found"})
 

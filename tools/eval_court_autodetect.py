@@ -525,6 +525,96 @@ def _cam_refine(frame, quad, calibration, court, dt, w, h):
     return H, {n: [float(c[n][0]), float(c[n][1])] for n in DBL}
 
 
+def cam_fit_quad(quad, calibration, court, w, h, dt=None):
+    """Lock an ARBITRARY 4-corner court placement onto the closest physical
+    camera view of a regulation court (position, pan, tilt, zoom; roll=0).
+
+    Manual-path counterpart of _cam_refine: the overlay tool lets a human drag
+    corners freely (8 DOF), which can produce shapes no real camera ever sees.
+    This projects that quad onto the 6-DOF camera manifold, so the result is
+    ALWAYS a legal view of a regulation court, as close as possible to where the
+    user put it. Unlike _cam_refine it never refuses a fittable quad (a hand
+    placement must resolve to the nearest legal shape, not be rejected), and it
+    multi-starts because hand placements can be far from the elevated-TV pose
+    _cam_refine's single seed assumes. _cam_refine is deliberately left alone:
+    the detector's gate behaviour is measurement-frozen (scorecards in git).
+
+    dt: optional line-distance map; when given, a second stage polishes the
+    camera onto the paint (use for Snap, omit for a pure shape lock on Save).
+
+    Returns (H, corners, fit_px) or None. fit_px = mean px between the input
+    quad and the nearest physical view: ~0 when the input was already a real
+    camera shape, large when it was impossible and got corrected."""
+    from scipy.optimize import minimize
+    target = np.array([quad[n] for n in DBL], float)
+
+    f0 = None
+    try:
+        Hq = calibration.compute_homography([court.LANDMARKS[n] for n in DBL], target)
+        f0 = calibration.focal_from_homography(Hq, (w, h))
+    except Exception:
+        pass
+    f_guess = float(f0) if f0 else w * 0.9
+    Wd = court.DOUBLES_WIDTH
+    starts = [
+        np.array([Wd/2.0, -6.0, 4.0, 0.0, 0.25, f_guess]),   # elevated behind baseline
+        np.array([Wd/2.0, -3.0, 1.6, 0.0, 0.10, f_guess]),   # court-level phone
+        np.array([Wd/2.0, -12.0, 8.0, 0.0, 0.35, f_guess]),  # high stands
+        np.array([Wd/2.0, -6.0, 4.0, 0.0, 0.25, w*1.4]),     # long lens
+    ]
+
+    def cost_quad(p):
+        c = _cam_corners(p, w, h, court)
+        if c is None:
+            return 1e6
+        return float(np.mean(np.hypot(*(np.array([c[n] for n in DBL]) - target).T)))
+
+    best = None
+    for x0 in starts:
+        r = minimize(cost_quad, x0, method="Nelder-Mead",
+                     options={"maxiter": 1200, "xatol": 1e-3, "fatol": 1e-3})
+        if np.isfinite(r.fun) and r.fun < 1e5 and (best is None or r.fun < best.fun):
+            best = r
+    if best is None:
+        return None
+    fit_px, px = float(best.fun), best.x
+
+    if dt is not None:
+        S = _court_samples(court)[0]
+
+        def cost_dt(p):
+            c = _cam_corners(p, w, h, court)
+            if c is None:
+                return 1e6
+            try:
+                H = calibration.compute_homography(
+                    [court.LANDMARKS[n] for n in DBL], [c[n] for n in DBL])
+            except Exception:
+                return 1e6
+            P = calibration.court_to_image(H, S)
+            xs = np.clip(P[:, 0], 0, w-1).astype(int)
+            ys = np.clip(P[:, 1], 0, h-1).astype(int)
+            inb = (P[:, 0] >= 0) & (P[:, 0] < w) & (P[:, 1] >= 0) & (P[:, 1] < h)
+            if inb.sum() < len(P)*0.3:
+                return 1e6
+            return float(dt[ys[inb], xs[inb]].mean())
+
+        r2 = minimize(cost_dt, px, method="Nelder-Mead",
+                      options={"maxiter": 600, "xatol": 1e-3, "fatol": 1e-3})
+        if np.isfinite(r2.fun) and r2.fun < cost_dt(px):
+            px = r2.x
+
+    c = _cam_corners(px, w, h, court)
+    if c is None:
+        return None
+    try:
+        H = calibration.compute_homography(
+            [court.LANDMARKS[n] for n in DBL], [c[n] for n in DBL])
+    except Exception:
+        return None
+    return H, {n: [float(c[n][0]), float(c[n][1])] for n in DBL}, fit_px
+
+
 def autodetect(frame, calibration, court, *, grid=4, topk=12,
                athr=0.80, accept=0.33, use_prior=True, mask_fn=None, _fallback=True):
     """Prior-sampled + grid seeds -> local refine -> snap -> structural+plausibility

@@ -12,6 +12,13 @@
       "runtimeExecutable": "py",
       "runtimeArgs": ["tools/gold_label_server.py", "--no-browser", "--port", "8765"],
       "port": 8765
+    },
+    {
+      "name": "court-setup",
+      "runtimeExecutable": "backend/.venv/Scripts/python.exe",
+      "runtimeArgs": ["tools/court_setup_server.py", "--clip", "am_ntrp40", "--no-auto",
+                      "--no-browser", "--out", "court_pts_test.json"],
+      "port": 8770
     }
   ]
 }
