@@ -1,0 +1,52 @@
+{
+  "video": {
+    "filename": "e2e_SgZpQtiTG1A.mp4",
+    "fps": 24.0,
+    "width": 1280,
+    "height": 720,
+    "duration_s": 50.0
+  },
+  "players": [
+    {
+      "id": "A",
+      "name": "Player A (near)"
+    },
+    {
+      "id": "B",
+      "name": "Player B (far)"
+    }
+  ],
+  "shots": [],
+  "rallies": [],
+  "score": {
+    "final": "0-0",
+    "sets": [],
+    "games": [
+      0,
+      0
+    ],
+    "timeline": []
+  },
+  "stats": {
+    "shot_count": 0,
+    "rally_count": 0,
+    "avg_speed_kmh": 0.0,
+    "top_speed_kmh": 0.0,
+    "shot_mix": {},
+    "line_calls": {
+      "in": 0,
+      "out": 0
+    },
+    "distance_run_m": {
+      "A": 65.7,
+      "B": 0.0
+    }
+  },
+  "schema_version": "1.0",
+  "court": {
+    "length_m": 23.77,
+    "width_m": 10.97,
+    "singles_width_m": 8.23,
+    "service_line_from_net_m": 6.4
+  }
+}
