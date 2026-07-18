@@ -74,6 +74,9 @@ PAGE = r"""<!doctype html><html><head><meta charset="utf-8">
   <button id="big">Bigger</button>
   <button id="small">Smaller</button>
   <button id="reset">Reset</button>
+  <label style="display:flex;align-items:center;gap:6px;font-size:13.5px;cursor:pointer"
+         title="ON: the court always stays a shape a real camera could see (corners re-solve together). OFF: place each corner exactly where you want it - use when a wide lens bends the real lines.">
+    <input type="checkbox" id="lockchk" checked> Shape lock</label>
   <span class="sp"></span>
   <button id="save" class="ok">Save calibration</button>
 </header>
@@ -157,12 +160,16 @@ view.addEventListener("pointermove",e=>{if(!mode)return;const[x,y]=toImg(e);
   if(mode==="corner"){corners[drag]=[x,y];}
   else{const dx=x-last[0],dy=y-last[1];for(const c of corners){c[0]+=dx;c[1]+=dy;}last=[x,y];}
   render();});
+const lockOn=()=>$("lockchk").checked;
 async function regularize(){const r=await api("/api/regularize",{corners:corDict()});
   if(r.corners){setDict(r.corners);render();
-    if(r.moved>3)setStatus('Shape locked to a <b>real camera view</b> (adjusted '+r.moved.toFixed(0)+'px). Courts can’t warp — drag corners to steer, the shape stays legal.');}}
+    if(r.moved>3)setStatus('Shape locked to a <b>real camera view</b> (adjusted '+r.moved.toFixed(0)+'px). Courts can’t warp — drag corners to steer, the shape stays legal. Untick <b>Shape lock</b> to place corners exactly.');}}
 function endDrag(){const wasCorner=(mode==="corner");mode=null;drag=null;
-  view.classList.remove("grabbing");if(wasCorner)regularize();}
+  view.classList.remove("grabbing");if(wasCorner&&lockOn())regularize();}
 view.addEventListener("pointerup",endDrag);view.addEventListener("pointercancel",endDrag);
+$("lockchk").addEventListener("change",()=>{
+  if(lockOn()){setStatus("Shape lock ON — corners re-solve together as one rigid court.");regularize();}
+  else setStatus("Shape lock <b>OFF</b> — each corner stays exactly where you put it (for lenses that bend the lines). Save will keep your exact points.");});
 
 function scaleBy(f){const[cx,cy]=centroid();for(const c of corners){c[0]=cx+(c[0]-cx)*f;c[1]=cy+(c[1]-cy)*f;}render();}
 $("big").onclick=()=>scaleBy(1.06);$("small").onclick=()=>scaleBy(1/1.06);
@@ -177,15 +184,16 @@ $("auto").onclick=async()=>{setStatus("Auto-detecting the court...");$("auto").d
   const r=await api("/api/autodetect",{});$("auto").disabled=false;
   if(r.corners){setDict(r.corners);render();setStatus('Auto-detected (line support '+(r.score*100|0)+'%). If it grabbed the wrong court, <b>drag it</b> onto the right one, then <b>Snap</b>.');}
   else setStatus('<span class="w">Auto-detect couldn’t lock a court</span> - drag the overlay onto it by hand, then <b>Snap</b>.');};
-$("snap").onclick=async()=>{setStatus("Snapping to the white lines...");$("snap").disabled=true;
+$("snap").onclick=async()=>{setStatus("Snapping to the lines...");$("snap").disabled=true;
   const r=await api("/api/snap",{corners:corDict()});$("snap").disabled=false;
   if(r.corners){setDict(r.corners);render();
-    setStatus(r.snapped?'<span class="g">Snapped onto the lines</span> (coverage '+(r.coverage*100|0)+'%). Adjust if needed, then <b>Save</b>.'
-      :'<span class="w">Snap didn’t improve the fit</span> (coverage '+(r.coverage*100|0)+'%) - nudge it closer and try again.');}};
-$("save").onclick=async()=>{const r=await api("/api/save",{corners:corDict()});
+    setStatus(r.snapped?'<span class="g">Snapped onto the '+(r.mode==="clay"?'clay':'white')+' lines</span> (coverage '+(r.coverage*100|0)+'%). Adjust if needed, then <b>Save</b>.'
+      :'<span class="w">Snap didn’t improve the fit</span> (coverage '+(r.coverage*100|0)+'%) - nudge it closer and try again, or place corners by hand.');}};
+$("save").onclick=async()=>{const r=await api("/api/save",{corners:corDict(),lock:lockOn()});
   if(r.ok){if(r.corners){setDict(r.corners);render();}
     setStatus('<span class="g">Saved</span> to <b>'+r.path+'</b>'+
-      (r.moved>3?' (shape locked to a real camera view, adjusted '+r.moved.toFixed(0)+'px)':'')+
+      (r.exact?' (exact corners - your points, untouched)':
+       (r.moved>3?' (shape locked to a real camera view, adjusted '+r.moved.toFixed(0)+'px)':''))+
       ' - use it with <kbd>run.py analyze --keypoints</kbd>.');}
   else setStatus('Save failed.');};
 
@@ -269,13 +277,21 @@ def build_handler(state):
                 # Interactive snap: refine from wherever the user placed it and keep
                 # any improvement (min_coverage=0 -> no absolute gate; the user is
                 # looking at the result). Wider basin than the pipeline default.
+                # White lines first, then the hue-agnostic CLAY retry (worn or
+                # colour-tinted paint the white mask can't see).
+                mode = "white"
                 Hs, out, snapped, c0, c1 = calibration.snap_to_lines(
                     frame, named, min_coverage=0.0, max_move_px=60.0)
+                if not snapped:
+                    Hs, out, snapped, c0, c1 = calibration.snap_to_lines(
+                        frame, named, min_coverage=0.0, max_move_px=60.0,
+                        mask_fn=lambda f: ad._clay_mask(f, calibration))
+                    mode = "clay"
                 use = out if all(k in out for k in DBL) else named
                 # The corner-snap moves 4 corners independently — re-lock to a
                 # physical camera view (with the paint polish) before returning.
                 use, _ = lock_shape(use, use_dt=True)
-                self._send(200, {"corners": corners_named(use),
+                self._send(200, {"corners": corners_named(use), "mode": mode,
                                  "snapped": bool(snapped), "coverage": float(c1)})
             elif self.path == "/api/regularize":
                 # After a corner drag: keep the user's steering but resolve the
@@ -284,15 +300,30 @@ def build_handler(state):
                 locked, moved = lock_shape(named, use_dt=False)
                 self._send(200, {"corners": corners_named(locked), "moved": float(moved)})
             elif self.path == "/api/save":
-                named = corners_named(self._body()["corners"])
-                # Never save an impossible court: pure shape lock (no paint pull —
-                # at Save time the user's placement is the authority).
-                locked, moved = lock_shape(named, use_dt=False)
+                body = self._body()
+                named = corners_named(body["corners"])
                 Path(state["out"]).parent.mkdir(parents=True, exist_ok=True)
-                Path(state["out"]).write_text(
-                    json.dumps(corners_named(locked), indent=2), encoding="utf-8")
-                self._send(200, {"ok": True, "path": state["out"],
-                                 "corners": corners_named(locked), "moved": float(moved)})
+                if body.get("lock", True):
+                    # Never save an impossible court: pure shape lock (no paint
+                    # pull — at Save time the user's placement is the authority).
+                    locked, moved = lock_shape(named, use_dt=False)
+                    Path(state["out"]).write_text(
+                        json.dumps(corners_named(locked), indent=2), encoding="utf-8")
+                    self._send(200, {"ok": True, "path": state["out"],
+                                     "corners": corners_named(locked),
+                                     "moved": float(moved)})
+                else:
+                    # Shape lock OFF: the user chose to place corners EXACTLY
+                    # (e.g. a wide lens bends the real lines away from any
+                    # pinhole view). Saved with the _exact marker so the
+                    # pipeline also skips its snap + shape lock.
+                    data = dict(corners_named(named))
+                    data["_exact"] = True
+                    Path(state["out"]).write_text(
+                        json.dumps(data, indent=2), encoding="utf-8")
+                    self._send(200, {"ok": True, "path": state["out"],
+                                     "corners": corners_named(named),
+                                     "moved": 0.0, "exact": True})
             else:
                 self._send(404, {"error": "not found"})
 

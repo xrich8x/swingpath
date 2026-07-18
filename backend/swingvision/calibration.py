@@ -472,18 +472,20 @@ def line_ridge_mask(frame: np.ndarray, tau: int = 9, sat_max: int = 90) -> np.nd
 
 
 def court_line_coverage(frame: np.ndarray, H: np.ndarray,
-                        tol_px: Optional[float] = None) -> tuple[float, float]:
+                        tol_px: Optional[float] = None,
+                        mask_fn=None) -> tuple[float, float]:
     """(coverage, visible_frac) for a candidate court.
 
     coverage     = fraction of the IN-FRAME projected court lines that land within
-                   tol_px of a real white-line pixel.
+                   tol_px of a real line pixel (mask_fn selects the line detector;
+                   default line_ridge_mask = white lines).
     visible_frac = fraction of the whole projected court that is inside the frame
                    (amateur courts often run off the edge; only the visible part
                    can be checked).
     """
     import cv2
 
-    mask = line_ridge_mask(frame)
+    mask = (mask_fn or line_ridge_mask)(frame)
     h, w = mask.shape[:2]
     if tol_px is None:
         tol_px = max(2.0, w * 0.006)
@@ -732,7 +734,7 @@ def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: floa
 
 
 def snap_to_lines(frame: np.ndarray, named, *, min_coverage: float = 0.40,
-                  max_move_px: float = 30.0):
+                  max_move_px: float = 30.0, mask_fn=None):
     """Snap a manual/auto court calibration onto the amateur white lines — GUARDED.
 
     Refines the four doubles corners so the projected court lines land on real
@@ -749,23 +751,24 @@ def snap_to_lines(frame: np.ndarray, named, *, min_coverage: float = 0.40,
     Returns (H, named_out, snapped: bool, cov_before, cov_after). On skip/refuse,
     named_out is the input `named` and H is built from it unchanged.
     """
+    mf = mask_fn or line_ridge_mask
     corners = {n: list(named[n]) for n in _DBL_CORNERS if n in named}
     if len(corners) < 4 or len(named) < 4:
         # Can't snap without the four corners; return H from the clicks if solvable.
         try:
             H_before = homography_from_landmarks(named)
-            cov_before = court_line_coverage(frame, H_before)[0]
+            cov_before = court_line_coverage(frame, H_before, mask_fn=mf)[0]
         except Exception:
             H_before, cov_before = None, 0.0
         return H_before, named, False, cov_before, cov_before
     H_before = homography_from_landmarks(named)
-    cov_before = court_line_coverage(frame, H_before)[0]
+    cov_before = court_line_coverage(frame, H_before, mask_fn=mf)[0]
     try:
         H_after, refined, _ = refine_homography_bounded(
-            frame, corners, max_move_px=max_move_px, mask_fn=line_ridge_mask)
+            frame, corners, max_move_px=max_move_px, mask_fn=mf)
     except Exception:
         return H_before, named, False, cov_before, cov_before
-    cov_after = court_line_coverage(frame, H_after)[0]
+    cov_after = court_line_coverage(frame, H_after, mask_fn=mf)[0]
     if cov_after >= min_coverage and cov_after >= cov_before - 1e-6:
         return H_after, refined, True, cov_before, cov_after
     return H_before, named, False, cov_before, cov_after

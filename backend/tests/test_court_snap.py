@@ -64,3 +64,27 @@ def test_snap_skipped_when_corners_missing():
     H, out, snapped, cov0, cov1 = calibration.snap_to_lines(blank, partial)
     assert snapped is False
     assert out is partial
+
+
+def test_snap_court_clay_retry():
+    """Colour-tinted (clay) lines: the white path refuses (saturated paint is
+    invisible to line_ridge_mask's sat gate), the clay retry snaps instead."""
+    from swingvision import courtfit
+
+    court_pts = [court.LANDMARKS[n] for n in _DBL]
+    H_true = calibration.compute_homography(court_pts, [_TRUE_IMG[n] for n in _DBL])
+    frame = np.full((360, 640, 3), (110, 60, 40), np.uint8)   # dark clay ground
+    for a, b in court.LINES:
+        pa = calibration.court_to_image(H_true, [a])[0]
+        pb = calibration.court_to_image(H_true, [b])[0]
+        cv2.line(frame, (int(round(pa[0])), int(round(pa[1]))),
+                 (int(round(pb[0])), int(round(pb[1]))), (60, 140, 235), 2)
+
+    rng = np.random.default_rng(5)
+    rough = {n: [_TRUE_IMG[n][0] + float(rng.uniform(-9, 9)),
+                 _TRUE_IMG[n][1] + float(rng.uniform(-9, 9))] for n in _DBL}
+
+    _H, out, snapped, tag, cov = courtfit.snap_court(frame, rough, calibration, court)
+    assert snapped is True
+    assert tag == "snap-clay"
+    assert _mean_corner_err(out) < _mean_corner_err(rough)

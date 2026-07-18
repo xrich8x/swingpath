@@ -337,9 +337,15 @@ def calibrate_video(
     source = "manual"
     named = None
 
+    manual_exact = False
     if keypoints_path:
         with open(keypoints_path, "r", encoding="utf-8") as f:
-            named = json.load(f)
+            raw = json.load(f)
+        # "_exact": the overlay tool's shape-lock-OFF save — the user deliberately
+        # placed these corners (e.g. a wide lens bends the real lines away from
+        # any pinhole view). Their placement is final: no snap, no shape lock.
+        manual_exact = bool(raw.pop("_exact", False))
+        named = {k: v for k, v in raw.items() if not k.startswith("_")}
     else:
         # TIER 1: line-fit CONSENSUS auto-calibration (courtfit; the measured
         # best on amateur footage). The court is static, so fit K frames
@@ -389,22 +395,36 @@ def calibrate_video(
                 source = "auto-classical"
 
     H = calibration.homography_from_landmarks(named)
+    from . import courtfit
 
-    # Snap the corners onto the real white lines (amateur-robust), guarded: kept
-    # only if it improves line coverage, so clay/unseeable lines fall back to the
-    # clicks unchanged. Halves court error on hard/indoor courts (eval_court_snap).
-    H_snap, named_snap, snapped, cov0, cov1 = calibration.snap_to_lines(frame, named)
+    if manual_exact:
+        print("[calibration] exact manual calibration (user-placed corners are "
+              "final; snap and shape lock skipped)")
+        err = calibration.reprojection_error(
+            H, [court.LANDMARKS[n] for n in named], [named[n] for n in named])
+        print(f"[calibration] source=manual-exact; reprojection error = {err:.2f} px")
+        if overlay_path:
+            from . import overlay as overlay_mod
+            overlay_mod.render_overlay_image(frame, H, overlay_path)
+            print(f"[calibration] overlay preview -> {overlay_path}")
+        return H, err, "manual-exact", named, None
+
+    # Snap the corners onto the real lines (amateur-robust), guarded: white
+    # lines first, then the hue-agnostic CLAY retry when white refuses (worn or
+    # colour-tinted paint), kept only if coverage clears the bar under the same
+    # mask. Halves court error on hard/indoor courts (eval_court_snap).
+    H_snap, named_snap, snapped, snap_tag, cov1 = courtfit.snap_court(
+        frame, named, calibration, court)
     if snapped:
         H, named = H_snap, named_snap
-        source += "+snap"
-        print(f"[calibration] snapped to white lines: coverage {cov0:.2f} -> {cov1:.2f}")
+        source += "+" + snap_tag
+        print(f"[calibration] snapped to lines ({snap_tag}): coverage {cov1:.2f}")
     else:
         print(f"[calibration] line-snap not applied (coverage {cov1:.2f}); using clicks as-is")
 
     # HARD SHAPE RULE (every source, manual clicks included): never ship a court
     # no real camera could see. Project the homography's corners onto the closest
     # physical 6-DOF camera view; an already-physical placement moves <1px.
-    from . import courtfit
 
     quad = {n: [float(v) for v in calibration.court_to_image(
         H, [court.LANDMARKS[n]])[0]] for n in courtfit.DBL}

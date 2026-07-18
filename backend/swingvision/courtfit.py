@@ -834,6 +834,32 @@ def stacked_clay_fit(imgs, calibration, court):
     return None if res is None else res[2]
 
 
+def snap_court(frame, named, calibration, court, *,
+               min_coverage=0.40, max_move_px=30.0):
+    """Guarded corner snap with a CLAY retry.
+
+    White/ridge lines first (the measured default). When that path REFUSES —
+    worn or colour-tinted paint has no white signal, exactly the case where a
+    stack-fit court sits ~15px off its faintest sideline — retry with the
+    hue-agnostic clay mask, judged under the SAME mask it refined with (the
+    guard still demands coverage >= min_coverage and no decrease). The snap
+    stays bounded (+-max_move_px), so the worst it can do is tighten onto
+    nearby clay texture; callers re-lock the shape afterwards regardless.
+
+    Returns (H, named_out, snapped, tag, coverage) — tag "snap", "snap-clay",
+    or None when both paths refused (named_out is then the input)."""
+    H, out, snapped, _c0, c1 = calibration.snap_to_lines(
+        frame, named, min_coverage=min_coverage, max_move_px=max_move_px)
+    if snapped:
+        return H, out, True, "snap", c1
+    H2, out2, snapped2, _c0, c2 = calibration.snap_to_lines(
+        frame, named, min_coverage=min_coverage, max_move_px=max_move_px,
+        mask_fn=lambda f: _clay_mask(f, calibration))
+    if snapped2:
+        return H2, out2, True, "snap-clay", c2
+    return H, named, False, None, c1
+
+
 def auto_fit_frame(frame, calibration, court):
     """The full single-frame recipe: line-fit autodetect -> guarded corner snap
     -> physical shape re-lock. Returns {corner:[x,y]} or None (no lock)."""
