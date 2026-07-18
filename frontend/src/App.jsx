@@ -160,7 +160,7 @@ export default function App() {
             onSelectRally={handleSelectRally}
           />
         )}
-        {tab === "Court Setup" && <CourtSetup />}
+        {tab === "Court Setup" && <CourtSetup match={match} />}
       </main>
 
       <footer className="footer">

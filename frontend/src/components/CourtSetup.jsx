@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LINES, NET_LINE, LENGTH, DOUBLES_WIDTH } from "../lib/court.js";
 import { computeHomography, applyHomography } from "../lib/homography.js";
+import { fitCamToQuad } from "../lib/camfit.js";
 
 // SwingVision-style court setup: a fixed camera is calibrated ONCE by dragging
 // the four court corners onto the real corners. Coarse placement is by drag;
 // fine placement (esp. on a phone) is by the on-screen nudge pad / arrow keys,
 // with a magnifier loupe so you can see exactly where the corner lands.
+// "Shape lock" keeps the court a real camera's view of a regulation court while
+// you steer (corners re-solve together); turn it off to place corners exactly
+// (wide lenses bend the real lines away from any rigid view).
 
 const PAD = 90; // draggable margin around the frame so edge corners are reachable
 const ZOOM = 3.5;
@@ -17,22 +21,34 @@ const CORNERS = [
   { key: "near_bl_doubles", court: [0, 0], label: "near-left", at: [0.16, 0.86] },
   { key: "near_br_doubles", court: [DOUBLES_WIDTH, 0], label: "near-right", at: [0.84, 0.86] },
 ];
+// camfit's fixed corner order
+const DBL_ORDER = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"];
 const defaultCorners = (w, h) =>
   Object.fromEntries(CORNERS.map((c) => [c.key, [w * c.at[0], h * c.at[1]]]));
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-export default function CourtSetup() {
+export default function CourtSetup({ match }) {
   const svgRef = useRef(null);
   const fileRef = useRef(null);
+  const nudgeTimer = useRef(null);
   const [frame, setFrame] = useState({ src: "/court_setup_frame.jpg", w: 1280, h: 720 });
   const [pts, setPts] = useState(() => defaultCorners(1280, 720));
   const [drag, setDrag] = useState(null);
   const [selected, setSelected] = useState("near_br_doubles");
   const [step, setStep] = useState(1);
+  const [lockShape, setLockShape] = useState(true);
+  const [note, setNote] = useState("");
 
-  // Seed the corners from /court_setup_seed.json when the backend published a
-  // best-guess calibration for the default frame — the user then only fine-tunes.
+  // Seed the corners from the ANALYZED match's own calibration when it carries
+  // one (match.calibration.corners — written by run.py analyze), else from the
+  // static /court_setup_seed.json. The user then only fine-tunes.
   useEffect(() => {
+    const cal = match?.calibration?.corners;
+    if (cal && CORNERS.every((c) => Array.isArray(cal[c.key]))) {
+      setPts(Object.fromEntries(CORNERS.map((c) => [c.key, [...cal[c.key]]])));
+      setNote("Loaded this match's calibration — adjust if needed, then save.");
+      return;
+    }
     fetch("/court_setup_seed.json")
       .then((r) => (r.ok ? r.json() : null))
       .then((seed) => {
@@ -41,7 +57,25 @@ export default function CourtSetup() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [match]);
+
+  // Project the current 4 corners onto the closest LEGAL camera view of a
+  // regulation court (the shape lock). Returns the locked pts (or the input).
+  function lockedPts(s) {
+    const quad = DBL_ORDER.map((k) => s[k]);
+    const fit = fitCamToQuad(quad, frame.w, frame.h);
+    if (!fit) return s;
+    const out = { ...s };
+    DBL_ORDER.forEach((k, i) => (out[k] = [fit.corners[i][0], fit.corners[i][1]]));
+    if (fit.fitPx > 3) {
+      setNote(`Shape locked to a real camera view (adjusted ~${fit.fitPx.toFixed(0)}px). ` +
+              "Untick Shape lock to place corners exactly.");
+    }
+    return out;
+  }
+  function resolveShape() {
+    if (lockShape) setPts((s) => lockedPts(s));
+  }
 
   const H = useMemo(
     () => computeHomography(CORNERS.map((c) => c.court), CORNERS.map((c) => pts[c.key])),
@@ -62,6 +96,12 @@ export default function CourtSetup() {
         clamp(s[selected][1] + dy, -PAD, frame.h + PAD),
       ],
     }));
+    // With the lock on, re-solve the rigid court shortly after the last nudge
+    // (not per click - 1px fine-tuning would fight an instant re-solve).
+    if (lockShape) {
+      clearTimeout(nudgeTimer.current);
+      nudgeTimer.current = setTimeout(resolveShape, 600);
+    }
   }
 
   // Keyboard arrows (desktop): nudge the selected corner; Shift = x10.
@@ -105,9 +145,35 @@ export default function CourtSetup() {
     img.src = url;
     e.target.value = "";
   }
+  // Pull a frame straight from the analyzed video, so the court is adjusted on
+  // the actual footage without exporting a screenshot first.
+  function grabVideoFrame() {
+    const v = document.createElement("video");
+    v.muted = true;
+    v.preload = "auto";
+    v.src = "/analyzed.mp4";
+    v.addEventListener("loadeddata", () => {
+      v.currentTime = Math.min(2, (v.duration || 4) / 2);
+    });
+    v.addEventListener("seeked", () => {
+      const c = document.createElement("canvas");
+      c.width = v.videoWidth;
+      c.height = v.videoHeight;
+      c.getContext("2d").drawImage(v, 0, 0);
+      setFrame({ src: c.toDataURL("image/jpeg", 0.92), w: v.videoWidth, h: v.videoHeight });
+      setNote("Frame grabbed from the analyzed video.");
+    });
+    v.addEventListener("error", () => setNote("No analyzed video found — load a frame instead."));
+  }
   function download() {
+    // With the lock on, export the LOCKED shape (a real camera's court). With it
+    // off, export the exact points with the _exact marker - the analyzer then
+    // skips its own snap + shape lock and treats your placement as final.
+    const src = lockShape ? lockedPts(pts) : pts;
     const named = {};
-    for (const c of CORNERS) named[c.key] = [Math.round(pts[c.key][0]), Math.round(pts[c.key][1])];
+    for (const c of CORNERS) named[c.key] = [Math.round(src[c.key][0]), Math.round(src[c.key][1])];
+    if (!lockShape) named._exact = true;
+    if (lockShape) setPts(src);
     const blob = new Blob([JSON.stringify(named, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -140,8 +206,8 @@ export default function CourtSetup() {
         viewBox={vb}
         className="setup-svg"
         onPointerMove={onMove}
-        onPointerUp={() => setDrag(null)}
-        onPointerLeave={() => setDrag(null)}
+        onPointerUp={() => { if (drag) resolveShape(); setDrag(null); }}
+        onPointerLeave={() => { if (drag) resolveShape(); setDrag(null); }}
       >
         <defs>
           <clipPath id="loupeClip">
@@ -229,14 +295,31 @@ export default function CourtSetup() {
         </div>
 
         <div className="setup-actions">
+          <button className="btn" onClick={grabVideoFrame}>Use video frame</button>
           <button className="btn" onClick={() => fileRef.current?.click()}>Load frame</button>
           <input ref={fileRef} type="file" accept="image/*" onChange={loadFrame} hidden />
           <button className="btn btn-ghost" onClick={() => setPts(defaultCorners(frame.w, frame.h))}>
             Reset corners
           </button>
+          <label
+            className="muted"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
+            title="ON: the court always stays a shape a real camera could see (corners re-solve together). OFF: place each corner exactly - use when a wide lens bends the real lines."
+          >
+            <input
+              type="checkbox"
+              checked={lockShape}
+              onChange={(e) => {
+                setLockShape(e.target.checked);
+                if (e.target.checked) setPts((s) => lockedPts(s));
+                else setNote("Shape lock OFF — corners stay exactly where you put them; save keeps your exact points.");
+              }}
+            />
+            Shape lock
+          </label>
           <button className="btn btn-primary" onClick={download}>Confirm &amp; save</button>
           <span className="muted setup-note">
-            Saves <code>court_pts.json</code> → <code>run.py analyze --keypoints</code>.
+            {note || <>Saves <code>court_pts.json</code> → <code>run.py analyze --keypoints</code>.</>}
           </span>
         </div>
       </div>

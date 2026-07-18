@@ -834,6 +834,52 @@ def stacked_clay_fit(imgs, calibration, court):
     return None if res is None else res[2]
 
 
+class CourtWatchdog:
+    """Detects that the CAMERA CHANGED after calibration and drives re-acquisition.
+
+    The per-frame lock step absorbs small drift, but a real change — the phone
+    gets bumped, re-mounted, or zoomed — moves the lines out of its tiny search
+    basin and the court silently stays wrong. This watchdog measures how much of
+    the projected court still lands on real line pixels (coverage) and compares
+    it against its OWN rolling baseline, so a worn clay court with low absolute
+    coverage still alarms on a RELATIVE collapse. Two consecutive bad checks
+    (not one — a player standing on a line dips coverage for a moment) raise
+    "changed"; the caller then re-runs full detection and, on a gated lock,
+    rebases the motion track. After a rebase (or a failed re-acquisition) call
+    rebase() to start a fresh baseline instead of alarming forever.
+
+    States from check(): "warmup" (building the baseline), "ok", "watch"
+    (one bad check), "changed" (confirmed - re-acquire now).
+    """
+
+    def __init__(self, calibration, court, *, drop=0.45, floor=0.05,
+                 confirm=2, warmup=5):
+        self._calibration = calibration
+        self._court = court
+        self.drop, self.floor, self.confirm, self.warmup = drop, floor, confirm, warmup
+        self._covs: list[float] = []
+        self.baseline: float | None = None
+        self._bad = 0
+
+    def rebase(self):
+        self._covs, self.baseline, self._bad = [], None, 0
+
+    def check(self, frame, H_t) -> str:
+        cov = self._calibration.court_line_coverage(frame, H_t)[0]
+        if self.baseline is None:
+            self._covs.append(cov)
+            if len(self._covs) >= self.warmup:
+                self.baseline = float(np.median(self._covs))
+            return "warmup"
+        if cov >= max(self.drop * self.baseline, self.floor):
+            self._bad = 0
+            # slow tracking of gradual, benign change (light, shadows)
+            self.baseline = 0.9 * self.baseline + 0.1 * cov
+            return "ok"
+        self._bad += 1
+        return "changed" if self._bad >= self.confirm else "watch"
+
+
 def snap_court(frame, named, calibration, court, *,
                min_coverage=0.40, max_move_px=30.0):
     """Guarded corner snap with a CLAY retry.

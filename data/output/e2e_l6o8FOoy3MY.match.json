@@ -653,5 +653,28 @@
     "width_m": 10.97,
     "singles_width_m": 8.23,
     "service_line_from_net_m": 6.4
+  },
+  "calibration": {
+    "corners": {
+      "far_bl_doubles": [
+        538.2631705863676,
+        280.27765579887847
+      ],
+      "far_br_doubles": [
+        820.8088663979145,
+        265.22486059111577
+      ],
+      "near_bl_doubles": [
+        228.7022903428555,
+        478.1994793770552
+      ],
+      "near_br_doubles": [
+        1197.6888481477804,
+        470.2329029380517
+      ]
+    },
+    "source": "manual+snap-clay",
+    "hfov_deg": 72.56,
+    "events": []
   }
 }

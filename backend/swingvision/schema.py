@@ -140,6 +140,10 @@ class Match:
             "service_line_from_net_m": court.SERVICE_LINE_FROM_NET,
         }
     )
+    # How the court was calibrated: {"corners": {landmark: [x_px, y_px]},
+    # "source": ..., "hfov_deg": ..., "events": [{"frame", "kind"}]}. Optional -
+    # demo matches have no camera. The dashboard's Court Setup seeds from it.
+    calibration: Optional[dict[str, Any]] = None
 
     def to_dict(self) -> dict[str, Any]:
         """Plain dict ready for json.dump."""

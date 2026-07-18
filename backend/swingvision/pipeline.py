@@ -303,6 +303,18 @@ def _read_first_frame(video_path: str):
     return frame
 
 
+def _cam_row_to_A(row):
+    """Stored cam_motion row -> 3x3 camera-motion matrix. Rows are 6 numbers
+    (affine, older caches) or 9 (full 3x3 - watchdog rebases after a detected
+    camera change are projective)."""
+    vals = np.asarray(row, dtype=float)
+    if vals.size == 9:
+        return vals.reshape(3, 3)
+    A = np.eye(3)
+    A[:2, :] = vals.reshape(2, 3)
+    return A
+
+
 def _sample_calib_frames(video_path: str, k: int = 8):
     """K frames spread across the clip (2%..98%) for consensus calibration."""
     import cv2
@@ -745,7 +757,8 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                     c.get("near_kpts", [None] * n),
                     c.get("far_kpts", [None] * n),
                     c["cam_motion"],
-                    c.get("player_counts", []))
+                    c.get("player_counts", []),
+                    c.get("court_events", []))
 
     from .ball import BallDetector, WASBDetector, BallTracker, median_background
     from . import pose as pose_mod
@@ -808,10 +821,15 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
     if use_bgsub and bg is not None:
         print(f"[analyze] background model built (fixed-camera ball recovery on, "
               f"player-masked, bridge<={bg_run_cap})")
+    from . import courtfit
+
     ball_px, near_court, far_court = [], [], []
     near_kpts, far_kpts = [], []   # striker keypoints (image px) for shot-type classification
-    cam_motion = []                # per-frame 3x3 camera motion vs frame 0 (rows 0-1 stored)
+    cam_motion = []                # per-frame camera motion vs frame 0 (full 3x3 stored)
     player_counts = []             # (near, far) on-court people per pose frame -> singles/doubles
+    court_events = []              # camera-change detections: reacquired / lost
+    watchdog = courtfit.CourtWatchdog(calibration, court)
+    WATCH_EVERY = 30               # coverage check cadence (processed frames)
     A = np.eye(3)
     last_near = last_far = None
     last_near_kp = last_far_kp = None
@@ -831,8 +849,27 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
             # homography onto the white lines each frame (bounded correction).
             step, _ = calibration.court_lock_step(frame, A @ H, last_boxes)
             A = step @ A
-            cam_motion.append([float(v) for v in A[:2, :].ravel()])
             H_t = A @ H
+            # WATCHDOG: the lock step only absorbs small drift. A real camera
+            # change (bump / re-mount / zoom) collapses line coverage under the
+            # tracked H -> re-run full detection and REBASE the motion track
+            # (projective A = H_new @ H0^-1; the stored rows carry a full 3x3).
+            if processed % WATCH_EVERY == 0 and watchdog.check(frame, H_t) == "changed":
+                res = courtfit.autodetect(frame, calibration, court)
+                if res is not None:
+                    A = res[0] @ np.linalg.inv(H)
+                    A = A / A[2, 2]
+                    H_t = A @ H
+                    court_events.append({"frame": int(idx), "kind": "reacquired"})
+                    print(f"[analyze] camera change detected ~frame {idx} -> "
+                          "court RE-ACQUIRED (motion track rebased)")
+                else:
+                    court_events.append({"frame": int(idx), "kind": "lost"})
+                    print(f"[analyze] WARNING: camera appears to have moved ~frame {idx} "
+                          "and the court could not be re-acquired - positions after "
+                          "this point may be off; re-check the overlay for this section")
+                watchdog.rebase()
+            cam_motion.append([float(v) for v in A.ravel()])
             # Pose next so the ball tracker can mask players this frame (boxes
             # carry forward between pose frames; players move little in ~3 frames).
             if processed % pose_every == 0:
@@ -885,11 +922,13 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                     "far_kpts": far_kpts,
                     "cam_motion": cam_motion,
                     "player_counts": player_counts,
+                    "court_events": court_events,
                 },
                 f,
             )
         print(f"[analyze] cached perception -> {cache_path}")
-    return ball_px, near_court, far_court, near_kpts, far_kpts, cam_motion, player_counts
+    return (ball_px, near_court, far_court, near_kpts, far_kpts, cam_motion,
+            player_counts, court_events)
 
 
 def analyze_video(
@@ -965,7 +1004,8 @@ def analyze_video(
     # Perception (ball + pose) is the expensive part — cache it next to the output
     # so downstream tuning (events/speed/scoring) doesn't re-run inference.
     cache_path = (os.path.splitext(out_path)[0] + ".perception.json") if out_path else None
-    ball_px, near_court, far_court, near_kpts, far_kpts, cam_motion, player_counts = _perceive(
+    (ball_px, near_court, far_court, near_kpts, far_kpts, cam_motion,
+     player_counts, court_events) = _perceive(
         video_path, H, ball_weights, pose_quality, pose_every, device,
         max_frames, frame_step, cache_path, use_bgsub, ball_model, camera_hfov_deg
     )
@@ -985,11 +1025,7 @@ def analyze_video(
     far_court, far_kpts = _reject_static_player(far_court, far_kpts, "far")
     # Per-frame inverse camera motion: un-warp a frame-t pixel back to frame-0
     # space so the one calibrated homography stays valid under broadcast pan/zoom.
-    cam_inv = []
-    for row in cam_motion or []:
-        A = np.eye(3)
-        A[:2, :] = np.asarray(row, dtype=float).reshape(2, 3)
-        cam_inv.append(np.linalg.inv(A))
+    cam_inv = [np.linalg.inv(_cam_row_to_A(row)) for row in cam_motion or []]
 
     def unwarp(px, i):
         if not cam_inv or i >= len(cam_inv):
@@ -1049,6 +1085,16 @@ def analyze_video(
         track, hit_idx, bounce_idx, near_court, far_court, fps_eff, width, height,
         video_path, physics_shots, ball_conf, near_kpts, far_kpts, H, singles=not use_doubles
     )
+    # Carry the calibration in the match: the dashboard's Court Setup seeds its
+    # adjustable overlay from these corners, and camera-change events tell the
+    # user which sections were re-acquired (or need a manual re-check).
+    match.calibration = {
+        "corners": {k: [float(v[0]), float(v[1])] for k, v in named_corners.items()},
+        "source": source,
+        "hfov_deg": (round(float(camera_hfov_deg), 2)
+                     if camera_hfov_deg is not None else None),
+        "events": court_events,
+    }
 
     if out_path:
         data = match.to_dict()
