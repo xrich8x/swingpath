@@ -208,8 +208,6 @@ window.addEventListener("resize",()=>{if(W){fit();render();}});
 
 
 def build_handler(state):
-    import math
-
     import cv2
     import numpy as np
     from swingvision import calibration, court
@@ -219,21 +217,15 @@ def build_handler(state):
     h, w = frame.shape[:2]
     ok, buf = cv2.imencode(".jpg", frame)
     jpg = buf.tobytes()
-    dt = ad._precompute(frame, calibration)[0]   # line-distance map for Snap's polish
+    dt = ad.line_distance_map(frame, calibration)   # for Snap's polish stage
 
     def corners_named(d):
         return {k: [float(d[k][0]), float(d[k][1])] for k in DBL}
 
     def lock_shape(named, use_dt=False):
-        """Project a (possibly hand-warped) quad onto the closest physical camera
-        view of a regulation court. Returns (locked_corners, moved_px)."""
-        r = ad.cam_fit_quad(named, calibration, court, w, h,
-                            dt=dt if use_dt else None)
-        if r is None:
-            return named, 0.0
-        locked = r[1]
-        moved = max(math.hypot(locked[k][0] - named[k][0],
-                               locked[k][1] - named[k][1]) for k in DBL)
+        """Closest physical camera view of the quad -> (corners, moved_px)."""
+        locked, moved, _fit = ad.lock_quad(named, calibration, court, w, h,
+                                           dt=dt if use_dt else None)
         return locked, moved
 
     class Handler(BaseHTTPRequestHandler):
@@ -274,24 +266,19 @@ def build_handler(state):
                     self._send(200, {"corners": corners_named(ref), "score": float(score)})
             elif self.path == "/api/snap":
                 named = corners_named(self._body()["corners"])
-                # Interactive snap: refine from wherever the user placed it and keep
-                # any improvement (min_coverage=0 -> no absolute gate; the user is
-                # looking at the result). Wider basin than the pipeline default.
-                # White lines first, then the hue-agnostic CLAY retry (worn or
-                # colour-tinted paint the white mask can't see).
-                mode = "white"
-                Hs, out, snapped, c0, c1 = calibration.snap_to_lines(
-                    frame, named, min_coverage=0.0, max_move_px=60.0)
-                if not snapped:
-                    Hs, out, snapped, c0, c1 = calibration.snap_to_lines(
-                        frame, named, min_coverage=0.0, max_move_px=60.0,
-                        mask_fn=lambda f: ad._clay_mask(f, calibration))
-                    mode = "clay"
+                # Interactive snap: refine from wherever the user placed it and
+                # keep any improvement (min_coverage=0 -> no absolute gate; the
+                # user is looking at the result). snap_court owns the
+                # white-then-clay retry policy; wider basin than the pipeline.
+                _Hs, out, snapped, tag, c1 = ad.snap_court(
+                    frame, named, calibration, court,
+                    min_coverage=0.0, max_move_px=60.0)
                 use = out if all(k in out for k in DBL) else named
                 # The corner-snap moves 4 corners independently — re-lock to a
                 # physical camera view (with the paint polish) before returning.
                 use, _ = lock_shape(use, use_dt=True)
-                self._send(200, {"corners": corners_named(use), "mode": mode,
+                self._send(200, {"corners": corners_named(use),
+                                 "mode": "clay" if tag == "snap-clay" else "white",
                                  "snapped": bool(snapped), "coverage": float(c1)})
             elif self.path == "/api/regularize":
                 # After a corner drag: keep the user's steering but resolve the

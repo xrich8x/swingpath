@@ -25,12 +25,11 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
-sys.path.insert(0, str(REPO / "tools"))
 
 GOLD = REPO / "data" / "gold"
-DBL = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"]
 
-from swingvision.courtfit import DBL, auto_fit_frame, consensus, stacked_clay_fit  # noqa: F401,E501
+from swingvision.courtfit import DBL, auto_fit_frame, consensus, stacked_clay_fit  # noqa: E402,F401
+
 
 def score_clip(clip, k, save_dir=None):
     import cv2

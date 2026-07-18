@@ -33,54 +33,6 @@ REPO = Path(__file__).resolve().parents[2]
 DBL = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"]
 
 
-def _quad_iou(a, b):
-    """Convex-quad IoU via shoelace + Sutherland-Hodgman (self-contained)."""
-    def area(p):
-        s = 0.0
-        for i in range(len(p)):
-            x1, y1 = p[i]; x2, y2 = p[(i + 1) % len(p)]
-            s += x1 * y2 - x2 * y1
-        return abs(s) / 2.0
-
-    def clip(sub, clp):
-        def inside(p, aa, bb):
-            return (bb[0]-aa[0])*(p[1]-aa[1]) - (bb[1]-aa[1])*(p[0]-aa[0]) >= 0
-
-        def isect(p1, p2, aa, bb):
-            x1, y1 = p1; x2, y2 = p2; x3, y3 = aa; x4, y4 = bb
-            den = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
-            if abs(den) < 1e-9:
-                return p2
-            t = ((x1-x3)*(y3-y4) - (y1-y3)*(x3-x4)) / den
-            return (x1 + t*(x2-x1), y1 + t*(y2-y1))
-        s = 0.0
-        for i in range(len(clp)):
-            x1, y1 = clp[i]; x2, y2 = clp[(i+1) % len(clp)]
-            s += x1*y2 - x2*y1
-        if s < 0:
-            clp = clp[::-1]
-        out = sub
-        for i in range(len(clp)):
-            aa, bb = clp[i], clp[(i+1) % len(clp)]
-            inp, out = out, []
-            for j in range(len(inp)):
-                cur, prv = inp[j], inp[j-1]
-                if inside(cur, aa, bb):
-                    if not inside(prv, aa, bb):
-                        out.append(isect(prv, cur, aa, bb))
-                    out.append(cur)
-                elif inside(prv, aa, bb):
-                    out.append(isect(prv, cur, aa, bb))
-            if not out:
-                return []
-        return out
-    inter = clip(a, b)
-    if len(inter) < 3:
-        return 0.0
-    ai = area(inter)
-    return ai / (area(a) + area(b) - ai + 1e-9)
-
-
 # Court line samples + endpoints (court metres), cached — H-independent.
 _S = _LINE_ID = _EA = _EB = None
 
@@ -338,10 +290,26 @@ def _params_from_corners(c):
             (fbl[1]+fbr[1])/2.0, (nbr[0]-nbl[0])/2.0, (fbr[0]-fbl[0])/2.0)
 
 
+def _score_seed(params, calibration, court, court_pts, dt, cos2, sin2,
+                w, h, tol, athr, prior):
+    """Score one trapezoid seed. Returns (rank, support, nlines, params, maha)
+    or None; rank = line-support x plausibility weight (a plausible camera pose
+    wins ties over an equally-well-fitting but implausible wrong-rung court)."""
+    cx, yn, yf, wn, wf = params
+    try:
+        H = calibration.compute_homography(
+            court_pts, [_corners(cx, yn, yf, wn, wf)[n] for n in DBL])
+    except Exception:
+        return None
+    g, nl, _ = _ori_detail(H, calibration, court, dt, cos2, sin2, w, h, tol, athr)
+    if g <= 0:
+        return None
+    m = _maha(params, w, h, prior)
+    return (g * np.exp(-0.5 * m / PRIOR_TEMP), g, nl, params, m)
+
+
 def _scan(axes, calibration, court, court_pts, dt, cos2, sin2, w, h, tol, athr, prior):
-    """Score every trapezoid. Returns [(rank, support, nlines, params, maha)] where
-    rank = line-support x plausibility weight (so a plausible camera pose wins ties
-    over an equally-well-fitting but implausible wrong-rung court)."""
+    """Score every trapezoid in the axes grid; ranked best-first."""
     out = []
     for cx in axes[0]:
         for yn in axes[1]:
@@ -352,17 +320,11 @@ def _scan(axes, calibration, court, court_pts, dt, cos2, sin2, w, h, tol, athr, 
                     for wf in axes[4]:
                         if wf >= wn:
                             continue
-                        try:
-                            H = calibration.compute_homography(
-                                court_pts, [_corners(cx, yn, yf, wn, wf)[n] for n in DBL])
-                        except Exception:
-                            continue
-                        g, nl, _ = _ori_detail(H, calibration, court, dt, cos2, sin2,
-                                               w, h, tol, athr)
-                        if g > 0:
-                            m = _maha((cx, yn, yf, wn, wf), w, h, prior)
-                            rank = g * np.exp(-0.5 * m / PRIOR_TEMP)
-                            out.append((rank, g, nl, (cx, yn, yf, wn, wf), m))
+                        s = _score_seed((cx, yn, yf, wn, wf), calibration, court,
+                                        court_pts, dt, cos2, sin2, w, h, tol,
+                                        athr, prior)
+                        if s is not None:
+                            out.append(s)
     out.sort(key=lambda t: t[0], reverse=True)
     return out
 
@@ -378,15 +340,10 @@ def _prior_seeds(prior, calibration, court, court_pts, dt, cos2, sin2, w, h, tol
         wn, wf = s[3]*w, s[4]*w
         if yf >= yn - 20 or wf >= wn or wn <= 0:
             continue
-        try:
-            H = calibration.compute_homography(
-                court_pts, [_corners(cx, yn, yf, wn, wf)[n] for n in DBL])
-        except Exception:
-            continue
-        g, nl, _ = _ori_detail(H, calibration, court, dt, cos2, sin2, w, h, tol, athr)
-        if g > 0:
-            m = _maha((cx, yn, yf, wn, wf), w, h, prior)
-            out.append((g * np.exp(-0.5 * m / PRIOR_TEMP), g, nl, (cx, yn, yf, wn, wf), m))
+        sc = _score_seed((cx, yn, yf, wn, wf), calibration, court, court_pts,
+                         dt, cos2, sin2, w, h, tol, athr, prior)
+        if sc is not None:
+            out.append(sc)
     return out
 
 
@@ -407,12 +364,11 @@ def _lowcam_seeds(calibration, court, court_pts, dt, cos2, sin2, w, h, tol, athr
         # looking at the far half. Court frame: X across [0,10.97], Y depth.
         cx3, cy3 = Wd/2.0, -back
         look_y = L*0.45
-        import numpy as _np
-        fwd = _np.array([0.0, look_y-cy3, -cam_h]); fwd /= _np.linalg.norm(fwd)
-        right = _np.array([1.0, 0.0, 0.0])
-        up = _np.cross(fwd, right); up /= _np.linalg.norm(up)
+        fwd = np.array([0.0, look_y-cy3, -cam_h]); fwd /= np.linalg.norm(fwd)
+        right = np.array([1.0, 0.0, 0.0])
+        up = np.cross(fwd, right); up /= np.linalg.norm(up)
         def proj(X, Y):
-            p = _np.array([X-cx3, Y-cy3, 0.0-cam_h])
+            p = np.array([X-cx3, Y-cy3, 0.0-cam_h])
             z = p @ fwd
             if z <= 0.1:
                 return None
@@ -478,16 +434,30 @@ def _cam_refine(frame, quad, calibration, court, dt, w, h):
     x0 = np.array([court.DOUBLES_WIDTH/2.0, -6.0, 4.0, 0.0, 0.25,
                    float(f0) if f0 else w*0.9])
 
-    def cost_quad(p):
+    r1 = minimize(_cam_cost_quad(target, w, h, court), x0, method="Nelder-Mead",
+                  options={"maxiter": 1200, "xatol": 1e-3, "fatol": 1e-3})
+    if not np.isfinite(r1.fun) or r1.fun > 40.0:
+        return None                       # quad too non-physical to be a camera view
+    use_x = _tethered_dt_polish(r1.x, dt, w, h, calibration, court)
+    return _cam_result(use_x, w, h, calibration, court)
+
+
+def _cam_cost_quad(target, w, h, court):
+    """Cost: mean px distance from camera p's corner projection to `target`."""
+    def cost(p):
         c = _cam_corners(p, w, h, court)
         if c is None:
             return 1e6
         return float(np.mean(np.hypot(*(np.array([c[n] for n in DBL]) - target).T)))
+    return cost
 
-    r1 = minimize(cost_quad, x0, method="Nelder-Mead",
-                  options={"maxiter": 1200, "xatol": 1e-3, "fatol": 1e-3})
-    if not np.isfinite(r1.fun) or r1.fun > 40.0:
-        return None                       # quad too non-physical to be a camera view
+
+def _tethered_dt_polish(px, dt, w, h, calibration, court):
+    """Stage-2 polish of camera params onto the paint (line-distance map),
+    TETHERED: dt sinks far from the court (banner/fence rows) can drag the
+    polish into a collapsed sliver, so a 'polish' that moves the corners >30px
+    mean is discarded. Returns the polished params, or `px` unchanged."""
+    from scipy.optimize import minimize
     S = _court_samples(court)[0]
 
     def cost_dt(p):
@@ -507,20 +477,22 @@ def _cam_refine(frame, quad, calibration, court, dt, w, h):
             return 1e6
         return float(dt[ys[inb], xs[inb]].mean())
 
-    r2 = minimize(cost_dt, r1.x, method="Nelder-Mead",
+    c0 = cost_dt(px)
+    r2 = minimize(cost_dt, px, method="Nelder-Mead",
                   options={"maxiter": 600, "xatol": 1e-3, "fatol": 1e-3})
-    # TETHERED polish (same fix as cam_fit_quad): dt sinks far from the court
-    # (banner/fence rows) can drag the polish into a collapsed sliver. A polish
-    # that moves the corners >30px mean is no longer polishing - discard it.
-    use_x = r1.x
-    if np.isfinite(r2.fun) and r2.fun < cost_dt(r1.x):
-        c1 = _cam_corners(r1.x, w, h, court)
+    if np.isfinite(r2.fun) and r2.fun < c0:
+        c1 = _cam_corners(px, w, h, court)
         c2 = _cam_corners(r2.x, w, h, court)
         if c1 is not None and c2 is not None and float(np.mean(
                 [math.hypot(c2[n][0]-c1[n][0], c2[n][1]-c1[n][1])
                  for n in DBL])) <= 30.0:
-            use_x = r2.x
-    c = _cam_corners(use_x, w, h, court)
+            return r2.x
+    return px
+
+
+def _cam_result(px, w, h, calibration, court):
+    """(H, corners) for camera params px, or None on a degenerate projection."""
+    c = _cam_corners(px, w, h, court)
     if c is None:
         return None
     try:
@@ -568,8 +540,9 @@ def cam_fit_quad(quad, calibration, court, w, h, dt=None):
     user put it. Unlike _cam_refine it never refuses a fittable quad (a hand
     placement must resolve to the nearest legal shape, not be rejected), and it
     multi-starts because hand placements can be far from the elevated-TV pose
-    _cam_refine's single seed assumes. _cam_refine is deliberately left alone:
-    the detector's gate behaviour is measurement-frozen (scorecards in git).
+    _cam_refine's single seed assumes. Both share the same cost/polish helpers
+    (_cam_cost_quad, _tethered_dt_polish, _cam_result); _cam_refine keeps its
+    own >40px REFUSE gate, which is measurement-frozen (scorecards in git).
 
     dt: optional line-distance map; when given, a second stage polishes the
     camera onto the paint (use for Snap, omit for a pure shape lock on Save).
@@ -599,12 +572,7 @@ def cam_fit_quad(quad, calibration, court, w, h, dt=None):
     seed = _seed_from_quad(target, court)
     if seed is not None:
         starts.insert(0, seed)   # data-driven guess first (covers broadcast poses)
-
-    def cost_quad(p):
-        c = _cam_corners(p, w, h, court)
-        if c is None:
-            return 1e6
-        return float(np.mean(np.hypot(*(np.array([c[n] for n in DBL]) - target).T)))
+    cost_quad = _cam_cost_quad(target, w, h, court)
 
     best = None
     for x0 in starts:
@@ -623,53 +591,15 @@ def cam_fit_quad(quad, calibration, court, w, h, dt=None):
     fit_px, px = float(best.fun), best.x
 
     if dt is not None:
-        S = _court_samples(court)[0]
+        px = _tethered_dt_polish(px, dt, w, h, calibration, court)
 
-        def cost_dt(p):
-            c = _cam_corners(p, w, h, court)
-            if c is None:
-                return 1e6
-            try:
-                H = calibration.compute_homography(
-                    [court.LANDMARKS[n] for n in DBL], [c[n] for n in DBL])
-            except Exception:
-                return 1e6
-            P = calibration.court_to_image(H, S)
-            xs = np.clip(P[:, 0], 0, w-1).astype(int)
-            ys = np.clip(P[:, 1], 0, h-1).astype(int)
-            inb = (P[:, 0] >= 0) & (P[:, 0] < w) & (P[:, 1] >= 0) & (P[:, 1] < h)
-            if inb.sum() < len(P)*0.3:
-                return 1e6
-            return float(dt[ys[inb], xs[inb]].mean())
-
-        r2 = minimize(cost_dt, px, method="Nelder-Mead",
-                      options={"maxiter": 600, "xatol": 1e-3, "fatol": 1e-3})
-        # TETHERED polish: the dt map has sinks far from the court (banner and
-        # fence edge rows) - an unbounded polish can walk the camera to one and
-        # collapse the court to a sliver (seen live). Keep the polish only if
-        # it stays a POLISH: corners move <=30px mean from the stage-1 shape.
-        if np.isfinite(r2.fun) and r2.fun < cost_dt(px):
-            c1 = _cam_corners(px, w, h, court)
-            c2 = _cam_corners(r2.x, w, h, court)
-            if c1 is not None and c2 is not None:
-                drift = float(np.mean([math.hypot(c2[n][0]-c1[n][0],
-                                                  c2[n][1]-c1[n][1]) for n in DBL]))
-                if drift <= 30.0:
-                    px = r2.x
-
-    c = _cam_corners(px, w, h, court)
-    if c is None:
+    res = _cam_result(px, w, h, calibration, court)
+    if res is None:
         return None
-    try:
-        H = calibration.compute_homography(
-            [court.LANDMARKS[n] for n in DBL], [c[n] for n in DBL])
-    except Exception:
-        return None
-    return (H, {n: [float(c[n][0]), float(c[n][1])] for n in DBL}, fit_px,
-            tuple(float(v) for v in px))
+    return (*res, fit_px, tuple(float(v) for v in px))
 
 
-def autodetect(frame, calibration, court, *, grid=4, topk=12,
+def autodetect(frame, calibration, court, *, topk=12,
                athr=0.80, accept=0.33, use_prior=True, mask_fn=None, _fallback=True):
     """Prior-sampled + grid seeds -> local refine -> snap -> structural+plausibility
     gate. Returns (H, score, corners) or None (falls back to manual).
@@ -777,7 +707,7 @@ def autodetect(frame, calibration, court, *, grid=4, topk=12,
     if best is None and _fallback and mask_fn is None:
         # nothing with the "white lines" mask -> the surface may be clay/shell.
         # Retry hue-agnostic; the structure verifier keeps this honest.
-        return autodetect(frame, calibration, court, grid=grid, topk=topk, athr=athr,
+        return autodetect(frame, calibration, court, topk=topk, athr=athr,
                           accept=accept, use_prior=use_prior,
                           mask_fn=lambda f: _clay_mask(f, calibration), _fallback=False)
     return best
@@ -834,6 +764,46 @@ def stacked_clay_fit(imgs, calibration, court):
     return None if res is None else res[2]
 
 
+def line_distance_map(frame, calibration, mask_fn=None):
+    """Distance-to-nearest-line-pixel map (the dt the polish stages sample).
+    Cheaper than _precompute when the caller needs ONLY the dt — no Sobel,
+    orientation maps, or Hough pass."""
+    import cv2
+    mask = (mask_fn or calibration.line_ridge_mask)(frame)
+    return cv2.distanceTransform(255 - mask, cv2.DIST_L2, 5)
+
+
+def lock_quad(named, calibration, court, w, h, dt=None):
+    """cam_fit_quad plus 'how far did it move' — the one place that computes the
+    lock displacement (the tool, the pipeline, and auto_fit_frame all report it).
+    Returns (locked_corners, moved_max_px, fit) where fit is cam_fit_quad's full
+    result; on a total fit failure returns (named, 0.0, None) unchanged."""
+    r = cam_fit_quad(named, calibration, court, w, h, dt=dt)
+    if r is None:
+        return named, 0.0, None
+    moved = max(math.hypot(r[1][n][0] - named[n][0],
+                           r[1][n][1] - named[n][1]) for n in DBL)
+    return r[1], moved, r
+
+
+def shape_lock(H, calibration, court, w, h, *, gate_px=40.0):
+    """The HARD SHAPE RULE, as one operation on a homography: project H's
+    doubles corners, fit the closest physical camera, and APPLY it only when a
+    real camera reproduces the shape within gate_px (else the caller keeps its
+    input and warns — an optimizer miss must never 'correct' a good court).
+
+    Returns a dict: applied, H, corners, moved_max, hfov_deg (the fitted lens
+    when applied), gap_px (fit distance when NOT applied, for the warning)."""
+    quad = {n: [float(v) for v in calibration.court_to_image(
+        H, [court.LANDMARKS[n]])[0]] for n in DBL}
+    corners, moved, fit = lock_quad(quad, calibration, court, w, h)
+    if fit is None or fit[2] > gate_px:
+        return {"applied": False, "H": H, "corners": quad, "moved_max": 0.0,
+                "hfov_deg": None, "gap_px": (fit[2] if fit else None)}
+    return {"applied": True, "H": fit[0], "corners": corners, "moved_max": moved,
+            "hfov_deg": calibration.hfov_from_focal(fit[3][5], w), "gap_px": None}
+
+
 class CourtWatchdog:
     """Detects that the CAMERA CHANGED after calibration and drives re-acquisition.
 
@@ -864,8 +834,8 @@ class CourtWatchdog:
     def rebase(self):
         self._covs, self.baseline, self._bad = [], None, 0
 
-    def check(self, frame, H_t) -> str:
-        cov = self._calibration.court_line_coverage(frame, H_t)[0]
+    def check(self, frame, H_t, mask=None) -> str:
+        cov = self._calibration.court_line_coverage(frame, H_t, mask=mask)[0]
         if self.baseline is None:
             self._covs.append(cov)
             if len(self._covs) >= self.warmup:
@@ -919,9 +889,8 @@ def auto_fit_frame(frame, calibration, court):
     use = out if all(k in out for k in DBL) else named
     # the free corner-snap can undo the physical gate; re-lock to a camera view
     h, w = frame.shape[:2]
-    dt = _precompute(frame, calibration)[0]
-    r = cam_fit_quad(use, calibration, court, w, h, dt=dt)
-    return r[1] if r is not None else use
+    return lock_quad(use, calibration, court, w, h,
+                     dt=line_distance_map(frame, calibration))[0]
 
 
 def fit_video_frames(frames, calibration, court):

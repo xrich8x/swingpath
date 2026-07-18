@@ -343,7 +343,7 @@ def calibrate_video(
     overlay preview. Returns (H, reprojection_error_px, source, named_corners,
     cam_hfov_deg) - cam_hfov_deg is the lens field-of-view from the physical
     camera lock (None when the lock could not be applied)."""
-    from . import calibration
+    from . import calibration, courtfit
 
     frame = _read_first_frame(video_path)
     source = "manual"
@@ -364,8 +364,6 @@ def calibrate_video(
         # independently and trust only a court that reproduces. >=6/8 agreeing
         # frames has always been a correct court on the gold set + cold tests;
         # anything below is NOT auto-accepted (overlay confirm instead).
-        from . import courtfit
-
         frames = _sample_calib_frames(video_path, k=8)
         pts, votes, tag = None, 0, None
         if frames:
@@ -407,66 +405,48 @@ def calibrate_video(
                 source = "auto-classical"
 
     H = calibration.homography_from_landmarks(named)
-    from . import courtfit
+    cam_hfov_deg = None
 
     if manual_exact:
+        source = "manual-exact"
         print("[calibration] exact manual calibration (user-placed corners are "
               "final; snap and shape lock skipped)")
-        err = calibration.reprojection_error(
-            H, [court.LANDMARKS[n] for n in named], [named[n] for n in named])
-        print(f"[calibration] source=manual-exact; reprojection error = {err:.2f} px")
-        if overlay_path:
-            from . import overlay as overlay_mod
-            overlay_mod.render_overlay_image(frame, H, overlay_path)
-            print(f"[calibration] overlay preview -> {overlay_path}")
-        return H, err, "manual-exact", named, None
-
-    # Snap the corners onto the real lines (amateur-robust), guarded: white
-    # lines first, then the hue-agnostic CLAY retry when white refuses (worn or
-    # colour-tinted paint), kept only if coverage clears the bar under the same
-    # mask. Halves court error on hard/indoor courts (eval_court_snap).
-    H_snap, named_snap, snapped, snap_tag, cov1 = courtfit.snap_court(
-        frame, named, calibration, court)
-    if snapped:
-        H, named = H_snap, named_snap
-        source += "+" + snap_tag
-        print(f"[calibration] snapped to lines ({snap_tag}): coverage {cov1:.2f}")
     else:
-        print(f"[calibration] line-snap not applied (coverage {cov1:.2f}); using clicks as-is")
+        # Snap the corners onto the real lines (amateur-robust), guarded: white
+        # lines first, then the hue-agnostic CLAY retry when white refuses (worn
+        # or colour-tinted paint), kept only if coverage clears the bar under
+        # the same mask. Halves court error on hard/indoor (eval_court_snap).
+        H_snap, named_snap, snapped, snap_tag, cov1 = courtfit.snap_court(
+            frame, named, calibration, court)
+        if snapped:
+            H, named = H_snap, named_snap
+            source += "+" + snap_tag
+            print(f"[calibration] snapped to lines ({snap_tag}): coverage {cov1:.2f}")
+        else:
+            print(f"[calibration] line-snap not applied (coverage {cov1:.2f}); "
+                  "using clicks as-is")
 
-    # HARD SHAPE RULE (every source, manual clicks included): never ship a court
-    # no real camera could see. Project the homography's corners onto the closest
-    # physical 6-DOF camera view; an already-physical placement moves <1px.
-
-    quad = {n: [float(v) for v in calibration.court_to_image(
-        H, [court.LANDMARKS[n]])[0]] for n in courtfit.DBL}
-    lock = courtfit.cam_fit_quad(quad, calibration, court,
-                                 frame.shape[1], frame.shape[0])
-    cam_hfov_deg = None
-    if lock is not None and lock[2] <= 40.0:
-        # a physical camera reproduces this shape closely -> use the exact
-        # physical version (moves <1px when the input was already physical),
-        # and keep its focal: the honest lens zoom for the speed physics
-        # (focal_from_homography is degenerate on telephoto views).
-        H = lock[0]
-        f_px = lock[3][5]
-        cam_hfov_deg = float(np.degrees(2.0 * np.arctan(
-            frame.shape[1] / (2.0 * f_px))))
-        moved = max(float(np.hypot(lock[1][n][0] - quad[n][0],
-                                   lock[1][n][1] - quad[n][1]))
-                    for n in courtfit.DBL)
-        if moved > 3.0:
-            print(f"[calibration] shape-locked to a physical camera view "
-                  f"(corners moved up to {moved:.1f}px - the input shape was "
-                  "not quite a real camera's view of a regulation court)")
-    else:
-        # No physical camera lands near this shape. For a manual calibration
-        # the user's placement stays authoritative - but say so plainly rather
-        # than silently "correcting" toward a possibly-wrong court.
-        gap = f" (nearest physical view is {lock[2]:.0f}px away)" if lock else ""
-        print("[calibration] WARNING: this court shape could not be verified as "
-              f"a real camera's view of a regulation court{gap}; keeping it "
-              "as given - re-check the overlay preview")
+        # HARD SHAPE RULE (every source, manual clicks included): never ship a
+        # court no real camera could see. The lock also yields the honest lens
+        # zoom (focal_from_homography is degenerate on telephoto views).
+        lock = courtfit.shape_lock(H, calibration, court,
+                                   frame.shape[1], frame.shape[0])
+        if lock["applied"]:
+            H, cam_hfov_deg = lock["H"], lock["hfov_deg"]
+            if lock["moved_max"] > 3.0:
+                print(f"[calibration] shape-locked to a physical camera view "
+                      f"(corners moved up to {lock['moved_max']:.1f}px - the "
+                      "input shape was not quite a real camera's view of a "
+                      "regulation court)")
+        else:
+            # No physical camera lands near this shape. The placement stays
+            # authoritative - but say so plainly rather than silently
+            # "correcting" toward a possibly-wrong court.
+            gap = (f" (nearest physical view is {lock['gap_px']:.0f}px away)"
+                   if lock["gap_px"] is not None else "")
+            print("[calibration] WARNING: this court shape could not be verified "
+                  f"as a real camera's view of a regulation court{gap}; keeping "
+                  "it as given - re-check the overlay preview")
 
     err = calibration.reprojection_error(
         H, [court.LANDMARKS[n] for n in named], [named[n] for n in named]
@@ -847,14 +827,20 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
             # (sparse LK, dense ECC) both fail on consumer footage — burned-in UI
             # graphics dominate them — so track the COURT ITSELF: snap the running
             # homography onto the white lines each frame (bounded correction).
-            step, _ = calibration.court_lock_step(frame, A @ H, last_boxes)
+            # On watchdog frames build the line mask ONCE and share it between
+            # the lock step (which zeroes player boxes in its own copy) and the
+            # coverage check - the mask is the expensive part of both.
+            wmask = (calibration.line_ridge_mask(frame)
+                     if processed % WATCH_EVERY == 0 else None)
+            step, _ = calibration.court_lock_step(frame, A @ H, last_boxes,
+                                                  mask=wmask)
             A = step @ A
             H_t = A @ H
             # WATCHDOG: the lock step only absorbs small drift. A real camera
             # change (bump / re-mount / zoom) collapses line coverage under the
             # tracked H -> re-run full detection and REBASE the motion track
             # (projective A = H_new @ H0^-1; the stored rows carry a full 3x3).
-            if processed % WATCH_EVERY == 0 and watchdog.check(frame, H_t) == "changed":
+            if wmask is not None and watchdog.check(frame, H_t, mask=wmask) == "changed":
                 res = courtfit.autodetect(frame, calibration, court)
                 if res is not None:
                     A = res[0] @ np.linalg.inv(H)
@@ -986,7 +972,7 @@ def analyze_video(
     if camera_hfov_deg is None:
         f_est = calibration.focal_from_homography(H, (width, height)) if H is not None else None
         if f_est:
-            camera_hfov_deg = float(np.degrees(2.0 * np.arctan(width / (2.0 * f_est))))
+            camera_hfov_deg = calibration.hfov_from_focal(f_est, width)
             print(f"[analyze] self-calibrated focal {f_est:.0f}px "
                   f"-> hfov {camera_hfov_deg:.1f}deg")
         else:

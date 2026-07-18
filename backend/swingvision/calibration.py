@@ -138,6 +138,11 @@ def camera_height_m(H: np.ndarray, img_wh: Sequence[float], hfov_deg: float = 70
         return None
 
 
+def hfov_from_focal(f_px: float, width: float) -> float:
+    """Horizontal field of view (degrees) from a focal length in pixels."""
+    return float(np.degrees(2.0 * np.arctan(width / (2.0 * f_px))))
+
+
 def focal_from_homography(H: np.ndarray, img_wh: Sequence[float]) -> Optional[float]:
     """Self-calibrate the focal length (pixels) from the court homography.
 
@@ -473,19 +478,21 @@ def line_ridge_mask(frame: np.ndarray, tau: int = 9, sat_max: int = 90) -> np.nd
 
 def court_line_coverage(frame: np.ndarray, H: np.ndarray,
                         tol_px: Optional[float] = None,
-                        mask_fn=None) -> tuple[float, float]:
+                        mask_fn=None, mask=None) -> tuple[float, float]:
     """(coverage, visible_frac) for a candidate court.
 
     coverage     = fraction of the IN-FRAME projected court lines that land within
                    tol_px of a real line pixel (mask_fn selects the line detector;
-                   default line_ridge_mask = white lines).
+                   default line_ridge_mask = white lines; pass `mask` to reuse a
+                   precomputed one).
     visible_frac = fraction of the whole projected court that is inside the frame
                    (amateur courts often run off the edge; only the visible part
                    can be checked).
     """
     import cv2
 
-    mask = (mask_fn or line_ridge_mask)(frame)
+    if mask is None:
+        mask = (mask_fn or line_ridge_mask)(frame)
     h, w = mask.shape[:2]
     if tol_px is None:
         tol_px = max(2.0, w * 0.006)
@@ -777,7 +784,7 @@ def snap_to_lines(frame: np.ndarray, named, *, min_coverage: float = 0.40,
 def court_lock_step(frame: np.ndarray, H_prev: np.ndarray, boxes=None,
                     max_shift_px: float = 14.0, max_scale: float = 0.03,
                     max_rot_deg: float = 1.2, mask_fn=None,
-                    min_shift_px: float = 0.6):
+                    min_shift_px: float = 0.6, mask=None):
     """Track the court between frames by SNAPPING the previous homography onto the
     white lines of the current frame (small bounded similarity correction).
 
@@ -802,7 +809,9 @@ def court_lock_step(frame: np.ndarray, H_prev: np.ndarray, boxes=None,
     import cv2
     from scipy.optimize import minimize
 
-    mask = (mask_fn or line_ridge_mask)(frame)
+    # `mask`: optionally reuse a precomputed line mask (copied - boxes are
+    # zeroed in place below and the caller may share the mask with other checks).
+    mask = mask.copy() if mask is not None else (mask_fn or line_ridge_mask)(frame)
     for b in boxes or []:
         if b is None:
             continue

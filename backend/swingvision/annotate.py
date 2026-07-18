@@ -194,11 +194,8 @@ def render_match_video(
     H_frames = [H] * n_all
     cam = perception.get("cam_motion")
     if cam and H is not None:
-        H_frames = []
-        for row in cam:
-            A = np.eye(3)
-            A[:2, :] = np.asarray(row, dtype=float).reshape(2, 3)
-            H_frames.append(A @ H)
+        from .pipeline import _cam_row_to_A   # handles 6-number and 3x3 rows
+        H_frames = [_cam_row_to_A(row) @ H for row in cam]
         H_frames += [H_frames[-1] if H_frames else H] * (n_all - len(H_frames))
 
     # Prefer the CLEANED court track (off-court/teleport detections already nulled)
