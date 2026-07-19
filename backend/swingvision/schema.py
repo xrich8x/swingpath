@@ -25,7 +25,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Optional
 
-from . import court
+from . import analytics, court
 
 SCHEMA_VERSION = "1.0"
 
@@ -121,6 +121,19 @@ class Stats:
     # Metres each player ran (court-plane path length), {"A": near, "B": far}. The
     # far player's value is approximate (perspective amplifies its position jitter).
     distance_run_m: dict[str, float] = field(default_factory=dict)
+    # --- Serve + rally analytics (additive; older match.json simply omit these) --
+    # Serve placement counts per server, by court side and lateral band. Only serves
+    # that landed IN (and whose call we trust) are placed — a fault has no zone.
+    #   {"A": {"deuce": {"T":n,"body":n,"wide":n}, "ad": {...}, "total": n}, "B": {...}}
+    serve_placement: dict[str, Any] = field(default_factory=dict)
+    # First vs second serve, derived from the point/fault sequence (see
+    # derive_serve_order). "unknown" where the state can't be trusted.
+    #   {"A": {"first_total","first_in","second_total","second_in","unknown"}, "B": {...}}
+    serve_split: dict[str, Any] = field(default_factory=dict)
+    # Rally-length histogram by shots-per-rally (Tennis Abstract buckets).
+    rally_length_buckets: dict[str, int] = field(default_factory=dict)
+    # Per-player shot-type mix, {"A": {"serve":n, "forehand":n, ...}, "B": {...}}.
+    shot_mix_by_player: dict[str, dict[str, int]] = field(default_factory=dict)
 
 
 @dataclass
@@ -151,6 +164,58 @@ class Match:
         return asdict(self)
 
 
+# Rally-length buckets (shots per rally). Tennis Abstract convention.
+RALLY_BUCKETS = ("1-3", "4-6", "7-9", "10+")
+
+
+def _rally_bucket(n_shots: int) -> str:
+    if n_shots <= 3:
+        return "1-3"
+    if n_shots <= 6:
+        return "4-6"
+    if n_shots <= 9:
+        return "7-9"
+    return "10+"
+
+
+def _server_end(player: str) -> str:
+    """Which baseline a server stands behind. Player A is always the near-half
+    player (pipeline assigns 'A' to y < NET_Y), B the far player."""
+    return "near" if player == "A" else "far"
+
+
+def derive_serve_order(shots: list[Shot]) -> dict[int, str]:
+    """Map each serve's shot id -> "first" | "second" | "unknown" (the logic layer).
+
+    First vs second serve can't be read from one bounce — it's point state. A
+    serve is a SECOND serve iff the previous serve, by the same player, was a fault
+    (landed out) with no rally play in between. A groundstroke between two serves
+    means a new point started, so the next serve is a first serve; a second serve
+    (whether in or a double fault) always resets the next serve to first.
+
+    Where a serve's line call isn't trustworthy (call_confident is False) we can't
+    tell whether it faulted, so that serve — and the fault state it would set — is
+    reported "unknown" rather than guessed. Shots are consumed in id/time order.
+    """
+    order: dict[int, str] = {}
+    fault_pending_for: Optional[str] = None  # player whose last (first) serve faulted
+    for s in sorted(shots, key=lambda sh: sh.id):
+        if s.type != "serve":
+            fault_pending_for = None  # rally play => the next serve begins a new point
+            continue
+        if not getattr(s, "call_confident", True):
+            order[s.id] = "unknown"
+            fault_pending_for = None  # unsure it faulted: don't propagate a guess
+            continue
+        if fault_pending_for == s.player:
+            order[s.id] = "second"
+            fault_pending_for = None  # point is decided after the second serve
+        else:
+            order[s.id] = "first"
+            fault_pending_for = s.player if s.call == "out" else None
+    return order
+
+
 def compute_stats(shots: list[Shot], rallies: list[Rally]) -> Stats:
     """Derive the summary stats block from shots + rallies. Deterministic; the
     dashboard renders these directly."""
@@ -165,6 +230,49 @@ def compute_stats(shots: list[Shot], rallies: list[Rally]) -> Stats:
         "in": sum(1 for s in shots if s.call == "in"),
         "out": sum(1 for s in shots if s.call == "out"),
     }
+
+    # Per-player shot-type mix.
+    shot_mix_by_player: dict[str, dict[str, int]] = {}
+    for s in shots:
+        m = shot_mix_by_player.setdefault(s.player, {})
+        m[s.type] = m.get(s.type, 0) + 1
+
+    # Serve placement + first/second split. Placement counts only IN serves with a
+    # trusted call (a fault has no meaningful zone); the split uses every serve.
+    serve_order = derive_serve_order(shots)
+    serve_placement: dict[str, Any] = {}
+    serve_split: dict[str, Any] = {}
+    for s in shots:
+        if s.type != "serve":
+            continue
+        pl = serve_placement.setdefault(
+            s.player,
+            {"deuce": {"T": 0, "body": 0, "wide": 0},
+             "ad": {"T": 0, "body": 0, "wide": 0}, "total": 0},
+        )
+        if s.is_in and getattr(s, "call_confident", True):
+            side, band = analytics.serve_placement(s.bounce_xy, _server_end(s.player))
+            pl[side][band] += 1
+            pl["total"] += 1
+        sp = serve_split.setdefault(
+            s.player,
+            {"first_total": 0, "first_in": 0, "second_total": 0,
+             "second_in": 0, "unknown": 0},
+        )
+        which = serve_order.get(s.id, "unknown")
+        if which == "first":
+            sp["first_total"] += 1
+            sp["first_in"] += int(s.is_in)
+        elif which == "second":
+            sp["second_total"] += 1
+            sp["second_in"] += int(s.is_in)
+        else:
+            sp["unknown"] += 1
+
+    rally_length_buckets = {b: 0 for b in RALLY_BUCKETS}
+    for r in rallies:
+        rally_length_buckets[_rally_bucket(len(r.shot_ids))] += 1
+
     return Stats(
         shot_count=len(shots),
         rally_count=len(rallies),
@@ -172,6 +280,10 @@ def compute_stats(shots: list[Shot], rallies: list[Rally]) -> Stats:
         top_speed_kmh=round(max(speeds), 1) if speeds else 0.0,
         shot_mix=shot_mix,
         line_calls=line_calls,
+        serve_placement=serve_placement,
+        serve_split=serve_split,
+        rally_length_buckets=rally_length_buckets,
+        shot_mix_by_player=shot_mix_by_player,
     )
 
 

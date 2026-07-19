@@ -19,6 +19,18 @@ from . import court
 
 MS_TO_KMH = 3.6
 
+# --- Serve-placement bands (metres, measured inward from each box edge) -------
+# A service box is 4.115 m wide (X_LEFT_SINGLES..X_CENTER, mirrored). Coaches aim
+# serves at three lateral targets, each about one racquet-length (~0.7 m) wide:
+#   - T:    hugging the centre service line
+#   - Wide: hugging the singles sideline
+#   - Body: the ~2.6 m in between (the returner's body)
+# Widths are the standard coaching targets, not invented zones. Sources:
+#   https://www.ten-fifty5.com/post/tennis-serve-placement-zones-how-to-read-and-win-from-the-t-wide-and-body
+#   https://www.7shottennis.com/tennis-court-visualization/tennis-serve-targets/
+SERVE_T_BAND_M = 0.7      # band along the centre service line
+SERVE_WIDE_BAND_M = 0.7   # band along the singles sideline
+
 
 def speed_between(
     p0: Sequence[float], t0: float, p1: Sequence[float], t1: float
@@ -92,3 +104,47 @@ def line_call(
 ) -> str:
     """'in' or 'out' for a bounce. The string the schema's `call` field stores."""
     return "in" if is_in(bounce_xy, shot_type, singles, margin) else "out"
+
+
+def serve_placement(
+    bounce_xy: Sequence[float], server_end: str
+) -> tuple[str, str]:
+    """Classify where a serve bounced: (court_side, band).
+
+    - court_side: "deuce" | "ad" — which service box, read as the standard tennis
+      court crossed with the server's end (a serve is struck cross-court, so the box
+      the ball lands in tells you the court served from).
+    - band: "T" | "body" | "wide" — the lateral third of that box (see the
+      SERVE_*_BAND_M constants).
+
+    `server_end` is "near" (player A, serving to the far service boxes) or "far"
+    (player B, serving to the near boxes). Facing the net, the deuce court is on the
+    server's right; the cross-court serve lands in the diagonally opposite box, so:
+      - near server: a bounce in the LEFT box (x < centre) came from the deuce court;
+      - far  server: a bounce in the RIGHT box (x > centre) came from the deuce court.
+
+    Pure geometry on court metres. The lateral band needs only x (not which half),
+    so a slightly-long serve still gets a band; callers decide whether to count
+    faults at all (use the shot's `is_in`).
+    """
+    x = float(bounce_xy[0])
+    left_box = x < court.X_CENTER
+    sideline = court.X_LEFT_SINGLES if left_box else court.X_RIGHT_SINGLES
+
+    dist_center = abs(x - court.X_CENTER)
+    dist_sideline = abs(x - sideline)
+    eps = 1e-9  # keep the band edge inclusive despite float round-off
+    if dist_center <= SERVE_T_BAND_M + eps:
+        band = "T"
+    elif dist_sideline <= SERVE_WIDE_BAND_M + eps:
+        band = "wide"
+    else:
+        band = "body"
+
+    if server_end == "near":
+        court_side = "deuce" if left_box else "ad"
+    elif server_end == "far":
+        court_side = "ad" if left_box else "deuce"
+    else:
+        raise ValueError(f"server_end must be 'near' or 'far', got {server_end!r}")
+    return court_side, band

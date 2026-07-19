@@ -45,20 +45,58 @@ def _rand(rng: np.random.Generator, lo: float, hi: float) -> float:
     return float(rng.uniform(lo, hi))
 
 
+# Demo serve-placement mix — roughly pro reference (~30% T, ~25% wide, rest body).
+# Just for believable synthetic data; the real placement stat is measured, not set.
+_SERVE_BANDS = (("T", 0.30), ("wide", 0.25), ("body", 0.45))
+
+
+def _serve_band_x(rng, x_lo: float, x_hi: float) -> float:
+    """Sample an in-serve x inside one service box, biased to realistic bands.
+
+    The box spans [x_lo, x_hi] (one half of the singles width). T hugs the centre
+    service line, wide hugs the singles sideline, body is the middle — each ~0.7 m,
+    matching analytics.serve_placement's definition so the demo's placement stats
+    land in the band it aimed for.
+    """
+    left_box = x_lo < court.X_CENTER
+    r, cum, band = rng.random(), 0.0, "body"
+    for name, p in _SERVE_BANDS:
+        cum += p
+        if r <= cum:
+            band = name
+            break
+    if band == "T":
+        b_lo, b_hi = (court.X_CENTER - 0.7, court.X_CENTER) if left_box else \
+                     (court.X_CENTER, court.X_CENTER + 0.7)
+    elif band == "wide":
+        b_lo, b_hi = (court.X_LEFT_SINGLES, court.X_LEFT_SINGLES + 0.7) if left_box else \
+                     (court.X_RIGHT_SINGLES - 0.7, court.X_RIGHT_SINGLES)
+    else:  # body — the ~2.6 m between the two bands
+        b_lo, b_hi = (court.X_LEFT_SINGLES + 0.7, court.X_CENTER - 0.7) if left_box else \
+                     (court.X_CENTER + 0.7, court.X_RIGHT_SINGLES - 0.7)
+    return _rand(rng, b_lo + 0.08, b_hi - 0.08)   # small inset keeps it clearly in
+
+
 def _serve_box(rng, striker: str, out: bool) -> list[float]:
-    """Bounce target for a serve: the opposite service box (or just long/wide)."""
-    if striker == "A":
+    """Bounce target for a serve: a realistic spot in the diagonal service box.
+
+    The server alternates deuce/ad court; the cross-court serve lands in the
+    matching box. A faulted serve lands long past the service line.
+    """
+    serve_side = "deuce" if rng.random() < 0.5 else "ad"
+    if striker == "A":                 # near player, serving to the far boxes
         y_lo, y_hi = court.NET_Y, court.Y_FAR_SERVICE
         long_y = y_hi + _rand(rng, 0.3, 1.0)
-    else:
+        left_box = serve_side == "deuce"   # A's deuce court -> far LEFT box
+    else:                              # far player, serving to the near boxes
         y_lo, y_hi = court.Y_NEAR_SERVICE, court.NET_Y
         long_y = y_lo - _rand(rng, 0.3, 1.0)
+        left_box = serve_side == "ad"      # B's ad court -> near LEFT box
+    x_lo, x_hi = (court.X_LEFT_SINGLES, court.X_CENTER) if left_box else \
+                 (court.X_CENTER, court.X_RIGHT_SINGLES)
     if out:
-        return [_rand(rng, court.X_LEFT_SINGLES, court.X_RIGHT_SINGLES), long_y]
-    return [
-        _rand(rng, court.X_LEFT_SINGLES + 0.25, court.X_RIGHT_SINGLES - 0.25),
-        _rand(rng, y_lo + 0.5, y_hi - 0.4),
-    ]
+        return [_rand(rng, x_lo, x_hi), long_y]   # long fault (not placed)
+    return [_serve_band_x(rng, x_lo, x_hi), _rand(rng, y_lo + 0.5, y_hi - 0.4)]
 
 
 def _groundstroke_bounce(rng, striker: str, out: bool) -> list[float]:

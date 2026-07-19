@@ -58,5 +58,33 @@ Sources:
   `call_confident`/`speed_confident` flags already exist; respect them).
 - Sparse-ball clips (worn clay) will have few serves — that's honest, not a bug.
 
-## Results (fill in during the session)
-- _pending_
+## Results (2026-07-19)
+Done end to end; 108 backend tests pass.
+1. **`analytics.serve_placement(bounce_xy, server_end)` → (deuce|ad, T|body|wide)**
+   — pure geometry. `SERVE_T_BAND_M`/`SERVE_WIDE_BAND_M = 0.7` module constants,
+   sources cited. Deuce/ad derived by crossing the box (x vs centre) with the
+   server's end, since a serve is struck cross-court. Unit tests on every band
+   edge + both server ends (test_analytics.py).
+2. **`schema.compute_stats` additions (all additive):** `serve_placement` counts
+   per player/side (IN serves with a trusted `call_confident` only — a fault has
+   no zone), `serve_split` (1st/2nd via `derive_serve_order`, a fault-sequence
+   state machine that handles double faults and reports "unknown" when the call
+   isn't trusted), `rally_length_buckets` (1-3/4-6/7-9/10+), `shot_mix_by_player`.
+   test_stats.py covers the state machine + aggregation.
+3. **Statistics.jsx:** a 6-zone serve-placement mini-court (deuce | ad × T/body/
+   wide, filled by count intensity, server toggle), a 1st/2nd serve % panel, and
+   rally-length bars. New CSS in index.css. Panels are guarded so older match.json
+   without the fields just omit them.
+4. **Verified by hand:** an independent recompute of every demo serve's zone
+   matches the stored `serve_placement` exactly; sampled serves checked by hand.
+   Demo regenerated (`run.py demo`) — the demo serve generator now targets
+   realistic bands (T ~47% / body ~37% / wide ~16% on the sample) instead of
+   scattering uniformly. Analyzed clip's `stats` recomputed in place (distance_run
+   preserved); its lone serve is honestly `unknown`/unplaced (untrusted call).
+   Both demo and analyzed render in the dashboard (verified via the live DOM;
+   the browser-pane screenshot tool was down, so proof is a faithful re-render of
+   the shipped SVG + live numbers).
+
+Not done / out of scope: the real pipeline still marks only the first stroke of a
+clip as a serve (`is_serve = len(pending) == 0`), so real analyzed clips are
+serve-sparse by construction — honest, per the guardrails, not fixed here.

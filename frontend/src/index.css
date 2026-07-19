@@ -286,6 +286,37 @@ body {
 .callsplit-legend { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .callsplit-legend > div { display: flex; align-items: center; }
 
+/* ---- Serve analytics ---- */
+.panel-wide { grid-column: 1 / -1; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.panel-head h3 { margin: 0 0 14px; }
+.seg-group { display: inline-flex; background: var(--bg-elev2); border: 1px solid var(--line); border-radius: 8px; padding: 3px; margin-bottom: 10px; }
+.seg-group .seg { padding: 5px 12px; font-size: 12px; border-radius: 6px; }
+
+.serve-placement { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(180px, 1fr); gap: 18px; align-items: center; }
+.serve-court { width: 100%; height: auto; }
+.serve-court-outline { stroke: var(--court-line); stroke-width: 2; opacity: 0.9; }
+.serve-zone-div { stroke: var(--court-line); stroke-width: 1; opacity: 0.4; }
+.serve-center-line { stroke: var(--court-line); stroke-width: 2.2; opacity: 0.95; }
+.serve-zone-count { fill: var(--text); font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.serve-zone-label { fill: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.serve-side-label { fill: var(--muted); font-size: 11px; }
+
+.serve-band-summary { display: flex; flex-direction: column; gap: 8px; font-size: 13px; margin-bottom: 10px; }
+.serve-band-summary > div { display: flex; align-items: center; }
+.swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; background: var(--accent); }
+.swatch-t { opacity: 0.85; }
+.swatch-body { opacity: 0.45; }
+.swatch-wide { opacity: 0.2; border: 1px solid var(--accent-dim); }
+
+.serve-split { display: flex; flex-direction: column; gap: 14px; }
+.serve-split-name { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+.serve-split-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.serve-split-cell { background: var(--bg-elev2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.serve-split-pct { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.serve-split-cap { color: var(--muted); font-size: 11px; margin-top: 2px; }
+.serve-split-unknown { color: var(--muted); font-size: 12px; margin-top: 6px; }
+
 /* ---- Rallies tab ---- */
 .rallies-help { margin: 0 0 14px; }
 .rally-table {
