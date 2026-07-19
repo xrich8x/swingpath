@@ -1,0 +1,81 @@
+{
+  "video": {
+    "filename": "bump_ntrp30.mp4",
+    "fps": 29.97,
+    "width": 600,
+    "height": 298,
+    "duration_s": 30.0
+  },
+  "players": [
+    {
+      "id": "A",
+      "name": "Player A (near)"
+    },
+    {
+      "id": "B",
+      "name": "Player B (far)"
+    }
+  ],
+  "shots": [],
+  "rallies": [],
+  "score": {
+    "final": "0-0",
+    "sets": [],
+    "games": [
+      0,
+      0
+    ],
+    "timeline": []
+  },
+  "stats": {
+    "shot_count": 0,
+    "rally_count": 0,
+    "avg_speed_kmh": 0.0,
+    "top_speed_kmh": 0.0,
+    "shot_mix": {},
+    "line_calls": {
+      "in": 0,
+      "out": 0
+    },
+    "distance_run_m": {
+      "A": 35.8,
+      "B": 0.0
+    }
+  },
+  "schema_version": "1.0",
+  "court": {
+    "length_m": 23.77,
+    "width_m": 10.97,
+    "singles_width_m": 8.23,
+    "service_line_from_net_m": 6.4
+  },
+  "calibration": {
+    "corners": {
+      "far_bl_doubles": [
+        225.8599008146182,
+        128.66387045295565
+      ],
+      "far_br_doubles": [
+        388.718548992199,
+        132.8538411091195
+      ],
+      "near_bl_doubles": [
+        106.24062885095606,
+        229.27311790560685
+      ],
+      "near_br_doubles": [
+        517.3212192146599,
+        214.0699561601872
+      ]
+    },
+    "source": "manual+snap",
+    "hfov_deg": 54.4,
+    "lens_k1": 0.0,
+    "events": [
+      {
+        "frame": 480,
+        "kind": "reacquired"
+      }
+    ]
+  }
+}

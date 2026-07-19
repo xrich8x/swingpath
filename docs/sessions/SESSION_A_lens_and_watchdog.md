@@ -59,5 +59,67 @@ Sources:
 - Never emit a non-court shape; measure after each step; cold tests only on
   never-used clips; 720p for new footage; don't train on gold labels.
 
-## Results (fill in during the session)
-- _pending_
+## Results (2026-07-19)
+
+**Step 1 — k1 estimator: DONE, with a method correction.** The textbook
+circle-fit route (F = 1/k1 from an algebraic fit) collapses on shallow arcs
+(Kasa small-arc bias: a true −0.18 read as −0.53). Shipped instead: per-chain
+k1 by minimizing the STRAIGHTNESS residual of the undistorted chain
+(model-consistent chain growth; a straight chain actively votes 0). Accuracy on
+synthetic known-k1 renders: within ~0.012 absolute over k1 ∈ [−0.25, +0.08],
+~0.05 s/frame. `calibration.estimate_k1 / undistort_points / distort_points`,
+14 tests in `tests/test_lens.py`.
+
+**Step 2 — threaded through calibrate_video, and the premise was WRONG on the
+target clip.** Three independent measurements agree that e2e_l6o8FOoy3MY has
+**no radial distortion** (in-camera rectified): the real paint is straight to
+±1 px over a 967 px span; no k1 in [−0.10, +0.13] reduces the lock residual
+(minimum at 0); per-frame plumb-line reads scatter +0.04..+0.18 (a real lens is
+frame-constant). The pipeline's cross-frame HONESTY GATE
+(`estimate_k1_frames`) therefore refuses k1 on this clip — correctly.
+
+The ACTUAL cause of the near-left sideline offset: the physical camera fit's
+**roll = 0 assumption**. The mount is tilted −1.1°, which roll-free could only
+express as an 8–16 px displaced court. Fix: bounded roll DOF (±3°) on the
+TRUSTED path only (`shape_lock` / calibrate); the auto-detect candidate path
+keeps roll frozen — measured on gold, roll there let a 68 px wrong court gain
+2 consensus votes past the auto-accept bar (am_indoor_hard2 4→6), so it was
+restricted and the law re-verified.
+
+GATES: gold consensus scorecard **17/20 locked, median 12.0 px** (baseline
+17/20 ~12 px; every ≥6-vote court correct, wrong courts ≤5 votes). e2e frame-60
+near-left crop `[330:640,120:640]`: sideline residual **7.99 → 3.41 px**,
+near-baseline **8.41 → 1.08 px** (local: data/output/e2e_l6o8FOoy3MY
+.sideline_{before,after}.png); reprojection 8.20 → 2.60 px; lock displacement
+15.8 → 10.0 px. `lens_k1` stored in match.calibration.
+
+**Step 3 — lens-corrected projection path: DONE.** With a measured lens, ball
+pixels are undistorted after camera-motion unwarp and projected with the
+pinhole H_und; player positions re-derived from cached ankle keypoints; the
+physics camera gets undistorted corners+pixels; the shot-type contact point is
+bent back before comparing against real striker keypoints. Points only, no
+frame resampling. GATES: tennis_sample (telephoto, k1≈0) analyze output is
+byte-identical before/after the change (same cache+flags, empty diff);
+`test_metric_projection_through_the_lens` shows the pinhole path exact
+(<1e-6 m) where the distorted-corner path errs >0.05 m; e2e re-checked under
+the corrected court (positions on-court, no artifacts; one borderline
+6.7 km/h shot fell below the stroke gates).
+
+**Step 4 — watchdog on a moving camera: PROVED.** Synthetic bump built by
+`tools/make_bump_clip.py` (am_ntrp30 source, 900 frames @600×298, +40 px
+crop-shift at frame 450). Signal pre-checks: pre-bump court coverage 0.53, the
+same court on post-bump frames 0.18; fresh post-bump autodetect locks at 0.83.
+The full analyze run printed `camera change detected ~frame 480 -> court
+RE-ACQUIRED (motion track rebased)` — one 30-frame check-interval after the
+bump — and recorded `{"frame": 480, "kind": "reacquired"}` in
+match.calibration.events. The tracked post-bump overlay is sane and BETTER
+than the (deliberately slightly-off) initial calibration: line coverage 0.59
+pre-bump → 0.71 post-bump (data/output/bump_ntrp30.overlay_f600.png hugs the
+paint). Evidence: data/output/bump_ntrp30.match{.json,.perception.json}.
+
+**Definition of done: all four boxes ticked.** 93 backend tests pass. The one
+scope adjustment vs the brief: the e2e residual reduction came from the
+measured cause (camera roll) rather than the hypothesized one (lens k1) — the
+k1 machinery shipped anyway, honest-gated, awaiting genuinely uncorrected
+wide-lens footage.
+
