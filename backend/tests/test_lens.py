@@ -131,6 +131,27 @@ def test_estimate_k1_frames_refuses_too_few_frames():
     assert k1 == 0.0
 
 
+def test_metric_projection_through_the_lens():
+    # The projection-path claim: for a lens camera, undistort the observed
+    # pixel and project with the PINHOLE homography -> true court position.
+    # The old path (homography fitted on distorted corners, applied to the
+    # distorted pixel) is exact at the corners but systematically off between
+    # them - that was the error being removed.
+    k1 = -0.15
+    Hm = calibration.homography_from_landmarks(_CORNERS)          # pinhole truth
+    obs_corners = {n: calibration.distort_points([p], k1, (W, H))[0]
+                   for n, p in _CORNERS.items()}
+    H_old = calibration.homography_from_landmarks(obs_corners)
+    truth_m = [(2.0, 3.0), (5.5, 11.9), (9.0, 20.0), (0.5, 18.0), (10.0, 1.0)]
+    obs = calibration.distort_points(calibration.court_to_image(Hm, truth_m), k1, (W, H))
+    old = calibration.image_to_court(H_old, obs)
+    new = calibration.image_to_court(Hm, calibration.undistort_points(obs, k1, (W, H)))
+    err_old = np.hypot(*(old - np.asarray(truth_m)).T)
+    err_new = np.hypot(*(new - np.asarray(truth_m)).T)
+    assert err_new.max() < 1e-6, "pinhole path must be exact"
+    assert err_old.max() > 0.05, "the distorted path's systematic error vanished?"
+
+
 def test_undistorted_corners_give_straight_sidelines():
     # The functional claim behind step 2: undistorting points recovers pinhole
     # geometry. Take court-line points, distort them (what a wide lens observes),

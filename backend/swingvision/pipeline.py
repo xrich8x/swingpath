@@ -1075,6 +1075,46 @@ def analyze_video(
             return px
         q = cam_inv[i] @ np.array([px[0], px[1], 1.0])
         return (q[0] / q[2], q[1] / q[2])
+
+    # LENS: metric projections go through pinhole space when a lens was
+    # measured - undistort the observed pixel, project with the pinhole H_und.
+    # With lens_k1 == 0 (the common case) both helpers are exact no-ops and
+    # every code path below is unchanged.
+    H_metric = H_und if lens_k1 else H
+
+    def und(px):
+        if not lens_k1 or px is None:
+            return px
+        q = calibration.undistort_points([px], lens_k1, (width, height))[0]
+        return (float(q[0]), float(q[1]))
+
+    if lens_k1:
+        # Player court positions were projected in DISTORTED pixel space during
+        # perception; redo them lens-corrected from the cached keypoints (ankle
+        # midpoint - the same contact point pose.PlayerPose.feet uses). Frames
+        # whose feet came from the box-bottom fallback (ankles unseen; the box
+        # is not cached) keep their perceived value.
+        def _feet(kp):
+            pts = [(x, y) for x, y, c in (kp[15], kp[16]) if c > 0.2]
+            if not pts:
+                return None
+            return (float(np.mean([p[0] for p in pts])),
+                    float(np.mean([p[1] for p in pts])))
+
+        def _relens(courts, kpts):
+            out = list(courts)
+            for i, kp in enumerate(kpts):
+                if not kp or i >= len(out) or out[i] is None:
+                    continue
+                f = _feet(kp)
+                if f is None:
+                    continue
+                x, y = calibration.image_to_court(H_metric, [und(unwarp(f, i))])[0]
+                out[i] = (float(x), float(y))
+            return out
+
+        near_court = _relens(near_court, near_kpts)
+        far_court = _relens(far_court, far_kpts)
     n = len(ball_px)
     print(f"[analyze] {n} frames; ball detected in {sum(p is not None for p in ball_px)}")
 
@@ -1094,12 +1134,12 @@ def analyze_video(
             ball_court_raw.append(None)
             ball_conf.append(None)
             continue
-        p0 = unwarp(px, i)   # camera-motion compensation (frame-t px -> frame-0 px)
-        x, y = calibration.image_to_court(H, [p0])[0]
+        p0 = und(unwarp(px, i))   # camera-motion compensation + lens correction
+        x, y = calibration.image_to_court(H_metric, [p0])[0]
         if (-RUNOFF_M <= x <= court.DOUBLES_WIDTH + RUNOFF_M
                 and -RUNOFF_M <= y <= court.LENGTH + RUNOFF_M):
             ball_court_raw.append([float(x), float(y)])
-            ball_conf.append(calibration.court_scale_m_per_px(H, p0))
+            ball_conf.append(calibration.court_scale_m_per_px(H_metric, p0))
         else:
             ball_court_raw.append(None)
             ball_conf.append(None)
@@ -1117,16 +1157,27 @@ def analyze_video(
     # arc on the court plane, invert the flight physics. Best-effort — skipped if
     # the framework/corners aren't available.
     # The physics camera is built from frame-0 corner pixels, so feed it ball
-    # pixels un-warped to frame-0 space too (camera-motion consistency).
-    ball_px_cam0 = [None if p is None else unwarp(p, i) for i, p in enumerate(ball_px)]
+    # pixels un-warped to frame-0 space too (camera-motion consistency). With a
+    # measured lens everything physics sees moves to pinhole space: undistorted
+    # ball pixels, undistorted corners, the pinhole H (the physics camera model
+    # IS a pinhole - feeding it bent pixels was the systematic error).
+    ball_px_cam0 = [None if p is None else und(unwarp(p, i))
+                    for i, p in enumerate(ball_px)]
+    corners_metric = named_corners
+    if lens_k1 and named_corners:
+        corners_metric = {
+            n: [float(v) for v in
+                calibration.undistort_points([xy], lens_k1, (width, height))[0]]
+            for n, xy in named_corners.items()}
     physics_shots = _estimate_speed_spin(
-        ball_px_cam0, near_court, far_court, named_corners, H, (width, height),
-        fps_eff, camera_hfov_deg, hit_idx, bounce_idx
+        ball_px_cam0, near_court, far_court, corners_metric, H_metric,
+        (width, height), fps_eff, camera_hfov_deg, hit_idx, bounce_idx
     )
 
     match = _build_match_from_events(
         track, hit_idx, bounce_idx, near_court, far_court, fps_eff, width, height,
-        video_path, physics_shots, ball_conf, near_kpts, far_kpts, H, singles=not use_doubles
+        video_path, physics_shots, ball_conf, near_kpts, far_kpts, H_metric,
+        singles=not use_doubles, lens_k1=lens_k1
     )
     # Carry the calibration in the match: the dashboard's Court Setup seeds its
     # adjustable overlay from these corners, and camera-change events tell the
@@ -1215,6 +1266,7 @@ def _estimate_speed_spin(ball_px, near_court, far_court, named_corners, H, img_w
 def _build_match_from_events(
     track, hit_idx, bounce_idx, near_court, far_court, fps, width, height, video_path,
     physics_shots=None, ball_conf=None, near_kpts=None, far_kpts=None, H=None, singles=True,
+    lens_k1=0.0,
 ) -> Match:
     """Turn ball track + contacts + player positions into a schema.Match.
 
@@ -1304,7 +1356,11 @@ def _build_match_from_events(
                        for j in range(h - 3, h + 4)]
         contact_xy_img = None
         if H is not None:
+            # Striker keypoints are real (distorted) pixels, so a measured lens
+            # must bend the projected contact point back before comparing.
             cpt = calibration.court_to_image(H, [hit_xy])[0]
+            if lens_k1:
+                cpt = calibration.distort_points([cpt], lens_k1, (width, height))[0]
             contact_xy_img = (float(cpt[0]), float(cpt[1]))
         # Tennis rule: a SECOND bounce before the next contact ends the point —
         # whatever "hit" follows is a pickup/feed, so the rally must break here.
