@@ -105,17 +105,36 @@ byte-identical before/after the change (same cache+flags, empty diff);
 the corrected court (positions on-court, no artifacts; one borderline
 6.7 km/h shot fell below the stroke gates).
 
-**Step 4 — watchdog on a moving camera: PROVED.** Synthetic bump built by
-`tools/make_bump_clip.py` (am_ntrp30 source, 900 frames @600×298, +40 px
-crop-shift at frame 450). Signal pre-checks: pre-bump court coverage 0.53, the
-same court on post-bump frames 0.18; fresh post-bump autodetect locks at 0.83.
-The full analyze run printed `camera change detected ~frame 480 -> court
-RE-ACQUIRED (motion track rebased)` — one 30-frame check-interval after the
-bump — and recorded `{"frame": 480, "kind": "reacquired"}` in
-match.calibration.events. The tracked post-bump overlay is sane and BETTER
-than the (deliberately slightly-off) initial calibration: line coverage 0.59
-pre-bump → 0.71 post-bump (data/output/bump_ntrp30.overlay_f600.png hugs the
-paint). Evidence: data/output/bump_ntrp30.match{.json,.perception.json}.
+**Step 4 — watchdog on a moving camera: PROVED (clip rebuilt after review).**
+Synthetic bump via `tools/make_bump_clip.py`. The full analyze printed
+`camera change detected ~frame 480 -> court RE-ACQUIRED (motion track rebased)`
+and recorded `{"frame": 480, "kind": "reacquired"}` in match.calibration.events.
+
+FIRST ATTEMPT WAS FLAWED (caught by the user): the original `--shift 40`
+cropped BOTH axes, which pushed the near-right corner (x≈612 of 640) out of
+the pre-bump frame. With a corner missing, multi-frame consensus couldn't lock
+(2/8 votes), so the seed fell back to a single-frame `auto_fit_frame` — a
+wrong-rung distorted quad, **62 px** off the human gold labels. That is the
+"insanely abnormal shape" that showed in the first evidence render. The
+line-detection code was never the problem; it was fed a mutilated framing.
+
+FIX: the tool now PADS (black-fills the vacated edge) instead of cropping, so
+the framing is never altered — nothing leaves the frame. Rebuilt clip
+`bump_ntrp30b.mp4` (640×338, +40 px vertical shift at frame 450). Measured on
+the corrected clip:
+- pre-bump consensus calibration **8/8 votes**; seed vs human gold labels
+  (source frame 817) **6.1 px** (was 62.1 px);
+- watchdog signal: coverage 0.87 baseline → 0.21 the frame the bump lands
+  (0.21 < the 0.45× trigger), fires cleanly;
+- tracked court coverage 0.87 pre-bump → **0.91** post-bump (re-acquired);
+  both overlays land on the paint (data/output/bump30b_{pre,post}_tracked_*.png).
+- BONUS: this footage has a genuine mild lens distortion — the honesty gate
+  ACCEPTED k1 = +0.061 (consistent across frames; the untouched source reads
+  +0.060 independently), so it's also the first REAL clip exercising the
+  Step-3 lens-correction path.
+Evidence: data/output/bump_ntrp30b.match{.json,.perception.json}. Only one gold
+frame exists in this segment, so the post-bump court is validated by coverage
+(0.91), not a second gold score.
 
 **Definition of done: all four boxes ticked.** 93 backend tests pass. The one
 scope adjustment vs the brief: the e2e residual reduction came from the
