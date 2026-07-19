@@ -205,6 +205,224 @@ def reprojection_error(
     return float(np.sqrt(((projected - image) ** 2).sum(axis=1)).mean())
 
 
+# --- Lens distortion (division model, 1-parameter) ---------------------------
+# A wide lens bends straight world lines into curves near the frame edges, so a
+# homography fitted on 4 corners is exact AT the corners while the lines between
+# them drift off the paint (the near-left sideline offset on wide phone clips).
+# Fitzgibbon's DIVISION model captures that with one parameter k1:
+#
+#     p_u = c + (p_d - c) / (1 + k1 * r_d^2)
+#
+# where p_d is the observed (distorted) pixel, p_u the pinhole pixel, c the
+# distortion centre (assumed = image centre, standard for 1-param use), and r_d
+# the distance from c NORMALIZED BY THE IMAGE HALF-DIAGONAL (so k1 is
+# resolution-independent; barrel lenses have k1 < 0, typically -0.05..-0.25).
+#
+# Under this model the image of a straight line is a CIRCULAR ARC, so k1 can be
+# read off the court's own lines (the plumb-line method): fit a circle
+# x^2 + y^2 + Dx + Ey + F = 0 to a detected line's pixels in centred-normalized
+# coordinates, and F = 1/k1. References: Bukhari & Dailey (JMIV 2012),
+# "Automatic Radial Distortion Estimation from a Single Image".
+
+
+def _lens_norm(img_wh: Sequence[float]) -> tuple[float, float, float]:
+    """(cx, cy, s): distortion centre and the half-diagonal normalization."""
+    w, h = float(img_wh[0]), float(img_wh[1])
+    return w / 2.0, h / 2.0, math.hypot(w, h) / 2.0
+
+
+def undistort_points(points, k1: float, img_wh: Sequence[float]) -> np.ndarray:
+    """Distorted pixels -> pinhole pixels (closed-form division model)."""
+    pts = np.atleast_2d(np.asarray(points, dtype=np.float64)).copy()
+    if abs(k1) < 1e-12:
+        return pts
+    cx, cy, s = _lens_norm(img_wh)
+    x = (pts[:, 0] - cx) / s
+    y = (pts[:, 1] - cy) / s
+    f = 1.0 + k1 * (x * x + y * y)
+    f = np.where(np.abs(f) < 1e-6, 1e-6, f)   # guard the model's blow-up radius
+    pts[:, 0] = cx + s * x / f
+    pts[:, 1] = cy + s * y / f
+    return pts
+
+
+def distort_points(points, k1: float, img_wh: Sequence[float]) -> np.ndarray:
+    """Pinhole pixels -> distorted pixels (exact inverse of undistort_points).
+
+    Solving r_u = r_d / (1 + k1 r_d^2) for r_d gives the closed form
+    r_d = (1 - sqrt(1 - 4 k1 r_u^2)) / (2 k1 r_u) (the branch that -> r_u as
+    k1 -> 0). Used to draw pinhole-space geometry (the corrected court overlay)
+    back onto the distorted frame.
+    """
+    pts = np.atleast_2d(np.asarray(points, dtype=np.float64)).copy()
+    if abs(k1) < 1e-12:
+        return pts
+    cx, cy, s = _lens_norm(img_wh)
+    x = (pts[:, 0] - cx) / s
+    y = (pts[:, 1] - cy) / s
+    ru = np.hypot(x, y)
+    disc = np.maximum(1.0 - 4.0 * k1 * ru * ru, 0.0)
+    denom = 2.0 * k1 * ru
+    with np.errstate(divide="ignore", invalid="ignore"):
+        scale = np.where(np.abs(denom) > 1e-12,
+                         (1.0 - np.sqrt(disc)) / np.where(denom == 0, 1, denom) / np.where(ru == 0, 1, ru),
+                         1.0)   # r_d/r_u; -> 1 at the centre
+    pts[:, 0] = cx + s * x * scale
+    pts[:, 1] = cy + s * y * scale
+    return pts
+
+
+@dataclass
+class K1Estimate:
+    """Result of estimate_k1: the median k1 over usable lines, how many lines
+    were usable, and each line's individual estimate (for diagnostics)."""
+    k1: float
+    n_lines: int
+    per_line: list
+
+
+def _line_rms(pts: np.ndarray) -> tuple[float, np.ndarray, float]:
+    """(rms_perp, unit_normal, rho) of the best-fit straight line through an
+    (N,2) point set (total least squares via the 2x2 covariance eigenvector)."""
+    c = pts.mean(axis=0)
+    q = pts - c
+    cov = q.T @ q / len(q)
+    evals, evecs = np.linalg.eigh(cov)          # ascending; evecs[:,0] = normal
+    n = evecs[:, 0]
+    return float(math.sqrt(max(evals[0], 0.0))), n, float(n @ c)
+
+
+def _chain_k1(pts_px: np.ndarray, img_wh, lo=-0.6, hi=0.3) -> tuple[float, float]:
+    """The k1 that best STRAIGHTENS one pixel chain: minimize the rms residual
+    of a line fitted to the undistorted points, over scalar k1. Returns
+    (k1, rms_at_k1). Well-conditioned where an algebraic circle fit is not: a
+    shallow arc barely constrains a circle's centre/radius (the Kasa fit
+    collapses to far-too-small circles on small-arc data - measured a true
+    -0.18 read as -0.53), but its straightness under a candidate k1 is direct
+    evidence. A genuinely straight chain votes k1 = 0 (undistorting a straight
+    line with any k1 != 0 CURVES it, so 0 is its minimum)."""
+    from scipy.optimize import minimize_scalar
+
+    def resid(k1: float) -> float:
+        return _line_rms(undistort_points(pts_px, k1, img_wh))[0]
+
+    r = minimize_scalar(resid, bounds=(lo, hi), method="bounded",
+                        options={"xatol": 1e-4})
+    return float(r.x), float(r.fun)
+
+
+def estimate_k1(frame: np.ndarray, min_span_frac: float = 0.25,
+                max_lines: int = 12, mask_fn=None) -> K1Estimate:
+    """Estimate the lens's radial distortion k1 from the court's own lines.
+
+    Plumb-line method: every long straight PAINTED line (baselines, sidelines,
+    fences) is straight in a pinhole image, so the k1 that straightens the
+    observed curves is the lens. Robustness comes from structure, not trust in
+    any one line:
+      * seeds are long Hough segments (deduped per painted line);
+      * each seed's pixel chain is grown model-consistently - undistort with
+        the chain's current k1, fit a straight line there, re-collect the mask
+        pixels on it - so the chain follows the real curve out to the frame
+        edges, where the k1 signal lives;
+      * arcs spanning < min_span_frac of the frame width are rejected (short
+        arcs have no measurable curvature);
+      * lines passing near the distortion centre are rejected (they stay
+        straight under ANY k1 - zero information);
+      * the final k1 is the MEDIAN over surviving lines.
+    Returns K1Estimate(k1=0.0, n_lines=0, ...) when nothing is usable - callers
+    treat that as "no correction".
+    """
+    import cv2
+
+    h, w = frame.shape[:2]
+    cx, cy, s = _lens_norm((w, h))
+    mask = (mask_fn or line_ridge_mask)(frame)
+    ys, xs = np.nonzero(mask)
+    if len(xs) < 200:
+        return K1Estimate(0.0, 0, [])
+    P = np.column_stack([xs, ys]).astype(np.float64)
+
+    segs = cv2.HoughLinesP(mask, 1, np.pi / 180.0, threshold=60,
+                           minLineLength=int(w * 0.15), maxLineGap=int(w * 0.02))
+    if segs is None:
+        return K1Estimate(0.0, 0, [])
+    segs = sorted((tuple(map(float, r)) for r in np.asarray(segs).reshape(-1, 4)),
+                  key=lambda r: -math.hypot(r[2] - r[0], r[3] - r[1]))
+
+    # Dedupe: one seed per painted line (a curved line yields many chords whose
+    # angles differ by a few degrees - the tolerance must absorb that).
+    seeds = []
+    for x1, y1, x2, y2 in segs:
+        th = math.atan2(y2 - y1, x2 - x1)
+        n = (th + math.pi / 2.0) % math.pi
+        rho = x1 * math.cos(n) + y1 * math.sin(n)
+        if rho < 0:
+            n, rho = (n + math.pi) % math.pi, -rho
+        dup = any(abs((n - sn + math.pi / 2) % math.pi - math.pi / 2) < math.radians(6.0)
+                  and abs(rho - sr) < max(10.0, w * 0.02)
+                  for sn, sr, _seg in seeds)
+        if not dup:
+            seeds.append((n, rho, (x1, y1, x2, y2)))
+        if len(seeds) >= max_lines:
+            break
+
+    tol_px = 3.5                        # on-line tolerance (undistorted space)
+    gap_px = max(20.0, w * 0.03)        # break the chain across real gaps
+    per_line: list[float] = []
+    for n, rho, (x1, y1, x2, y2) in seeds:
+        # A line through the distortion centre is straight under any k1.
+        if abs(rho - (cx * math.cos(n) + cy * math.sin(n))) / s < 0.10:
+            continue
+        d = np.array([-math.sin(n), math.cos(n)])          # line direction
+        t_all = P @ d
+        perp = P @ np.array([math.cos(n), math.sin(n)]) - rho
+        t0 = 0.5 * ((x1 + x2) * d[0] + (y1 + y2) * d[1])   # seed midpoint
+        ta, tb = sorted((x1 * d[0] + y1 * d[1], x2 * d[0] + y2 * d[1]))
+        sel = (np.abs(perp) <= max(4.0, w * 0.006)) & \
+              (t_all >= ta - w * 0.02) & (t_all <= tb + w * 0.02)
+        k1_i = None
+        for _ in range(4):
+            if int(sel.sum()) < 50:
+                k1_i = None
+                break
+            idx = np.nonzero(sel)[0]
+            if len(idx) > 4000:          # subsample for speed; keeps the shape
+                idx = idx[:: len(idx) // 4000 + 1]
+            k1_i, _rms = _chain_k1(P[idx], (w, h))
+            # Re-collect every mask pixel that lies on the chain's straight
+            # line ONCE UNDISTORTED with k1_i, then keep the contiguous run
+            # containing the seed (crossing lines only graze it; separate
+            # collinear paint is cut at the gap).
+            und_sel = undistort_points(P[idx], k1_i, (w, h))
+            _, nrm, r0 = _line_rms(und_sel)
+            und_all = undistort_points(P, k1_i, (w, h))
+            on = np.abs(und_all @ nrm - r0) <= tol_px
+            if not on.any():
+                k1_i = None
+                break
+            ts = np.sort(t_all[on])
+            cuts = np.nonzero(np.diff(ts) > gap_px)[0]
+            lo_t, hi_t = -np.inf, np.inf
+            for c in cuts:
+                if ts[c] < t0:
+                    lo_t = ts[c + 1]
+                else:
+                    hi_t = ts[c]
+                    break
+            sel = on & (t_all >= lo_t) & (t_all <= hi_t)
+        if k1_i is None or int(sel.sum()) < 50:
+            continue
+        span = float(t_all[sel].max() - t_all[sel].min())
+        if span < min_span_frac * w:
+            continue
+        if abs(k1_i) <= 0.55:           # interior of the search range only
+            per_line.append(float(k1_i))
+
+    if len(per_line) < 2:
+        return K1Estimate(0.0, len(per_line), per_line)
+    return K1Estimate(float(np.median(per_line)), len(per_line), per_line)
+
+
 def homography_from_landmarks(named_image_points: Mapping[str, Sequence[float]]) -> np.ndarray:
     """Convenience: build H from a {landmark_name: [x_px, y_px]} mapping using
     the canonical court coordinates in court.LANDMARKS. This is what the manual
