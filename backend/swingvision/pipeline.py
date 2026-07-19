@@ -333,6 +333,22 @@ def _sample_calib_frames(video_path: str, k: int = 8):
     return frames
 
 
+def _estimate_lens_k1(video_path, first_frame, H):
+    """Clip-level lens estimate for calibrate_video: the first frame plus a few
+    sampled ones, court-line-matched through H, judged by the cross-frame
+    honesty gate (calibration.estimate_k1_frames - a real lens reads the same
+    on every frame; scatter is speckle and gets refused). Prints the verdict."""
+    frames = [first_frame] + _sample_calib_frames(video_path, k=4)
+    k1, meds = calibration.estimate_k1_frames(frames, H=H)
+    if k1:
+        print(f"[calibration] lens: radial distortion k1={k1:+.3f} (consistent "
+              f"over {len(meds)} frames) - projections are lens-corrected")
+    elif meds:
+        print(f"[calibration] lens: no consistent radial distortion (per-frame "
+              f"reads {min(meds):+.3f}..{max(meds):+.3f}) - no correction")
+    return k1
+
+
 def calibrate_video(
     video_path: str,
     keypoints_path: Optional[str] = None,
@@ -341,8 +357,17 @@ def calibrate_video(
     """Calibrate a clip: manual keypoints JSON, else tiered auto-detection
     (consensus line-fit -> learned -> classical -> refuse). Optionally writes an
     overlay preview. Returns (H, reprojection_error_px, source, named_corners,
-    cam_hfov_deg) - cam_hfov_deg is the lens field-of-view from the physical
-    camera lock (None when the lock could not be applied)."""
+    cam_hfov_deg, lens_k1, H_und):
+      * H / named_corners live in the frame's real (distorted) pixel space -
+        everything that compares against pixels (lock step, watchdog, masks)
+        keeps using them;
+      * lens_k1 is the division-model radial distortion read off the court's
+        own lines (0.0 = none detected / refused as inconsistent);
+      * H_und (only when lens_k1 != 0) is the PINHOLE homography fitted on the
+        undistorted corners - metric projections should undistort points and
+        use it (see analyze_video);
+      * cam_hfov_deg is the lens field-of-view from the physical camera lock
+        (None when the lock could not be applied)."""
     from . import calibration, courtfit
 
     frame = _read_first_frame(video_path)
@@ -406,11 +431,22 @@ def calibrate_video(
 
     H = calibration.homography_from_landmarks(named)
     cam_hfov_deg = None
+    k1, H_und = 0.0, None
+    w_img, h_img = frame.shape[1], frame.shape[0]
+
+    def _undistorted_H(pts):
+        und = {n: [float(v) for v in
+                   calibration.undistort_points([xy], k1, (w_img, h_img))[0]]
+               for n, xy in pts.items()}
+        return calibration.homography_from_landmarks(und)
 
     if manual_exact:
         source = "manual-exact"
         print("[calibration] exact manual calibration (user-placed corners are "
               "final; snap and shape lock skipped)")
+        k1 = _estimate_lens_k1(video_path, frame, H)
+        if k1:
+            H_und = _undistorted_H(named)   # corners stay final; lens still honest
     else:
         # Snap the corners onto the real lines (amateur-robust), guarded: white
         # lines first, then the hue-agnostic CLAY retry when white refuses (worn
@@ -426,13 +462,31 @@ def calibrate_video(
             print(f"[calibration] line-snap not applied (coverage {cov1:.2f}); "
                   "using clicks as-is")
 
+        # LENS: read radial distortion off the paint the snap just aligned to.
+        # On a k1 lens the on-paint corners are NOT a pinhole camera's view, so
+        # undistort them BEFORE the shape lock - locking first would force a
+        # pinhole shape onto bent evidence and displace the whole court.
+        k1 = _estimate_lens_k1(video_path, frame, H)
+
         # HARD SHAPE RULE (every source, manual clicks included): never ship a
-        # court no real camera could see. The lock also yields the honest lens
-        # zoom (focal_from_homography is degenerate on telephoto views).
-        lock = courtfit.shape_lock(H, calibration, court,
-                                   frame.shape[1], frame.shape[0])
+        # court no real camera could see. Applied in pinhole space (undistorted
+        # corners) when a lens was measured, directly otherwise. The lock also
+        # yields the honest lens zoom (focal_from_homography is degenerate on
+        # telephoto views).
+        lock = courtfit.shape_lock(_undistorted_H(named) if k1 else H,
+                                   calibration, court, w_img, h_img)
         if lock["applied"]:
-            H, cam_hfov_deg = lock["H"], lock["hfov_deg"]
+            cam_hfov_deg = lock["hfov_deg"]
+            if k1:
+                H_und = lock["H"]
+                # machinery H / stored corners = the locked pinhole court seen
+                # back through the measured lens (real, distorted pixel space)
+                named = {n: [float(v) for v in calibration.distort_points(
+                    [calibration.court_to_image(H_und, [court.LANDMARKS[n]])[0]],
+                    k1, (w_img, h_img))[0]] for n in named}
+                H = calibration.homography_from_landmarks(named)
+            else:
+                H = lock["H"]
             if lock["moved_max"] > 3.0:
                 print(f"[calibration] shape-locked to a physical camera view "
                       f"(corners moved up to {lock['moved_max']:.1f}px - the "
@@ -442,6 +496,8 @@ def calibrate_video(
             # No physical camera lands near this shape. The placement stays
             # authoritative - but say so plainly rather than silently
             # "correcting" toward a possibly-wrong court.
+            if k1:
+                H_und = _undistorted_H(named)
             gap = (f" (nearest physical view is {lock['gap_px']:.0f}px away)"
                    if lock["gap_px"] is not None else "")
             print("[calibration] WARNING: this court shape could not be verified "
@@ -456,9 +512,10 @@ def calibrate_video(
     if overlay_path:
         from . import overlay as overlay_mod
 
-        overlay_mod.render_overlay_image(frame, H, overlay_path)
+        overlay_mod.render_overlay_image(frame, H_und if k1 else H,
+                                         overlay_path, k1=k1)
         print(f"[calibration] overlay preview -> {overlay_path}")
-    return H, err, source, named, cam_hfov_deg
+    return H, err, source, named, cam_hfov_deg, k1, H_und
 
 
 def _probe_ball_model(video_path, ball_weights, device, frame_step, max_frames,
@@ -952,7 +1009,7 @@ def analyze_video(
     from . import pose as pose_mod
 
     overlay_path = os.path.splitext(out_path)[0] + ".overlay.png" if out_path else None
-    H, err, source, named_corners, cam_hfov_deg = calibrate_video(
+    H, err, source, named_corners, cam_hfov_deg, lens_k1, H_und = calibrate_video(
         video_path, keypoints_path, overlay_path)
 
     cap = cv2.VideoCapture(video_path)
@@ -1079,6 +1136,7 @@ def analyze_video(
         "source": source,
         "hfov_deg": (round(float(camera_hfov_deg), 2)
                      if camera_hfov_deg is not None else None),
+        "lens_k1": round(float(lens_k1), 4),
         "events": court_events,
     }
 

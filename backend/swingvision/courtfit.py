@@ -392,16 +392,32 @@ def _lowcam_seeds(calibration, court, court_pts, dt, cos2, sin2, w, h, tol, athr
     return out
 
 
+_ROLL_MAX = math.radians(3.0)   # small mounting tilt is physics; more is noise-chasing
+
+
 def _cam_corners(p, w, h, court):
     """Project the 4 doubles corners through a PHYSICAL camera: position (Cx,Cy,Cz)
-    in court metres, yaw, pitch (roll=0 — phones are mounted level), focal f_px.
+    in court metres, yaw, pitch, focal f_px, and an optional 7th param ROLL.
+
+    Roll is bounded to +-3 deg: phones are mounted ROUGHLY level, but not
+    exactly - a fence-mounted clip measured -1.1 deg, which the old roll=0
+    model could only express as an 8px corner misfit (seen as the near-left
+    sideline offset on e2e_l6o8FOoy3MY; adding roll cut the on-paint residual
+    there from ~8px to ~2-3px). Beyond a few degrees, roll would hand a
+    court-shaped hallucination an extra DOF to chase noise, so it stays out.
     Returns {corner:[u,v]} or None if any corner is behind the camera."""
-    Cx, Cy, Cz, yaw, pitch, f = p
+    Cx, Cy, Cz, yaw, pitch, f = (float(v) for v in p[:6])
+    roll = float(p[6]) if len(p) > 6 else 0.0
+    if abs(roll) > _ROLL_MAX:
+        return None
     sy, cy_ = math.sin(yaw), math.cos(yaw)
     st, ct = math.sin(pitch), math.cos(pitch)
     fwd = np.array([sy*ct, cy_*ct, -st])
     right = np.array([cy_, -sy, 0.0])
     up = np.array([sy*st, cy_*st, ct])
+    if roll:
+        cr, sr = math.cos(roll), math.sin(roll)
+        right, up = cr * right + sr * up, -sr * right + cr * up
     out = {}
     for n in DBL:
         X, Y = court.LANDMARKS[n]
@@ -419,7 +435,8 @@ def _cam_refine(frame, quad, calibration, court, dt, w, h):
     The corner snap moves 4 corners independently (8 DOF) — it keeps the template
     rigid in court space but allows warps no real camera produces (skewed quads,
     tilted baselines), which is exactly the 'shape distortion' seen on weak-evidence
-    courts. A real camera has ~6 DOF (position, pan, tilt, zoom; roll~0). Stage 1
+    courts. A real camera has ~6 DOF (position, pan, tilt, zoom; roll frozen at 0
+    on this candidate path — see the NOTE below). Stage 1
     fits camera params to the quad; stage 2 polishes them on the line-distance map.
     Every candidate shape is then a legal view of a regulation court by
     construction. Returns (H, corners) or None."""
@@ -431,6 +448,11 @@ def _cam_refine(frame, quad, calibration, court, dt, w, h):
         f0 = calibration.focal_from_homography(Hq, (w, h))
     except Exception:
         pass
+    # NOTE: roll stays FROZEN at 0 on this (auto-detect) path: measured on the
+    # gold set, giving candidate courts the roll DOF makes wrong-rung fits
+    # reproduce across frames (am_indoor_hard2's 68px court rose from 4 to 6
+    # consensus votes - past the auto-accept bar). Roll is for TRUSTED quads
+    # only (shape_lock / the calibrate path).
     x0 = np.array([court.DOUBLES_WIDTH/2.0, -6.0, 4.0, 0.0, 0.25,
                    float(f0) if f0 else w*0.9])
 
@@ -529,9 +551,14 @@ def _seed_from_quad(target, court):
     return np.array([Wd / 2.0, -Dn, Cz, 0.0, pitch, f])
 
 
-def cam_fit_quad(quad, calibration, court, w, h, dt=None):
+def cam_fit_quad(quad, calibration, court, w, h, dt=None, allow_roll=False):
     """Lock an ARBITRARY 4-corner court placement onto the closest physical
-    camera view of a regulation court (position, pan, tilt, zoom; roll=0).
+    camera view of a regulation court (position, pan, tilt, zoom; plus, when
+    allow_roll is set, roll within the +-3 deg mounting-tilt bound - see
+    _cam_corners). allow_roll is for TRUSTED quads only (a snapped/manual
+    court): on candidate quads the extra DOF lets wrong courts look physical
+    (measured: a 68px wrong consensus court gained 2 votes), so the
+    auto-detect path keeps roll frozen at 0.
 
     Manual-path counterpart of _cam_refine: the overlay tool lets a human drag
     corners freely (8 DOF), which can produce shapes no real camera ever sees.
@@ -550,8 +577,8 @@ def cam_fit_quad(quad, calibration, court, w, h, dt=None):
     Returns (H, corners, fit_px, cam_params) or None. fit_px = mean px between
     the input quad and the nearest physical view: ~0 when the input was already
     a real camera shape, large when it was impossible and got corrected.
-    cam_params = (Cx, Cy, Cz, yaw, pitch, focal_px) - the actual camera; the
-    focal is the honest lens zoom (feeds speed physics downstream)."""
+    cam_params = (Cx, Cy, Cz, yaw, pitch, focal_px, roll) - the actual camera;
+    the focal is the honest lens zoom (feeds speed physics downstream)."""
     from scipy.optimize import minimize
     target = np.array([quad[n] for n in DBL], float)
 
@@ -572,21 +599,26 @@ def cam_fit_quad(quad, calibration, court, w, h, dt=None):
     seed = _seed_from_quad(target, court)
     if seed is not None:
         starts.insert(0, seed)   # data-driven guess first (covers broadcast poses)
+    if allow_roll:
+        starts = [np.append(x0, 0.0) for x0 in starts]
     cost_quad = _cam_cost_quad(target, w, h, court)
 
     best = None
     for x0 in starts:
         r = minimize(cost_quad, x0, method="Nelder-Mead",
-                     options={"maxiter": 1200, "xatol": 1e-3, "fatol": 1e-3})
+                     options={"maxiter": 1400, "xatol": 1e-3, "fatol": 1e-3})
         if np.isfinite(r.fun) and r.fun < 1e5 and (best is None or r.fun < best.fun):
             best = r
     if best is None:
         return None
-    # one restart from the winner: Nelder-Mead's simplex collapses on long-lens
-    # poses before converging; a fresh simplex there finishes the job cheaply
-    r = minimize(cost_quad, best.x, method="Nelder-Mead",
-                 options={"maxiter": 1200, "xatol": 1e-3, "fatol": 1e-3})
-    if np.isfinite(r.fun) and r.fun < best.fun:
+    # restart from the winner until improvement stalls: Nelder-Mead's simplex
+    # collapses prematurely (worse in 7-D with roll); fresh simplexes finish
+    # the job cheaply (the 8px->0px refit guarantee in test_cam_lock needs it)
+    for _ in range(6):
+        r = minimize(cost_quad, best.x, method="Nelder-Mead",
+                     options={"maxiter": 1400, "xatol": 1e-3, "fatol": 1e-3})
+        if not (np.isfinite(r.fun) and r.fun < best.fun - 1e-3):
+            break
         best = r
     fit_px, px = float(best.fun), best.x
 
@@ -773,12 +805,12 @@ def line_distance_map(frame, calibration, mask_fn=None):
     return cv2.distanceTransform(255 - mask, cv2.DIST_L2, 5)
 
 
-def lock_quad(named, calibration, court, w, h, dt=None):
+def lock_quad(named, calibration, court, w, h, dt=None, allow_roll=False):
     """cam_fit_quad plus 'how far did it move' — the one place that computes the
     lock displacement (the tool, the pipeline, and auto_fit_frame all report it).
     Returns (locked_corners, moved_max_px, fit) where fit is cam_fit_quad's full
     result; on a total fit failure returns (named, 0.0, None) unchanged."""
-    r = cam_fit_quad(named, calibration, court, w, h, dt=dt)
+    r = cam_fit_quad(named, calibration, court, w, h, dt=dt, allow_roll=allow_roll)
     if r is None:
         return named, 0.0, None
     moved = max(math.hypot(r[1][n][0] - named[n][0],
@@ -793,10 +825,16 @@ def shape_lock(H, calibration, court, w, h, *, gate_px=40.0):
     input and warns — an optimizer miss must never 'correct' a good court).
 
     Returns a dict: applied, H, corners, moved_max, hfov_deg (the fitted lens
-    when applied), gap_px (fit distance when NOT applied, for the warning)."""
+    when applied), gap_px (fit distance when NOT applied, for the warning).
+
+    This is the TRUSTED-quad lock (the calibrate/manual path), so the camera
+    fit may use its bounded roll DOF (allow_roll) — a fence-mounted phone is
+    only roughly level, and forcing roll=0 here displaced a whole court by
+    ~8px on-paint (e2e_l6o8FOoy3MY, roll -1.1 deg)."""
     quad = {n: [float(v) for v in calibration.court_to_image(
         H, [court.LANDMARKS[n]])[0]] for n in DBL}
-    corners, moved, fit = lock_quad(quad, calibration, court, w, h)
+    corners, moved, fit = lock_quad(quad, calibration, court, w, h,
+                                    allow_roll=True)
     if fit is None or fit[2] > gate_px:
         return {"applied": False, "H": H, "corners": quad, "moved_max": 0.0,
                 "hfov_deg": None, "gap_px": (fit[2] if fit else None)}

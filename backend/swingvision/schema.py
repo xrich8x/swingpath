@@ -141,7 +141,8 @@ class Match:
         }
     )
     # How the court was calibrated: {"corners": {landmark: [x_px, y_px]},
-    # "source": ..., "hfov_deg": ..., "events": [{"frame", "kind"}]}. Optional -
+    # "source": ..., "hfov_deg": ..., "lens_k1": division-model radial
+    # distortion (0.0 = none), "events": [{"frame", "kind"}]}. Optional -
     # demo matches have no camera. The dashboard's Court Setup seeds from it.
     calibration: Optional[dict[str, Any]] = None
 

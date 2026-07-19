@@ -292,15 +292,18 @@ def _line_rms(pts: np.ndarray) -> tuple[float, np.ndarray, float]:
     return float(math.sqrt(max(evals[0], 0.0))), n, float(n @ c)
 
 
-def _chain_k1(pts_px: np.ndarray, img_wh, lo=-0.6, hi=0.3) -> tuple[float, float]:
+_K1_LO, _K1_HI = -0.6, 0.3   # search range: barrel-heavy (phones) + mild pincushion
+
+
+def _chain_k1(pts_px: np.ndarray, img_wh, lo=_K1_LO, hi=_K1_HI) -> tuple[float, float, float]:
     """The k1 that best STRAIGHTENS one pixel chain: minimize the rms residual
     of a line fitted to the undistorted points, over scalar k1. Returns
-    (k1, rms_at_k1). Well-conditioned where an algebraic circle fit is not: a
-    shallow arc barely constrains a circle's centre/radius (the Kasa fit
-    collapses to far-too-small circles on small-arc data - measured a true
-    -0.18 read as -0.53), but its straightness under a candidate k1 is direct
-    evidence. A genuinely straight chain votes k1 = 0 (undistorting a straight
-    line with any k1 != 0 CURVES it, so 0 is its minimum)."""
+    (k1, rms_at_k1, rms_at_zero). Well-conditioned where an algebraic circle
+    fit is not: a shallow arc barely constrains a circle's centre/radius (the
+    Kasa fit collapses to far-too-small circles on small-arc data - measured a
+    true -0.18 read as -0.53), but its straightness under a candidate k1 is
+    direct evidence. A genuinely straight chain votes k1 = 0 (undistorting a
+    straight line with any k1 != 0 CURVES it, so 0 is its minimum)."""
     from scipy.optimize import minimize_scalar
 
     def resid(k1: float) -> float:
@@ -308,27 +311,54 @@ def _chain_k1(pts_px: np.ndarray, img_wh, lo=-0.6, hi=0.3) -> tuple[float, float
 
     r = minimize_scalar(resid, bounds=(lo, hi), method="bounded",
                         options={"xatol": 1e-4})
-    return float(r.x), float(r.fun)
+    return float(r.x), float(r.fun), resid(0.0)
 
 
-def estimate_k1(frame: np.ndarray, min_span_frac: float = 0.25,
-                max_lines: int = 12, mask_fn=None) -> K1Estimate:
+def _plumb_lines_image(H: np.ndarray, w: int, h: int):
+    """The court's structural lines projected to the image, as canonical
+    (theta_normal, rho) forms - the trusted plumb lines for k1 estimation.
+    The NET is excluded (a net sags; it is not straight in the world)."""
+    out = []
+    for a, b in court.LINES:
+        if a[1] == court.NET_Y and b[1] == court.NET_Y:
+            continue
+        pa = court_to_image(H, [a])[0]
+        pb = court_to_image(H, [b])[0]
+        mid = (pa + pb) / 2.0
+        if not (-0.1 * w <= mid[0] <= 1.1 * w and -0.1 * h <= mid[1] <= 1.1 * h):
+            continue
+        n = math.atan2(pb[1] - pa[1], pb[0] - pa[0]) + math.pi / 2.0
+        rho = pa[0] * math.cos(n) + pa[1] * math.sin(n)
+        if rho < 0:
+            n, rho = n + math.pi, -rho
+        out.append((n % math.pi, rho))
+    return out
+
+
+def estimate_k1(frame: np.ndarray, H: Optional[np.ndarray] = None,
+                min_span_frac: float = 0.25, max_lines: int = 12,
+                mask_fn=None) -> K1Estimate:
     """Estimate the lens's radial distortion k1 from the court's own lines.
 
-    Plumb-line method: every long straight PAINTED line (baselines, sidelines,
-    fences) is straight in a pinhole image, so the k1 that straightens the
-    observed curves is the lens. Robustness comes from structure, not trust in
-    any one line:
-      * seeds are long Hough segments (deduped per painted line);
+    Plumb-line method: every long straight PAINTED line is straight in a
+    pinhole image, so the k1 that straightens the observed curves is the lens.
+    Robustness comes from structure, not trust in any one line:
+      * seeds are long Hough segments (deduped per painted line); when a court
+        homography `H` is given, only seeds MATCHING a projected court line are
+        used (trees, fences and banners carry sag and clutter, and the net is
+        excluded because it sags) - pass H whenever calibration exists;
       * each seed's pixel chain is grown model-consistently - undistort with
         the chain's current k1, fit a straight line there, re-collect the mask
         pixels on it - so the chain follows the real curve out to the frame
         edges, where the k1 signal lives;
       * arcs spanning < min_span_frac of the frame width are rejected (short
-        arcs have no measurable curvature);
+        arcs have no measurable curvature); chains whose best k1 pins at the
+        search bounds are rejected (a flat/contaminated objective, not a lens);
       * lines passing near the distortion centre are rejected (they stay
         straight under ANY k1 - zero information);
       * the final k1 is the MEDIAN over surviving lines.
+    If the default white-line mask yields under 3 usable lines, retries once
+    with the hue-agnostic ridge mask (clay/shell paint has no white signal).
     Returns K1Estimate(k1=0.0, n_lines=0, ...) when nothing is usable - callers
     treat that as "no correction".
     """
@@ -337,34 +367,52 @@ def estimate_k1(frame: np.ndarray, min_span_frac: float = 0.25,
     h, w = frame.shape[:2]
     cx, cy, s = _lens_norm((w, h))
     mask = (mask_fn or line_ridge_mask)(frame)
-    ys, xs = np.nonzero(mask)
-    if len(xs) < 200:
-        return K1Estimate(0.0, 0, [])
-    P = np.column_stack([xs, ys]).astype(np.float64)
+    plumb = None if H is None else _plumb_lines_image(H, w, h)
 
-    segs = cv2.HoughLinesP(mask, 1, np.pi / 180.0, threshold=60,
-                           minLineLength=int(w * 0.15), maxLineGap=int(w * 0.02))
-    if segs is None:
-        return K1Estimate(0.0, 0, [])
-    segs = sorted((tuple(map(float, r)) for r in np.asarray(segs).reshape(-1, 4)),
-                  key=lambda r: -math.hypot(r[2] - r[0], r[3] - r[1]))
+    def _seeds_from(mask):
+        ys, xs = np.nonzero(mask)
+        if len(xs) < 200:
+            return None, []
+        P = np.column_stack([xs, ys]).astype(np.float64)
+        segs = cv2.HoughLinesP(mask, 1, np.pi / 180.0, threshold=60,
+                               minLineLength=int(w * 0.15), maxLineGap=int(w * 0.02))
+        if segs is None:
+            return P, []
+        segs = sorted((tuple(map(float, r)) for r in np.asarray(segs).reshape(-1, 4)),
+                      key=lambda r: -math.hypot(r[2] - r[0], r[3] - r[1]))
+        # Dedupe: one seed per painted line (a curved line yields many chords
+        # whose angles differ by a few degrees - the tolerance must absorb
+        # that). With H, a seed must also MATCH a known court line.
+        seeds = []
+        for x1, y1, x2, y2 in segs:
+            th = math.atan2(y2 - y1, x2 - x1)
+            n = (th + math.pi / 2.0) % math.pi
+            rho = x1 * math.cos(n) + y1 * math.sin(n)
+            if rho < 0:
+                n, rho = (n + math.pi) % math.pi, -rho
+            if plumb is not None and not any(
+                    abs((n - cn + math.pi / 2) % math.pi - math.pi / 2) < math.radians(7.0)
+                    and abs(rho - cr) < max(10.0, w * 0.02) for cn, cr in plumb):
+                continue
+            dup = any(abs((n - sn + math.pi / 2) % math.pi - math.pi / 2) < math.radians(6.0)
+                      and abs(rho - sr) < max(10.0, w * 0.02)
+                      for sn, sr, _seg in seeds)
+            if not dup:
+                seeds.append((n, rho, (x1, y1, x2, y2)))
+            if len(seeds) >= max_lines:
+                break
+        return P, seeds
 
-    # Dedupe: one seed per painted line (a curved line yields many chords whose
-    # angles differ by a few degrees - the tolerance must absorb that).
-    seeds = []
-    for x1, y1, x2, y2 in segs:
-        th = math.atan2(y2 - y1, x2 - x1)
-        n = (th + math.pi / 2.0) % math.pi
-        rho = x1 * math.cos(n) + y1 * math.sin(n)
-        if rho < 0:
-            n, rho = (n + math.pi) % math.pi, -rho
-        dup = any(abs((n - sn + math.pi / 2) % math.pi - math.pi / 2) < math.radians(6.0)
-                  and abs(rho - sr) < max(10.0, w * 0.02)
-                  for sn, sr, _seg in seeds)
-        if not dup:
-            seeds.append((n, rho, (x1, y1, x2, y2)))
-        if len(seeds) >= max_lines:
-            break
+    P, seeds = _seeds_from(mask)
+    if len(seeds) < 3 and mask_fn is None:
+        # Worn or colour-tinted paint has no white signal (clay): retry with
+        # the hue-agnostic ridge mask. Safe here because with H the seeds are
+        # court-line-matched, and without H the span/centre/bound gates hold.
+        P2, seeds2 = _seeds_from(line_ridge_mask(frame, tau=12, sat_max=255))
+        if len(seeds2) > len(seeds):
+            P, seeds = P2, seeds2
+    if P is None or not seeds:
+        return K1Estimate(0.0, 0, [])
 
     tol_px = 3.5                        # on-line tolerance (undistorted space)
     gap_px = max(20.0, w * 0.03)        # break the chain across real gaps
@@ -388,7 +436,7 @@ def estimate_k1(frame: np.ndarray, min_span_frac: float = 0.25,
             idx = np.nonzero(sel)[0]
             if len(idx) > 4000:          # subsample for speed; keeps the shape
                 idx = idx[:: len(idx) // 4000 + 1]
-            k1_i, _rms = _chain_k1(P[idx], (w, h))
+            k1_i, rms_opt, rms0 = _chain_k1(P[idx], (w, h))
             # Re-collect every mask pixel that lies on the chain's straight
             # line ONCE UNDISTORTED with k1_i, then keep the contiguous run
             # containing the seed (crossing lines only graze it; separate
@@ -415,12 +463,42 @@ def estimate_k1(frame: np.ndarray, min_span_frac: float = 0.25,
         span = float(t_all[sel].max() - t_all[sel].min())
         if span < min_span_frac * w:
             continue
-        if abs(k1_i) <= 0.55:           # interior of the search range only
+        # A chain whose optimum pins at a search bound was not measuring a
+        # lens (flat or contaminated objective) - real lenses sit well inside.
+        if _K1_LO + 0.02 < k1_i < _K1_HI - 0.02:
             per_line.append(float(k1_i))
 
     if len(per_line) < 2:
         return K1Estimate(0.0, len(per_line), per_line)
     return K1Estimate(float(np.median(per_line)), len(per_line), per_line)
+
+
+def estimate_k1_frames(frames, H: Optional[np.ndarray] = None, *,
+                       min_frames: int = 3, min_abs: float = 0.02,
+                       spread_frac: float = 0.25) -> tuple[float, list]:
+    """Clip-level k1 with an HONESTY GATE: the lens is a constant of the clip,
+    so per-frame estimates of a REAL k1 agree tightly, while speckle/shadow
+    overfits scatter. Accept the median only when
+      * at least `min_frames` frames yielded >=2 usable lines each,
+      * |median| >= min_abs (below that a correction is indistinguishable from
+        applying noise), and
+      * the per-frame medians agree: MAD <= max(0.01, spread_frac*|median|).
+    Anything else returns 0.0 - an honest refusal. Measured basis: an already
+    -rectified clay clip read +0.02..+0.23 scattered across frames (refused);
+    synthetic true-k1 renders agree within a few thousandths (accepted).
+    Returns (k1, per_frame_medians)."""
+    meds = []
+    for f in frames:
+        e = estimate_k1(f, H=H)
+        if e.n_lines >= 2:
+            meds.append(e.k1)
+    if len(meds) < min_frames:
+        return 0.0, meds
+    med = float(np.median(meds))
+    mad = float(np.median(np.abs(np.asarray(meds) - med)))
+    if abs(med) < min_abs or mad > max(0.01, spread_frac * abs(med)):
+        return 0.0, meds
+    return med, meds
 
 
 def homography_from_landmarks(named_image_points: Mapping[str, Sequence[float]]) -> np.ndarray:

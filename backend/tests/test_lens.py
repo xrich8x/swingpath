@@ -95,6 +95,42 @@ def test_estimate_k1_refuses_blank_frame():
     assert est.k1 == 0.0 and est.n_lines == 0
 
 
+def _framing(dx=0.0, dy=0.0, s=1.0):
+    return {n: (W / 2 + (x - W / 2) * s + dx, H / 2 + (y - H / 2) * s + dy)
+            for n, (x, y) in _CORNERS.items()}
+
+
+def test_estimate_k1_frames_accepts_a_consistent_lens():
+    # The lens is a constant of the clip: several framings, one k1.
+    k1_true = -0.12
+    frames = []
+    for f in (_framing(), _framing(dx=30, dy=-12, s=0.95), _framing(dx=-25, s=1.04)):
+        Hm = calibration.homography_from_landmarks(f)
+        frames.append(_distort_image(overlay.synthetic_court_image(Hm, W, H, thickness=3),
+                                     k1_true))
+    k1, meds = calibration.estimate_k1_frames(frames)
+    assert len(meds) == 3
+    assert abs(k1 - k1_true) <= 0.04, f"{k1} vs {k1_true} (per-frame {meds})"
+
+
+def test_estimate_k1_frames_refuses_inconsistent_reads():
+    # Per-frame estimates that disagree are speckle, not a lens -> honest 0.
+    frames = []
+    for f, k in ((_framing(), 0.0), (_framing(dx=30), -0.15), (_framing(dx=-25), 0.08)):
+        Hm = calibration.homography_from_landmarks(f)
+        img = overlay.synthetic_court_image(Hm, W, H, thickness=3)
+        frames.append(_distort_image(img, k) if k else img)
+    k1, meds = calibration.estimate_k1_frames(frames)
+    assert k1 == 0.0, f"scattered reads must be refused, got {k1} ({meds})"
+
+
+def test_estimate_k1_frames_refuses_too_few_frames():
+    Hm = calibration.homography_from_landmarks(_CORNERS)
+    img = _distort_image(overlay.synthetic_court_image(Hm, W, H, thickness=3), -0.12)
+    k1, _ = calibration.estimate_k1_frames([img, img])   # only 2 frames
+    assert k1 == 0.0
+
+
 def test_undistorted_corners_give_straight_sidelines():
     # The functional claim behind step 2: undistorting points recovers pinhole
     # geometry. Take court-line points, distort them (what a wide lens observes),

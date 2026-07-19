@@ -34,26 +34,36 @@ def draw_court(
     color=_LINE_COLOR,
     thickness: int = 2,
     dots: bool = True,
+    k1: float = 0.0,
 ) -> np.ndarray:
     """Draw the full court line set (and optionally the named landmarks) onto
-    `frame` in place, using H to project court metres to pixels."""
+    `frame` in place, using H to project court metres to pixels.
+
+    When k1 != 0, H is taken to live in UNDISTORTED (pinhole) pixel space and
+    every line is drawn as a polyline bent back through the lens
+    (calibration.distort_points), so the overlay hugs the real, curved paint."""
     import cv2
 
+    lens = abs(k1) > 1e-12
     for a, b in court.LINES:
-        p = calibration.court_to_image(H, [a])[0]
-        q = calibration.court_to_image(H, [b])[0]
         is_net = a[1] == court.NET_Y and b[1] == court.NET_Y
-        cv2.line(
-            frame,
-            _ipt(p),
-            _ipt(q),
-            _NET_COLOR if is_net else color,
-            thickness,
-            cv2.LINE_AA,
-        )
+        col = _NET_COLOR if is_net else color
+        if lens:
+            ts = np.linspace(0.0, 1.0, 24)[:, None]
+            line_m = np.asarray(a, float) + ts * (np.asarray(b, float) - np.asarray(a, float))
+            pts = calibration.court_to_image(H, line_m)
+            pts = calibration.distort_points(pts, k1, (frame.shape[1], frame.shape[0]))
+            cv2.polylines(frame, [np.round(pts).astype(np.int32).reshape(-1, 1, 2)],
+                          False, col, thickness, cv2.LINE_AA)
+        else:
+            p = calibration.court_to_image(H, [a])[0]
+            q = calibration.court_to_image(H, [b])[0]
+            cv2.line(frame, _ipt(p), _ipt(q), col, thickness, cv2.LINE_AA)
     if dots:
         for name, xy in court.LANDMARKS.items():
             p = calibration.court_to_image(H, [xy])[0]
+            if lens:
+                p = calibration.distort_points([p], k1, (frame.shape[1], frame.shape[0]))[0]
             cv2.circle(frame, _ipt(p), max(3, thickness + 1), _DOT_COLOR, -1, cv2.LINE_AA)
     return frame
 
