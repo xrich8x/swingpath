@@ -37,9 +37,25 @@ def load(path: str | Path) -> dict:
         return json.load(f)
 
 
+def cache_index(cache: dict):
+    """frame -> position in ball_px, or None if that frame was not processed.
+
+    Caches written by `ball_perception.py --target-fps` carry an explicit
+    `src_frames` list (decimation by timestamp is not a fixed stride); everything
+    else is the classic every-`frame_step`-th-frame layout.
+    """
+    src = cache.get("src_frames")
+    if src:
+        lut = {int(f): i for i, f in enumerate(src)}
+        return lambda f: lut.get(f)
+    step = cache["frame_step"]
+    n = len(cache["ball_px"])
+    return lambda f: (f // step) if (f % step == 0 and f // step < n) else None
+
+
 def score(cache: dict, gold: dict[int, dict], buckets: dict[int, str],
           radius: float) -> dict:
-    step = cache["frame_step"]
+    at = cache_index(cache)
     ball_px = cache["ball_px"]
     res = {
         "n_ball": 0, "hit": 0, "wrong": 0, "miss": 0,
@@ -49,10 +65,11 @@ def score(cache: dict, gold: dict[int, dict], buckets: dict[int, str],
         "per_bucket": {},        # bucket -> dict(n, hit, wrong, miss, n_nb, fp)
     }
     for frame, lab in gold.items():
-        if frame % step != 0 or frame // step >= len(ball_px):
+        pos = at(frame)
+        if pos is None or pos >= len(ball_px):
             res["skipped"] += 1
             continue
-        lock = ball_px[frame // step]
+        lock = ball_px[pos]
         b = res["per_bucket"].setdefault(
             buckets.get(frame, "?"),
             {"n": 0, "hit": 0, "wrong": 0, "miss": 0, "n_nb": 0, "fp": 0})
@@ -95,6 +112,11 @@ def main() -> None:
     ap.add_argument("--names", nargs="*", default=None,
                     help="display names, one per cache (default: file stems)")
     ap.add_argument("--radius", type=float, default=10.0)
+    ap.add_argument("--common-frames", action="store_true",
+                    help="score only gold frames that EVERY cache processed. "
+                         "Required for fps comparisons: a decimated run sees "
+                         "fewer gold frames, and a different frame subset is a "
+                         "different test set.")
     ap.add_argument("--markdown", default=None,
                     help="also write the tables as markdown to this file")
     args = ap.parse_args()
@@ -112,6 +134,17 @@ def main() -> None:
             n_unsure += 1
         else:
             gold[int(k)] = lab
+
+    caches = [load(c) for c in args.caches]
+    if args.common_frames:
+        before = len(gold)
+        for cache in caches:
+            at = cache_index(cache)
+            n = len(cache["ball_px"])
+            gold = {f: lab for f, lab in gold.items()
+                    if (p := at(f)) is not None and p < n}
+        print(f"[common-frames] {before} -> {len(gold)} gold frames "
+              f"processed by all {len(caches)} caches")
 
     n_ball = sum(1 for v in gold.values() if v["ball"])
     n_nob = len(gold) - n_ball
@@ -133,9 +166,8 @@ def main() -> None:
     w()
 
     results = []
-    for cache_path, name in zip(args.caches, names):
-        r = score(load(cache_path), gold, buckets, args.radius)
-        results.append((name, r))
+    for cache, name in zip(caches, names):
+        results.append((name, score(cache, gold, buckets, args.radius)))
 
     hdr = (f"{'track':<22} {'hit@10':>7} {'wrong>10':>9} {'miss':>6} "
            f"{'hit@5':>7} {'hit@25':>7} {'med.err':>8} {'FP(no-ball)':>12}")

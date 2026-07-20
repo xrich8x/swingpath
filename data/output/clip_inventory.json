@@ -1,0 +1,290 @@
+[
+  {
+    "clip": "data/eala_segment.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 900,
+    "seconds": 15.0,
+    "mb": 11.4
+  },
+  {
+    "clip": "data/eala_swiatek.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 29436,
+    "seconds": 490.6,
+    "mb": 48.4
+  },
+  {
+    "clip": "data/train_clips/6jp23ghDY9Q.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 45553,
+    "seconds": 759.2,
+    "mb": 105.7
+  },
+  {
+    "clip": "data/train_clips/RZ_wyJ9rI3Q.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 8093,
+    "seconds": 134.9,
+    "mb": 22.5
+  },
+  {
+    "clip": "data/train_clips/TilAFMPc0yg.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 13783,
+    "seconds": 229.7,
+    "mb": 48.3
+  },
+  {
+    "clip": "data/train_clips/VZWi6Vf-sX0.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 60602,
+    "seconds": 1010.0,
+    "mb": 153.5
+  },
+  {
+    "clip": "data/train_clips/WjHZrIYteDA.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 55220,
+    "seconds": 920.3,
+    "mb": 74.7
+  },
+  {
+    "clip": "data/train_clips/ewqSn18xdsY.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 12526,
+    "seconds": 208.8,
+    "mb": 88.5
+  },
+  {
+    "clip": "data/train_clips/nQan0M5JDM8.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 29626,
+    "seconds": 493.8,
+    "mb": 85.9
+  },
+  {
+    "clip": "data/train_clips/tC0z7FYvMks.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 42061,
+    "seconds": 701.0,
+    "mb": 80.6
+  },
+  {
+    "clip": "data/yt_rally.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 844,
+    "seconds": 14.1,
+    "mb": 1.8
+  },
+  {
+    "clip": "data/yt_rally2.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 60.0,
+    "frames": 2215,
+    "seconds": 36.9,
+    "mb": 7.3
+  },
+  {
+    "clip": "data/train_clips/rz4T0-VALNw.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 59.94,
+    "frames": 57604,
+    "seconds": 961.0,
+    "mb": 124.4
+  },
+  {
+    "clip": "data/amateur_clips/yt_0genZFgM61E.mp4",
+    "w": 640,
+    "h": 360,
+    "fps": 30.0,
+    "frames": 14109,
+    "seconds": 470.3,
+    "mb": 22.2
+  },
+  {
+    "clip": "data/amateur_clips/yt_5VUiurUhSRY.mp4",
+    "w": 640,
+    "h": 360,
+    "fps": 30.0,
+    "frames": 40252,
+    "seconds": 1341.7,
+    "mb": 45.1
+  },
+  {
+    "clip": "data/amateur_clips/yt_esnrHQhCIxQ.mp4",
+    "w": 640,
+    "h": 360,
+    "fps": 30.0,
+    "frames": 10050,
+    "seconds": 335.0,
+    "mb": 16.4
+  },
+  {
+    "clip": "data/amateur_clips/yt_ihXS4IDvF0A.mp4",
+    "w": 640,
+    "h": 360,
+    "fps": 30.0,
+    "frames": 23287,
+    "seconds": 776.2,
+    "mb": 24.3
+  },
+  {
+    "clip": "data/tennis_sample.mp4",
+    "w": 1920,
+    "h": 1080,
+    "fps": 30.0,
+    "frames": 123,
+    "seconds": 4.1,
+    "mb": 2.5
+  },
+  {
+    "clip": "data/tennis_sample_short.mp4",
+    "w": 1920,
+    "h": 1080,
+    "fps": 30.0,
+    "frames": 93,
+    "seconds": 3.1,
+    "mb": 0.5
+  },
+  {
+    "clip": "data/amateur_clips/bump_ntrp30.mp4",
+    "w": 600,
+    "h": 298,
+    "fps": 29.97,
+    "frames": 900,
+    "seconds": 30.0,
+    "mb": 2.8
+  },
+  {
+    "clip": "data/amateur_clips/bump_ntrp30b.mp4",
+    "w": 640,
+    "h": 338,
+    "fps": 29.97,
+    "frames": 900,
+    "seconds": 30.0,
+    "mb": 3.0
+  },
+  {
+    "clip": "data/amateur_clips/yt_4apx6gd5Uxs.mp4",
+    "w": 640,
+    "h": 360,
+    "fps": 29.97,
+    "frames": 38808,
+    "seconds": 1294.9,
+    "mb": 58.5
+  },
+  {
+    "clip": "data/amateur_clips/yt_QsO90orMfWM.mp4",
+    "w": 640,
+    "h": 360,
+    "fps": 29.97,
+    "frames": 51059,
+    "seconds": 1703.7,
+    "mb": 91.4
+  },
+  {
+    "clip": "data/amateur_clips/yt_deNCnfQjfoU.mp4",
+    "w": 640,
+    "h": 338,
+    "fps": 29.97,
+    "frames": 40876,
+    "seconds": 1363.9,
+    "mb": 52.3
+  },
+  {
+    "clip": "data/amateur_clips/yt_rNMc9tpWWZ0.mp4",
+    "w": 640,
+    "h": 360,
+    "fps": 29.97,
+    "frames": 28117,
+    "seconds": 938.2,
+    "mb": 43.7
+  },
+  {
+    "clip": "data/amateur_clips/yt_tnxkujogch4.mp4",
+    "w": 640,
+    "h": 360,
+    "fps": 29.97,
+    "frames": 1632,
+    "seconds": 54.5,
+    "mb": 1.7
+  },
+  {
+    "clip": "data/demo30.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 29.0,
+    "frames": 870,
+    "seconds": 30.0,
+    "mb": 2.4
+  },
+  {
+    "clip": "data/yt_match40.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 29.0,
+    "frames": 10268,
+    "seconds": 354.1,
+    "mb": 36.0
+  },
+  {
+    "clip": "data/train_clips/8-BkpjFFIhQ.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 25.0,
+    "frames": 13927,
+    "seconds": 557.1,
+    "mb": 61.5
+  },
+  {
+    "clip": "data/amateur_clips/e2e_EQSfL7bwJ_I.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 24.0,
+    "frames": 1800,
+    "seconds": 75.0,
+    "mb": 45.4
+  },
+  {
+    "clip": "data/amateur_clips/e2e_SgZpQtiTG1A.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 24.0,
+    "frames": 1800,
+    "seconds": 75.0,
+    "mb": 47.8
+  },
+  {
+    "clip": "data/amateur_clips/e2e_l6o8FOoy3MY.mp4",
+    "w": 1280,
+    "h": 720,
+    "fps": 24.0,
+    "frames": 1800,
+    "seconds": 75.0,
+    "mb": 41.7
+  }
+]

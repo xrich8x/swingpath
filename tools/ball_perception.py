@@ -80,6 +80,10 @@ def main() -> None:
     ap.add_argument("--tracknet-weights", default="weights/tracknet.pt")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--frame-step", type=int, default=1)
+    ap.add_argument("--target-fps", type=float, default=None,
+                    help="decimate to this frame rate instead of --frame-step "
+                         "(allows non-integer ratios, e.g. 60 -> 24). Writes the "
+                         "kept source frame indices as 'src_frames'.")
     ap.add_argument("--keypoints", default=None,
                     help="court corners json -> enables the court-plausibility gate")
     ap.add_argument("--no-bgsub", action="store_true")
@@ -103,7 +107,25 @@ def main() -> None:
         raise SystemExit(f"cannot open {args.video}")
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    src_fps = float(cap.get(cv2.CAP_PROP_FPS)) or 0.0
+    n_src = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     cap.release()
+
+    # Frame selection. --target-fps decimates by timestamp (handles 60->24, which
+    # no integer --frame-step can express); --frame-step keeps every k-th frame.
+    keep: set[int] | None = None
+    if args.target_fps:
+        if src_fps <= 0:
+            raise SystemExit("--target-fps needs a readable source fps")
+        if args.target_fps > src_fps + 1e-6:
+            raise SystemExit(f"--target-fps {args.target_fps} exceeds source {src_fps:.2f}")
+        limit = min(n_src, args.max_frames) if args.max_frames else n_src
+        n_out = int(round(limit * args.target_fps / src_fps))
+        keep = {min(limit - 1, int(round(j * src_fps / args.target_fps)))
+                for j in range(n_out)}
+        eff_fps = args.target_fps
+    else:
+        eff_fps = src_fps / args.frame_step if src_fps else 0.0
 
     H = load_homography(args.keypoints)
     gate_H = None
@@ -111,24 +133,29 @@ def main() -> None:
         cam_h = calibration.camera_height_m(H, (width, height), 70.0)
         gate_H = H if (cam_h is not None and cam_h >= COURT_GATE_MIN_CAM_H) else None
     print(f"[ball] {args.ball_model} on {Path(args.video).name} "
-          f"({width}x{height}) gate={'ON' if gate_H is not None else 'OFF'} "
+          f"({width}x{height}) src={src_fps:.2f}fps -> {eff_fps:.2f}fps "
+          f"gate={'ON' if gate_H is not None else 'OFF'} "
           f"bgsub={use_bgsub} device={args.device}")
 
+    # The background plate is a static-scene estimate; sample it identically
+    # regardless of decimation so it is not a hidden variable across fps runs.
     bg, inv = (median_background(args.video, args.frame_step, args.max_frames)
                if use_bgsub else (None, 2.0))
     tracker = BallTracker(dets, (width, height), background=bg, inv_scale=inv,
                           use_bgsub=use_bgsub, homography=gate_H)
 
     cap = cv2.VideoCapture(args.video)
-    ball_px = []
+    ball_px, src_frames = [], []
     idx = processed = 0
     t0 = time.time()
     while True:
         ok, frame = cap.read()
         if not ok or (args.max_frames is not None and idx >= args.max_frames):
             break
-        if idx % args.frame_step == 0:
+        take = (idx in keep) if keep is not None else (idx % args.frame_step == 0)
+        if take:
             ball_px.append(tracker.update(frame))   # no pose exclude boxes
+            src_frames.append(idx)
             processed += 1
             if processed % 500 == 0:
                 dt = time.time() - t0
@@ -146,6 +173,11 @@ def main() -> None:
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump({
             "frame_step": args.frame_step,
+            "src_fps": round(src_fps, 3),
+            "eff_fps": round(eff_fps, 3),
+            # Present only for --target-fps runs, where the kept frames are not a
+            # fixed stride; consumers (eval_gold) prefer it over frame_step.
+            "src_frames": src_frames if keep is not None else None,
             "max_frames": args.max_frames,
             "bgsub": bool(use_bgsub),
             "ball_model": args.ball_model,

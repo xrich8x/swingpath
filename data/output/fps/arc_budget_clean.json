@@ -1,0 +1,185 @@
+{
+  "shot": "drive_topspin",
+  "hfov": 93.46,
+  "sigma_px": 0.0,
+  "phases": 8,
+  "min_arc": 6,
+  "rows": [
+    {
+      "fps": 120,
+      "offset": -2,
+      "n": 8,
+      "reproj_med": 1.453587357486796,
+      "reproj_max": 1.4719067559000192,
+      "speed_med": 50.28148666421028,
+      "speed_err_pct": -42.166665200797475,
+      "anchor_height_m": 0.08476036569944403,
+      "short": 0
+    },
+    {
+      "fps": 120,
+      "offset": -1,
+      "n": 8,
+      "reproj_med": 1.46749847909838,
+      "reproj_max": 1.5095353379991758,
+      "speed_med": 49.63188163185086,
+      "speed_err_pct": -42.91383533867707,
+      "anchor_height_m": 0.04154742981548854,
+      "short": 0
+    },
+    {
+      "fps": 120,
+      "offset": 0,
+      "n": 8,
+      "reproj_med": 1.5069358208397732,
+      "reproj_max": 1.5526470346362613,
+      "speed_med": 49.06294271855253,
+      "speed_err_pct": -43.568223998121724,
+      "anchor_height_m": 0.0001769930266177247,
+      "short": 0
+    },
+    {
+      "fps": 120,
+      "offset": 1,
+      "n": 4,
+      "reproj_med": 1.3583099750364882,
+      "reproj_max": 1.4633119050737962,
+      "speed_med": 48.98567623004507,
+      "speed_err_pct": -43.65709525064559,
+      "anchor_height_m": 0.0,
+      "short": 4
+    },
+    {
+      "fps": 60,
+      "offset": -2,
+      "n": 8,
+      "reproj_med": 2.043705908694845,
+      "reproj_max": 2.092785773906175,
+      "speed_med": 49.24137780863779,
+      "speed_err_pct": -43.36298948758024,
+      "anchor_height_m": 0.1663302411997405,
+      "short": 0
+    },
+    {
+      "fps": 60,
+      "offset": -1,
+      "n": 8,
+      "reproj_med": 2.056548345846069,
+      "reproj_max": 2.136436367954037,
+      "speed_med": 48.39846831384587,
+      "speed_err_pct": -44.33249676057078,
+      "anchor_height_m": 0.08207722105022808,
+      "short": 0
+    },
+    {
+      "fps": 60,
+      "offset": 0,
+      "n": 8,
+      "reproj_med": 1.916351606908111,
+      "reproj_max": 2.0247439801226865,
+      "speed_med": 47.95868217380324,
+      "speed_err_pct": -44.83833500769719,
+      "anchor_height_m": 0.0001769930266174297,
+      "short": 0
+    },
+    {
+      "fps": 60,
+      "offset": 1,
+      "n": 4,
+      "reproj_med": 1.8770532402911804,
+      "reproj_max": 1.894662084686773,
+      "speed_med": 46.06270017099881,
+      "speed_err_pct": -47.019077249344136,
+      "anchor_height_m": 0.0,
+      "short": 4
+    },
+    {
+      "fps": 30,
+      "offset": -2,
+      "n": 8,
+      "reproj_med": 2.85757299336241,
+      "reproj_max": 2.908080222647602,
+      "speed_med": 43.061369616448786,
+      "speed_err_pct": -50.47118191688408,
+      "anchor_height_m": 0.3208667629325602,
+      "short": 0
+    },
+    {
+      "fps": 30,
+      "offset": -1,
+      "n": 8,
+      "reproj_med": 2.8160242874464387,
+      "reproj_max": 2.8983721187148883,
+      "speed_med": 40.97176838988393,
+      "speed_err_pct": -52.87462332942228,
+      "anchor_height_m": 0.16113552754450022,
+      "short": 0
+    },
+    {
+      "fps": 30,
+      "offset": 0,
+      "n": 8,
+      "reproj_med": 2.827287164793461,
+      "reproj_max": 3.1791386966315547,
+      "speed_med": 38.94810860707635,
+      "speed_err_pct": -55.202219458796385,
+      "anchor_height_m": 0.0001769930266177247,
+      "short": 0
+    },
+    {
+      "fps": 30,
+      "offset": 1,
+      "n": 4,
+      "reproj_med": 2.966151330123175,
+      "reproj_max": 3.251308519263564,
+      "speed_med": 35.91918984927144,
+      "speed_err_pct": -58.68605584115223,
+      "anchor_height_m": 0.0,
+      "short": 4
+    },
+    {
+      "fps": 24,
+      "offset": -2,
+      "n": 8,
+      "reproj_med": 3.136904250640815,
+      "reproj_max": 3.713913191009321,
+      "speed_med": 40.61904415765804,
+      "speed_err_pct": -53.280323716730656,
+      "anchor_height_m": 0.4121327123280343,
+      "short": 0
+    },
+    {
+      "fps": 24,
+      "offset": -1,
+      "n": 8,
+      "reproj_med": 3.103827672486883,
+      "reproj_max": 4.1726140368139975,
+      "speed_med": 38.28535048985114,
+      "speed_err_pct": -55.96451816210138,
+      "anchor_height_m": 0.2199371541358586,
+      "short": 0
+    },
+    {
+      "fps": 24,
+      "offset": 0,
+      "n": 8,
+      "reproj_med": 3.374998830912873,
+      "reproj_max": 5.004101521967596,
+      "speed_med": 34.8492824034099,
+      "speed_err_pct": -59.916654210963614,
+      "anchor_height_m": 0.01120333119804573,
+      "short": 0
+    },
+    {
+      "fps": 24,
+      "offset": 1,
+      "n": 4,
+      "reproj_med": 3.212554018370448,
+      "reproj_max": 3.7780898540047234,
+      "speed_med": 33.427945809630884,
+      "speed_err_pct": -61.55146337321715,
+      "anchor_height_m": 0.0,
+      "short": 4
+    }
+  ]
+}

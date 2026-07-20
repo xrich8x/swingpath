@@ -439,3 +439,64 @@ needs calibration on new clips], (b) a far-court-specific retrain for recall
 weights/ballnet_v2.pt; data/output/yt_{rally2,match40}_*.perception.json;
 data/gold/yt_match40.benchmark.md. Deferred tracker work (live-ball gate +
 hit-anchored arc, TODO.md) unchanged; the filter is the offline first half.
+
+## 13. Session E1 (2026-07-20) — fps priced; the arc gate found to be no gate
+
+Goal was to price frame rate (docs/sessions/SESSION_E_ball_push.md). Frame rate
+priced out as second-order, and the experiment built to test it exposed the
+first-order problem. Full tables in the session doc's Results; headlines:
+
+1. **Premise correction.** `tools/clip_inventory.py`: 13 of our 32 clips are
+   60 fps, including the gold-labelled **yt_rally2 (1280x720/60fps)**. Past runs
+   sampled it at frame_step=2, so "our evidence is all 24-30fps" was an artifact
+   of our own sampling. The fps experiment therefore ran against real human gold
+   labels at zero annotation cost.
+
+2. **fps buys precision, not recall** [MEASURED, yt_rally2, 284 gold frames].
+   tracknet hit@10: 43.4% @60 vs 42.6% @30 (flat, and 38.6% @15). What moves is
+   junk rejection: mislocks 10.6/12.9/21.2% and no-ball false fires 15.4/30.8%
+   at 60/30 fps. Far court is fps-INDEPENDENT (23.8% at both) — an apparent-size
+   problem for E2's inference-side work, not a frame-rate one. Harness validated:
+   tnet@30 reproduces Session 2's 41.5% (measured 42.6%).
+   What 60fps does buy is sample density: 29.7 vs 16.8 locks/s, and `analyze`
+   built 2 candidate arcs at 60fps vs 0 at 30fps (min_arc=6 unreachable).
+
+3. **THE finding — `reproj_px` does not constrain speed** [MEASURED on noise-free
+   ground truth, tools/arc_observability.py]. Walk the launch point along its
+   viewing ray from z=0.3m to 3.0m: recovered speed spans 54.6 -> 151.5 km/h for
+   one true 86.9 km/h ball, and EVERY depth reprojects under 0.15px. Identical at
+   60/30/24 fps — geometry, not sampling. A hit->bounce arc pinned only at its
+   bounce leaves launch depth free; the fit trades depth against speed and spin
+   for nothing in pixels. With today's bounce-anchor-only fit the ground-truth
+   arc returns +107% (60fps) to +143% (24fps) speed error.
+   Corollary [MEASURED, arc_error_budget.py]: event-timing is NOT dominant —
+   anchoring +-2 frames off costs only 1.5-3.4px, all inside the 6px gate. The
+   session doc's "timing poisons the fits" hypothesis is disconfirmed.
+   The fix, priced: an exact contact-height prior recovers speed to -2/-3/-4% at
+   60/30/24 fps. Sensitivity: 0.25m of height error -> ~13% speed error, 0.5m ->
+   ~25%. So E4's <5% MAE needs launch height to ~0.2m — pose (wrist height +
+   striker court position) is the obvious source. This is E3's real job.
+
+4. **Confirmed on real footage; gate FIXED and shipped.** analyze on yt_rally2
+   @60fps produced an arc at reproj 3.5px — inside the gate — claiming 110 km/h
+   and 10,361 rpm, and was promoting it to speed_source="physics",
+   speed_confident=True, into the dashboard. speedspin.py now requires a
+   plausibility band (20-250 km/h, |spin| <= 3500 rpm) in ADDITION to the
+   reprojection gate, and records a reject_reason per arc. That clip's headline
+   drops from a fabricated 110 km/h to the honest plane-average 81.7 km/h.
+   114 backend tests pass (6 new: tests/test_speedspin_gate.py).
+
+5. **E3's stated gate is void.** "≥1 arc passes at 6px with a physically sane
+   speed" is satisfiable by noise. Replace it with agreement against an
+   independent measurement (OCR'd SwingVision MPH, or a radar gun), or with a
+   demonstrated collapse of the ray-walk speed spread once the launch point is
+   constrained.
+
+Not done (needs the user or a download): gold labels on a clay clip and a second
+60fps clip; the image-level miss taxonomy (near-vs-far split came free and
+already implicates apparent size); the TrackNet-dataset hit/bounce external check.
+
+New/changed: tools/{clip_inventory,arc_error_budget,arc_observability}.py,
+tools/run_fps_sweep.sh, ball_perception.py --target-fps, eval_gold.py
+--common-frames, speedspin.py plausibility band, pipeline.py reject_reason print,
+tests/test_speedspin_gate.py, data/output/fps/*, data/gold/yt_rally2.fps.md.

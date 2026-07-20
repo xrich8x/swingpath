@@ -28,6 +28,15 @@ for any direct spin work.
 | `e2e_l6o8FOoy3MY` / `SgZpQtiTG1A` / `EQSfL7bwJ_I` (the clay e2e set) | 1280×720 | **24** |
 | `train_clips/6jp23ghDY9Q`, `RZ_wyJ9rI3Q` | 1280×720 | **60** |
 
+> **CORRECTED BY E1 (2026-07-20).** Two of the three claims below did not
+> survive measurement. (a) The evidence base is *not* all 24-30 fps: 13 clips
+> are 60 fps, **including the gold-labelled `yt_rally2`** — past runs merely
+> *sampled* it at `frame_step=2`. (b) Event-timing error is **not** what fails
+> the arc fits: ±2 frames of anchor error costs only 1.5-3.4 px, well inside the
+> 6 px gate. The absurd rpm is real, but its cause is that the fit is
+> **under-determined**, not mistimed. Read the E1 Results section before
+> planning from this box.
+
 **Our entire recent ball evidence base is 24–30 fps — below the stated minimum
 to resolve a bounce at all.** That reframes what we have been calling failures:
 
@@ -218,6 +227,13 @@ frames from our own camera angle, not thousands of scraped ones.
 false-fire on no-ball frames no worse. Never train on gold.
 
 ### E3 — Trajectory + arc: make the physics fit PASS
+> **E1 re-ordered this list.** Item 2 (a second constraint on the launch point)
+> is now the whole ballgame — it moved ground-truth speed error from +107% to
+> −2%. Item 1 (event timing) measured as second-order: ±2 anchor frames costs
+> 1.5-3.4 px. Do the constraint first; revisit audio only if speed error stays
+> above target once the arc is determined. And note the stated gate below is
+> **void** — an arc passing at 6 px proves nothing (E1 §2).
+
 1. **Event timing first** (if E1 says timing dominates): add **audio hit
    detection** (impact transient on the audio track — we currently ignore audio
    entirely) and upgrade bounce detection from the speed-minimum heuristic to a
@@ -275,7 +291,128 @@ as such in the UI.
   Market accordingly; never imply officiating-grade accuracy.
 
 ## Results (fill in per session)
-- _E1 pending_
+
+### E1 (2026-07-20) — MEASURED. The bottleneck is not frame rate; it is observability.
+
+E1 set out to price frame rate. Frame rate turned out to be a second-order
+variable, and the experiment designed to test it uncovered the first-order one:
+**the arc fit's `reproj_px` gate does not constrain speed at all.** Everything
+below is measured, with the fps of every measurement stated.
+
+#### 0. The premise needed correcting first
+`tools/clip_inventory.py` (new) probed all 32 clips. The doc's claim that "our
+entire recent ball evidence base is 24-30 fps" was **wrong**: 13 clips are 60 fps,
+including **`yt_rally2` — one of our two human-gold-labelled clips — at
+1280x720/60 fps.** Its 300 gold frames were merely *sampled* at `frame_step=2`,
+so past measurements were taken at an effective 30 fps on 60 fps footage. That
+means the fps experiment could run against real human labels, at no annotation
+cost. (The 24 fps clay e2e set and 30 fps `tennis_sample` are as the doc said.)
+
+#### 1. fps-controlled detection [MEASURED, yt_rally2, 60fps source, human gold]
+Same footage, same detector, same 284 scored gold frames; only the ingest frame
+rate changes (`ball_perception.py --target-fps`, `eval_gold.py --common-frames`).
+
+| track | hit@10 | hit@5 | wrong>10 | miss | FP (no-ball) | far court |
+|---|---|---|---|---|---|---|
+| tracknet @60 | **43.4%** | 30.2% | 10.5% | 46.1% | **15.4%** | 23.8% |
+| tracknet @30 | 42.6% | 32.9% | 14.7% | 42.6% | 30.8% | 23.8% |
+| wasb @60 | 29.5% | 20.9% | 8.9% | 61.6% | 19.2% | 4.8% |
+| wasb @30 | 34.9% | 26.7% | 15.5% | 49.6% | 26.9% | 9.5% |
+
+Extending the ladder (common subset, n=142): tracknet hit@10 is 42.4 / 40.9 /
+38.6% at 60 / 30 / 15 fps, while mislocks (`wrong>10`) climb 10.6 / 12.9 / 21.2%
+and no-ball false fires 10 / 10 / 20%.
+
+**Finding: frame rate buys PRECISION, not recall.** Per-frame recall is flat
+within noise from 15 to 60 fps; what degrades as fps falls is the tracker's
+ability to reject junk (its temporal continuity and static-fixture gate have
+less to work with). Recording at 60 fps roughly halves the false-fire rate and
+changes hit rate by ~1 point.
+
+What 60 fps *does* buy is **sample density**: locks per second of video are
+29.7 @60 vs 16.8 @30 (tracknet) — nearly 2x as many looks at the ball per second
+of flight. That is the currency arcs and bounce localisation spend, and it shows
+up downstream: full `analyze` on yt_rally2 built **2 candidate arcs at 60 fps and
+0 at 30 fps** (a 30 fps arc rarely reaches `min_arc=6` samples). So the "record
+at 60 fps" advice is right, but for the trajectory stage, not the detector.
+
+Also settled: **far court is fps-independent** (23.8% at both 60 and 30). It is a
+resolution/apparent-size problem, so E2's far-court work should be
+inference-side (native-res or tiled crops), not frame rate and not more epochs.
+
+Sanity check on the harness: tracknet@30 reproduces Session 2's independently
+measured 41.5% (we got 42.6%), so this rig is comparable to the old numbers.
+
+#### 2. The arc gate is not a gate [MEASURED, ground truth, `tools/arc_observability.py`]
+Simulate a real flight (86.9 km/h, 2400 rpm topspin) through the real yt_rally2
+calibration, project it to **noise-free** pixels, hand it to the same
+`fit_anchored` the pipeline ships, and walk the launch point along its own
+viewing ray:
+
+| launch height | recovered speed | error | reproj | passes 6 px gate |
+|---|---|---|---|---|
+| 0.3 m | 54.6 km/h | −37% | 0.14 px | YES |
+| 1.0 m | 83.4 km/h | −4% | 0.01 px | YES |
+| 2.0 m | 114.1 km/h | +31% | 0.01 px | YES |
+| 3.0 m | 151.5 km/h | +74% | 0.02 px | YES |
+
+**A 2.8x span of shot speeds all reproject under 0.15 px.** Identical result at
+60, 30 and 24 fps — this is geometry, not sampling. A hit→bounce arc pinned only
+at its bounce leaves the launch point free to slide along its viewing ray, and
+the fit trades depth against speed (and against the Magnus term) for essentially
+nothing in pixels. `reproj_px` measures self-consistency, not truth.
+
+That fully explains the two facts that opened this session:
+- the **11,692 / 12,221 rpm** readings — the optimiser absorbing free depth into
+  spin, exactly as suspected, but *not* because of timing error;
+- and the corollary nobody had checked: with today's bounce-anchor-only fit, the
+  ground-truth arc comes back at **+107% (60 fps) to +143% (24 fps)** speed.
+
+**Corrected: `arc_error_budget.py` shows event-timing is NOT the dominant term.**
+Anchoring ±2 frames off costs only 1.5→3.4 px of reprojection at 120→24 fps,
+and all of it passes the gate. Timing error is real but second-order; E3 should
+lead with the constraint, not with audio hit detection.
+
+**What breaks the tie [MEASURED]:** an exact contact-height prior recovers the
+speed to **−2% (60 fps) / −3% (30) / −4% (24)**. Sensitivity: a height prior
+0.25 m wrong costs ~13% of speed, 0.5 m wrong costs ~25%. So the E4 target of
+<5% speed MAE needs the launch height to ~0.2 m — which is roughly what pose
+(wrist/racket height + the striker's court position via the homography) can
+supply. **That is E3's job, and it now outranks everything else in the chain.**
+
+#### 3. Confirmed on real footage, and the gate is fixed [SHIPPED]
+`analyze` on yt_rally2 @60 fps produced an arc at **reproj 3.5 px** — inside the
+gate — reporting **110 km/h with 10,361 rpm**. It was being promoted to
+`speed_source="physics"` with `speed_confident=True` and shown in the dashboard.
+
+Fixed in `speedspin.py`: `ok` now requires a physical plausibility band
+(20-250 km/h, |spin| ≤ 3500 rpm) *as well as* the reprojection gate, and every
+rejected arc carries a `reject_reason`. That clip's headline speed drops from a
+fabricated 110 km/h to the honest plane-average 81.7 km/h. 6 new tests;
+114 backend tests pass.
+
+**Consequence for the plan: E3's stated gate — "≥1 arc passes at 6 px with a
+physically sane speed" — is satisfiable by noise and must be replaced.** The
+right gate is agreement with an independent measurement (OCR'd SwingVision MPH,
+or a radar gun), or a demonstrated collapse of the ray-walk speed spread once
+the second constraint is in.
+
+#### Not done in E1 (needs the user or a download)
+- New gold labels on a clay clip and a 60 fps clip (~15 min blind labelling each).
+  The existing yt_rally2 labels carried the fps experiment, so this is no longer
+  blocking, but clay is still unmeasured against human clicks.
+- The image-level failure taxonomy (smear / too small / occlusion). The
+  near-vs-far split above is the part that came free, and it already points at
+  apparent size.
+- The TrackNet-dataset hit/bounce external check (needs the ~19,835-frame download).
+
+#### Artifacts
+`tools/clip_inventory.py`, `tools/arc_error_budget.py`,
+`tools/arc_observability.py`, `tools/run_fps_sweep.sh`;
+`ball_perception.py --target-fps`, `eval_gold.py --common-frames`;
+`data/output/fps/*` (8 fps-swept perception caches + 2 analyze runs + 4 JSON
+result files), `data/gold/yt_rally2.fps.md`, `data/output/clip_inventory.json`;
+`backend/tests/test_speedspin_gate.py`.
 - _E2 pending_
 - _E3 pending_
 - _E4 pending_

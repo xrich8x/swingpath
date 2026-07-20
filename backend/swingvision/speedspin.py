@@ -7,9 +7,16 @@ bounce. Each hit->bounce arc is then anchored on the court plane (which pins the
 otherwise-ambiguous monocular depth) and the flight physics is inverted for
 speed + spin.
 
-Speed is well-posed once anchored (~4% on synthetic); spin magnitude is looser.
 Camera scale depends on the horizontal FOV (known per phone; estimate for
 broadcast), so pass `hfov_deg` for your footage.
+
+HONESTY NOTE (Session E1, measured — see the plausibility band below): a
+bounce anchor alone does NOT make speed well-posed. It pins one END of the
+flight; the launch point is still free to slide along its viewing ray, and
+speed slides with it over a ~2.8x range at under 0.15 px of reprojection cost.
+The earlier "~4% on synthetic" figure came from a synthetic setup that also
+knew the launch point. Treat every number here as provisional until E3 supplies
+that second constraint.
 """
 from __future__ import annotations
 
@@ -25,6 +32,51 @@ _BALL_PHYSICS = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 def _ensure_path():
     if _BALL_PHYSICS not in sys.path:
         sys.path.insert(0, _BALL_PHYSICS)
+
+
+# --- Plausibility band (Session E1) -----------------------------------------
+# A low reprojection error does NOT certify an arc. Measured on noise-free
+# ground truth (tools/arc_observability.py): sliding the launch point along its
+# own viewing ray from 0.3 m to 3.0 m yields shot speeds from 55 to 152 km/h for
+# one true 87 km/h ball, and EVERY one of them reprojects under 0.15 px. The
+# monocular hit->bounce arc, pinned only at the bounce, leaves launch depth free,
+# and the fit trades depth against speed (and against the Magnus term) for
+# almost nothing in pixels. So `reproj_px` measures self-consistency, not truth.
+#
+# Until a second constraint pins the launch point (E3 — a contact-height prior
+# or the striker's court position from pose), an arc must ALSO land inside
+# physically plausible bands before anything downstream may call it a
+# measurement. Real evidence this is needed: yt_rally2 @60fps produced an arc at
+# reproj 3.5 px reporting 110 km/h with 10,361 rpm — pro topspin is ~2-3,200 rpm.
+SPEED_BAND_KMH = (20.0, 250.0)
+SPIN_BAND_RPM = 3500.0
+
+
+def _plausible(speed_kmh: float, spin_rpm: float) -> Optional[str]:
+    """None if the readout is physically believable, else why it is not."""
+    lo, hi = SPEED_BAND_KMH
+    if not np.isfinite(speed_kmh) or not lo <= speed_kmh <= hi:
+        return f"speed {speed_kmh:.0f} km/h outside {lo:.0f}-{hi:.0f}"
+    if not np.isfinite(spin_rpm) or abs(spin_rpm) > SPIN_BAND_RPM:
+        return f"spin {spin_rpm:.0f} rpm exceeds {SPIN_BAND_RPM:.0f}"
+    return None
+
+
+def _readout(a, b, r, reproj, fps, reproj_max_px) -> dict:
+    """One arc's public record, with the reason it was rejected (if it was)."""
+    why = _plausible(r.speed_kmh, r.spin_rpm)
+    if why is None and reproj > reproj_max_px:
+        why = f"reproj {reproj:.1f}px exceeds {reproj_max_px:.1f}px"
+    return {
+        "start_frame": int(a), "end_frame": int(b),
+        "t_hit_s": round(a / fps, 2), "t_bounce_s": round(b / fps, 2),
+        "speed_kmh": round(r.speed_kmh, 1),
+        "spin_rpm": round(r.spin_rpm, 0),
+        "topspin_rpm": round(r.topspin_rpm, 0),
+        "reproj_px": round(reproj, 1),
+        "ok": why is None,
+        "reject_reason": why,
+    }
 
 
 def _estimate_from_events(track, hit_idx, bounce_idx, camera, Hfw, fps,
@@ -57,15 +109,7 @@ def _estimate_from_events(track, hit_idx, bounce_idx, camera, Hfw, fps,
             continue
         seg_t = np.arange(b - a + 1, dtype=float) / fps
         r, reproj, _ = fit_anchored(seg_t, seg, camera, Hfw, track[b], "end")
-        shots.append({
-            "start_frame": int(h), "end_frame": int(b),
-            "t_hit_s": round(h / fps, 2), "t_bounce_s": round(b / fps, 2),
-            "speed_kmh": round(r.speed_kmh, 1),
-            "spin_rpm": round(r.spin_rpm, 0),
-            "topspin_rpm": round(r.topspin_rpm, 0),
-            "reproj_px": round(reproj, 1),
-            "ok": bool(reproj <= reproj_max_px),
-        })
+        shots.append(_readout(h, b, r, reproj, fps, reproj_max_px))
     return shots
 
 
@@ -133,13 +177,5 @@ def estimate(ball_px, near_img, far_img, named_corners, img_wh, fps, *,
             continue
         seg_t = np.arange(b - a + 1, dtype=float) / fps
         r, reproj, _ = fit_anchored(seg_t, seg, camera, Hfw, track[b], "end")
-        shots.append({
-            "start_frame": int(a), "end_frame": int(b),
-            "t_hit_s": round(a / fps, 2), "t_bounce_s": round(b / fps, 2),
-            "speed_kmh": round(r.speed_kmh, 1),
-            "spin_rpm": round(r.spin_rpm, 0),
-            "topspin_rpm": round(r.topspin_rpm, 0),
-            "reproj_px": round(reproj, 1),
-            "ok": bool(reproj <= reproj_max_px),
-        })
+        shots.append(_readout(a, b, r, reproj, fps, reproj_max_px))
     return shots

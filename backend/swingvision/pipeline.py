@@ -1294,7 +1294,8 @@ def _estimate_speed_spin(ball_px, near_court, far_court, named_corners, H, img_w
         for s in shots:
             print(f"    arc f{s['start_frame']}-{s['end_frame']}: "
                   f"{s['speed_kmh']:.0f} km/h, {s['spin_rpm']:.0f} rpm, "
-                  f"reproj {s['reproj_px']}px {'OK' if s['ok'] else 'rejected'}")
+                  f"reproj {s['reproj_px']}px "
+                  + ("OK" if s["ok"] else f"rejected ({s.get('reject_reason')})"))
         return shots
     except Exception as e:  # framework missing / camera failure -> approx speeds only
         print(f"[analyze] speed/spin estimation skipped: {e}")
