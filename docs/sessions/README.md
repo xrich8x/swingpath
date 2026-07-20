@@ -13,7 +13,7 @@ Recommended order (B/C/D are independent and can be reordered):
 | B | SESSION_B_serve_stats.md | Serve placement (T/body/wide) + expanded match stats | ~1 session |
 | C | SESSION_C_flow_polish.md | Refuse→overlay handoff, camera events in UI, player heatmap | ~1 session |
 | D | SESSION_D_highlights.md | Per-rally clips + top-rallies reel (stream-copy strategy) | ~1 session |
-| E | SESSION_E_ball_push.md | The ball stack: tracking → trajectory → arc → speed + spin (multi-session arc, E1-E4) | multi |
+| E | SESSION_E_ball_push.md | The ball stack: tracking → trajectory → arc → speed + spin (multi-session arc, E1-E4). **Read its frame-rate finding first — it constrains the footage the user records.** | multi |
 
 Standing rules for every session (from CLAUDE.md + project memory):
 - Measure after each step; show the user the numbers before continuing.
