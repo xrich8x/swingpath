@@ -823,6 +823,58 @@ The three live leads, in order: (1) kill the ~9 remaining phantoms, (2) audio
 hit detection (built, blocked on audio-bearing footage), (3) sub-frame bounce
 refinement. Nothing here is served by more tracking work.
 
+### E3g/h (2026-07-22) — two physics rules cut the speed error by 3x
+E3f concluded every thread ended at event timing. It did — and the fix was two
+constraints that tennis itself imposes, both found by looking at the data rather
+than reasoning from first principles.
+
+#### Rule 1: a racquet contact does not cross the net [E3g]
+Tabulated all 29 candidate hits against the HUD's stroke list. The separation was
+total: **all 14 hits matching a real stroke kept the ball on the striker's side
+0.33 s later; 10 of the 15 phantoms crossed the net immediately.** They were not
+contacts at all — they were the ball flying past the net, caught by a proximity
+or turn-angle minimum on the way. `events.drop_midflight_hits`.
+| | hits | HUD strokes covered | phantoms |
+|---|---|---|---|
+| gap hits (E3d, shipped) | 29 | 14/17 | 15 |
+| + drop mid-flight (0.33 s) | 19 | 14/17 | 5 |
+| **+ max_gap 3.0 → 2.0** | **17** | **14/17** | **3** |
+Known cost: a genuine net volley does cross immediately and is dropped. Fine on
+baseline rally footage; `hold_s` needs lowering for serve-and-volley.
+
+#### Rule 2: a rally shot lands ACROSS the net [E3h]
+With the hits clean, the speeds went systematically LOW — 10 of 15 under, several
+at 25-35 km/h for strokes the HUD read at 70-90. A ball does not travel at
+25 km/h. Checking where those "landings" were: **11 of 15 sat on the striker's
+OWN side, 2-5 m from the contact** — the bounce detector locking onto a jitter
+minimum just after the hit. The four that did cross the net had a 24% median
+speed error against 56% for the rest.
+`detect_bounces_between_hits(..., require_cross_net=True)` now requires the
+landing to be on the far side of the net from the contact. A span with no
+opposite-side candidate yields NO bounce, which is the honest outcome — we did
+not observe that landing.
+
+#### Result [MEASURED vs the HUD reference]
+| | shots (17 real) | matched | median speed err | within 25% | within 40% | mean vs HUD |
+|---|---|---|---|---|---|---|
+| E3b | 45 | 17/17 | 82% | 2/17 | 3/17 | +35.0% |
+| E3e | 26 | 16/17 | 50% | 5/16 | 5/16 | −2.5% |
+| E3g (rule 1) | 20 | 15/17 | 55% | 5/15 | 6/15 | −27.4% |
+| **E3h (rules 1+2)** | **20** | **15/17** | **28%** | **7/15** | **9/15** | **−8.4%** |
+**Median per-shot speed error 82% → 28% across the session**, with shot count
+down from 45 phantoms-and-all to 20 for 17 real strokes. Best shots: +2.7%,
++8.2%, +14.5%, −15.6%.
+
+Note E3g alone looked like a regression (50% → 55%) — removing the mid-flight
+phantoms stripped out the over-estimates and left the distribution biased low.
+That was the clue that led to rule 2; a metric moving the wrong way was
+information, not a reason to revert.
+
+Still open: 6 of 15 shots remain beyond 40% error, 2 HUD strokes produce no shot
+at all, and 0 physics arcs pass (only 9 candidates now — the cross-net rule made
+bounces scarcer, 20 → 10). Sub-frame bounce refinement is the next lever, then
+audio hits once footage with sound exists.
+
 - _E-next: (1) hit/bounce disambiguation to kill the 28 junk shots; (2) re-run
   e2e/clay + demo30 under the cap fix (numbers will move); (3) plane-speed
   quality on dense tracks; (4) spin=0-first arc fitting; (5) audio measurement

@@ -198,11 +198,46 @@ def detect_hits_by_gap(
     return hits
 
 
+def drop_midflight_hits(hits: Sequence[int], track: Track, *,
+                        hold_s: float = 0.33) -> list[int]:
+    """Reject "hits" that are really mid-flight points (Session E3g).
+
+    A racquet contact happens on the striker's side of the net, and the ball then
+    needs real time to reach the net — at least a few tenths of a second from any
+    baseline. A candidate that is on one side of the net and on the OTHER side
+    `hold_s` later was never a contact; it was the ball crossing, caught by a
+    proximity or turn-angle minimum on the way past.
+
+    Measured on yt_rally2 against the HUD's stroke list: of 29 candidate hits,
+    all **14 that matched a real stroke** kept the ball on the striker's side,
+    while **10 of the 15 phantoms** crossed within 0.33 s. This one test removes
+    two thirds of the phantoms and costs nothing real.
+
+    Known cost: a genuine net volley does cross almost immediately and will be
+    dropped. On baseline rally footage that is a rare trade — and a volley
+    currently accounts for 1 of our 26 shots — but on serve-and-volley footage
+    `hold_s` should come down.
+    """
+    from . import court
+
+    pts = [tuple(p) for p in track]
+    n = len(pts)
+    out = []
+    for h in hits:
+        j = h
+        while j + 1 < n and pts[j][0] - pts[h][0] < hold_s:
+            j += 1
+        same_side = (pts[h][2] - court.NET_Y) * (pts[j][2] - court.NET_Y) >= 0
+        if same_side:
+            out.append(int(h))
+    return out
+
+
 def detect_hits_hybrid(
     gaps: "np.ndarray",
     track: Track,
     *,
-    max_gap: float = 3.0,
+    max_gap: float = 2.0,
     min_turn_deg: float = 20.0,
     angle_thresh_deg: float = 70.0,
     min_gap_s: float = 0.35,
@@ -327,6 +362,8 @@ def detect_bounces_between_hits(
     n_frames: int,
     *,
     min_sep_frames: int = 4,
+    track: Track | None = None,
+    require_cross_net: bool = True,
 ) -> list[int]:
     """Ground bounces, searched only BETWEEN consecutive hits (Session E3d).
 
@@ -339,8 +376,17 @@ def detect_bounces_between_hits(
     Image row is used rather than court-plane speed because a low skidding bounce
     barely changes court-plane speed but always reverses vertical image motion.
     `ball_img` is the per-frame ball pixel position (None where untracked).
-    Returns sorted frame indices.
+
+    `require_cross_net` (needs `track`) enforces the other half of the physics: a
+    rally shot must LAND ACROSS THE NET from where it was struck. Without it,
+    measured on yt_rally2, **11 of 15 shots had their "landing" on the striker's
+    own side, 2-5 m from the contact** — the detector was locking onto a jitter
+    minimum just after the hit instead of the real landing, and those shots
+    carried a 56% median speed error against the HUD versus 24% for the ones that
+    did cross. A span with no opposite-side candidate yields NO bounce, which is
+    the honest outcome: we did not observe that landing.
     """
+    from . import court
     ys = np.full(n_frames, np.nan)
     for i in range(min(n_frames, len(ball_img))):
         p = ball_img[i]
@@ -352,13 +398,23 @@ def detect_bounces_between_hits(
     for k, h in enumerate(hits):
         nxt = hits[k + 1] if k + 1 < len(hits) else n_frames - 1
         if nxt - h > 2 * min_sep_frames:
-            spans.append((h + min_sep_frames, nxt - 1))
+            spans.append((h, h + min_sep_frames, nxt - 1))
+
+    cross_ok = None
+    if require_cross_net and track is not None:
+        def cross_ok(hit_i, k):
+            if hit_i >= len(track) or k >= len(track):
+                return False
+            return ((track[hit_i][2] - court.NET_Y)
+                    * (track[k][2] - court.NET_Y)) < 0
 
     bounces: list[int] = []
-    for a, b in spans:
+    for h, a, b in spans:
         best, best_y = None, -np.inf
         for k in range(a + 1, min(b, n_frames - 1)):
             if not np.isfinite(ys[k]):
+                continue
+            if cross_ok is not None and not cross_ok(h, k):
                 continue
             prev = next((ys[j] for j in range(k - 1, a - 1, -1) if np.isfinite(ys[j])), np.nan)
             nxt_y = next((ys[j] for j in range(k + 1, b + 1) if np.isfinite(ys[j])), np.nan)

@@ -1277,9 +1277,14 @@ def analyze_video(
     ball_gap = events.ball_player_gap(ball_px, near_kpts, far_kpts, n)
     if np.isfinite(ball_gap).sum() >= 0.15 * n:
         hit_idx = sorted(events.detect_hits_hybrid(ball_gap, track))
+        # Drop candidates that are really the ball crossing the net rather than a
+        # racquet contact (E3g). Measured against the HUD's stroke list this took
+        # phantom hits 15 -> 3 while keeping every real stroke we already had.
+        hit_idx = events.drop_midflight_hits(hit_idx, track)
         # With hits known, a bounce is the ball's lowest point BETWEEN two of them,
         # so racquet contacts can no longer be counted as landings as well.
-        bounce_idx = sorted(events.detect_bounces_between_hits(ball_px, hit_idx, n))
+        bounce_idx = sorted(events.detect_bounces_between_hits(
+            ball_px, hit_idx, n, track=track))
         events_src = "gap+between"
     else:
         # Too little pose to locate strikers (uncalibrated or badly framed clip):

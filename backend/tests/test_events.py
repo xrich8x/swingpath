@@ -151,3 +151,57 @@ def test_classify_spin_flat_when_level():
 def test_classify_spin_unknown_without_wrist():
     win = [_kpts() for _ in range(7)]   # no confident wrist anywhere
     assert classify_spin(win, contact_xy_img=(530.0, 360.0)) == ""
+
+
+class TestPhysicalEventRules:
+    """A rally shot is struck on one side and lands on the other (Session E3g/h).
+
+    Both rules came from measurement, not intuition. Against the HUD's stroke
+    list on yt_rally2: 15 of 29 candidate hits were phantoms, and every one of
+    the 14 real ones kept the ball on the striker's side while 10 phantoms
+    crossed the net immediately. Separately, 11 of 15 shots had their "landing"
+    on the striker's OWN side, 2-5 m from the contact, and those carried a 56%
+    median speed error against 24% for the ones that crossed.
+    """
+
+    FPS = 60.0
+
+    def _track(self, ys, fps=None):
+        fps = fps or self.FPS
+        return [(i / fps, 5.0, y) for i, y in enumerate(ys)]
+
+    def test_midflight_candidate_is_dropped(self):
+        from swingvision import court, events
+        # Ball starts just past the net and keeps going: not a contact.
+        ys = [court.NET_Y - 0.5 + 0.4 * i for i in range(40)]
+        assert events.drop_midflight_hits([0], self._track(ys)) == []
+
+    def test_real_contact_at_the_baseline_is_kept(self):
+        from swingvision import court, events
+        # Struck near the far baseline, still on that side 0.33 s later.
+        ys = [court.LENGTH - 1.0 - 0.05 * i for i in range(40)]
+        assert events.drop_midflight_hits([0], self._track(ys)) == [0]
+
+    def test_bounce_must_land_across_the_net(self):
+        from swingvision import court, events
+        n = 60
+        # Hit at frame 0 on the near side; the ball never crosses the net.
+        track = self._track([2.0 + 0.02 * i for i in range(n)])
+        # An image-row maximum mid-span would otherwise be taken as the landing.
+        ball_img = [[100.0, 200.0 + (30.0 if i == 30 else 0.0)] for i in range(n)]
+        same_side = events.detect_bounces_between_hits(
+            ball_img, [0, n - 1], n, track=track, require_cross_net=True)
+        assert same_side == [], "a landing on the striker's own side is not a landing"
+
+        # Same shape, but the ball does cross: the landing is accepted.
+        crossed = self._track([2.0 + 0.4 * i for i in range(n)])
+        assert crossed[30][2] > court.NET_Y
+        assert events.detect_bounces_between_hits(
+            ball_img, [0, n - 1], n, track=crossed, require_cross_net=True) == [30]
+
+    def test_rule_can_be_disabled_for_footage_without_calibration(self):
+        from swingvision import events
+        n = 60
+        ball_img = [[100.0, 200.0 + (30.0 if i == 30 else 0.0)] for i in range(n)]
+        assert events.detect_bounces_between_hits(
+            ball_img, [0, n - 1], n, require_cross_net=False) == [30]
