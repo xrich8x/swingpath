@@ -42,6 +42,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         annotate=args.annotate,
         doubles=args.doubles,
         far_player_rescue=args.far_player_rescue,
+        far_ball_tile=args.far_ball_tile,
         device=args.device,
     )
     s = match.stats
@@ -161,6 +162,10 @@ def build_parser() -> argparse.ArgumentParser:
                          help="run a second, accurate pose pass on a native-resolution "
                               "crop of the far court when the far player is missing "
                               "(they subtend ~45px and whole-frame inference loses them)")
+    analyze.add_argument("--far-ball-tile", action="store_true", dest="far_ball_tile",
+                         help="also run the ball detector on a native-resolution "
+                              "crop of the far court (far ball is ~4px; the model "
+                              "sees ~2px after downscaling). ~2x slower.")
     analyze.add_argument("--doubles", action="store_true", dest="doubles",
                          help="force doubles line calls (outer alleys). Default: "
                               "auto-detect singles vs doubles from on-court player "

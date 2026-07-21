@@ -754,6 +754,75 @@ Best shots now land at +7.0%, −5.5%, −5.9%, +8.2%. The remainder still swing
 ±100%+, and those are bounce-frame errors, not tracking errors — that is the
 next target.
 
+### E3f (2026-07-22) — 90% is not reachable, and per-frame recall stopped mattering
+Asked to push ball-found to 90%, or else deliver landing zone / speed / spin.
+Both halves answered with measurements, and both answers were negative in ways
+that redirect the work.
+
+#### 1. 90% is off the table, and the ceiling says why
+From `candidate_ceiling.py` (258 gold frames, detector's top-5 heatmap blobs):
+| | all court |
+|---|---|
+| ball is the detector's strongest blob | 70.9% |
+| ball is anywhere in its top 5 | **77.9%** ← hard ceiling for any tracker |
+| detector never produces it | 22.1% |
+We are at **72.5%** — already past the top-1 ceiling and inside 6 points of the
+top-5 one. **No tracking or selection work reaches 90%; only a better detector
+would**, and Session 3 already measured that our custom training does not beat
+off-the-shelf on unseen footage. Detector fusion is out too: TrackNet ∪ WASB
+rescues 4 frames.
+
+Where the remaining 27.5% sits (measured, E3e track): 17.4 pts no lock at all in
+stretches >10 frames, 8.1 pts near-misses at 10-50 px (a PRECISION problem,
+17 of 21 far-court), 3.1 pts locked on the wrong object. Zero misses sit in
+short fillable gaps, so TrackNetV3-style trajectory inpainting has nothing to
+inpaint here.
+
+#### 2. Far-court tiling works per-frame, and makes the product WORSE [OPT-IN]
+SAHI-style native-resolution crop of the far court, shipped as
+`ball.RoiDetector` + `ball.far_court_roi` behind `--far-ball-tile` (and the same
+mechanism already used for pose in E3d):
+| | hit@10 | far court | serve |
+|---|---|---|---|
+| E3e (no tile) | 71.3% | 66.7% | 91.7% |
+| E3f (+tile) | **72.5%** | **73.8%** | 79.2% |
+Exactly the +7 far-court points the probe predicted. But end-to-end it is worse:
+median speed error 50% → 57%, matched strokes 16/17 → 15/17, and serve recall
+drops because the tile competes near the toss. **Default OFF**, with the numbers
+recorded. The lesson is bigger than the flag: **per-frame recall has stopped
+being the bottleneck** — we can improve it and the output does not follow.
+
+#### 3. "Speed for a landing zone": aggregate works, per-shot does not
+Track-quality signals do NOT predict speed accuracy (`speed_confidence.py`,
+n=16): correlations of |error| with real-frame fraction, detection count, span
+and gap length are all |r| ≤ 0.31, and every quality gate tried made the median
+error worse. A shot with a PERFECT track (100% real frames, 22 detections) came
+in at +144%; another with identical signals came in at −6%. So we cannot
+currently label which individual shots are trustworthy.
+
+But the errors are roughly symmetric, so they cancel in aggregate — **over
+correctly-identified strokes**:
+| statistic (16 matched strokes) | vs HUD |
+|---|---|
+| plain mean | +16.4% |
+| median | −3.3% |
+| interquartile mean | **−1.8%** |
+**Honest caveat that killed the change:** that only holds over MATCHED strokes.
+Over all 26 shots we actually report, the trimmed mean is −23%, because ~10
+phantom shots carry low speeds and drag it down; the plain mean reads −2.6% only
+because phantoms happen to cancel the over-estimates. Neither is a method, so
+the shipped statistic was left alone (the trimmed version was written, measured,
+and reverted). **A trustworthy "typical shot speed" is one phantom-shot fix
+away, not one statistic away.**
+
+#### Verdict for E-next
+Every thread now terminates at the same place: **event timing**. Per-frame
+tracking is near its ceiling and no longer pays; speed is limited by which
+frames we call hit and bounce; the aggregate speed is limited by phantom shots.
+The three live leads, in order: (1) kill the ~9 remaining phantoms, (2) audio
+hit detection (built, blocked on audio-bearing footage), (3) sub-frame bounce
+refinement. Nothing here is served by more tracking work.
+
 - _E-next: (1) hit/bounce disambiguation to kill the 28 junk shots; (2) re-run
   e2e/clay + demo30 under the cap fix (numbers will move); (3) plane-speed
   quality on dense tracks; (4) spin=0-first arc fitting; (5) audio measurement

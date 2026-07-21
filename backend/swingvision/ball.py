@@ -448,6 +448,82 @@ def _in_any_box(x: float, y: float, boxes, pad: float = 24.0) -> bool:
     return False
 
 
+class RoiDetector:
+    """Runs any ball detector on a FIXED crop at native resolution (Session E3f).
+
+    The far ball measures 3.9 px across in a 1280x720 frame, and every heatmap
+    detector here resizes the whole frame to 640x360 first — so the net is asked
+    to find a **2 px** object. Cropping instead of scaling is the standard fix
+    (SAHI: slice, infer per slice, merge), and on our own gold far-court frames it
+    lifted the raw detector from 71.4% to 78.6% hit@10, matching an oracle crop
+    centred on the human's click.
+
+    This wraps a detector rather than changing one, so `BallTracker` can simply be
+    handed [full_frame_detector, RoiDetector(tile_detector, tile)] and its existing
+    fusion — "the candidate most consistent with the predicted path wins" — does
+    the merging for free. The wrapped detector must be its OWN instance: these
+    models keep a 3-frame buffer, and feeding one alternating full frames and
+    crops would corrupt its motion cue.
+    """
+
+    def __init__(self, detector, roi):
+        self.detector = detector
+        self.x0, self.y0, self.x1, self.y1 = (int(v) for v in roi)
+        self.weights_path = getattr(detector, "weights_path", None)
+        self.last_sub = None
+
+    def reset(self) -> None:
+        self.detector.reset()
+        self.last_sub = None
+
+    def _shift(self, pt):
+        return None if pt is None else (pt[0] + self.x0, pt[1] + self.y0)
+
+    def detect(self, frame):
+        h, w = frame.shape[:2]
+        x0, y0 = max(0, self.x0), max(0, self.y0)
+        x1, y1 = min(w, self.x1), min(h, self.y1)
+        if x1 - x0 < 32 or y1 - y0 < 32:
+            self.last_sub = None
+            return None
+        out = self.detector.detect(frame[y0:y1, x0:x1])
+        self.last_sub = self._shift(getattr(self.detector, "last_sub", None))
+        return self._shift(out)
+
+
+def far_court_roi(homography, img_wh, *, runoff_m: float = 3.0, pad_px: float = 30.0):
+    """Image-space crop covering the far half of the court, for `RoiDetector`.
+
+    Derived from the homography so it follows the camera, and extended upward to
+    cover an airborne ball (the far court's ground projection alone would clip a
+    lob out of the crop). Returns (x0, y0, x1, y1) or None.
+    """
+    from . import calibration, court
+
+    W, H = img_wh
+    ground = [
+        (-runoff_m, court.NET_Y), (court.DOUBLES_WIDTH + runoff_m, court.NET_Y),
+        (-runoff_m, court.LENGTH + runoff_m),
+        (court.DOUBLES_WIDTH + runoff_m, court.LENGTH + runoff_m),
+    ]
+    try:
+        pts = np.asarray(calibration.court_to_image(homography, ground), float)
+    except Exception:
+        return None
+    if not np.isfinite(pts).all():
+        return None
+    x0, y0 = pts[:, 0].min(), pts[:, 1].min()
+    x1, y1 = pts[:, 0].max(), pts[:, 1].max()
+    if not (x1 > x0 and y1 > y0):
+        return None
+    y0 -= 1.2 * (y1 - y0)                      # headroom for an airborne ball
+    x0, y0 = max(0.0, x0 - pad_px), max(0.0, y0 - pad_px)
+    x1, y1 = min(float(W), x1 + pad_px), min(float(H), y1 + pad_px)
+    if x1 - x0 < 32 or y1 - y0 < 32:
+        return None
+    return int(x0), int(y0), int(x1), int(y1)
+
+
 def median_background(video_path, frame_step: int = 1, max_frames: Optional[int] = None,
                       max_samples: int = 80, scale: float = 0.5):
     """Build a static-camera background image by per-pixel median over the clip.

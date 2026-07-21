@@ -1,5 +1,7 @@
 """Serve/rally statistics math (the logic layer over shots + rallies)."""
 
+import pytest
+
 from swingvision import court, schema
 from swingvision.schema import Rally, Shot
 

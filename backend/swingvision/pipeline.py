@@ -781,7 +781,8 @@ def _provenance_mismatches(prov, device, camera_hfov_deg, H):
 
 def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
               max_frames, frame_step, cache_path, use_bgsub=True, ball_model="tracknet",
-              camera_hfov_deg=70.0, far_player_rescue=False):
+              camera_hfov_deg=70.0, far_player_rescue=False,
+              far_ball_tile=False):
     """Run ball + pose over every `frame_step`-th frame (or load a cached run).
     Returns (ball_px, near_court, far_court) for the processed frames.
 
@@ -835,6 +836,7 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                     c.get("player_counts", []),
                     c.get("court_events", []))
 
+    from . import ball as ball_mod
     from .ball import BallDetector, WASBDetector, BallTracker, median_background
     from . import pose as pose_mod
 
@@ -914,6 +916,27 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
               f"(height-aware, ball up to 6 m)")
     else:
         print("[analyze] camera pose unknown -> court gate OFF")
+    # Far-court tile detector (SAHI-style). The far ball is ~4 px wide and every
+    # heatmap detector resizes the frame to 640x360 first, so the net sees ~2 px.
+    # A native-resolution crop of the far half recovers it: measured on the gold
+    # labels, far-court hit@10 66.7% -> 73.8% with false-fire held flat by the
+    # live-ball pass. Costs ~2x inference, hence opt-in.
+    if far_ball_tile:
+        roi = ball_mod.far_court_roi(H, (width, height))
+        if roi:
+            # Fresh instances: these detectors keep a 3-frame buffer, so one
+            # object cannot be fed full frames and crops alternately.
+            tile_dets = []
+            if ball_model in ("tracknet", "fusion", "all"):
+                tile_dets.append(BallDetector(ball_weights, device=device))
+            if ball_model in ("wasb", "fusion", "all"):
+                tile_dets.append(WASBDetector(device=device))
+            if ball_model in ("ours", "all"):
+                from .ball import OurBallDetector
+                tile_dets.append(OurBallDetector(device=device))
+            detectors = list(detectors) + [ball_mod.RoiDetector(d, roi)
+                                           for d in tile_dets]
+            print(f"[analyze] far-court ball tile ON roi={roi}")
     tracker = BallTracker(detectors, (width, height), background=bg, inv_scale=inv,
                           use_bgsub=use_bgsub, max_bg_run=bg_run_cap, homography=gate_H,
                           fps=fps_eff, cam_xyz=cam_xyz)
@@ -1068,6 +1091,7 @@ def analyze_video(
     annotate: bool = False,
     doubles: bool = False,
     far_player_rescue: bool = False,
+    far_ball_tile: bool = False,
 ) -> Match:
     """Analyze a real clip into a match.json — the full real pipeline.
 
@@ -1130,7 +1154,7 @@ def analyze_video(
      player_counts, court_events) = _perceive(
         video_path, H, ball_weights, pose_quality, pose_every, device,
         max_frames, frame_step, cache_path, use_bgsub, ball_model, camera_hfov_deg,
-        far_player_rescue
+        far_player_rescue, far_ball_tile
     )
     # Singles vs doubles: --doubles forces it; otherwise auto-detect from how many
     # players are on court (2 each side => doubles). Only the line-call boundary

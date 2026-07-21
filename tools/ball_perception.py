@@ -97,6 +97,9 @@ def main() -> None:
     ap.add_argument("--velocity-gate", type=float, default=None,
                     help="override the velocity/distance gate in px (default 70)")
     ap.add_argument("--max-coast", type=int, default=None)
+    ap.add_argument("--far-tile", action="store_true",
+                    help="add a native-resolution far-court crop as a second "
+                         "detector (SAHI-style); needs --keypoints")
     ap.add_argument("--max-frames", type=int, default=None)
     args = ap.parse_args()
 
@@ -160,6 +163,14 @@ def main() -> None:
         tk["gate"] = args.velocity_gate
     if args.max_coast is not None:
         tk["max_coast"] = args.max_coast
+    if args.far_tile and H is not None:
+        from swingvision.ball import RoiDetector, far_court_roi
+        roi = far_court_roi(H, (width, height))
+        if roi:
+            tile_dets, _ = build_detectors(args.ball_model, args.device,
+                                           args.tracknet_weights)
+            dets = list(dets) + [RoiDetector(d, roi) for d in tile_dets]
+            print(f"[ball] far-court tile detector ON roi={roi}")
     tracker = BallTracker(dets, (width, height), **tk)
 
     cap = cv2.VideoCapture(args.video)
