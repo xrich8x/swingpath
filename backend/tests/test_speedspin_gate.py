@@ -17,11 +17,20 @@ def readout(speed_kmh, spin_rpm, topspin_rpm=None):
                            topspin_rpm=spin_rpm if topspin_rpm is None else topspin_rpm)
 
 
-def test_sane_arc_inside_the_gate_is_ok():
+def test_sane_striker_pinned_arc_is_ok():
     r = speedspin._readout(10, 40, readout(95.0, 2400.0), reproj=3.5, fps=60.0,
-                           reproj_max_px=6.0)
+                           reproj_max_px=6.0, launch_source="striker_launch")
     assert r["ok"] is True
     assert r["reject_reason"] is None
+
+
+def test_bounce_only_arc_is_never_ok():
+    """E1: with only the bounce pinned, launch depth is free and speed slides
+    over a 23.8x range at <0.15px. A clean reprojection proves nothing there."""
+    r = speedspin._readout(10, 40, readout(95.0, 2400.0), reproj=1.0, fps=60.0,
+                           reproj_max_px=6.0, launch_source="bounce_only")
+    assert r["ok"] is False
+    assert "striker" in r["reject_reason"]
 
 
 def test_absurd_spin_is_rejected_even_at_low_reprojection():
@@ -48,4 +57,5 @@ def test_high_reprojection_still_rejected_and_says_so():
 
 @pytest.mark.parametrize("spin", [3499.0, -3499.0])
 def test_band_edges_are_inclusive(spin):
-    assert speedspin._readout(0, 10, readout(100.0, spin), 1.0, 60.0, 6.0)["ok"]
+    assert speedspin._readout(0, 10, readout(100.0, spin), 1.0, 60.0, 6.0,
+                              launch_source="striker_launch")["ok"]

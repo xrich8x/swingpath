@@ -62,11 +62,16 @@ def _plausible(speed_kmh: float, spin_rpm: float) -> Optional[str]:
     return None
 
 
-def _readout(a, b, r, reproj, fps, reproj_max_px) -> dict:
+def _readout(a, b, r, reproj, fps, reproj_max_px, launch_source="bounce_only") -> dict:
     """One arc's public record, with the reason it was rejected (if it was)."""
     why = _plausible(r.speed_kmh, r.spin_rpm)
     if why is None and reproj > reproj_max_px:
         why = f"reproj {reproj:.1f}px exceeds {reproj_max_px:.1f}px"
+    # A bounce-only fit leaves the launch point free to slide along its viewing
+    # ray, so its speed is arbitrary no matter how well it reprojects (E1: a 23.8x
+    # speed range all passes the gate). Only a striker-pinned arc may be believed.
+    if why is None and launch_source != "striker_launch":
+        why = "launch not pinned by a striker (bounce-only fit: speed unobservable)"
     return {
         "start_frame": int(a), "end_frame": int(b),
         "t_hit_s": round(a / fps, 2), "t_bounce_s": round(b / fps, 2),
@@ -159,7 +164,7 @@ def _estimate_from_events(track, hit_idx, bounce_idx, camera, Hfw, fps,
         else:
             r, reproj, _ = fit_anchored(seg_t, seg, camera, Hfw, track[b], "end")
 
-        rec = _readout(h, b, r, reproj, fps, reproj_max_px)
+        rec = _readout(h, b, r, reproj, fps, reproj_max_px, launch_source=source)
         rec["launch_source"] = source
         if p_launch is not None:
             rec["launch_height_m"] = round(float(p_launch[2]), 2)

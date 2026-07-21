@@ -55,6 +55,7 @@ def fit_arc(
     lift: Optional[LiftModel] = None,
     physical_bounds: bool = False,
     anchor: Optional[tuple] = None,
+    spin_free: bool = True,
 ) -> FitResult:
     """Fit (p0, v0, omega) to one arc.
 
@@ -67,6 +68,13 @@ def fit_arc(
         physical_bounds: constrain v0 / omega / p0 to physically plausible ranges.
                Essential for noisy monocular 2D — without it the depth ambiguity
                lets the optimiser wander to absurd speeds.
+        spin_free: when False, omega is held at zero. Spin is the softest
+               parameter in the model — over a short arc the optimiser buys a
+               cheap residual reduction by pinning all three components at their
+               bound (|omega| = 750*sqrt(3) rad/s = 12,405 rpm, which is exactly
+               what real arcs kept reporting). Fitting spin-free first and only
+               accepting spin when it clearly earns its residual is how the
+               caller tells a measured curve from an excuse.
     """
     drag = drag or DragModel()
     lift = lift or LiftModel()
@@ -124,7 +132,10 @@ def fit_arc(
     bounds = (-np.inf, np.inf)
     if physical_bounds:
         v_lo, v_hi = [-75.0] * 3, [75.0] * 3            # m/s per component (~270 km/h)
-        w_lo, w_hi = [-750.0] * 3, [750.0] * 3          # rad/s (~7160 rpm)
+        # rad/s (~7160 rpm). The no-spin cap is small but not zero: x0 is clipped
+        # into the box by +-1e-6, so a tighter bound would invert it.
+        w_cap = 750.0 if spin_free else 1e-3
+        w_lo, w_hi = [-w_cap] * 3, [w_cap] * 3
         p_lo, p_hi = [-6.0, -12.0, 0.0], [30.0, 12.0, 6.0]   # m, on/over the court
         lo = (v_lo + w_lo) if fix_p0 else (p_lo + v_lo + w_lo)
         hi = (v_hi + w_hi) if fix_p0 else (p_hi + v_hi + w_hi)

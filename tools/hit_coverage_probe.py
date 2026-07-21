@@ -117,12 +117,16 @@ def main() -> None:
     print(f"track: {len(track)} frames @ {args.fps:g} fps, "
           f"{sum(has_data)} with real ball data; HUD strokes: {len(hud)}\n")
 
+    cache = json.loads(Path(args.cache).read_text(encoding="utf-8"))
+    near_c, far_c = cache.get("near_court") or [], cache.get("far_court") or []
+    prox = events.detect_hits_by_proximity(track, near_c, far_c)
     detectors = {
         "angle70 (shipping)": [track[k][0] for k in
                                events.detect_hits(track, angle_thresh_deg=70,
                                                   min_gap_s=0.3)],
         "ysign (prototype)": [track[k][0] for k in
                               detect_hits_ysign(track, has_data, args.fps)],
+        "proximity (E3d)": [track[k][0] for k in prox],
     }
     hdr = f"{'detector':<22} {'hits':>5} {'HUD covered':>12} {'extras':>7}"
     print(hdr)

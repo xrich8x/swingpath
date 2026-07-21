@@ -1,0 +1,187 @@
+{
+  "match": "rally2_e3d.json",
+  "hud": "hud_yt_rally2.json",
+  "reference": "SwingVision burned-in HUD (an independent single-camera estimate, NOT radar ground truth)",
+  "n_ours": 26,
+  "n_hud": 17,
+  "n_matched": 16,
+  "mae_confident_pct": 54.8,
+  "pairs": [
+    {
+      "t_hit_s": 0.72,
+      "type": "serve",
+      "ours_kmh": 83.7,
+      "source": "physics",
+      "hud_kmh": 98.2,
+      "hud_mph": 61,
+      "delta_pct": -14.8,
+      "confident": true,
+      "lag_s": 0.31
+    },
+    {
+      "t_hit_s": 2.37,
+      "type": "forehand",
+      "ours_kmh": 188.8,
+      "source": "approx",
+      "hud_kmh": 90.1,
+      "hud_mph": 56,
+      "delta_pct": 109.5,
+      "confident": false,
+      "lag_s": 0.0
+    },
+    {
+      "t_hit_s": 4.3,
+      "type": "backhand",
+      "ours_kmh": 145.4,
+      "source": "approx",
+      "hud_kmh": 85.3,
+      "hud_mph": 53,
+      "delta_pct": 70.5,
+      "confident": true,
+      "lag_s": 1.13
+    },
+    {
+      "t_hit_s": 5.08,
+      "type": "forehand",
+      "ours_kmh": 30.8,
+      "source": "approx",
+      "hud_kmh": 70.8,
+      "hud_mph": 44,
+      "delta_pct": -56.5,
+      "confident": true,
+      "lag_s": 1.92
+    },
+    {
+      "t_hit_s": 6.97,
+      "type": "backhand",
+      "ours_kmh": 25.2,
+      "source": "approx",
+      "hud_kmh": 66.0,
+      "hud_mph": 41,
+      "delta_pct": -61.8,
+      "confident": false,
+      "lag_s": 1.83
+    },
+    {
+      "t_hit_s": 9.9,
+      "type": "backhand",
+      "ours_kmh": 227.4,
+      "source": "approx",
+      "hud_kmh": 70.8,
+      "hud_mph": 44,
+      "delta_pct": 221.2,
+      "confident": false,
+      "lag_s": 0.6
+    },
+    {
+      "t_hit_s": 10.42,
+      "type": "backhand",
+      "ours_kmh": 36.8,
+      "source": "approx",
+      "hud_kmh": 56.3,
+      "hud_mph": 35,
+      "delta_pct": -34.6,
+      "confident": false,
+      "lag_s": 1.71
+    },
+    {
+      "t_hit_s": 14.0,
+      "type": "backhand",
+      "ours_kmh": 55.6,
+      "source": "approx",
+      "hud_kmh": 78.9,
+      "hud_mph": 49,
+      "delta_pct": -29.5,
+      "confident": false,
+      "lag_s": 0.6
+    },
+    {
+      "t_hit_s": 15.67,
+      "type": "forehand",
+      "ours_kmh": 25.1,
+      "source": "approx",
+      "hud_kmh": 80.5,
+      "hud_mph": 50,
+      "delta_pct": -68.8,
+      "confident": true,
+      "lag_s": 0.53
+    },
+    {
+      "t_hit_s": 17.77,
+      "type": "backhand",
+      "ours_kmh": 92.2,
+      "source": "approx",
+      "hud_kmh": 74.0,
+      "hud_mph": 46,
+      "delta_pct": 24.6,
+      "confident": false,
+      "lag_s": 1.73
+    },
+    {
+      "t_hit_s": 20.58,
+      "type": "backhand",
+      "ours_kmh": 26.1,
+      "source": "approx",
+      "hud_kmh": 69.2,
+      "hud_mph": 43,
+      "delta_pct": -62.3,
+      "confident": false,
+      "lag_s": 0.82
+    },
+    {
+      "t_hit_s": 21.63,
+      "type": "backhand",
+      "ours_kmh": 97.1,
+      "source": "approx",
+      "hud_kmh": 91.7,
+      "hud_mph": 57,
+      "delta_pct": 5.9,
+      "confident": false,
+      "lag_s": 1.77
+    },
+    {
+      "t_hit_s": 23.35,
+      "type": "forehand",
+      "ours_kmh": 86.4,
+      "source": "approx",
+      "hud_kmh": 66.0,
+      "hud_mph": 41,
+      "delta_pct": 30.9,
+      "confident": false,
+      "lag_s": 1.38
+    },
+    {
+      "t_hit_s": 26.58,
+      "type": "backhand",
+      "ours_kmh": 83.1,
+      "source": "approx",
+      "hud_kmh": 78.9,
+      "hud_mph": 49,
+      "delta_pct": 5.3,
+      "confident": false,
+      "lag_s": 0.12
+    },
+    {
+      "t_hit_s": 29.4,
+      "type": "backhand",
+      "ours_kmh": 31.3,
+      "source": "approx",
+      "hud_kmh": 85.3,
+      "hud_mph": 53,
+      "delta_pct": -63.3,
+      "confident": true,
+      "lag_s": 0.83
+    },
+    {
+      "t_hit_s": 30.23,
+      "type": "backhand",
+      "ours_kmh": 14.6,
+      "source": "approx",
+      "hud_kmh": 59.5,
+      "hud_mph": 37,
+      "delta_pct": -75.5,
+      "confident": false,
+      "lag_s": 1.34
+    }
+  ]
+}

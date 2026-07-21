@@ -781,7 +781,7 @@ def _provenance_mismatches(prov, device, camera_hfov_deg, H):
 
 def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
               max_frames, frame_step, cache_path, use_bgsub=True, ball_model="tracknet",
-              camera_hfov_deg=70.0):
+              camera_hfov_deg=70.0, far_player_rescue=False):
     """Run ball + pose over every `frame_step`-th frame (or load a cached run).
     Returns (ball_px, near_court, far_court) for the processed frames.
 
@@ -865,6 +865,14 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
         raise ValueError(f"unknown ball_model {ball_model!r}")
     print(f"[analyze] ball model: {ball_model} ({len(detectors)} detector(s))")
     estimator = pose_mod.PoseEstimator(quality=pose_quality, device=device)
+    # Second estimator for the far-court crop only: the small preset cannot resolve
+    # a 45 px player even at native resolution (measured), so this one is always the
+    # accurate preset regardless of `pose_quality`. It runs on a small crop, so it
+    # is far cheaper than raising `pose_quality` for the whole frame.
+    far_estimator = (pose_mod.PoseEstimator(quality="accurate", device=device)
+                     if far_player_rescue else None)
+    far_tile = None
+    n_far_rescued = 0
     pose_w, pose_imgsz = pose_mod.QUALITY_PRESETS.get(
         pose_quality, pose_mod.QUALITY_PRESETS["fast"])
     pose_model = f"{pose_w}@{pose_imgsz}"
@@ -875,6 +883,10 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
     # Rate of the frames the tracker will actually see — its time-based gates
     # (static-fixture) need this, not the source rate.
     fps_eff = (cap.get(cv2.CAP_PROP_FPS) or 30.0) / max(1, frame_step)
+    if far_estimator is not None:
+        far_tile = pose_mod.far_court_tile(H, (width, height))
+        print("[analyze] far-player rescue "
+              + (f"ON tile={far_tile}" if far_tile else "OFF (no tile from H)"))
     bg, inv = (median_background(video_path, frame_step, max_frames) if use_bgsub else (None, 2.0))
     # With players masked out of the background candidates, the bridge can run
     # longer without drifting onto a body — but only if pose actually finds the
@@ -962,6 +974,20 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                 last_near_kp = last_far_kp = None
                 last_boxes = []
                 _poses = estimator.estimate(frame)
+                # Far-player rescue (E3d). A far player subtends ~45 px and
+                # whole-frame inference misses them entirely — measured 0/2215
+                # frames on yt_rally2 at BOTH presets. A native-resolution crop of
+                # the far half, run through the larger model, recovers them; both
+                # the crop and the bigger model are needed. Only pay for it on
+                # frames where the full-frame pass found nobody in the far half,
+                # so well-framed footage costs nothing.
+                if far_estimator is not None and far_tile is not None:
+                    if not any(cxy[1] >= court.NET_Y for _, cxy
+                               in pose_mod.select_players_on_court(_poses, H_t)):
+                        extra = far_estimator.estimate_tiled(frame, far_tile)
+                        if extra:
+                            _poses = list(_poses) + extra
+                            n_far_rescued += 1
                 player_counts.append(list(pose_mod.count_on_court(_poses, H_t)))
                 for p, cxy in pose_mod.select_players_on_court(_poses, H_t):
                     last_boxes.append(tuple(float(v) for v in p.box))
@@ -983,6 +1009,8 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
     if processed:
         print(f"[analyze] perceived {processed} frames in {elapsed:.0f}s "
               f"({processed / elapsed:.2f} fps, {elapsed / processed:.2f}s/frame)")
+        if far_estimator is not None:
+            print(f"[analyze] far-player rescue fired on {n_far_rescued} pose frames")
     print(f"[analyze] ball locked via model={tracker.n_tnet}, "
           f"background-recovered={tracker.n_bg}, "
           f"static-fixtures-suppressed={tracker.n_static}")
@@ -1031,6 +1059,7 @@ def analyze_video(
     ball_model: str = "tracknet",
     annotate: bool = False,
     doubles: bool = False,
+    far_player_rescue: bool = False,
 ) -> Match:
     """Analyze a real clip into a match.json — the full real pipeline.
 
@@ -1092,7 +1121,8 @@ def analyze_video(
     (ball_px, near_court, far_court, near_kpts, far_kpts, cam_motion,
      player_counts, court_events) = _perceive(
         video_path, H, ball_weights, pose_quality, pose_every, device,
-        max_frames, frame_step, cache_path, use_bgsub, ball_model, camera_hfov_deg
+        max_frames, frame_step, cache_path, use_bgsub, ball_model, camera_hfov_deg,
+        far_player_rescue
     )
     # Singles vs doubles: --doubles forces it; otherwise auto-detect from how many
     # players are on court (2 each side => doubles). Only the line-call boundary
@@ -1193,8 +1223,27 @@ def analyze_video(
     smoothed = smooth_and_fill(ball_court_raw, window=7, polyorder=2)
     track = [(i / fps_eff, float(smoothed[i, 0]), float(smoothed[i, 1])) for i in range(n)]
 
-    hit_idx = sorted(events.detect_hits(track, angle_thresh_deg=70, min_gap_s=0.3))
-    bounce_idx = sorted(events.detect_bounces(track, min_speed_drop=0.55))
+    # Hits from the ball-to-player gap where pose can see the striker, falling back
+    # to the ball's own turn angle only where pose has been blind (E3d). Measured on
+    # yt_rally2 vs the HUD's 17 strokes: angle-only covers 17/17 but invents 36
+    # extra "hits" (bounces read as racquet contacts); the gap rule covers 15/17
+    # with 11. Downstream, a wrong hit is far more damaging than a missed one — it
+    # pairs a racquet contact with the wrong landing and poisons the arc.
+    ball_gap = events.ball_player_gap(ball_px, near_kpts, far_kpts, n)
+    if np.isfinite(ball_gap).sum() >= 0.15 * n:
+        hit_idx = sorted(events.detect_hits_hybrid(ball_gap, track))
+        # With hits known, a bounce is the ball's lowest point BETWEEN two of them,
+        # so racquet contacts can no longer be counted as landings as well.
+        bounce_idx = sorted(events.detect_bounces_between_hits(ball_px, hit_idx, n))
+        events_src = "gap+between"
+    else:
+        # Too little pose to locate strikers (uncalibrated or badly framed clip):
+        # keep the ball-only heuristics rather than inventing a striker.
+        hit_idx = sorted(events.detect_hits(track, angle_thresh_deg=70, min_gap_s=0.3))
+        bounce_idx = sorted(events.detect_bounces(track, min_speed_drop=0.55))
+        events_src = "angle+speedmin (no pose)"
+    print(f"[analyze] events: {len(hit_idx)} hits, {len(bounce_idx)} bounces "
+          f"[{events_src}]")
     if not hit_idx:
         hit_idx = [0]  # degenerate clip: treat the start as the only contact
 

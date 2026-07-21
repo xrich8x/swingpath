@@ -613,6 +613,72 @@ give the same error, so the distance measure is NOT the problem: the ENDPOINTS
 are. Phantom hits/bounces put A and B in the wrong place, and no geometry fixes
 that. Revisit after the hit/bounce disambiguation lands.
 
+### E3d (2026-07-21) — the first physics arc ever to pass on real footage
+Ran the approved plan: B1 hit/bounce disambiguation → A2 tiling → C2 spin.
+All numbers yt_rally2 @60fps, scored against the 17-stroke HUD reference.
+
+#### 1. B1 was blocked by an unmeasured gap: the far player was never detected
+The literature's hit cue is ball-to-player proximity, so it needs a player.
+Measured: `far_court` was populated on **0 of 2215 frames**. The far player is
+plainly visible — ~45 px tall — but whole-frame inference misses them at BOTH
+presets. A native-resolution crop of the far court fixes it, and only with the
+larger model:
+| | far players found (4 sampled frames) |
+|---|---|
+| `fast`, full frame | 0 |
+| `fast`, far tile | 0 |
+| `accurate`, full frame | 0 |
+| **`accurate`, far tile** | **7** |
+Shipped as `pose.estimate_tiled` + `pose.far_court_tile` (homography-derived, so
+it follows the camera) behind `--far-player-rescue`, firing only on frames where
+the full-frame pass found nobody in the far half. **Far player: 0% → 39% of
+frames.** Cost 0.08 → 0.12 s/frame. This is the same small-object problem as the
+far ball, fixed the same way (A2's tiling, applied to pose).
+
+#### 2. B1 shipped: hits from the ball-to-player gap
+`events.ball_player_gap` measures ball-to-skeleton distance **in the image,
+divided by that player's own pixel height** — depth-invariant, so one threshold
+works at any court depth. Court-metre distance does NOT work: the z=0 projection
+of an airborne ball throws it metres down-court, and the measured 5th-percentile
+closest approach was 2.1 m even at contact.
+Threshold picked by sweep (`tools/hit_gap_probe.py`), not intuition:
+| hit detector | HUD strokes covered | spurious hits |
+|---|---|---|
+| angle-only (shipping) | 17/17 | **36** |
+| gap-based (E3d) | 15/17 | **11** |
+Wired as `detect_hits_hybrid` (gap where pose sees a striker, old angle rule only
+where pose has been blind ≥1 s). Honest note: the fallback never fired on this
+clip, so it is insurance, not a measured win. Bounces are now searched **only
+between consecutive hits** (`detect_bounces_between_hits`), so a racquet contact
+can no longer also be counted as a landing.
+
+#### 3. C2: spin was pure garbage absorption — proved, then fixed
+Every failing arc reported ~12,405 rpm. That is exactly |(750,750,750)| rad/s —
+**all three spin components pinned at the optimiser's bound**. Spin is the
+softest parameter in the model, so over an 8-20 frame arc it buys residual
+reduction by inventing Magnus force. Now every arc is fitted twice (`spin_free`)
+and the spinning fit must beat the spin-free one by 30% of reprojection AND land
+under 3500 rpm to be accepted (`bridge._spin_parsimonious`).
+Also: a `bounce_only` arc can no longer be `ok` at all — E1 measured its speed
+sliding 23.8x at <0.15 px, so a clean reprojection there proves nothing.
+
+#### 4. Result [MEASURED]
+| | before (E3b) | after (E3d) |
+|---|---|---|
+| shots reported for 17 strokes | 45 | **26** |
+| median speed error vs HUD | 82% | **59%** |
+| shots within 25% of HUD | 2/17 | **4/16** |
+| physics arcs passing every gate | 0 | **1** |
+**The first physics-backed shot in the project's history:** `arc f43-56`,
+83.7 km/h, 0 rpm, reproj 2.3 px, launch pinned by the striker at z = 1.33 m. The
+nearest HUD reading is 61 MPH (98.2 km/h) — **−15%**, on a single arc, so it is
+a milestone rather than a validated accuracy.
+
+Still open, in order: 9 phantom shots remain (26 vs 17); far-court tracking is
+33.3% against the detector's own 78.6%, so more gates need auditing; 22 of 23
+arcs still fail, most on reprojection now rather than on spin — which points
+back at bounce-frame accuracy.
+
 - _E-next: (1) hit/bounce disambiguation to kill the 28 junk shots; (2) re-run
   e2e/clay + demo30 under the cap fix (numbers will move); (3) plane-speed
   quality on dense tracks; (4) spin=0-first arc fitting; (5) audio measurement

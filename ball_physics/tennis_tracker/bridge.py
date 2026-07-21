@@ -166,15 +166,13 @@ def fit_anchored(times, uv, camera, H, anchor_uv, anchor_at="start", anchor_w=10
     uv = np.asarray(uv, float)
     p_anchor = lift_contact(np.asarray(anchor_uv, float), H)[0]
     if anchor_at == "end":
-        fit = fit_arc(times, uv, camera=camera, anchor=(-1, p_anchor, anchor_w),
-                      physical_bounds=True)
+        kw = dict(camera=camera, anchor=(-1, p_anchor, anchor_w), physical_bounds=True)
     else:
-        fit = fit_arc(times, uv, camera=camera, p0_init=p_anchor, fix_p0=True,
-                      physical_bounds=True)
-    tr = simulate(fit.p0, fit.v0, fit.omega, dt=2e-3, t_max=float(times[-1]) + 0.05, bounces=0)
-    pred = camera.project(tr.sample(times))
-    valid = np.isfinite(uv).all(axis=1)
-    reproj = float(np.sqrt(np.mean(np.sum((pred - uv)[valid] ** 2, axis=1)))) if valid.any() else 1e9
+        kw = dict(camera=camera, p0_init=p_anchor, fix_p0=True, physical_bounds=True)
+    fit_free = fit_arc(times, uv, **kw)
+    fit_zero = fit_arc(times, uv, spin_free=False, **kw)
+    fit, reproj, _ = _spin_parsimonious(fit_free, fit_zero, times, uv, camera,
+                                        fit_free.p0, fit_zero.p0)
     readout, _ = _peak_readout(fit.p0, fit.v0, fit.omega, float(times[-1]) + 0.05)
     return readout, reproj, (fit.p0, fit.v0, fit.omega)
 
@@ -210,6 +208,39 @@ def launch_from_striker(camera, uv, striker_xy):
     return p, float(np.linalg.norm(p[:2] - np.asarray(striker_xy, float)))
 
 
+def _spin_parsimonious(fit_free, fit_zero, times, uv, camera, p0_free, p0_zero,
+                       min_gain: float = 0.30, max_rpm: float = 3500.0):
+    """Prefer the NO-SPIN fit unless spin genuinely earns its keep.
+
+    Session E3d: on real arcs the free fit pins all three spin components at the
+    optimiser's bound — |omega| = 750*sqrt(3) rad/s = exactly the 12,405 rpm we
+    kept seeing. Spin is the softest parameter in the model, so a short arc with
+    any residual at all buys a cheap reduction by inventing Magnus force. Over
+    8-20 frames there is simply not enough curvature to identify it.
+
+    So the free fit must beat the spin-free one by `min_gain` (fractional
+    reprojection improvement) AND come back inside a believable band before it is
+    accepted. Otherwise the honest answer is "flat, spin not measurable".
+    """
+    from .physics import simulate
+
+    def reproj(p0, v0, omega):
+        tr = simulate(p0, v0, omega, dt=2e-3, t_max=float(times[-1]) + 0.05, bounces=0)
+        pred = camera.project(tr.sample(times))
+        valid = np.isfinite(uv).all(axis=1)
+        if not valid.any():
+            return 1e9
+        return float(np.sqrt(np.mean(np.sum((pred - uv)[valid] ** 2, axis=1))))
+
+    r_free = reproj(p0_free, fit_free.v0, fit_free.omega)
+    r_zero = reproj(p0_zero, fit_zero.v0, np.zeros(3))
+    rpm = float(np.linalg.norm(fit_free.omega)) * 60.0 / (2.0 * np.pi)
+    gain = (r_zero - r_free) / max(r_zero, 1e-9)
+    if gain >= min_gain and rpm <= max_rpm:
+        return fit_free, r_free, p0_free
+    return fit_zero, r_zero, p0_zero
+
+
 def fit_launch_anchored(times, uv, camera, H, launch_p0, anchor_uv):
     """Fit one arc pinned at BOTH ends: launch point fixed, bounce soft-anchored.
 
@@ -220,15 +251,12 @@ def fit_launch_anchored(times, uv, camera, H, launch_p0, anchor_uv):
     uv = np.asarray(uv, float)
     p_anchor = lift_contact(np.asarray(anchor_uv, float), H)[0]
     v_guess = (p_anchor - np.asarray(launch_p0, float)) / max(float(times[-1]), 1e-3)
-    fit = fit_arc(times, uv, camera=camera, p0_init=np.asarray(launch_p0, float),
-                  v0_init=v_guess, fix_p0=True, anchor=(-1, p_anchor, 100.0),
-                  physical_bounds=True)
-    tr = simulate(fit.p0, fit.v0, fit.omega, dt=2e-3, t_max=float(times[-1]) + 0.05,
-                  bounces=0)
-    pred = camera.project(tr.sample(times))
-    valid = np.isfinite(uv).all(axis=1)
-    reproj = (float(np.sqrt(np.mean(np.sum((pred - uv)[valid] ** 2, axis=1))))
-              if valid.any() else 1e9)
+    p0 = np.asarray(launch_p0, float)
+    kw = dict(camera=camera, p0_init=p0, fix_p0=True,
+              anchor=(-1, p_anchor, 100.0), physical_bounds=True)
+    fit_free = fit_arc(times, uv, v0_init=v_guess, **kw)
+    fit_zero = fit_arc(times, uv, v0_init=v_guess, spin_free=False, **kw)
+    fit, reproj, _ = _spin_parsimonious(fit_free, fit_zero, times, uv, camera, p0, p0)
     readout, _ = _peak_readout(fit.p0, fit.v0, fit.omega, float(times[-1]) + 0.05)
     return readout, reproj, (fit.p0, fit.v0, fit.omega)
 

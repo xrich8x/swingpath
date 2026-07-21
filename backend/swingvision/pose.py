@@ -120,6 +120,79 @@ class PoseEstimator:
             )
         return out
 
+    def estimate_tiled(self, frame: np.ndarray, tile,
+                       min_score: float = 0.0) -> list[PlayerPose]:
+        """Run pose on one native-resolution crop, returning FULL-FRAME coordinates.
+
+        The far player is the same small-object problem as the far ball: on
+        yt_rally2 they stand ~45 px tall, and whole-frame inference finds them in
+        0 of 2215 frames even at the `accurate` preset. Measured on 4 sampled
+        frames (Session E3d): full frame finds 0 far players at both `fast` and
+        `accurate`; a native-resolution far-court crop finds 0 at `fast` and 7 at
+        `accurate`. Both the crop AND the larger model are required — neither
+        alone recovers them.
+
+        `tile` is (x0, y0, x1, y1) in frame pixels. Detections are shifted back to
+        frame coordinates so callers cannot tell the difference.
+        """
+        x0, y0, x1, y1 = (int(v) for v in tile)
+        h, w = frame.shape[:2]
+        x0, y0 = max(0, x0), max(0, y0)
+        x1, y1 = min(w, x1), min(h, y1)
+        if x1 - x0 < 32 or y1 - y0 < 32:
+            return []
+        found = self.estimate(frame[y0:y1, x0:x1])
+        out: list[PlayerPose] = []
+        for p in found:
+            if p.score < min_score:
+                continue
+            out.append(PlayerPose(
+                player=p.player,
+                keypoints=[(x + x0, y + y0, c) for x, y, c in p.keypoints],
+                box=(p.box[0] + x0, p.box[1] + y0, p.box[2] + x0, p.box[3] + y0),
+                score=p.score,
+            ))
+        return out
+
+
+def far_court_tile(homography, img_wh, *, runoff_m: float = 5.0,
+                   head_room: float = 1.6, pad_px: float = 40.0):
+    """Image-space crop covering the FAR half of the court, for `estimate_tiled`.
+
+    Derived from the homography rather than hardcoded, so it follows the camera:
+    project the far half's ground corners (plus a behind-baseline runoff, since
+    players receive from well back), then extend the box UPWARD by `head_room`
+    times its own height — the projection covers the players' FEET, and their
+    heads are above that in the image.
+
+    Returns (x0, y0, x1, y1) clipped to the frame, or None if the projection is
+    degenerate (bad calibration, court off-screen).
+    """
+    from . import calibration, court
+
+    W, H = img_wh
+    ground = [
+        (-runoff_m, court.NET_Y), (court.DOUBLES_WIDTH + runoff_m, court.NET_Y),
+        (-runoff_m, court.LENGTH + runoff_m),
+        (court.DOUBLES_WIDTH + runoff_m, court.LENGTH + runoff_m),
+    ]
+    try:
+        pts = np.asarray(calibration.court_to_image(homography, ground), float)
+    except Exception:
+        return None
+    if not np.isfinite(pts).all():
+        return None
+    x0, y0 = pts[:, 0].min(), pts[:, 1].min()
+    x1, y1 = pts[:, 0].max(), pts[:, 1].max()
+    if not (x1 > x0 and y1 > y0):
+        return None
+    y0 -= head_room * (y1 - y0)          # room for standing players above their feet
+    x0, y0 = max(0.0, x0 - pad_px), max(0.0, y0 - pad_px)
+    x1, y1 = min(float(W), x1 + pad_px), min(float(H), y1 + pad_px)
+    if x1 - x0 < 32 or y1 - y0 < 32:
+        return None
+    return int(x0), int(y0), int(x1), int(y1)
+
 
 def _point_in_poly(x: float, y: float, poly: np.ndarray) -> bool:
     """Ray-casting point-in-polygon for an (N, 2) polygon."""

@@ -41,6 +41,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         ball_model=args.ball_model,
         annotate=args.annotate,
         doubles=args.doubles,
+        far_player_rescue=args.far_player_rescue,
         device=args.device,
     )
     s = match.stats
@@ -155,6 +156,11 @@ def build_parser() -> argparse.ArgumentParser:
     analyze.add_argument("--annotate", action="store_true", dest="annotate",
                          help="also render an annotated overlay video (court + players + "
                               "ball + shot labels) next to the match.json")
+    analyze.add_argument("--far-player-rescue", action="store_true",
+                         dest="far_player_rescue",
+                         help="run a second, accurate pose pass on a native-resolution "
+                              "crop of the far court when the far player is missing "
+                              "(they subtend ~45px and whole-frame inference loses them)")
     analyze.add_argument("--doubles", action="store_true", dest="doubles",
                          help="force doubles line calls (outer alleys). Default: "
                               "auto-detect singles vs doubles from on-court player "
