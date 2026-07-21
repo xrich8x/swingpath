@@ -1181,7 +1181,11 @@ def analyze_video(
         else:
             ball_court_raw.append(None)
             ball_conf.append(None)
-    ball_court_raw = ball_mod.cap_court_jumps(ball_court_raw, max_step_m=2.8)
+    # 84 m/s (~300 km/h) expressed per PROCESSED frame — the old fixed 2.8 m was
+    # only correct at 30 fps and, being gap-blind, cascaded into culling most of
+    # the track after any dropout (see cap_court_jumps).
+    ball_court_raw = ball_mod.cap_court_jumps(ball_court_raw,
+                                              max_step_m=84.0 / fps_eff)
     smoothed = smooth_and_fill(ball_court_raw, window=7, polyorder=2)
     track = [(i / fps_eff, float(smoothed[i, 0]), float(smoothed[i, 1])) for i in range(n)]
 

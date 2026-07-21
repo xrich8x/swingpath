@@ -497,6 +497,60 @@ position may shift). One clay clip too, for the still-missing clay gold labels.
 `data/gold/{hud_glyphs.npz,hud_templates.json,hud_yt_rally2.json}`;
 `data/output/fps/{rally2_launch.json,rally2_hud_compare.json,arc_observability_60fps.json}`.
 
-- _E3 continued / E-next: events layer (bounce classifier + audio hits), then
-  re-run `hud_compare` for coverage + MAE; then E4 confidence recalibration_
+### E3b (2026-07-21, same day) — the events layer wasn't dumb, it was starving
+All numbers on yt_rally2 (1280x720 @ 60 fps).
+
+#### 1. Root cause of 5/17 coverage found: `cap_court_jumps` was gap-blind [FIXED]
+Stage-by-stage attrition audit of the court track: 1015 image locks → 1015
+after outlier rejection → 830 after projection/runoff → **113 after
+`cap_court_jumps`**. The cap compared each point to the last ACCEPTED point
+with no notion of elapsed time: after any detection dropout the ball has
+legitimately flown further than one frame's budget, so the first re-detection
+died — and culled points never update the anchor, so everything after was
+compared to an ever-staler position and died too. It was also fps-blind
+(2.8 m tuned per-frame at 30 fps, run unchanged at 60).
+Fix: displacement budget scales with elapsed frames (capped at 30 m so a long
+gap can't launder a teleport); pipeline passes 84 m/s expressed per processed
+frame. Regression test added. **Court track: 113 → 720 real-data frames (6.4x).**
+This affects EVERY clip at every fps — the e2e/clay numbers deserve a re-run.
+
+#### 2. Hit coverage after the fix [MEASURED, `tools/hit_coverage_probe.py`]
+| detector | hits | HUD strokes covered | extras |
+|---|---|---|---|
+| angle70 (shipping), starved track | 10 | 5/17 | 5 |
+| angle70 (shipping), fixed track | 51 | **17/17** | 34 |
+| ysign prototype, fixed track | 26 | 13/17 | 13 |
+The shipping detector wins once fed; the prototype is dropped. Full-pipeline
+scoreboard (`hud_compare`): **coverage 5/17 → 17/17 (100%)**.
+
+#### 3. What the 100% coverage exposes next [MEASURED, honest]
+- **45 shots for 17 strokes** — 28 junk extras (bounces misread as hits).
+  Next: hit/bounce disambiguation (player proximity at contact, or the
+  trajectory-window classifier from the E3 plan).
+- Plane speeds on matched strokes now span −82%..+249% vs HUD (the denser
+  track exposes interpolation/jitter the sparse track hid). `speed_confident`
+  correctly refuses ALL of them — the flag is behaving, the speeds aren't.
+- Physics arcs: 2 → 8 candidates, several `striker_launch` at 1.7–10 px, but
+  every one pegs the spin bound (9–12k rpm) → all rejected by the E1 band.
+  Short arcs (8–20 frames) cannot constrain the Magnus term; E-next should fit
+  spin=0 first and only add spin if it earns its residual.
+
+#### 4. Audio hit detection: built, tested, blocked on footage [SHIPPED]
+`swingvision/audio.py` (extract via imageio-ffmpeg; band-pass → rolling
+median+MAD + global-contrast threshold → impact times; conservative
+`fuse_hits`) + `tools/audio_hits.py` scorer. 10 new tests (129 pass). But
+**every YouTube clip in data/ was pulled video-only — zero audio streams**
+(only tennis_sample.mp4 has sound). The measurement vs the HUD waits on
+audio-bearing pulls: re-download with audio (yt-dlp: `-f "bv*+ba"`).
+
+#### Artifacts
+`ball.cap_court_jumps` fix + `test_cap_court_jumps_scales_with_gap`;
+`swingvision/audio.py` + `tests/test_audio.py`;
+`tools/{audio_hits,hit_coverage_probe}.py`;
+`data/output/fps/{rally2_launch.json,rally2_hud_compare.json}` (post-fix).
+
+- _E-next: (1) hit/bounce disambiguation to kill the 28 junk shots; (2) re-run
+  e2e/clay + demo30 under the cap fix (numbers will move); (3) plane-speed
+  quality on dense tracks; (4) spin=0-first arc fitting; (5) audio measurement
+  once audio-bearing footage lands_
 - _E4 pending_

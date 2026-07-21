@@ -220,3 +220,31 @@ def test_filter_live_ball_offcourt():
     out = filter_live_ball(on + [None] + off, homography=H)
     assert out[0:6] == on, "an on-court moving run must be kept"
     assert all(p is None for p in out[7:13]), "an off-court run is dropped"
+
+
+def test_cap_court_jumps_scales_with_gap():
+    """The displacement budget must grow with elapsed frames (E3b regression).
+
+    The old gap-blind cap culled the first re-detection after any dropout —
+    the ball had legitimately flown further than one frame's budget — and then
+    cascaded, comparing every later point to an ever-staler anchor (measured:
+    830 in-court points -> 113 on yt_rally2 @60fps)."""
+    from swingvision.ball import cap_court_jumps
+
+    # 1.4 m/frame budget; ball at 1.0 m/frame with a 10-frame dropout.
+    track = [[0.0, 1.0 * i] for i in range(5)] + [None] * 10 \
+        + [[0.0, 1.0 * i] for i in range(15, 25)]
+    out = cap_court_jumps(track, max_step_m=1.4)
+    kept = sum(p is not None for p in out)
+    assert kept == 15, f"legit points after a gap must survive (kept {kept}/15)"
+
+    # A genuine teleport (adjacent court, same instant) must still die.
+    spike = [[0.0, 0.0], [0.0, 1.0], [0.0, 25.0], [0.0, 2.0]]
+    out = cap_court_jumps(spike, max_step_m=1.4)
+    assert out[2] is None, "a single-frame teleport must still be culled"
+    assert out[3] is not None
+
+    # And a long gap must not launder one: budget is capped absolutely.
+    laundered = [[0.0, 0.0]] + [None] * 100 + [[0.0, 80.0]]
+    out = cap_court_jumps(laundered, max_step_m=1.4, max_gap_allowance_m=30.0)
+    assert out[-1] is None, "a 80 m jump is unphysical no matter the gap"

@@ -72,27 +72,42 @@ def remove_outliers(
 
 
 def cap_court_jumps(
-    positions: Sequence[Optional[Sequence[float]]], max_step_m: float = 2.8
+    positions: Sequence[Optional[Sequence[float]]], max_step_m: float = 2.8,
+    *, max_gap_allowance_m: float = 30.0,
 ) -> list[Optional[list[float]]]:
-    """Null court-plane points that imply unphysical motion between frames.
+    """Null court-plane points that imply unphysical motion for the TIME elapsed.
 
     On the court plane a ball can move at most ~max_step_m metres per frame (at
-    30fps, 2.8 m == ~300 km/h). A point that jumps further than that from the last
-    accepted point is perspective-amplified far-court noise (a few pixels of jitter
-    near the horizon = decimetres) or a tracking spike — drop it so interpolation
-    bridges the gap instead of trusting the jump. Runs after projection to metres.
+    30fps, 2.8 m == ~300 km/h). A point that jumps further than physics allows
+    from the last accepted point is perspective-amplified far-court noise (a few
+    pixels of jitter near the horizon = decimetres) or a tracking spike — drop it
+    so interpolation bridges the gap instead of trusting the jump.
+
+    The budget scales with the number of frames elapsed since the last accepted
+    point (Session E3b fix). The old fixed per-comparison cap was gap-blind:
+    after any detection dropout the ball had legitimately flown many metres, so
+    the first re-detection was culled — and because culled points never update
+    the anchor, every subsequent point was compared to an ever-staler position
+    and culled too. Measured on yt_rally2 @60fps: 830 in-court projections
+    entered, 113 survived; the events layer starved downstream (5/17 strokes).
+    `max_gap_allowance_m` caps the budget so a long gap cannot launder a
+    teleport across the grounds.
     """
     out: list[Optional[list[float]]] = [
         None if p is None else [float(p[0]), float(p[1])] for p in positions
     ]
     last: Optional[list[float]] = None
+    last_i: int = 0
     for i, p in enumerate(out):
         if p is None:
             continue
-        if last is not None and np.hypot(p[0] - last[0], p[1] - last[1]) > max_step_m:
-            out[i] = None
-            continue
+        if last is not None:
+            allowed = min(max_step_m * (i - last_i), max_gap_allowance_m)
+            if np.hypot(p[0] - last[0], p[1] - last[1]) > allowed:
+                out[i] = None
+                continue
         last = p
+        last_i = i
     return out
 
 
