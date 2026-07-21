@@ -304,5 +304,12 @@ def render_match_video(
     if _to_h264(raw_path, out_path):
         os.remove(raw_path)
     else:
-        os.replace(raw_path, out_path)   # no ffmpeg: keep the MPEG-4 (may not play in-browser)
+        # No ffmpeg: keep the MPEG-4. It plays in VLC but NOT in a browser, so the
+        # dashboard's Broadcast tab will silently show "no annotated video". Say so
+        # here — this failed quietly for a whole session because the CUDA venv has
+        # no imageio-ffmpeg while the default one does.
+        os.replace(raw_path, out_path)
+        print("[annotate] WARNING: no ffmpeg available (pip install imageio-ffmpeg) — "
+              "wrote MPEG-4 Part 2, which browsers cannot decode. The dashboard's "
+              "Broadcast tab will not play it; transcode to H.264 to use it there.")
     return out_path
