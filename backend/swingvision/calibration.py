@@ -101,6 +101,40 @@ def image_to_court(H: np.ndarray, points: Sequence[Sequence[float]]) -> np.ndarr
     return _apply(np.linalg.inv(H), pts)
 
 
+def camera_position_m(H: np.ndarray, img_wh: Sequence[float],
+                      hfov_deg: float = 70.0) -> Optional[np.ndarray]:
+    """The camera's 3D position in court metres (x, y, height), or None.
+
+    Same PnP solve as `camera_height_m`, but the full position — the horizontal
+    part is what an airborne ball's ground projection slides toward, so anything
+    reasoning about ball height needs it (see `BallTracker._court_ok`).
+    """
+    try:
+        import cv2
+
+        from . import court as _court
+
+        world, img = [], []
+        for n in ("near_bl_doubles", "near_br_doubles", "far_bl_doubles", "far_br_doubles"):
+            cx, cy = _court.LANDMARKS[n]
+            world.append([cx, cy, 0.0])
+            img.append(court_to_image(H, [(cx, cy)])[0])
+        world = np.asarray(world, dtype=np.float64)
+        img = np.asarray(img, dtype=np.float64)
+        w, h = float(img_wh[0]), float(img_wh[1])
+        fx = (w / 2.0) / np.tan(np.radians(hfov_deg) / 2.0)
+        K = np.array([[fx, 0, w / 2.0], [0, fx, h / 2.0], [0, 0, 1.0]])
+        ok, rvec, tvec = cv2.solvePnP(world, img, K, None, flags=cv2.SOLVEPNP_IPPE)
+        if not ok:
+            return None
+        R, _ = cv2.Rodrigues(rvec)
+        cam = (-R.T @ tvec).ravel().astype(float)
+        cam[2] = abs(cam[2])
+        return cam
+    except Exception:
+        return None
+
+
 def camera_height_m(H: np.ndarray, img_wh: Sequence[float], hfov_deg: float = 70.0) -> Optional[float]:
     """Estimate the camera's height above the court plane (metres) from the
     calibration homography + an assumed horizontal field of view.

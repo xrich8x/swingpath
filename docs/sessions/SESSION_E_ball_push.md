@@ -679,6 +679,81 @@ Still open, in order: 9 phantom shots remain (26 vs 17); far-court tracking is
 arcs still fail, most on reprojection now rather than on spin — which points
 back at bounce-frame accuracy.
 
+### E3e (2026-07-21) — the ceiling study, and the biggest single fix of the arc
+Prompted by "still so bad — what more can we do". Answer: stop patching, measure
+the ceiling first. It turned out one gate was destroying a third of everything.
+
+#### 1. The ceiling study [`tools/candidate_ceiling.py`]
+Decoded the detector's top-5 heatmap blobs on all 258 gold ball frames and asked
+where the true ball ranks:
+| | all court | far court |
+|---|---|---|
+| ball IS the strongest blob | **70.9%** | 66.9% |
+| ball is among the top 5 | 77.9% | 70.1% |
+| detector never saw it | 22.1% | 29.9% |
+Shipped pipeline at the time: **49.2%**. So the budget was:
+- **21.7 pts** the detector ranked #1 and *our tracker threw away* ← the target
+- 7.0 pts recoverable by smarter multi-candidate selection (ceiling 77.9%)
+- 22.1 pts the detector genuinely misses (needs perception/resolution work)
+
+Also killed a tempting idea with data: TrackNet ∪ WASB rescues only **4 frames**
+(50.8% union vs 49.2% TrackNet alone). Detector fusion is not the lever; the
+two fail on the same frames, as E1's "they all cluster 61-65%" implied.
+
+#### 2. Gate ablation found the culprit [`tools/run_gate_ablation.sh`]
+One run per gate, disabled in isolation, scored on gold:
+| tracker configuration | hit@10 |
+|---|---|
+| baseline | 49.2% |
+| **court gate OFF** | **72.1%** |
+| static gate OFF | 50.0% |
+| velocity gate 200 / open | 47.3% / 47.7% |
+| bgsub OFF | 42.6% |
+| max_coast 60 | 51.2% |
+The court-plausibility gate alone accounted for **22.9 of the 21.7 missing
+points** — essentially the entire loss.
+
+#### 3. Root cause: the z=0 assumption, for the fourth time [FIXED]
+The gate back-projected each candidate to the GROUND plane and required it to
+land near the court. A ball in flight is not on the ground, and its ground
+projection slides away from the court — further the lower the camera. The
+`camera_height_m` docstring had literally warned about this ("a LOW camera sends
+it tens of metres past — so court-plausibility gating is only sound when the
+camera is high") and the pipeline's 3.0 m cutoff was far too permissive: at
+yt_rally2's 3.31 m the gate ran, and ate the ball.
+Fixed as a cone test rather than a point test: the true ball lies somewhere on
+the viewing ray, so as its height goes 0 → 6 m its court position slides linearly
+from the ground projection toward the point under the camera. Plausible if ANY
+height on that segment is over the court (`calibration.camera_position_m` +
+`BallTracker._court_ok`). Crowd and scoreboard detections still fail it at every
+height, so the gate keeps its purpose — and it now works at ANY camera height,
+so the 3.0 m cutoff that disabled it for phone footage is gone.
+
+**This is the same z=0 error that already broke (a) the physics speed fit (E1),
+(b) court-metre hit proximity (E3d), and (c) bounce anchoring. Four for four.**
+
+#### 4. Result [MEASURED, 258 human-labelled frames]
+| | hit@10 | hit@5 | miss | far court | FP (no-ball) |
+|---|---|---|---|---|---|
+| shipped before E3e | 49.2% | 35.7% | 37.6% | 33.3% | 23.1% |
+| height-aware gate | 72.9% | 58.5% | 12.0% | 66.7% | 46.2% |
+| **+ live-ball filter** | **71.3%** | **57.0%** | 17.4% | **66.7%** | **23.1%** |
+**+22.1 points of recall and DOUBLE the far-court rate, at identical false-fire.**
+The live-ball filter (proven in Session 3, never actually wired into the
+pipeline) is what pays for opening the gate; it is now in `analyze`.
+Ball recall is finally above the literature's 85%-of-the-detector bar relative to
+what the detector supplies (71.3 of a 77.9 ceiling = 92% of what is there).
+
+End-to-end vs the HUD reference:
+| | shots (17 real) | matched | median speed err | within 25% |
+|---|---|---|---|---|
+| E3b | 45 | 17/17 | 82% | 2/17 |
+| E3d | 26 | 16/17 | 59% | 4/16 |
+| **E3e** | **26** | 16/17 | **50%** | **5/16** |
+Best shots now land at +7.0%, −5.5%, −5.9%, +8.2%. The remainder still swing
+±100%+, and those are bounce-frame errors, not tracking errors — that is the
+next target.
+
 - _E-next: (1) hit/bounce disambiguation to kill the 28 junk shots; (2) re-run
   e2e/clay + demo30 under the cap fix (numbers will move); (3) plane-speed
   quality on dense tracks; (4) spin=0-first arc fitting; (5) audio measurement

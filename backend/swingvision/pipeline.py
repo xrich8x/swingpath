@@ -901,14 +901,22 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
     # focal self-calibration reads the same mounts ~25% lower (yt_rally2:
     # 4.4 -> 3.3 m), and the gate is empirically sound there — while a true phone
     # mount (~2 m) still reads well below 3.
-    cam_h = calibration.camera_height_m(H, (width, height), camera_hfov_deg)
-    gate_H = H if (cam_h is not None and cam_h >= COURT_GATE_MIN_CAM_H) else None
-    print(f"[analyze] camera height ~{cam_h:.1f} m -> court gate "
-          f"{'ON' if gate_H is not None else 'OFF (low camera)'}"
-          if cam_h is not None else "[analyze] camera height unknown -> court gate OFF")
+    # The court gate now allows for ball HEIGHT (BallTracker._court_ok), so it no
+    # longer needs a high camera to be sound — the old height cutoff simply turned
+    # it off for phone footage, and left it wrongly ON at 3.3 m where it cost 22.9
+    # points of recall. With the camera position supplied it stays on for any
+    # calibrated clip; without a pose solve we fall back to the old cutoff.
+    cam_xyz = calibration.camera_position_m(H, (width, height), camera_hfov_deg)
+    cam_h = None if cam_xyz is None else float(cam_xyz[2])
+    gate_H = H if cam_xyz is not None else None
+    if cam_h is not None:
+        print(f"[analyze] camera ~{cam_h:.1f} m high -> court gate ON "
+              f"(height-aware, ball up to 6 m)")
+    else:
+        print("[analyze] camera pose unknown -> court gate OFF")
     tracker = BallTracker(detectors, (width, height), background=bg, inv_scale=inv,
                           use_bgsub=use_bgsub, max_bg_run=bg_run_cap, homography=gate_H,
-                          fps=fps_eff)
+                          fps=fps_eff, cam_xyz=cam_xyz)
     if use_bgsub and bg is not None:
         print(f"[analyze] background model built (fixed-camera ball recovery on, "
               f"player-masked, bridge<={bg_run_cap})")
@@ -1199,6 +1207,19 @@ def analyze_video(
     # scale per frame (ball_conf) so far-court speeds/calls can be flagged.
     RUNOFF_M = 2.5
     ball_px = ball_mod.remove_outliers(ball_px, max_jump=max(width, height) * 0.06)
+    # Offline live-ball pass (E3e). The per-frame gates judge one detection at a
+    # time; this judges each contiguous locked RUN as a whole and drops the ones
+    # that never behave like a struck ball. It is the counterweight to the now
+    # height-aware court gate: measured on the yt_rally2 gold labels, opening that
+    # gate took recall 49.2% -> 72.9% but doubled no-ball false fires to 46.2%,
+    # and this pass puts them back to 23.1% while keeping far-court recall at
+    # 66.7% (hit@10 71.3%). Net vs the previous release: +22 points of recall at
+    # identical false-fire.
+    n_before = sum(p is not None for p in ball_px)
+    ball_px = ball_mod.filter_live_ball(ball_px, homography=H_metric)
+    n_after = sum(p is not None for p in ball_px)
+    print(f"[analyze] live-ball filter: {n_before} -> {n_after} locks "
+          f"({n_before - n_after} dropped)")
     ball_court_raw: list[Optional[list[float]]] = []
     ball_conf: list[Optional[float]] = []
     for i, px in enumerate(ball_px):

@@ -87,6 +87,16 @@ def main() -> None:
     ap.add_argument("--keypoints", default=None,
                     help="court corners json -> enables the court-plausibility gate")
     ap.add_argument("--no-bgsub", action="store_true")
+    # Gate ablation (E3e): the detector puts the ball as its strongest blob on
+    # 70.9% of gold frames while the pipeline reports 49.2%, so ~22 points are
+    # destroyed between the two. These switches attribute that loss to a gate.
+    ap.add_argument("--no-court-gate", action="store_true",
+                    help="disable the court-plausibility gate")
+    ap.add_argument("--no-static-gate", action="store_true",
+                    help="disable the static-fixture gate")
+    ap.add_argument("--velocity-gate", type=float, default=None,
+                    help="override the velocity/distance gate in px (default 70)")
+    ap.add_argument("--max-coast", type=int, default=None)
     ap.add_argument("--max-frames", type=int, default=None)
     args = ap.parse_args()
 
@@ -128,10 +138,10 @@ def main() -> None:
         eff_fps = src_fps / args.frame_step if src_fps else 0.0
 
     H = load_homography(args.keypoints)
-    gate_H = None
+    gate_H = cam_xyz = None
     if H is not None:
-        cam_h = calibration.camera_height_m(H, (width, height), 70.0)
-        gate_H = H if (cam_h is not None and cam_h >= COURT_GATE_MIN_CAM_H) else None
+        cam_xyz = calibration.camera_position_m(H, (width, height), 70.0)
+        gate_H = H if cam_xyz is not None else None
     print(f"[ball] {args.ball_model} on {Path(args.video).name} "
           f"({width}x{height}) src={src_fps:.2f}fps -> {eff_fps:.2f}fps "
           f"gate={'ON' if gate_H is not None else 'OFF'} "
@@ -141,8 +151,16 @@ def main() -> None:
     # regardless of decimation so it is not a hidden variable across fps runs.
     bg, inv = (median_background(args.video, args.frame_step, args.max_frames)
                if use_bgsub else (None, 2.0))
-    tracker = BallTracker(dets, (width, height), background=bg, inv_scale=inv,
-                          use_bgsub=use_bgsub, homography=gate_H, fps=eff_fps)
+    tk = dict(background=bg, inv_scale=inv, use_bgsub=use_bgsub,
+              homography=None if args.no_court_gate else gate_H, fps=eff_fps,
+              cam_xyz=cam_xyz)
+    if args.no_static_gate:
+        tk.update(static_step_px=0.0, static_min_run=10**9)
+    if args.velocity_gate is not None:
+        tk["gate"] = args.velocity_gate
+    if args.max_coast is not None:
+        tk["max_coast"] = args.max_coast
+    tracker = BallTracker(dets, (width, height), **tk)
 
     cap = cv2.VideoCapture(args.video)
     ball_px, src_frames = [], []

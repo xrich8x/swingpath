@@ -1,0 +1,11 @@
+{
+  "video": "yt_rally2.mp4",
+  "topk": 201,
+  "radius": 10.0,
+  "n": 258,
+  "top1": 183,
+  "none": 57,
+  "far_n": 157,
+  "far_top1": 105,
+  "far_topk": 110
+}

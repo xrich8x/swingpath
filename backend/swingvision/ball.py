@@ -507,7 +507,8 @@ class BallTracker:
                  continue_bound_m: float = 10.0, rescue: bool = False,
                  static_step_px: Optional[float] = None,
                  static_min_run: Optional[int] = None,
-                 fps: float = 30.0):
+                 fps: float = 30.0, cam_xyz=None,
+                 max_ball_height_m: float = 6.0):
         # One detector or several (e.g. TrackNet + WASB). Several are FUSED: each is
         # queried every frame (to keep its 3-frame buffer current) and the candidate
         # most consistent with the predicted path wins — their failure modes differ,
@@ -523,6 +524,11 @@ class BallTracker:
         self.Hinv = None if homography is None else np.linalg.inv(np.asarray(homography, float))
         self.acquire_bound_m = acquire_bound_m
         self.continue_bound_m = continue_bound_m
+        # Camera position in court metres (x, y, height) — lets the court gate
+        # allow for ball height instead of assuming z=0. Without it the gate
+        # degrades to the old ground-plane test.
+        self.cam_xyz = None if cam_xyz is None else np.asarray(cam_xyz, float)
+        self.max_ball_height_m = float(max_ball_height_m)
         self.bg = background
         self.inv_scale = inv_scale
         self.use_bgsub = use_bgsub and background is not None
@@ -572,8 +578,25 @@ class BallTracker:
         self.n_static = 0   # fixture zones found (for the analyze log)
 
     def _court_ok(self, pt, acquiring: bool) -> bool:
-        """Court-plausibility of an image-space candidate: its ground back-projection
-        must land within the acquire/continue bound of the court rectangle."""
+        """Court-plausibility of an image-space candidate, allowing for BALL HEIGHT.
+
+        The old test back-projected the candidate to the ground plane and required
+        that point to land near the court. But a ball in flight is not on the
+        ground, and its ground back-projection lands far past the court — further
+        the lower the camera and the further from it the ball is. `camera_height_m`
+        warned about exactly this ("a LOW camera sends it tens of metres past"),
+        and the pipeline's 3.0 m minimum was far too permissive: on yt_rally2 the
+        camera is 3.31 m and this gate cost **22.9 points of ball recall**
+        (measured, gate ablation: 49.2% -> 72.1% hit@10 with it disabled) — nearly
+        the entire gap between the detector's output and our shipped track.
+
+        The honest test is a cone, not a point. The true ball lies somewhere on the
+        viewing ray; as its height z rises from 0 to `max_ball_height_m`, its court
+        position slides linearly from the ground back-projection G toward the point
+        directly under the camera. The candidate is plausible if ANY height on that
+        segment puts it over the court. Crowd and scoreboard detections still fail
+        it — no height puts them on the court — so the gate keeps its purpose.
+        """
         if self.Hinv is None or pt is None:
             return True   # no homography available: gate disabled
         from . import court
@@ -582,9 +605,26 @@ class BallTracker:
         q = self.Hinv @ p
         if abs(q[2]) < 1e-9:
             return False
-        x, y = q[0] / q[2], q[1] / q[2]
+        gx, gy = q[0] / q[2], q[1] / q[2]
         b = self.acquire_bound_m if acquiring else self.continue_bound_m
-        return (-b <= x <= court.DOUBLES_WIDTH + b) and (-b <= y <= court.LENGTH + b)
+
+        def on_court(x, y):
+            return (-b <= x <= court.DOUBLES_WIDTH + b) and (-b <= y <= court.LENGTH + b)
+
+        if on_court(gx, gy):
+            return True
+        if self.cam_xyz is None:
+            return False               # no camera pose: fall back to the plane test
+        cx, cy, ch = self.cam_xyz
+        if ch <= 0.2:
+            return False
+        # P(z) = C + ((h - z)/h) * (G - C); sample the segment z in [0, z_max].
+        z_max = min(self.max_ball_height_m, 0.95 * ch)
+        for i in range(1, 7):
+            s = (ch - z_max * i / 6.0) / ch
+            if on_court(cx + s * (gx - cx), cy + s * (gy - cy)):
+                return True
+        return False
 
     def _static_ok(self, pt) -> bool:
         """False if the candidate sits in a known static-fixture zone (a spot
