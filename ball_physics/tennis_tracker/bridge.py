@@ -35,11 +35,20 @@ from .estimation.trajectory_fit import fit_arc
 
 # Map the clone's court landmarks (court.py: x=width 0..10.97, y=length 0..23.77)
 # to this framework's world frame (X=length 0..23.77, Y=width centred +-5.485).
+#
+# HANDEDNESS MATTERS HERE (fixed Session E3). X runs away from the camera; if Y
+# also ran to the image RIGHT, then Z = X x Y points DOWN into the court, and a
+# ball one metre in the air sits at Z = -1 — while `physics.constants.G_VEC`
+# defines gravity as -Z, i.e. it assumes +Z is up. That mismatch fitted every arc
+# with gravity inverted, and it was invisible because reprojection cannot see it.
+# So Y runs to the image LEFT, making (X, Y, Z) right-handed with +Z up.
+# `swingvision.speedspin._to_framework_xy` mirrors this convention; change both
+# together. `test_bridge_frame.py` pins it.
 _OUR2FW = {
-    "near_bl_doubles": [0.0, -5.485],
-    "near_br_doubles": [0.0, +5.485],
-    "far_bl_doubles": [23.77, -5.485],
-    "far_br_doubles": [23.77, +5.485],
+    "near_bl_doubles": [0.0, +5.485],
+    "near_br_doubles": [0.0, -5.485],
+    "far_bl_doubles": [23.77, +5.485],
+    "far_br_doubles": [23.77, -5.485],
 }
 
 
@@ -59,11 +68,46 @@ def camera_from_court_corners(named_corners: dict, img_wh, hfov_deg: float = 70.
     W, H = img_wh
     f = (W / 2.0) / np.tan(np.radians(hfov_deg) / 2.0)
     K = np.array([[f, 0, W / 2.0], [0, f, H / 2.0], [0, 0, 1.0]])
-    ok, rvec, tvec = cv2.solvePnP(w3d, img, K, None, flags=cv2.SOLVEPNP_ITERATIVE)
-    if not ok:
-        raise RuntimeError("solvePnP failed for the court corners")
-    R, _ = cv2.Rodrigues(rvec)
-    cam = Camera(K=K, R=R, t=tvec[:, 0], width=int(W), height=int(H))
+
+    # All four corners are coplanar, so the pose is TWO-FOLD AMBIGUOUS: a camera
+    # above the court and its mirror below it reproject identically. Projection
+    # cannot tell them apart — but physics can't survive the wrong one, because
+    # gravity is -z and the mirrored frame has +z pointing into the ground. This
+    # was shipping silently: plain solvePnP was returning the below-ground pose
+    # for yt_rally2 (camera centre z = -3.3 m), so every arc was fitted with
+    # gravity effectively inverted. Ask IPPE for both solutions and keep the one
+    # with the camera above the court, breaking ties on reprojection error.
+    ok, rvecs, tvecs, errs = cv2.solvePnPGeneric(w3d, img, K, None,
+                                                 flags=cv2.SOLVEPNP_IPPE)
+    if not ok or not len(rvecs):
+        ok, rvec, tvec = cv2.solvePnP(w3d, img, K, None, flags=cv2.SOLVEPNP_ITERATIVE)
+        if not ok:
+            raise RuntimeError("solvePnP failed for the court corners")
+        rvecs, tvecs, errs = [rvec], [tvec], [np.array([0.0])]
+
+    best = None
+    for i, (rv, tv) in enumerate(zip(rvecs, tvecs)):
+        R, _ = cv2.Rodrigues(rv)
+        t = tv[:, 0]
+        centre_z = float((-R.T @ t)[2])
+        err = float(np.ravel(errs[i])[0]) if i < len(errs) else 0.0
+        key = (centre_z <= 0.0, err)        # above-ground first, then lowest error
+        if best is None or key < best[0]:
+            best = (key, R, t, centre_z)
+    _, R, t, centre_z = best
+    # IPPE is analytic; polish the winner so corner reprojection matches what the
+    # iterative solver used to give (sub-pixel), without reopening the ambiguity.
+    rv, _ = cv2.Rodrigues(R)
+    rv, tv = cv2.solvePnPRefineLM(w3d, img, K, None, rv, t.reshape(3, 1).copy())
+    R_ref, _ = cv2.Rodrigues(rv)
+    if float((-R_ref.T @ tv[:, 0])[2]) > 0.0:
+        R, t = R_ref, tv[:, 0]
+        centre_z = float((-R.T @ t)[2])
+    if centre_z <= 0.0:
+        raise RuntimeError(
+            f"no above-court camera pose for these corners (centre z={centre_z:.2f} m); "
+            "physics cannot be fitted in a frame where gravity points up")
+    cam = Camera(K=K, R=R, t=t, width=int(W), height=int(H))
     Hh = homography_from_points(img, w2d)
     return cam, Hh
 
@@ -131,6 +175,60 @@ def fit_anchored(times, uv, camera, H, anchor_uv, anchor_at="start", anchor_w=10
     pred = camera.project(tr.sample(times))
     valid = np.isfinite(uv).all(axis=1)
     reproj = float(np.sqrt(np.mean(np.sum((pred - uv)[valid] ** 2, axis=1)))) if valid.any() else 1e9
+    readout, _ = _peak_readout(fit.p0, fit.v0, fit.omega, float(times[-1]) + 0.05)
+    return readout, reproj, (fit.p0, fit.v0, fit.omega)
+
+
+def launch_from_striker(camera, uv, striker_xy):
+    """Where the ball was in 3D when it left the racquet.
+
+    Session E1 measured the reason this function has to exist: an arc pinned only
+    at its bounce is under-determined — the launch point slides along its viewing
+    ray and speed slides with it over a ~2.8x range at under 0.15 px of
+    reprojection cost. So the launch point needs an independent constraint.
+
+    Pose supplies one for free. We know exactly which ray the ball is on (we can
+    see it), and we know roughly where on the court the striker is standing. The
+    contact must be near the vertical line rising through their feet, so the
+    answer is the point on the ball's viewing ray closest to that line. Contact
+    HEIGHT falls out of the geometry rather than being guessed — which matters,
+    because a serve and a low slice differ by 2 m of it.
+
+    `striker_xy`: the striker's (X, Y) in the framework's world frame (metres).
+    Returns (p_launch_xyz, horizontal_miss_m) — the miss is how far the ray
+    passes from the vertical line, i.e. how much to distrust the result.
+    """
+    ray = np.linalg.inv(camera.K) @ np.array([uv[0], uv[1], 1.0])
+    d = camera.R.T @ ray
+    c = -camera.R.T @ camera.t
+    d_xy, delta = d[:2], c[:2] - np.asarray(striker_xy, float)
+    denom = float(d_xy @ d_xy)
+    if denom < 1e-12:                       # ray points straight down: no solution
+        return None, float("inf")
+    s = -float(d_xy @ delta) / denom
+    p = c + s * d
+    return p, float(np.linalg.norm(p[:2] - np.asarray(striker_xy, float)))
+
+
+def fit_launch_anchored(times, uv, camera, H, launch_p0, anchor_uv):
+    """Fit one arc pinned at BOTH ends: launch point fixed, bounce soft-anchored.
+
+    Same return shape as `fit_anchored`.
+    """
+    from .physics import simulate
+    times = np.asarray(times, float)
+    uv = np.asarray(uv, float)
+    p_anchor = lift_contact(np.asarray(anchor_uv, float), H)[0]
+    v_guess = (p_anchor - np.asarray(launch_p0, float)) / max(float(times[-1]), 1e-3)
+    fit = fit_arc(times, uv, camera=camera, p0_init=np.asarray(launch_p0, float),
+                  v0_init=v_guess, fix_p0=True, anchor=(-1, p_anchor, 100.0),
+                  physical_bounds=True)
+    tr = simulate(fit.p0, fit.v0, fit.omega, dt=2e-3, t_max=float(times[-1]) + 0.05,
+                  bounces=0)
+    pred = camera.project(tr.sample(times))
+    valid = np.isfinite(uv).all(axis=1)
+    reproj = (float(np.sqrt(np.mean(np.sum((pred - uv)[valid] ** 2, axis=1))))
+              if valid.any() else 1e9)
     readout, _ = _peak_readout(fit.p0, fit.v0, fit.omega, float(times[-1]) + 0.05)
     return readout, reproj, (fit.p0, fit.v0, fit.omega)
 

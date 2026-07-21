@@ -79,8 +79,41 @@ def _readout(a, b, r, reproj, fps, reproj_max_px) -> dict:
     }
 
 
+# Our court frame is (x = width 0..10.97, y = length 0..23.77); the physics
+# framework's is (X = length, Y = width measured to the image LEFT, Z = up).
+# The Y flip is not cosmetic — it is what makes the frame right-handed with +Z
+# up, which the simulator's gravity depends on. Mirrors bridge._OUR2FW exactly;
+# change both together.
+def _to_framework_xy(court_xy):
+    return (float(court_xy[1]), 5.485 - float(court_xy[0]))
+
+
+def _striker_xy(near_img, far_img, near_court, far_court, frame, ball_uv,
+                max_px=400.0):
+    """Court (X, Y) of whichever player struck this ball, or None.
+
+    The striker is the player closest to the ball in the image at the hit frame.
+    Requiring a court position too means an arc silently falls back to the old
+    bounce-only fit when pose lost the player, rather than inventing a launch.
+    """
+    best, best_d = None, max_px
+    for img_list, court_list in ((near_img, near_court), (far_img, far_court)):
+        if not img_list or not court_list or frame >= len(img_list) \
+                or frame >= len(court_list):
+            continue
+        p, c = img_list[frame], court_list[frame]
+        if p is None or c is None:
+            continue
+        d = float(np.hypot(ball_uv[0] - p[0], ball_uv[1] - p[1]))
+        if d < best_d:
+            best, best_d = c, d
+    return _to_framework_xy(best) if best is not None else None
+
+
 def _estimate_from_events(track, hit_idx, bounce_idx, camera, Hfw, fps,
-                          min_arc, reproj_max_px, fit_anchored):
+                          min_arc, reproj_max_px, fit_anchored,
+                          striker_xy_at=None, launch_from_striker=None,
+                          fit_launch_anchored=None, max_striker_miss_m=2.5):
     """Build one arc per struck shot from the events layer: hit h -> the first
     bounce >= ~4 frames later and before the next hit. Single ballistic flights by
     construction; each is end-anchored at its bounce and physics-fit."""
@@ -108,8 +141,30 @@ def _estimate_from_events(track, hit_idx, bounce_idx, camera, Hfw, fps,
         if np.isfinite(seg).all(axis=1).sum() < min_arc or not np.isfinite(track[b]).all():
             continue
         seg_t = np.arange(b - a + 1, dtype=float) / fps
-        r, reproj, _ = fit_anchored(seg_t, seg, camera, Hfw, track[b], "end")
-        shots.append(_readout(h, b, r, reproj, fps, reproj_max_px))
+
+        # Pin the launch end too, when pose can say where the striker stood.
+        # Without it the fit is under-determined and speed is arbitrary (E1).
+        p_launch, miss, source = None, None, "bounce_only"
+        if striker_xy_at is not None and np.isfinite(seg[0]).all():
+            xy = striker_xy_at(h, seg[0])
+            if xy is not None:
+                p_launch, miss = launch_from_striker(camera, seg[0], xy)
+                if p_launch is None or miss > max_striker_miss_m \
+                        or not 0.0 <= p_launch[2] <= 4.0:
+                    p_launch = None      # implausible contact -> fall back
+        if p_launch is not None:
+            r, reproj, _ = fit_launch_anchored(seg_t, seg, camera, Hfw,
+                                               p_launch, track[b])
+            source = "striker_launch"
+        else:
+            r, reproj, _ = fit_anchored(seg_t, seg, camera, Hfw, track[b], "end")
+
+        rec = _readout(h, b, r, reproj, fps, reproj_max_px)
+        rec["launch_source"] = source
+        if p_launch is not None:
+            rec["launch_height_m"] = round(float(p_launch[2]), 2)
+            rec["striker_miss_m"] = round(float(miss), 2)
+        shots.append(rec)
     return shots
 
 
@@ -122,7 +177,8 @@ def _falling_then_rising(track: np.ndarray):
 def estimate(ball_px, near_img, far_img, named_corners, img_wh, fps, *,
              hfov_deg: float = 70.0, player_radius_px: float = 180.0,
              min_arc: int = 6, reproj_max_px: float = 6.0,
-             hit_idx=None, bounce_idx=None):
+             hit_idx=None, bounce_idx=None,
+             near_court=None, far_court=None):
     """Returns a list of arc readouts (struck shots), each a dict with
     start_frame/end_frame, t_hit_s, t_bounce_s, speed_kmh, spin_rpm, topspin_rpm,
     reproj_px, ok. `near_img`/`far_img` are per-frame player image positions (or None).
@@ -132,9 +188,15 @@ def estimate(ball_px, near_img, far_img, named_corners, img_wh, fps, *,
     detection is far more reliable than the image-space row-max heuristic here
     (low skidding bounces barely reverse in image y, and racquet contacts happen a
     racquet-length from the feet the proximity check measures against).
+
+    `near_court`/`far_court` are the same players' positions in COURT metres. Give
+    them and each arc is pinned at its launch end as well as its bounce, which is
+    what makes speed observable at all (E1) — without them the fit falls back to
+    the bounce-only anchor and its speed should not be believed.
     """
     _ensure_path()
-    from tennis_tracker.bridge import camera_from_court_corners, fit_anchored
+    from tennis_tracker.bridge import (camera_from_court_corners, fit_anchored,
+                                       fit_launch_anchored, launch_from_striker)
     from tennis_tracker.tracking import link_detections, fill_gaps
 
     camera, Hfw = camera_from_court_corners(named_corners, img_wh, hfov_deg=hfov_deg)
@@ -144,8 +206,16 @@ def estimate(ball_px, near_img, far_img, named_corners, img_wh, fps, *,
     track = fill_gaps(link_detections(per_frame))
 
     if hit_idx is not None and bounce_idx is not None:
+        striker_xy_at = None
+        if near_court is not None or far_court is not None:
+            def striker_xy_at(frame, ball_uv):
+                return _striker_xy(near_img, far_img, near_court, far_court,
+                                   frame, ball_uv)
         return _estimate_from_events(track, hit_idx, bounce_idx, camera, Hfw, fps,
-                                     min_arc, reproj_max_px, fit_anchored)
+                                     min_arc, reproj_max_px, fit_anchored,
+                                     striker_xy_at=striker_xy_at,
+                                     launch_from_striker=launch_from_striker,
+                                     fit_launch_anchored=fit_launch_anchored)
 
     # Classify reversals: near a player -> hit; away -> bounce (the anchorable contact).
     bounces, hits = [], []

@@ -1287,14 +1287,17 @@ def _estimate_speed_spin(ball_px, near_court, far_court, named_corners, H, img_w
         far_img = to_img(far_court)
         shots = speedspin.estimate(ball_px, near_img, far_img, corners,
                                    img_wh, fps, hfov_deg=hfov_deg,
-                                   hit_idx=hit_idx, bounce_idx=bounce_idx)
+                                   hit_idx=hit_idx, bounce_idx=bounce_idx,
+                                   near_court=near_court, far_court=far_court)
         ok = sum(s["ok"] for s in shots)
         print(f"[analyze] speed/spin: {ok}/{len(shots)} reliable shot arcs "
               f"(physics, hfov={hfov_deg:.0f}deg)")
         for s in shots:
             print(f"    arc f{s['start_frame']}-{s['end_frame']}: "
                   f"{s['speed_kmh']:.0f} km/h, {s['spin_rpm']:.0f} rpm, "
-                  f"reproj {s['reproj_px']}px "
+                  f"reproj {s['reproj_px']}px [{s.get('launch_source', '?')}"
+                  + (f" z={s['launch_height_m']}m" if "launch_height_m" in s else "")
+                  + "] "
                   + ("OK" if s["ok"] else f"rejected ({s.get('reject_reason')})"))
         return shots
     except Exception as e:  # framework missing / camera failure -> approx speeds only

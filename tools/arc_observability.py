@@ -31,7 +31,8 @@ import numpy as np
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "ball_physics"))
 
-from tennis_tracker.bridge import camera_from_court_corners           # noqa: E402
+from tennis_tracker.bridge import (camera_from_court_corners,          # noqa: E402
+                                   launch_from_striker)
 from tennis_tracker.calibration.lift import lift_contact              # noqa: E402
 from tennis_tracker.estimation.trajectory_fit import fit_arc          # noqa: E402
 from tennis_tracker.physics import simulate                           # noqa: E402
@@ -150,6 +151,32 @@ def main() -> None:
         report(f"+ contact-height prior z={z_true + dz:.2f} m "
                f"({'exact' if dz == 0 else f'{dz:+.2f} m wrong'})",
                ray_point(camera, obs[0], z_true + dz), True)
+
+    # --- 3. the constraint we actually ship: the striker's court position ------
+    # `launch_from_striker` never guesses a height — it intersects the ball's own
+    # viewing ray with the vertical line through the striker, so contact height
+    # falls out. What it IS sensitive to is how well pose locates the player, and
+    # that is the number worth knowing before trusting any of this on real video.
+    print("\nC. launch pinned by the striker's court position (what the pipeline does)")
+    hdr3 = (f"{'pose error':<24} {'contact z (m)':>14} {'recovered km/h':>15} "
+            f"{'err':>8} {'reproj':>9}")
+    print(hdr3); print("-" * len(hdr3))
+    true_xy = np.array(p_true_a[:2], float)
+    for dx, dy, label in ((0.0, 0.0, "exact"), (0.5, 0.0, "0.5 m down-court"),
+                          (-0.5, 0.0, "0.5 m up-court"), (0.0, 0.5, "0.5 m across"),
+                          (1.0, 0.0, "1.0 m down-court")):
+        p_l, miss = launch_from_striker(camera, obs[0], true_xy + np.array([dx, dy]))
+        if p_l is None:
+            continue
+        v_guess = (anchor - p_l) / max(times[-1], 1e-3)
+        fit = fit_arc(times, obs, camera=camera, p0_init=p_l, v0_init=v_guess,
+                      fix_p0=True, anchor=(-1, anchor, 100.0), physical_bounds=True)
+        rep = reproj_of(camera, p_l, fit.v0, fit.omega, times, obs)
+        kmh = float(np.linalg.norm(fit.v0)) * 3.6
+        rows.append(dict(mode=f"striker[{label}]", kmh=kmh, reproj=rep,
+                         contact_z=float(p_l[2])))
+        print(f"{label:<24} {p_l[2]:>14.2f} {kmh:>15.1f} "
+              f"{100*(kmh-speed_true)/speed_true:>+7.0f}% {rep:>8.2f}px")
 
     if args.json_out:
         Path(args.json_out).write_text(json.dumps(

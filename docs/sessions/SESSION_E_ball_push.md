@@ -413,6 +413,90 @@ the second constraint is in.
 `data/output/fps/*` (8 fps-swept perception caches + 2 analyze runs + 4 JSON
 result files), `data/gold/yt_rally2.fps.md`, `data/output/clip_inventory.json`;
 `backend/tests/test_speedspin_gate.py`.
-- _E2 pending_
-- _E3 pending_
+- _E2 pending_ (re-scoped by E1: far court is inference-side work, not fps)
+
+### E3 (2026-07-21) — MEASURED + SHIPPED. The fit is fixed; events are now the blocker.
+All numbers on yt_rally2 (1280x720 @ 60 fps) unless stated.
+
+#### 1. A gravity-inversion bug had been shipping the whole time [FIXED]
+The physics camera (`bridge.camera_from_court_corners`) had TWO stacked frame
+bugs, invisible to every reprojection number ever printed:
+- `solvePnP` on 4 coplanar points is two-fold ambiguous, and it was returning
+  the MIRROR pose — camera centre z = **−3.3 m, below the court** — for
+  yt_rally2. Now solved with IPPE (both solutions), the above-court one kept,
+  LM-refined (corner reproj 1.6 px), and a hard error if no above-court pose
+  exists.
+- `_OUR2FW` mapped the corners LEFT-handed: +Z pointed into the ground, so the
+  simulator's gravity (−Z in `constants.G_VEC`) pushed the ball UP in every fit
+  on real footage. Corner map flipped (Y now runs to image left);
+  `speedspin._to_framework_xy` mirrors it; `tests/test_bridge_frame.py` pins
+  handedness, camera-above-court, and the shared convention (5 tests).
+Reprojection genuinely cannot catch this class of bug — both poses reproject
+the corners identically. Only physics-plausibility can, which is why the E1
+plausibility gate matters.
+
+#### 2. The launch constraint works — validated on ground truth [MEASURED]
+`bridge.launch_from_striker`: intersect the ball's viewing ray (frame h+2) with
+the vertical line through the striker's feet (pose gives their court position).
+Contact HEIGHT falls out of geometry instead of being guessed.
+`tools/arc_observability.py` section C, corrected frame, 60 fps, noise-free:
+
+| launch pinned by | recovered speed (true 86.9) | err |
+|---|---|---|
+| bounce anchor only (old shipping path) | 98.9 km/h | +14% |
+| striker position, exact | 84.1 | **−3%** |
+| striker position 0.5 m wrong | 80.1–88.1 | ±8% |
+| striker position 1.0 m wrong | 92.2 | +6% |
+
+Compare: a blind height prior 0.5 m wrong costs 29-50%. The ray∩vertical
+geometry self-corrects height, so pose accuracy of ~1 m — which we already
+have — is enough for <10% speed error. **This is the E3 constraint, shipped:**
+`speedspin.estimate` now accepts `near_court`/`far_court`, pins each arc's
+launch when the striker is found (`launch_source: striker_launch`, with
+`launch_height_m` + `striker_miss_m` in the readout), and falls back to
+bounce-only (whose speed should not be believed) otherwise. Ray-walk in the
+corrected frame: 7-158 km/h all under 6 px — the gate-doesn't-gate finding
+stands, worse than E1 reported (23.8x, was 2.8x in the mirrored frame).
+
+#### 3. Independent per-shot reference built: SwingVision's own HUD [SHIPPED]
+`tools/hud_ocr.py` — dependency-free template OCR of the burned-in MPH panel
+(glyph bank bootstrapped from the clip, hand-labelled once, verification
+contact sheet checked by eye: 17/17 correct). `data/gold/hud_yt_rally2.json`:
+17 stroke speeds, 35-61 MPH. Caveat stamped in the file: this is SwingVision's
+estimate, not radar — agreement means "same world", not "correct".
+
+#### 4. The honest scoreboard [MEASURED, `tools/hud_compare.py`]
+| | |
+|---|---|
+| strokes SwingVision registered | 17 |
+| strokes our events layer turned into shots | 5 (**29% coverage**) |
+| the one shot with a clean track | **81.7 vs 80.5 km/h (+1.5%)** |
+| the other four | −90% to +151% (broken ball tracks) |
+| physics arcs passing the plausibility gate | 0/2 — both segments are mis-paired hit→bounce spans, not single flights (146 px reproj / 11k rpm pegging any spin bound it is given) |
+
+`speed_confident` was True on the −90% shot → the confidence heuristic is not
+calibrated; recalibrate it against this reference in E4.
+
+**Verdict: the fit machinery is done and validated; the binding constraint has
+moved up the chain to EVENT DETECTION** (hit/bounce pairing + per-stroke track
+quality). 5-of-17 coverage, not fit math, is why there are no trustworthy
+physics speeds yet. That is E-next: the trajectory-window bounce classifier +
+audio hit detection from the original E3 list, now with a per-stroke reference
+to score against.
+
+#### Footage request for next session (user pulls from YouTube)
+More SwingVision-HUD clips — search "SwingVision rally/match", prefer 60 fps,
+720p+, different courts/cameras. Each one is ~17 free labelled speeds via
+`hud_ocr.py` (rescan glyphs per clip; the font is SwingVision's, the panel
+position may shift). One clay clip too, for the still-missing clay gold labels.
+
+#### Artifacts
+`tools/{hud_ocr,hud_compare}.py`; `bridge.py` (IPPE pose + `launch_from_striker`
++ `fit_launch_anchored`); `speedspin.py` (launch wiring, `launch_source`);
+`backend/tests/test_bridge_frame.py` (119 tests pass);
+`data/gold/{hud_glyphs.npz,hud_templates.json,hud_yt_rally2.json}`;
+`data/output/fps/{rally2_launch.json,rally2_hud_compare.json,arc_observability_60fps.json}`.
+
+- _E3 continued / E-next: events layer (bounce classifier + audio hits), then
+  re-run `hud_compare` for coverage + MAE; then E4 confidence recalibration_
 - _E4 pending_

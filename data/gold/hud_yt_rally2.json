@@ -1,0 +1,161 @@
+{
+  "video": "yt_rally2.mp4",
+  "fps": 60.0,
+  "step": 2,
+  "source": "SwingVision burned-in HUD (an independent single-camera estimate, NOT radar ground truth)",
+  "shots": [
+    {
+      "mph": 61,
+      "start": 62,
+      "end": 140,
+      "n": 40,
+      "t_start_s": 1.03,
+      "t_end_s": 2.33,
+      "kmh": 98.2
+    },
+    {
+      "mph": 56,
+      "start": 142,
+      "end": 232,
+      "n": 41,
+      "t_start_s": 2.37,
+      "t_end_s": 3.87,
+      "kmh": 90.1
+    },
+    {
+      "mph": 51,
+      "start": 234,
+      "end": 324,
+      "n": 46,
+      "t_start_s": 3.9,
+      "t_end_s": 5.4,
+      "kmh": 82.1
+    },
+    {
+      "mph": 53,
+      "start": 326,
+      "end": 418,
+      "n": 45,
+      "t_start_s": 5.43,
+      "t_end_s": 6.97,
+      "kmh": 85.3
+    },
+    {
+      "mph": 44,
+      "start": 420,
+      "end": 526,
+      "n": 54,
+      "t_start_s": 7.0,
+      "t_end_s": 8.77,
+      "kmh": 70.8
+    },
+    {
+      "mph": 41,
+      "start": 528,
+      "end": 628,
+      "n": 51,
+      "t_start_s": 8.8,
+      "t_end_s": 10.47,
+      "kmh": 66.0
+    },
+    {
+      "mph": 44,
+      "start": 630,
+      "end": 726,
+      "n": 49,
+      "t_start_s": 10.5,
+      "t_end_s": 12.1,
+      "kmh": 70.8
+    },
+    {
+      "mph": 35,
+      "start": 728,
+      "end": 874,
+      "n": 74,
+      "t_start_s": 12.13,
+      "t_end_s": 14.57,
+      "kmh": 56.3
+    },
+    {
+      "mph": 49,
+      "start": 876,
+      "end": 970,
+      "n": 46,
+      "t_start_s": 14.6,
+      "t_end_s": 16.17,
+      "kmh": 78.9
+    },
+    {
+      "mph": 50,
+      "start": 972,
+      "end": 1168,
+      "n": 98,
+      "t_start_s": 16.2,
+      "t_end_s": 19.47,
+      "kmh": 80.5
+    },
+    {
+      "mph": 46,
+      "start": 1170,
+      "end": 1282,
+      "n": 56,
+      "t_start_s": 19.5,
+      "t_end_s": 21.37,
+      "kmh": 74.0
+    },
+    {
+      "mph": 43,
+      "start": 1284,
+      "end": 1402,
+      "n": 59,
+      "t_start_s": 21.4,
+      "t_end_s": 23.37,
+      "kmh": 69.2
+    },
+    {
+      "mph": 57,
+      "start": 1404,
+      "end": 1482,
+      "n": 40,
+      "t_start_s": 23.4,
+      "t_end_s": 24.7,
+      "kmh": 91.7
+    },
+    {
+      "mph": 41,
+      "start": 1484,
+      "end": 1600,
+      "n": 59,
+      "t_start_s": 24.73,
+      "t_end_s": 26.67,
+      "kmh": 66.0
+    },
+    {
+      "mph": 49,
+      "start": 1602,
+      "end": 1812,
+      "n": 101,
+      "t_start_s": 26.7,
+      "t_end_s": 30.2,
+      "kmh": 78.9
+    },
+    {
+      "mph": 53,
+      "start": 1814,
+      "end": 1892,
+      "n": 39,
+      "t_start_s": 30.23,
+      "t_end_s": 31.53,
+      "kmh": 85.3
+    },
+    {
+      "mph": 37,
+      "start": 1894,
+      "end": 2214,
+      "n": 160,
+      "t_start_s": 31.57,
+      "t_end_s": 36.9,
+      "kmh": 59.5
+    }
+  ]
+}

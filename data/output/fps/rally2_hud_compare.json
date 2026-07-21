@@ -1,0 +1,66 @@
+{
+  "match": "rally2_launch.json",
+  "hud": "hud_yt_rally2.json",
+  "reference": "SwingVision burned-in HUD (an independent single-camera estimate, NOT radar ground truth)",
+  "n_ours": 5,
+  "n_hud": 17,
+  "n_matched": 5,
+  "mae_confident_pct": 45.8,
+  "pairs": [
+    {
+      "t_hit_s": 0.45,
+      "type": "serve",
+      "ours_kmh": 28.3,
+      "source": "approx",
+      "hud_kmh": 98.2,
+      "hud_mph": 61,
+      "delta_pct": -71.2,
+      "confident": false,
+      "lag_s": 0.58
+    },
+    {
+      "t_hit_s": 0.77,
+      "type": "backhand",
+      "ours_kmh": 8.9,
+      "source": "approx",
+      "hud_kmh": 90.1,
+      "hud_mph": 56,
+      "delta_pct": -90.1,
+      "confident": true,
+      "lag_s": 1.6
+    },
+    {
+      "t_hit_s": 15.53,
+      "type": "forehand",
+      "ours_kmh": 81.7,
+      "source": "approx",
+      "hud_kmh": 80.5,
+      "hud_mph": 50,
+      "delta_pct": 1.5,
+      "confident": true,
+      "lag_s": 0.67
+    },
+    {
+      "t_hit_s": 23.35,
+      "type": "forehand",
+      "ours_kmh": 230.0,
+      "source": "approx",
+      "hud_kmh": 91.7,
+      "hud_mph": 57,
+      "delta_pct": 150.8,
+      "confident": false,
+      "lag_s": 0.05
+    },
+    {
+      "t_hit_s": 23.73,
+      "type": "backhand",
+      "ours_kmh": 14.8,
+      "source": "approx",
+      "hud_kmh": 66.0,
+      "hud_mph": 41,
+      "delta_pct": -77.6,
+      "confident": false,
+      "lag_s": 1.0
+    }
+  ]
+}
