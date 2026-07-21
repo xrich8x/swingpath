@@ -549,6 +549,70 @@ audio-bearing pulls: re-download with audio (yt-dlp: `-f "bv*+ba"`).
 `tools/{audio_hits,hit_coverage_probe}.py`;
 `data/output/fps/{rally2_launch.json,rally2_hud_compare.json}` (post-fix).
 
+### E3c (2026-07-21) — far court: it was our gates, not the model
+Prompted by the user: "the tracking is so bad after it goes away from the camera."
+
+#### 1. Measured the cause instead of assuming it
+Ball apparent size from the human gold clicks (yt_rally2, 1280x720):
+| | diameter in source | at the detector's 640x360 input | contrast |
+|---|---|---|---|
+| near court | 8.1 px | 4.0 px | 71/255 |
+| far court | **3.9 px** | **2.0 px** | **142/255** |
+Contrast is HIGHER far (bright ball, dark curtain) — it is purely a size
+problem, which rules out "train on harder examples" and points at resolution
+and at our own thresholds.
+
+#### 2. The detector was never the main loss [MEASURED, same 42 gold far frames]
+| | hit@10 |
+|---|---|
+| full tracker pipeline (the E1 number) | 23.8% |
+| raw TrackNet, full frame | **71.4%** |
+| raw TrackNet, native-resolution tiles over the far court | **78.6%** |
+The model finds the far ball three times more often than the pipeline reports
+it. Native-res tiling adds a further +7 pts and matches an oracle crop centred
+on the human's click (78.3% on the wider y<260 set), so **resolution is worth
+~7 pts and our own filtering was worth ~48**. Tiling is designed, not yet
+shipped (`tools/farcourt_probe.py`).
+
+#### 3. Root cause found and fixed: the static-fixture gate is fps-blind [SHIPPED]
+The gate that kills HUD/net-post lock-ons declares a track a fixture when it
+moves <3 px/frame for 5 frames. Both numbers were tuned at 30 fps and applied
+unchanged at 60. At 60 fps the same physical motion covers half the pixels:
+**36.3% of far-court ball steps fall under 3 px/frame (near court: 8.5%)**.
+The gate's own comment claimed "moving balls never trip it" — true at 30 fps,
+false at 60. Now expressed per SECOND (90 px/s over 0.167 s) and scaled by the
+processed frame rate; 30 fps behaviour is bit-identical, explicit overrides
+still win. This is the **third** instance of the same bug class this session
+(after `cap_court_jumps` and the 2.8 m step cap) — per-frame constants applied
+at arbitrary fps.
+
+Scored on the 284 human-labelled frames, tracknet @60fps:
+| | hit@10 | hit@5 | miss | far court | FP (no-ball) |
+|---|---|---|---|---|---|
+| before | 43.4% | 30.2% | 46.1% | 23.8% | 15.4% |
+| after | **49.2%** | **35.7%** | **37.6%** | **33.3%** | 23.1% |
+Honest cost: false-fires rose 15.4% → 23.1%. The live-ball trajectory filter
+(the proven false-fire lever, HANDOFF §12) is NOT applied in this path — that
+is where to buy it back, not by re-tightening the gate.
+**Still open:** far court 33.3% vs the detector's 78.6% on the same frames.
+More gates are still eating it; the next audit should walk each one.
+
+#### 4. Speed by court geometry: tested, and it is not the lever yet
+The user's proposal — time the ball between two known court points instead of
+integrating the path — is right in principle (the shipping path-integral turns
+a 4.1 m rally into 559.5 m by summing jitter; median step 1.1 m per 0.1 s).
+Four estimators scored against the HUD (`tools/speed_estimators.py`, n=9):
+| method | MAE | bias | within 25% |
+|---|---|---|---|
+| path integral (ships today) | 61% | −2% | 1/9 |
+| straight line hit→bounce | 64% | −7% | 1/9 |
+| bounce → next bounce | 88% | −88% | 0/9 |
+| striker's feet → bounce | 463% | +448% | 1/9 |
+**Chord ≈ path (61% vs 64%)** — two structurally different distance measures
+give the same error, so the distance measure is NOT the problem: the ENDPOINTS
+are. Phantom hits/bounces put A and B in the wrong place, and no geometry fixes
+that. Revisit after the hit/bounce disambiguation lands.
+
 - _E-next: (1) hit/bounce disambiguation to kill the 28 junk shots; (2) re-run
   e2e/clay + demo30 under the cap fix (numbers will move); (3) plane-speed
   quality on dense tracks; (4) spin=0-first arc fitting; (5) audio measurement

@@ -142,7 +142,7 @@ def main() -> None:
     bg, inv = (median_background(args.video, args.frame_step, args.max_frames)
                if use_bgsub else (None, 2.0))
     tracker = BallTracker(dets, (width, height), background=bg, inv_scale=inv,
-                          use_bgsub=use_bgsub, homography=gate_H)
+                          use_bgsub=use_bgsub, homography=gate_H, fps=eff_fps)
 
     cap = cv2.VideoCapture(args.video)
     ball_px, src_frames = [], []

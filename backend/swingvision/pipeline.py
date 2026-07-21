@@ -872,6 +872,9 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
     cap = cv2.VideoCapture(video_path)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # Rate of the frames the tracker will actually see — its time-based gates
+    # (static-fixture) need this, not the source rate.
+    fps_eff = (cap.get(cv2.CAP_PROP_FPS) or 30.0) / max(1, frame_step)
     bg, inv = (median_background(video_path, frame_step, max_frames) if use_bgsub else (None, 2.0))
     # With players masked out of the background candidates, the bridge can run
     # longer without drifting onto a body — but only if pose actually finds the
@@ -892,7 +895,8 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
           f"{'ON' if gate_H is not None else 'OFF (low camera)'}"
           if cam_h is not None else "[analyze] camera height unknown -> court gate OFF")
     tracker = BallTracker(detectors, (width, height), background=bg, inv_scale=inv,
-                          use_bgsub=use_bgsub, max_bg_run=bg_run_cap, homography=gate_H)
+                          use_bgsub=use_bgsub, max_bg_run=bg_run_cap, homography=gate_H,
+                          fps=fps_eff)
     if use_bgsub and bg is not None:
         print(f"[analyze] background model built (fixed-camera ball recovery on, "
               f"player-masked, bridge<={bg_run_cap})")

@@ -14,6 +14,12 @@ from typing import Optional, Sequence
 
 import numpy as np
 
+# Static-fixture gate, expressed in TIME units so the same physical motion trips
+# it identically at any frame rate. The numbers are the historical 30 fps values
+# (3.0 px/frame, 5 frames) restated per second — behaviour at 30 fps is unchanged.
+STATIC_STEP_PX_PER_S = 90.0
+STATIC_MIN_RUN_S = 5.0 / 30.0
+
 
 def smooth_and_fill(
     positions: Sequence[Optional[Sequence[float]]],
@@ -499,7 +505,9 @@ class BallTracker:
                  max_fg_ratio: float = 0.25, box_pad: float = 24.0,
                  homography=None, acquire_bound_m: float = 4.0,
                  continue_bound_m: float = 10.0, rescue: bool = False,
-                 static_step_px: float = 3.0, static_min_run: int = 5):
+                 static_step_px: Optional[float] = None,
+                 static_min_run: Optional[int] = None,
+                 fps: float = 30.0):
         # One detector or several (e.g. TrackNet + WASB). Several are FUSED: each is
         # queried every frame (to keep its 3-frame buffer current) and the candidate
         # most consistent with the predicted path wins — their failure modes differ,
@@ -543,9 +551,22 @@ class BallTracker:
         # is declared a fixture: dropped, its spot remembered (bounded list),
         # and no candidate near a known fixture may seed or extend a track
         # again — so the tracker goes back to looking for the real ball.
-        # Costs nothing on clean footage: moving balls never trip it.
-        self.static_step_px = static_step_px
-        self.static_min_run = static_min_run
+        #
+        # BOTH thresholds are TIME quantities, expressed per frame (Session E3c).
+        # They were hard-coded at 3 px/frame over 5 frames — values tuned on 30 fps
+        # footage — and then applied unchanged at 60 fps, where the same physical
+        # motion covers half the pixels per frame and the run fills in half the
+        # time. Measured on yt_rally2 @60fps: 36.3% of far-court ball steps fall
+        # under 3 px/frame (near court: 8.5%), so the gate was eating the far ball
+        # exactly where it is hardest to see. The old comment claimed "moving balls
+        # never trip it" — true at 30 fps, false at 60. Scaling by fps keeps a real
+        # fixture (0 px/frame at any rate) caught while letting a slow-looking far
+        # ball through.
+        self.fps = float(fps) if fps and fps > 0 else 30.0
+        self.static_step_px = (STATIC_STEP_PX_PER_S / self.fps
+                               if static_step_px is None else static_step_px)
+        self.static_min_run = (max(2, int(round(STATIC_MIN_RUN_S * self.fps)))
+                               if static_min_run is None else static_min_run)
         self.static_run = 0
         self.static_anchors: list = []
         self.n_static = 0   # fixture zones found (for the analyze log)

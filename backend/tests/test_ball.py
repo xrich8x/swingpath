@@ -1,6 +1,7 @@
 """Trajectory smoothing: gap filling and denoising (ball.smooth_and_fill)."""
 
 import numpy as np
+import pytest
 
 from swingvision.ball import smooth_and_fill
 
@@ -248,3 +249,41 @@ def test_cap_court_jumps_scales_with_gap():
     laundered = [[0.0, 0.0]] + [None] * 100 + [[0.0, 80.0]]
     out = cap_court_jumps(laundered, max_step_m=1.4, max_gap_allowance_m=30.0)
     assert out[-1] is None, "a 80 m jump is unphysical no matter the gap"
+
+
+def test_static_gate_thresholds_scale_with_frame_rate():
+    """The fixture gate is a TIME test, not a per-frame one (E3c regression).
+
+    Tuned at 30fps (3 px/frame over 5 frames), it was applied unchanged at 60fps
+    — where the same physical motion covers half the pixels per frame. Measured
+    on yt_rally2 @60fps, 36.3% of FAR-court ball steps fell under 3 px/frame
+    (near court: 8.5%), so the gate was discarding the far ball."""
+    from swingvision.ball import BallTracker
+
+    class _Noop:
+        def reset(self):
+            pass
+
+        def detect(self, frame):
+            return None
+
+    at30 = BallTracker(_Noop(), (1280, 720), use_bgsub=False, fps=30.0)
+    at60 = BallTracker(_Noop(), (1280, 720), use_bgsub=False, fps=60.0)
+
+    # 30fps keeps the historical values exactly — no silent behaviour change.
+    assert at30.static_step_px == pytest.approx(3.0)
+    assert at30.static_min_run == 5
+
+    # 60fps halves the per-frame step and doubles the run: same physical test.
+    assert at60.static_step_px == pytest.approx(1.5)
+    assert at60.static_min_run == 10
+
+    # A true fixture (0 px/frame) is still caught at any rate; a far ball moving
+    # 4.6 px/frame at 60fps (the measured median) now passes.
+    assert 0.0 < at60.static_step_px < 4.6
+
+    # Explicit values still win, so existing callers/experiments are unaffected.
+    forced = BallTracker(_Noop(), (1280, 720), use_bgsub=False, fps=60.0,
+                         static_step_px=3.0, static_min_run=5)
+    assert forced.static_step_px == pytest.approx(3.0)
+    assert forced.static_min_run == 5
