@@ -2,6 +2,17 @@
 
 Project context for Claude Code. Read this before editing.
 
+## REQUIRED READING before any ML work
+
+Before you create, train, tune, or evaluate ANY model (ball, court, pose, spin,
+or a new one), you MUST read **[ML_PRACTICES.md](ML_PRACTICES.md)** first and
+follow it. It is not optional and not generic advice — every rule in it is there
+because this project already got burned by breaking it. The load-bearing one:
+**never let a model grade its own homework** (score only against independent
+human/gold labels, and state in one sentence what every number was measured
+against). CLAUDE.md governs how we work; ML_PRACTICES.md governs how we do
+machine learning specifically; HANDOFF.md is the current state.
+
 ## What this is
 
 A single-camera **tennis** match analyzer. Backend turns a video into
