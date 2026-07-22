@@ -928,6 +928,63 @@ which needs a new model (research risk) or the physics net-handoff. The
 product-level lever remains event timing. `rectify_track` ships because a clean
 trail is the right default and it costs nothing, not because it moved accuracy.
 
+### E3j (2026-07-22) — we owned a better detector and weren't using it
+User: open to a proprietary tennis-tailored model — take the best of each algo.
+Consulted ML_PLAYBOOK/ML_PRACTICES first (required). The playbook's meta-lesson:
+our architectures are already mainstream; the wins are data/domain/temporal, not
+bigger backbones. Then the check that reframed everything.
+
+#### The finding: BallNet >> TrackNet, and the whole session ran on TrackNet
+`BallNet` (our own U-Net, trained on our footage, visibility-weighted-loss
+retrain from 2026-07-12) had never been benchmarked against the detector this
+session actually used. Head-to-head through the SAME height-aware pipeline, human
+gold [MEASURED]:
+| clip | detector | hit@10 | far court | miss | FP (no-ball) |
+|---|---|---|---|---|---|
+| yt_rally2 (held out of BallNet training) | TrackNet | 71.3% | 66.7% | 17.4% | 23% |
+| | **BallNet** | **81.8%** | **76.2%** | **5.4%** | 65% |
+| yt_match40 (fully cold, no calibration) | TrackNet | 64.1% | – | 19.6% | 50% |
+| | **BallNet** | **72.3%** | – | **9.2%** | 62.5% |
++10.5 pts hit@10 and +9.5 far-court on the held-out clip, +8.2 on the cold clip,
+misses roughly halved on both. Verified NOT a leak: `train_ballnet.py` excludes
+`indoor_elev (= yt_rally2)` by default, and the cold clip confirms it.
+BallNet's cost is false-fire (65% vs 23%) — its known, documented weakness.
+
+#### Root cause: the auto-probe could never pick it
+`_probe_ball_model` only ever considered TrackNet and WASB, scored by which
+FIRES more (a vanity metric the playbook warns against). BallNet was reachable
+only via an explicit `--ball-model ours`, which nothing in the default path
+passed. So every session since BallNet shipped has run on a weaker detector.
+
+#### End-to-end, the extra recall halves the speed error [MEASURED vs HUD]
+The false-fire that shelved BallNet before is now contained by defences that did
+not exist at its last benchmark — the height-aware court gate (E3e), live-ball
+filter (E3e), and rectifier (E3i):
+| detector | shots | matched | median speed err | within 40% |
+|---|---|---|---|---|
+| TrackNet (E3i) | 17 | 13/17 | 28% | 7/13 |
+| **BallNet (E3j)** | 15 | 13/17 | **16%** | 8/13 |
+**Best product result of the session, at zero training cost.** `--ball-model
+auto` now prefers BallNet whenever a court gate is available (calibrated), and
+falls back to the TrackNet/WASB probe on uncalibrated footage where the gate that
+tames its false-fire is off.
+
+#### The proprietary-model plan (measured priorities, not a rewrite)
+BallNet is the vehicle; the playbook §8 names the parts to steal, each already
+lit up by our own data:
+1. **Architecture (biggest lever for the vanishing far ball):** BallNet stacks 3
+   frames as flat channels — "motion as static", which TrackNetV4/TOTNet
+   criticise. Replace with temporal 3D-convs + an explicit motion/frame-diff
+   input. TOTNet's optical-flow input alone moved their occluded RMSE 12.3→7.2.
+2. **Hard negatives** for the 65% false-fire — mine the exact HUD/net-post/edge
+   frames it fires on (we have them); label "nothing here". The #1 documented
+   BallNet weakness and the direct cost of adopting it.
+3. **Keep** the visibility-weighted loss + occlusion aug (already a verified win).
+4. **Data ceiling (honest):** the ~20% no model sees is the 2 px far/blur ball;
+   pseudo-labels can't teach it (teacher can't see it). Needs synthetic
+   physics-blurred balls (free, perfect labels) or ~300 human far-court/blur
+   labels (user has offered). This is the only path past ~80% far court.
+
 - _E-next: (1) hit/bounce disambiguation to kill the 28 junk shots; (2) re-run
   e2e/clay + demo30 under the cap fix (numbers will move); (3) plane-speed
   quality on dense tracks; (4) spin=0-first arc fitting; (5) audio measurement
