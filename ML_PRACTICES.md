@@ -1,9 +1,14 @@
 # ML_PRACTICES.md — how to build and tune models on this project
 
+> **Two ML docs, two jobs.** This file (PRACTICES) is the *discipline*: how to
+> conduct model work honestly and reproducibly. **[ML_PLAYBOOK.md](ML_PLAYBOOK.md)** is
+> the *technique*: how to diagnose a weak model and what to steal from the field. Read
+> **both** before any model work — CLAUDE.md requires it.
+
 Read this before creating, training, tuning, or evaluating ANY model in this
-project. It sits alongside CLAUDE.md (architecture + hard rules) and HANDOFF.md
-(current state). CLAUDE.md governs how we work; this file governs how we do
-machine learning specifically.
+project. It sits alongside CLAUDE.md (architecture + hard rules), ML_PLAYBOOK.md
+(ML technique), and HANDOFF.md (historical evidence log). CLAUDE.md governs how we
+work; this file governs how we do machine learning specifically.
 
 The rules below are not generic ML advice. Every one of them is here because
 this project already got burned by breaking it — see the pointers to HANDOFF.md.

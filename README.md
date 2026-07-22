@@ -64,8 +64,9 @@ backend/swingvision/
   court.py         court constants + landmarks (geometry)
   calibration.py   classical court detection (ML seam) + homography solve (geometry)
   overlay.py       draw the court line set back onto frames (calibration proof)
-  pose.py          player pose (ML stub)
-  ball.py          TrackNet stub (ML) + trajectory smoothing (physics)
+  pose.py          player pose — real (YOLO-pose)
+  ball.py          ball tracking — real (TrackNet/WASB) + trajectory smoothing (physics)
+  courtfit.py      line-fit court auto-calibration + physical shape lock + watchdog
   events.py        hits, bounces, rallies, shot type
   analytics.py     shot speed + line calls (geometry)
   scoring.py       tennis scoring state machine (logic)
@@ -97,7 +98,15 @@ cd backend && python -m pytest tests/
 - Bounce detection from a single camera has no true height, so it's a court-speed
   heuristic — a second camera or a learned bounce model improves it.
 - Scoring from vision alone is brittle (the real app gets points wrong too);
-  the manual-correction UI in the roadmap isn't optional.
+  a manual-correction UI is a known gap.
 
 Accuracy is bounded by calibration quality and a fixed camera far more than by
 any single model choice.
+
+## Docs
+
+- **CLAUDE.md** — architecture, hard rules, current status (start here to work on it).
+- **[docs/sessions/](docs/sessions/README.md)** — the forward plan (one researched brief per session).
+- **ML_PRACTICES.md** / **ML_PLAYBOOK.md** — required reading before any model work
+  (discipline + technique). **HANDOFF.md** — historical evidence log.
+- **USER_GUIDE.md** — running it and driving it with Claude Code, in plain language.

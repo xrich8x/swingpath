@@ -4,6 +4,15 @@ Written 2026-07-05 for a fresh Claude session. Purpose: everything done, with
 evidence levels, so the next session can find real fixes and catch any
 hallucinated/overclaimed results. **Trust the artifacts, not the narrative.**
 
+> **⚠️ HISTORICAL — this is a point-in-time evidence log from 2026-07-05, kept
+> for its evidence-tagged findings and `§` references (ML_PLAYBOOK.md and
+> ML_PRACTICES.md cite them by number, so the sections are stable and must not be
+> renumbered). It does NOT reflect current state.** Much has shipped since:
+> line-fit court auto-calibration + physical shape lock + camera-change watchdog,
+> clay-aware snap, lens/roll correction, serve analytics, and a big refactor. For
+> where the project is *now*, read CLAUDE.md's Status section and the Results
+> blocks in [docs/sessions/](docs/sessions/). This file is the paper trail, not the roadmap.
+
 Evidence levels used below:
 - **[MEASURED]** — command output produced in-session; log/artifact exists on disk
 - **[VISUAL]** — a human-readable image artifact exists; interpretation is stated
@@ -208,7 +217,7 @@ value:
    `C:\Users\richm\.claude\projects\E--Claude-Outputs-Cowork-Tasks-Swing-Vision\memory\`.
 
 ## 8. Agreed roadmap (user-approved framing: self-reliant ML, no SwingVision
-labels as training data; see ROADMAP.md for the full PM version)
+labels as training data) — HISTORICAL; the live plan is now [docs/sessions/](docs/sessions/)
 
 R1 "Trust what you see": (1.1) solve §6 regression; (1.2) BallNet v2 with
 hard negatives (adjacent-court balls, HUD logos); (1.4) gold-label tool

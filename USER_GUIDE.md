@@ -11,9 +11,11 @@ Two halves that meet at one file, match.json:
 - Frontend (React) — a dashboard that renders match.json: a top-down court with
   shot landings, stat tiles, shot-mix and line-call breakdowns, rally playback.
 
-It runs today on synthetic demo data with no AI models. The parts that read real
-video (court keypoints, player pose, ball tracking) are stubbed with the plug-in
-points marked, so you add models when you're ready.
+It runs two ways: on synthetic demo data with no AI models (instant, for trying
+the dashboard), and on real footage through the full pipeline — court
+auto-calibration, ball tracking (TrackNet/WASB), and player pose (YOLO-pose) are
+all real and wired end to end (see §5). The forward plan lives in
+[docs/sessions/](docs/sessions/).
 
 ## 2. Before you start
 
@@ -104,9 +106,12 @@ heuristic; vision scoring is best-effort (correct points by hand when it matters
 ## 6. Driving it with Claude Code
 
 1. claude from the repo root (it auto-reads CLAUDE.md).
-2. Paste SETUP_PROMPT.md → get it running and verified.
-3. Paste the Phase 1 block from PROMPT.md → first real feature (calibration + overlay).
-4. Use the phase blocks in PROMPT.md for each next milestone.
+2. First time on a fresh machine, paste SETUP_PROMPT.md → get it installed,
+   tested, and running.
+3. To build the next feature, open [docs/sessions/](docs/sessions/) and paste a
+   session's kickoff prompt (e.g. `Do Session C (docs/sessions/SESSION_C_flow_polish.md)`).
+   Each brief is self-contained — researched approach, step plan, and what you
+   need to bring. The README in that folder lists them in the recommended order.
 
 Keep these rules in front of the agent (they're in CLAUDE.md):
 - Models go in the perception layer only.
@@ -114,15 +119,12 @@ Keep these rules in front of the agent (they're in CLAUDE.md):
   model — it adds error to exact answers.
 - match.json (schema.py) is the single source of truth for the data shape.
 - Court constants in backend/.../court.py and frontend/src/lib/court.js must stay in sync.
-- One verifiable milestone per phase, with acceptance criteria. Run the tests after changes.
+- Before any model work, the agent must read ML_PRACTICES.md + ML_PLAYBOOK.md
+  (CLAUDE.md requires it) — measure honestly, never let a model grade itself.
 
-Good first features to ask for after Phase 1 (highest value first):
-- A scoring-correction UI — confirm/fix points after a match. Closes the biggest
-  real-world accuracy gap.
-- A video export pipeline — trim dead time and render a highlights clip with the
-  score/stats overlaid. The most-loved feature in this category.
-- Movement & placement analytics — player-coverage heatmaps and shot-depth
-  metrics from the pose data.
+What's next, highest value first, is tracked in docs/sessions/: finishing the
+camera story (lens + watchdog), serve analytics (done), flow polish + heatmaps,
+auto-highlights, and the multi-session ball push (tracking → speed → spin).
 
 ## 7. Troubleshooting
 
@@ -135,10 +137,13 @@ Good first features to ask for after Phase 1 (highest value first):
 
 ## 8. Project map
 
-CLAUDE.md         agent context (auto-loaded by Claude Code)
-SETUP_PROMPT.md   paste-in prompt to install + run
-PROMPT.md         paste-in prompts for each build phase
-README.md         architecture overview
+CLAUDE.md         agent context + doc map (auto-loaded by Claude Code)
+README.md         architecture overview + quickstart
+SETUP_PROMPT.md   paste-in prompt to install + run (fresh machine)
+docs/sessions/    the forward plan — one researched brief per session
+ML_PRACTICES.md   how to conduct ML work honestly (required before model work)
+ML_PLAYBOOK.md    how to diagnose/technique the ML (required before model work)
+HANDOFF.md        historical evidence log (paper trail, not current state)
 backend/          Python: video -> match.json  (+ tests)
 frontend/         React dashboard
 data/             your videos and analysis output

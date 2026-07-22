@@ -2,16 +2,30 @@
 
 Project context for Claude Code. Read this before editing.
 
+## Project docs — read the right one for the task
+
+- **CLAUDE.md** (this file) — architecture, hard rules, current status. Read before editing.
+- **[README.md](README.md)** — what the project is + how to run it (quickstart, layout).
+- **[ML_PRACTICES.md](ML_PRACTICES.md)** — how to *conduct* ML work: honesty, evidence
+  tags, ground-truth-before-metrics, reproducibility, the session-end checklist.
+- **[ML_PLAYBOOK.md](ML_PLAYBOOK.md)** — how to *think about* the ML: diagnosis buckets,
+  per-area technique (ball/court/pose/physics), and the 2024-26 SOTA survey.
+- **[HANDOFF.md](HANDOFF.md)** — historical evidence log (from 2026-07-05); the ML docs
+  cite its `§` numbers. For *current* state use this file's Status + [docs/sessions/](docs/sessions/).
+- **[docs/sessions/](docs/sessions/README.md)** — the forward plan: one researched brief per
+  planned session (A-E), each with its Results filled in as it ships.
+
 ## REQUIRED READING before any ML work
 
 Before you create, train, tune, or evaluate ANY model (ball, court, pose, spin,
-or a new one), you MUST read **[ML_PRACTICES.md](ML_PRACTICES.md)** first and
-follow it. It is not optional and not generic advice — every rule in it is there
-because this project already got burned by breaking it. The load-bearing one:
-**never let a model grade its own homework** (score only against independent
-human/gold labels, and state in one sentence what every number was measured
-against). CLAUDE.md governs how we work; ML_PRACTICES.md governs how we do
-machine learning specifically; HANDOFF.md is the current state.
+or a new one), you MUST read **both [ML_PRACTICES.md](ML_PRACTICES.md) and
+[ML_PLAYBOOK.md](ML_PLAYBOOK.md)** first and follow them. They are not optional and
+not generic advice — every rule is there because this project already got burned by
+breaking it. PRACTICES is the *discipline* (how to conduct yourself); PLAYBOOK is the
+*technique* (how to diagnose and what to steal from the field). The load-bearing rule,
+from PRACTICES: **never let a model grade its own homework** — score only against
+independent human/gold labels, and state in one sentence what every number was
+measured against.
 
 ## What this is
 

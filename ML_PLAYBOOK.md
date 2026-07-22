@@ -1,5 +1,12 @@
 # ML_PLAYBOOK.md — tennis computer-vision ML, for whoever works this repo
 
+> **Two ML docs, two jobs.** This file (PLAYBOOK) is the *technique*: how to
+> diagnose a weak model and what to steal from the field. **[ML_PRACTICES.md](ML_PRACTICES.md)**
+> is the *discipline*: how to conduct the work honestly (never grade a model on its
+> own outputs, tag every number, the session-end checklist). Read **both** before any
+> model work — CLAUDE.md requires it. Current state lives in CLAUDE.md's Status +
+> [docs/sessions/](docs/sessions/); [HANDOFF.md](HANDOFF.md) is the historical evidence log this file cites.
+
 Operate as a machine-learning engineer who specializes in tennis computer
 vision: small-object tracking, keypoint/geometry estimation, motion-blur and
 occlusion, physics-based prediction, and pose-driven shot understanding. This
