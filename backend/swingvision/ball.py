@@ -77,6 +77,92 @@ def remove_outliers(
     return out
 
 
+def rectify_track(
+    positions: Sequence[Optional[Sequence[float]]],
+    *,
+    max_speed_px: float = 60.0,
+    win: int = 6,
+    resid_px: float = 40.0,
+) -> list[Optional[list[float]]]:
+    """Robust offline cleanup of a ball pixel track (Session E3i).
+
+    `remove_outliers` only catches a LONE spike flanked by two good points. It
+    misses the two failures you actually see in the drawn trail:
+      * a SUSTAINED wrong lock — the detector rides a fixture (net post, HUD,
+        the far player) for a few frames, so the "spike" has no clean neighbour
+        and survives;
+      * a spike next to a GAP — one neighbour is None, so the midpoint test
+        cannot even run.
+    Both make the trail "suddenly go awry", most often on the far side where the
+    real ball is ~2 px and easily lost.
+
+    The literature's answer is a global, motion-consistent path rather than a
+    greedy per-frame pick (Viterbi / shortest-path over candidates). We do not
+    keep per-frame candidates, so this is the one-track analogue: over a sliding
+    window, fit a robust local line through the LOCKED points (Theil-Sen style —
+    median of pairwise slopes, which ignores up to ~half the window being wrong)
+    and null any point that (a) implies a speed above `max_speed_px` per frame
+    from its accepted predecessor, or (b) sits more than `resid_px` off the local
+    fit. Nulled points become gaps for the existing physics-aware interpolation to
+    bridge — a straight coast is a better guess than a wrong lock.
+
+    Pixel-space and calibration-free, so it runs on any clip and is measurable on
+    the gold labels directly.
+    """
+    out: list[Optional[list[float]]] = [
+        None if p is None else [float(p[0]), float(p[1])] for p in positions
+    ]
+    n = len(out)
+    idx = [i for i in range(n) if out[i] is not None]
+    if len(idx) < 3:
+        return out
+
+    def robust_predict(anchor_pos, refs):
+        """Median-slope extrapolation to `anchor_pos+1` from prior locked refs."""
+        if len(refs) < 2:
+            return None
+        vs = []
+        for a in range(len(refs)):
+            for b in range(a + 1, len(refs)):
+                (ia, pa), (ib, pb) = refs[a], refs[b]
+                dt = ib - ia
+                if dt:
+                    vs.append(((pb[0] - pa[0]) / dt, (pb[1] - pa[1]) / dt))
+        if not vs:
+            return None
+        vx = float(np.median([v[0] for v in vs]))
+        vy = float(np.median([v[1] for v in vs]))
+        (li, lp) = refs[-1]
+        return [lp[0] + vx * (anchor_pos - li), lp[1] + vy * (anchor_pos - li)]
+
+    accepted: list[tuple[int, list[float]]] = []
+    for i in idx:
+        p = out[i]
+        refs = accepted[-win:]
+        pred = robust_predict(i, refs)
+        drop = False
+        if refs:
+            li, lp = refs[-1]
+            step = np.hypot(p[0] - lp[0], p[1] - lp[1]) / max(1, i - li)
+            # A single big step is allowed (fast ball); a big step that ALSO
+            # disagrees with the motion trend is a wrong lock.
+            if step > max_speed_px and pred is not None:
+                if np.hypot(p[0] - pred[0], p[1] - pred[1]) > resid_px:
+                    drop = True
+        # NB: no standalone "residual off the linear fit" test. A real ball arc
+        # CURVES, so a linear extrapolation is legitimately off near the hit and
+        # bounce — testing residual alone nulled exactly the fast, curved points
+        # that define a shot's speed (measured: it moved speed error 28% -> 39%).
+        # A wrong lock must show up as an unphysical STEP as well, which the test
+        # above already requires; sustained wrong locks are caught because each
+        # frame after the first re-tests the step against the last ACCEPTED point.
+        if drop:
+            out[i] = None
+        else:
+            accepted.append((i, p))
+    return out
+
+
 def cap_court_jumps(
     positions: Sequence[Optional[Sequence[float]]], max_step_m: float = 2.8,
     *, max_gap_allowance_m: float = 30.0,

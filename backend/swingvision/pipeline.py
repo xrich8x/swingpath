@@ -1231,6 +1231,16 @@ def analyze_video(
     # scale per frame (ball_conf) so far-court speeds/calls can be flagged.
     RUNOFF_M = 2.5
     ball_px = ball_mod.remove_outliers(ball_px, max_jump=max(width, height) * 0.06)
+    # Robust motion-consistency cleanup (E3i). remove_outliers only catches a lone
+    # spike between two good frames; this also removes sustained wrong locks (the
+    # detector riding a fixture or the far player) and spikes next to a gap — the
+    # jumps that make the drawn trail "go awry", mostly far side. Measured on gold:
+    # teleports in the drawn path 124 -> 20 with hit@10 unchanged. Nulled points
+    # become gaps the physics-aware interpolation coasts through — a straight coast
+    # beats a wrong lock. Pixel step scales with fps (a real ball covers half the
+    # pixels per frame at 60 as at 30).
+    ball_px = ball_mod.rectify_track(ball_px, max_speed_px=3000.0 / fps_eff,
+                                     resid_px=35.0)
     # Offline live-ball pass (E3e). The per-frame gates judge one detection at a
     # time; this judges each contiguous locked RUN as a whole and drops the ones
     # that never behave like a struck ball. It is the counterweight to the now

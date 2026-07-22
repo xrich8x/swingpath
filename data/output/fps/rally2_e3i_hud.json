@@ -1,0 +1,154 @@
+{
+  "match": "rally2_e3i.json",
+  "hud": "hud_yt_rally2.json",
+  "reference": "SwingVision burned-in HUD (an independent single-camera estimate, NOT radar ground truth)",
+  "n_ours": 17,
+  "n_hud": 17,
+  "n_matched": 13,
+  "mae_confident_pct": 45.9,
+  "pairs": [
+    {
+      "t_hit_s": 3.3,
+      "type": "serve",
+      "ours_kmh": 6.9,
+      "source": "approx",
+      "hud_kmh": 82.1,
+      "hud_mph": 51,
+      "delta_pct": -91.6,
+      "confident": false,
+      "lag_s": 0.6
+    },
+    {
+      "t_hit_s": 4.3,
+      "type": "backhand",
+      "ours_kmh": 145.4,
+      "source": "approx",
+      "hud_kmh": 85.3,
+      "hud_mph": 53,
+      "delta_pct": 70.5,
+      "confident": true,
+      "lag_s": 1.13
+    },
+    {
+      "t_hit_s": 5.08,
+      "type": "forehand",
+      "ours_kmh": 100.5,
+      "source": "approx",
+      "hud_kmh": 70.8,
+      "hud_mph": 44,
+      "delta_pct": 41.9,
+      "confident": true,
+      "lag_s": 1.92
+    },
+    {
+      "t_hit_s": 6.97,
+      "type": "backhand",
+      "ours_kmh": 82.3,
+      "source": "approx",
+      "hud_kmh": 66.0,
+      "hud_mph": 41,
+      "delta_pct": 24.7,
+      "confident": false,
+      "lag_s": 1.83
+    },
+    {
+      "t_hit_s": 9.75,
+      "type": "backhand",
+      "ours_kmh": 53.9,
+      "source": "approx",
+      "hud_kmh": 70.8,
+      "hud_mph": 44,
+      "delta_pct": -23.9,
+      "confident": false,
+      "lag_s": 0.75
+    },
+    {
+      "t_hit_s": 11.65,
+      "type": "backhand",
+      "ours_kmh": 99.3,
+      "source": "approx",
+      "hud_kmh": 56.3,
+      "hud_mph": 35,
+      "delta_pct": 76.4,
+      "confident": false,
+      "lag_s": 0.48
+    },
+    {
+      "t_hit_s": 14.03,
+      "type": "backhand",
+      "ours_kmh": 56.5,
+      "source": "approx",
+      "hud_kmh": 78.9,
+      "hud_mph": 49,
+      "delta_pct": -28.4,
+      "confident": false,
+      "lag_s": 0.57
+    },
+    {
+      "t_hit_s": 15.67,
+      "type": "forehand",
+      "ours_kmh": 25.1,
+      "source": "approx",
+      "hud_kmh": 80.5,
+      "hud_mph": 50,
+      "delta_pct": -68.8,
+      "confident": true,
+      "lag_s": 0.53
+    },
+    {
+      "t_hit_s": 18.88,
+      "type": "forehand",
+      "ours_kmh": 61.6,
+      "source": "approx",
+      "hud_kmh": 74.0,
+      "hud_mph": 46,
+      "delta_pct": -16.8,
+      "confident": false,
+      "lag_s": 0.62
+    },
+    {
+      "t_hit_s": 20.73,
+      "type": "backhand",
+      "ours_kmh": 53.9,
+      "source": "approx",
+      "hud_kmh": 69.2,
+      "hud_mph": 43,
+      "delta_pct": -22.1,
+      "confident": false,
+      "lag_s": 0.67
+    },
+    {
+      "t_hit_s": 22.53,
+      "type": "forehand",
+      "ours_kmh": 93.9,
+      "source": "approx",
+      "hud_kmh": 91.7,
+      "hud_mph": 57,
+      "delta_pct": 2.4,
+      "confident": true,
+      "lag_s": 0.87
+    },
+    {
+      "t_hit_s": 26.58,
+      "type": "backhand",
+      "ours_kmh": 85.4,
+      "source": "approx",
+      "hud_kmh": 78.9,
+      "hud_mph": 49,
+      "delta_pct": 8.2,
+      "confident": false,
+      "lag_s": 0.12
+    },
+    {
+      "t_hit_s": 29.4,
+      "type": "backhand",
+      "ours_kmh": 22.7,
+      "source": "approx",
+      "hud_kmh": 85.3,
+      "hud_mph": 53,
+      "delta_pct": -73.4,
+      "confident": false,
+      "lag_s": 0.83
+    }
+  ]
+}

@@ -287,3 +287,43 @@ def test_static_gate_thresholds_scale_with_frame_rate():
                          static_step_px=3.0, static_min_run=5)
     assert forced.static_step_px == pytest.approx(3.0)
     assert forced.static_min_run == 5
+
+
+def test_rectify_track_kills_sustained_wrong_locks():
+    """The robust rectifier catches what remove_outliers cannot (E3i).
+
+    remove_outliers only nulls a lone spike flanked by two good points. A
+    sustained wrong lock (detector riding a fixture for a few frames) and a
+    spike next to a gap both survive it — and those are the jumps that make the
+    drawn trail go awry."""
+    from swingvision.ball import rectify_track, remove_outliers
+
+    # A ball moving steadily right, then 3 frames stuck on a fixture far away,
+    # then back on the real path.
+    track = [[100.0 + 8.0 * i, 200.0] for i in range(8)]
+    track[4] = track[5] = track[6] = [600.0, 500.0]   # fixture, 3 frames
+    ro = remove_outliers([list(p) for p in track], max_jump=76)
+    assert ro[4] is not None, "remove_outliers misses a SUSTAINED wrong lock"
+
+    rec = rectify_track(track, max_speed_px=60.0, resid_px=40.0)
+    assert rec[4] is None and rec[5] is None and rec[6] is None
+    # the genuine steady points survive
+    assert rec[0] is not None and rec[7] is not None
+
+
+def test_rectify_track_keeps_a_fast_but_consistent_ball():
+    """A genuinely fast ball moving in a straight line is NOT an outlier."""
+    from swingvision.ball import rectify_track
+
+    fast = [[100.0 + 55.0 * i, 300.0] for i in range(10)]   # 55 px/frame, steady
+    rec = rectify_track(fast, max_speed_px=60.0, resid_px=40.0)
+    assert all(p is not None for p in rec), "a steady fast ball must be kept"
+
+
+def test_rectify_track_handles_spike_next_to_a_gap():
+    from swingvision.ball import rectify_track
+    track = [[100.0, 200.0], [108.0, 200.0], [116.0, 200.0], None,
+             [900.0, 90.0],                     # spike with a gap before it
+             [132.0, 200.0], [140.0, 200.0]]
+    rec = rectify_track(track, max_speed_px=60.0, resid_px=40.0)
+    assert rec[4] is None

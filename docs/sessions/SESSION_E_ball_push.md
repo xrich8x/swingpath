@@ -875,6 +875,59 @@ at all, and 0 physics arcs pass (only 9 candidates now — the cross-net rule ma
 bounces scarcer, 20 → 10). Sub-frame bounce refinement is the next lever, then
 audio hits once footage with sound exists.
 
+### E3i (2026-07-22) — track "goes awry": researched, and it is a ceiling, not a bug
+User report: the drawn trail suddenly jumps, and the far side is unreliable.
+Collected our behaviour and matched it to the literature before touching code.
+
+#### What the data said the failure IS
+- **32 image-space teleports** (lock jumping >60 px/frame), 20 of them far side.
+- The far half fragments into **66 short tracking runs** (median 9 frames) vs 31
+  near — it constantly loses and re-grabs the far ball.
+- Root cause already measured (E3e/f): the far ball is ~2 px at the detector
+  input and genuinely missed 22-33% of the time; and our selection is greedy
+  nearest-to-prediction, the textbook-weak method.
+
+#### What best practice says [researched]
+- Greedy per-frame selection is the known-weak approach; SOTA uses **global
+  trajectory optimisation** — Viterbi / shortest-path over ALL candidate
+  detections, offline. ([Viterbi data association], [All-Pairs Shortest Path for
+  tennis]). This is the direct fix for "goes awry" and would recover the 5-7
+  points the ceiling study attributed to bad selection.
+- Far-side handoff: the tennis-robot literature predicts the ball across the net
+  from **physics** rather than trusting far-side detection, cutting bound-position
+  error from 1-3 m to ~40 cm ([Oxford JCDE]).
+- Occlusion baked into the detector (TrackNetV3 97.5%, TOTNet) — but those are
+  shuttlecock/broadcast, and Session 3 already showed our custom training loses
+  to off-the-shelf on unseen footage, so a new detector is a research bet.
+
+#### What was built and MEASURED
+`ball.rectify_track` — the one-track analogue of a global path: over a sliding
+window, a robust median-slope (Theil-Sen) motion model, nulling any lock that
+implies an unphysical STEP *and* disagrees with the trend. Curvature-safe (an
+early version tested residual-off-a-straight-line and nulled real curved fast
+points near contacts — speed 28% → 39%; removed).
+| | image teleports | hit coverage | speed err | 
+|---|---|---|---|
+| shipped (remove_outliers) | 32 | 14/17 | 28% |
+| **+ rectify_track (50,35)** | **1** | **16/17** | **28%** |
+Teleports 32 → 1, hit coverage up 14 → 16/17, speed error held. Shipped.
+
+#### The honest finding, third confirmation
+Two things the user reasonably expected to help do NOT, and the measurements say
+why:
+- **Far-court tiling re-tested through the E3g/h event layer**: far-court recall
+  +7 pts as before, but end-to-end speed 28% → 36%. Still OFF.
+- The court-plane "jumpiness" is **mostly legitimate fast ball flight**, not
+  error: a 145 km/h ball covers >1 m/frame, so it looks like a jump but is real.
+  Only 32 genuine (image-space) teleports existed in 2215 frames.
+
+**Per-frame track quality is at its ceiling and is no longer the lever** — now
+measured four ways (E3f fusion, E3f tiling, E3i tiling, E3i rectify all move the
+track without moving the product). The far-side limit is the 2 px detector,
+which needs a new model (research risk) or the physics net-handoff. The
+product-level lever remains event timing. `rectify_track` ships because a clean
+trail is the right default and it costs nothing, not because it moved accuracy.
+
 - _E-next: (1) hit/bounce disambiguation to kill the 28 junk shots; (2) re-run
   e2e/clay + demo30 under the cap fix (numbers will move); (3) plane-speed
   quality on dense tracks; (4) spin=0-first arc fitting; (5) audio measurement
