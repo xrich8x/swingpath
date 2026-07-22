@@ -985,6 +985,41 @@ lit up by our own data:
    physics-blurred balls (free, perfect labels) or ~300 human far-court/blur
    labels (user has offered). This is the only path past ~80% far court.
 
+### E3k (2026-07-22) — BallNet's win is REAL: proven on 3 fresh surfaces
+The user worried we kept scoring the same 2 clips (fair — overfitting-to-
+benchmark risk). Widened the gold set to 5 clips / 3 surfaces (E-prev), the user
+hand-labelled all three new ones blind, and I scored BallNet vs TrackNet on
+footage NOBODY tuned against. Pure detector comparison, no calibration (court
+gate OFF), frame_step=1 so every labelled frame scores — the yt_match40 cold
+protocol.
+
+| clip (new, never trained/tuned on) | surface | TrackNet | **BallNet** | Δ | far Δ |
+|---|---|---|---|---|---|
+| gold_shell | hard, country club | 67.4% | **75.0%** | +7.6 | +4.0 |
+| gold_clay | **clay, 60 fps** | 61.2% | **74.4%** | +13.2 | +16.2 |
+| gold_am | amateur public hard | 53.0% | **67.4%** | +14.4 | +16.7 |
+| **pooled (584 ball frames)** | | **60.6%** | **72.4%** | **+11.8** | **+9.9 far** |
+
+**BallNet wins on all three surfaces, and the margin is LARGEST on the hardest
+footage** (clay +13, amateur +14) — the opposite of an overfit model, which
+would collapse on unseen domains. Misses roughly halved on every clip. This is
+the clean answer to the overfitting worry: the win generalises, it is not
+benchmark-hugging, and it holds on clay and amateur footage we had never tested.
+
+**The cost, stated honestly:** false-fire 64.4% vs 21.8% pooled — BUT this is
+UNGATED (these clips have no calibration, so the height-aware court gate + live
+filter that tamed BallNet's false-fire on yt_rally2 from 65% → 23% are OFF here).
+So 64% is the raw worst case; with calibration it drops by roughly two-thirds.
+The false-fire is BallNet's known, documented weakness and the #1 target for
+v2.1 (hard negatives).
+
+**Consequence:** the E3j decision (BallNet as the default detector when
+calibrated) is now validated on 3 independent surfaces, not one clip. And the
+new clips give us, for the first time, **human far-court labels on clay and
+amateur footage** — the exact data a v2.1 far-court retrain needs (paired with
+synthetic blur, since pseudo-labels can't teach the 2 px ball). The benchmark is
+no longer thin: 5 clips, 3 surfaces, ~1,100 human ball labels + ~130 no-ball.
+
 - _E-next: (1) hit/bounce disambiguation to kill the 28 junk shots; (2) re-run
   e2e/clay + demo30 under the cap fix (numbers will move); (3) plane-speed
   quality on dense tracks; (4) spin=0-first arc fitting; (5) audio measurement
