@@ -290,6 +290,64 @@ as such in the UI.
   measured one. Hawk-Eye's ~2.2 mm uses ~10 synchronised high-speed cameras.
   Market accordingly; never imply officiating-grade accuracy.
 
+### E4 (2026-07-22) — physics-through-blind-frames: researched, prototyped, MEASURED "not yet"
+User's idea (matches the literature exactly): predict the ball through blind
+frames from how it was struck. Research (spend-limited to manual searches) found
+the field's method is the **gray-box** model — physics you compute + a learned
+piece that supplies the initial conditions — with the key lesson from
+[Black-Box vs Gray-Box, arXiv 2305.15189]: infer spin/velocity from the LAUNCH,
+not from noisy ball positions. Then three probes measured whether OUR parts can
+do it, graded against human gold (`tools/physics_fill_probe.py`,
+`physics_forward_probe.py`).
+
+**Probe 1 — both-ends fit, does it fill blind frames?** On a genuine single
+flight the striker+bounce anchored fit reprojects **~3 px** — accurate enough to
+fill. But per-arc diagnosis showed the fit only works on SHORT spans (a real
+0.5-0.9 s flight); the "arcs" spanning 110-175 frames are mis-paired multi-bounce
+segments and reproject 75-447 px. Gating to real single flights left **1 fittable
+arc with ZERO blind gold frames** — because the flights we can fit are near-court
+(well-detected, nothing to fill), and the blind frames are far-court where we
+never detect the bounce to anchor the fit. **Physics-fill helps least exactly
+where the ball vanishes.**
+
+**Probe 2 — forward prediction from the early launch** (the user's actual idea:
+fit v0+spin from the first 0.2 s of well-observed flight with the launch pinned
+by pose, then simulate forward through the blind frames). Measured vs gold on the
+predicted frames:
+| region | physics forward | interpolation |
+|---|---|---|
+| near court | med **47 px** | med 2.9 px |
+| far court | med **772 px** | med 2.7 px |
+**Forward simulation diverges fast** — velocity+spin from a short window isn't
+precise enough and the error compounds over the flight (the Magnus term makes it
+worse). It loses badly to plain interpolation.
+
+**Honest verdict [MEASURED]:** none of the physics-prediction variants beat
+interpolation on the frames we can grade, and the far-court blind frames cannot
+be reached because they lack the anchors (bounce, dense early flight) the physics
+needs. The physics is sound; the single-camera 2 px ball does not supply enough
+signal to constrain it — the same wall as E1. This is why the literature's
+working systems use either a LEARNED initial-condition net (SynthNet / gray-box,
+trained on a simulator) or a controlled rig (known launcher, multi/high-speed
+cameras) — the impressive numbers (1.2 cm, 97.7%) are all from the latter and do
+NOT transfer to our footage.
+
+**What this rules in / out:**
+- OUT (measured): a hand-fit physics filler/predictor on top of our current arc
+  fit — it makes the track worse, not better. Not shipped.
+- CONDITIONAL: the gray-box path (a small net predicting launch conditions from
+  the stroke+pose, trained on our RK4 simulator — no human labels, no leak) is
+  the real project. But its far-court payoff is unproven on 2 px footage, and it
+  is a substantial build. Best revisited on the **phone footage the user will
+  shoot** (bigger ball, denser far-court detections → the physics fit gets the
+  observations it currently lacks). The user themselves noted phone video will be
+  clearer; the measurements agree that footage quality, not model cleverness, is
+  the gate.
+
+Artifacts: `tools/{physics_fill_probe,physics_forward_probe}.py`,
+`data/output/fps/physics_fill_probe.json`. No shipped code changed; 138 tests
+still green.
+
 ## Results (fill in per session)
 
 ### E1 (2026-07-20) — MEASURED. The bottleneck is not frame rate; it is observability.

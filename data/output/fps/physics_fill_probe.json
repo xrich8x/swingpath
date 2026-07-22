@@ -1,0 +1,29 @@
+{
+  "cache": "rally2_ballnet.perception.json",
+  "n_arcs": 4,
+  "fitted_arcs": 1,
+  "phys_frames": 30,
+  "errors": {
+    "raw": {
+      "blind": [],
+      "seen": [
+        3.86,
+        0.92
+      ]
+    },
+    "interp": {
+      "blind": [],
+      "seen": [
+        3.9,
+        0.8
+      ]
+    },
+    "physics": {
+      "blind": [],
+      "seen": [
+        1.2,
+        5.25
+      ]
+    }
+  }
+}
