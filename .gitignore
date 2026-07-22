@@ -67,3 +67,4 @@ Thumbs.db
 # Downloaded full match/highlight videos (user-sourced test footage; ~GBs,
 # regenerable from YouTube by id in the filename - never belongs in git)
 data/highlights/
+data/output/synth/*.npz

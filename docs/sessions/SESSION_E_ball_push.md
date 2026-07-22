@@ -348,6 +348,54 @@ Artifacts: `tools/{physics_fill_probe,physics_forward_probe}.py`,
 `data/output/fps/physics_fill_probe.json`. No shipped code changed; 138 tests
 still green.
 
+### E4b (2026-07-23) — built the gray-box net, trained it, MEASURED the synthetic-to-real gap
+On the user's push, built the actual SOTA method (not just the hand-fit): the
+SynthNet/gray-box launch predictor. The scaffolding already existed unexercised
+(`estimation/spin_net.py` GRU + `train_spin_net.py` with a physics-informed
+reprojection loss + `data/synthesize.py`). Wired it end to end:
+- `tools/gen_synth_camera.py` — GPU-batched synthetic flights rendered through the
+  REAL yt_rally2 camera (30k train + 4k val in ~20 s vs ~75 min CPU), 35% dropout
+  to mimic our blind rate. No labels, no leak (simulator owns the truth).
+- Trained SpinNet 40 epochs; `tools/eval_ball_predictor.py` grades net vs the
+  least-squares fit vs interpolation on the real gold arcs.
+
+**It learns the mapping on synthetic** [MEASURED, held-out synth]: velocity
+direction 3.5°, speed MAE ~12%, p0 0.5 m — but spin stays hard (742 rpm MAE),
+exactly the observability/Nyquist limit E1 named.
+
+**It does NOT transfer to real footage** [MEASURED, yt_rally2 gold arcs]:
+| fill on real arcs | seen frames | blind frames |
+|---|---|---|
+| net (learned, striker p0) | 121 px | 239 px |
+| net (fully learned p0) | 77 px | 198 px |
+| least-squares fit (E4 baseline) | 59 px | 87 px |
+| plain interpolation (shipped) | **2.7 px** | **31 px** |
+The net is WORSE than both the least-squares fit and plain interpolation on real
+tracks. Cause = the synthetic-to-real domain gap: the real 2 px sparse detector
+tracks + imperfect PnP calibration + simulator-vs-reality aero mismatch differ
+from the clean synthetic tracks it trained on. And structurally, yt_rally2 yields
+only ~3 gradable single-flight arcs and ~2 blind gradable gold frames — the
+target barely exists on this footage, and interpolation already covers the seen
+frames because the ball IS detected there.
+
+**Verdict [MEASURED]:** the gray-box net — the literature's own method — does not
+beat a straight line on our footage. This is the third independent confirmation
+(E1 fit, E4 forward-sim, E4b learned net) that the wall is the DATA, not the
+method: a 2 px single-camera ball on compressed YouTube video does not carry
+enough signal, and the blind far frames we want to fill are also the ones too
+sparse to grade or anchor. Consistent with the repo's standing result that
+synthetic/custom models don't beat simple baselines on unseen real footage.
+
+**Honest forward path (not pursued now — account spend limit + measured payoff):**
+1. Domain randomisation in synthesis (vary drag Cd, spin range, camera pose/hfov,
+   noise, dropout patterns) to close the transfer gap — standard, unproven here.
+2. Denser real tracks = the user's own phone footage (bigger ball, more far
+   detections → more gradable flights and real signal for the net). The recurring,
+   evidence-backed answer: footage quality gates this, not model cleverness.
+Artifacts: `tools/{gen_synth_camera,eval_ball_predictor}.py`,
+`data/output/synth/ballpred_rally2/best.pt` (kept for reference, NOT shipped),
+synthetic npz. No shipped code changed; 138 tests green.
+
 ## Results (fill in per session)
 
 ### E1 (2026-07-20) — MEASURED. The bottleneck is not frame rate; it is observability.
