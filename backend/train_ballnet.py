@@ -44,6 +44,13 @@ SIGMA = 3.0
 # missing current-frame pixels. Synthetic-occlusion frames are our "fully occluded"
 # visibility level and carry OCC_WEIGHT; everything else is 1.0.
 OCC_WEIGHT = 3.0
+# Negative frames (no ball, incl. mined hard negatives) carry an all-zero target,
+# so with pos_weight=100 on the ball pixels and 4x more positives than negatives,
+# a negative's loss is negligible and the model never learns to shut up on the
+# HUD/post/fence confusers (measured: false-fire stuck ~90% on the val hard
+# negatives even as recall recovered). Upweighting the negative SAMPLE is the
+# direct lever — suppressing a false-fire now costs as much as finding a ball.
+NEG_WEIGHT = 8.0
 
 
 def gaussian_heatmap(x, y, w=IN_W, h=IN_H, sigma=SIGMA):
@@ -66,7 +73,7 @@ def _motion_blur_kernel(size, angle_deg):
 
 class BallWindows(Dataset):
     def __init__(self, root, split="train", val_frac=0.2, augment=True,
-                 exclude=()):
+                 exclude=(), use_hard_negs=True):
         self.samples = []   # (clip_dir, frame_idx, x, y); x is None => negative
         self.augment = augment and split == "train"
         for tag in sorted(os.listdir(root)):
@@ -79,6 +86,7 @@ class BallWindows(Dataset):
             with open(lp, "r", encoding="utf-8") as f:
                 meta = json.load(f)
             items = sorted(((int(k), v) for k, v in meta["labels"].items()))
+            labeled = {int(k) for k in meta["labels"]}   # frames that HAVE a ball
             n_val = max(1, int(len(items) * val_frac))
             keep = items[:-n_val] if split == "train" else items[-n_val:]
             for idx, (x, y) in keep:
@@ -88,6 +96,20 @@ class BallWindows(Dataset):
                 n_val = max(1, int(len(negs) * val_frac))
                 nkeep = negs[:-n_val] if split == "train" else negs[-n_val:]
                 self.samples += [(d, idx, None, None) for idx in nkeep]
+            # Hard negatives (mine_hard_negatives.py): frames where BallNet
+            # STATIC-fired on a fixture (HUD/post/fence/crowd) — its documented
+            # false-fire weakness. Guard: never use a frame that HAS a labeled
+            # ball as an all-zero-target negative, even if the fixture fire was
+            # elsewhere in it (that frame does contain a ball).
+            hp = os.path.join(d, "hard_negatives.json")
+            if use_hard_negs and os.path.isfile(hp):
+                with open(hp, "r", encoding="utf-8") as f:
+                    hard = sorted(set(json.load(f).get("hard_negatives", []))
+                                  - labeled - set(negs))
+                if hard:
+                    n_val = max(1, int(len(hard) * val_frac))
+                    hkeep = hard[:-n_val] if split == "train" else hard[-n_val:]
+                    self.samples += [(d, idx, None, None) for idx in hkeep]
 
     def counts(self):
         n_neg = sum(1 for s in self.samples if s[2] is None)
@@ -149,7 +171,7 @@ class BallWindows(Dataset):
             hm = gaussian_heatmap(x, y)[None]
         # dtype pinned: augmentation clamps can make x/y ints, and a batch that
         # mixes Long and Float xy tensors fails to collate (torch.stack).
-        w = OCC_WEIGHT if occluded else 1.0
+        w = NEG_WEIGHT if negative else (OCC_WEIGHT if occluded else 1.0)
         return (torch.from_numpy(inp), torch.from_numpy(hm),
                 torch.tensor([x, y], dtype=torch.float32),
                 torch.tensor(w, dtype=torch.float32))
