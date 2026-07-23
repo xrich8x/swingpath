@@ -396,6 +396,46 @@ Artifacts: `tools/{gen_synth_camera,eval_ball_predictor}.py`,
 `data/output/synth/ballpred_rally2/best.pt` (kept for reference, NOT shipped),
 synthetic npz. No shipped code changed; 138 tests green.
 
+### E5 (2026-07-23) — hard-negative retrain: false-fire halved, at a recall cost
+"What else can we improve" without new footage → BallNet's one documented
+weakness: it false-fires (~64-67% on no-ball gold frames, ungated). Built the
+proper fix (hard negatives), not the dead-time negatives that never worked.
+
+**Mined 3,497 hard negatives** (`mine_hard_negatives.py`): frames where BallNet
+STATIC-fires on a fixture (a real ball is never motionless, so a >=6-frame
+motionless lock is provably a false-fire — HUD, net post, fence, crowd, burned-in
+graphics). Eyeballed a 44-example contact sheet: every one on background clutter,
+none on a real ball. Written to `hard_negatives.json` per clip (raw labels
+untouched); trainer guards against ever using a labeled frame as an all-zero
+negative. Gold clips never in training — no leak.
+
+**Two loss fixes were needed:** with `pos_weight=100` and 4:1 positives, negatives
+were ignored (false-fire stuck ~90% on val even as recall recovered).
+`NEG_WEIGHT=8` upweights the negative sample so suppressing a false-fire costs as
+much as finding a ball. Then it learned: val false-fire 89.5% → 57.7% while recall
+climbed to 81.4%.
+
+**Measured on all 5 gold clips (raw detector, epoch-8 checkpoint)** vs baseline:
+| | recall | far court | false-fire |
+|---|---|---|---|
+| baseline `ballnet.pt` | 82.9% | 83.2% | 67.5% |
+| **v2.1 hard-neg `ballnet_v21.pt`** | 70.7% | 69.4% | **31.1%** |
+**False-fire more than halved (67.5 → 31.1%)** — the technique works, decisively.
+Cost: recall −12 pts (clay hit hardest, 78→52%). It's a precision/recall
+TRADEOFF, not a clean win: the model got more cautious as well as more precise.
+
+**Ship call:** baseline stays the default. In the calibrated product the court
+gate + live filter already suppress false-fire, so the recall v2.1 gives up would
+hurt more than the false-fire it saves. v2.1 is kept as a documented
+PRECISION-oriented alternative — better for uncalibrated/preview paths where no
+gate runs. `NEG_WEIGHT` is the knob between the two operating points; a value
+between 1 and 8 (e.g. 3-4) likely buys most of the false-fire cut for less recall
+loss — the one tuning step worth taking to turn this into a clean win, left for a
+focused follow-up rather than a loop.
+Artifacts: `backend/mine_hard_negatives.py`, `tools/eval_detector_gold.py`,
+`train_ballnet.py` (NEG_WEIGHT + hard-neg loading), `weights/ballnet_v21.pt`
+(alternative, NOT default), `data/ball_dataset/*/hard_negatives.json`. 138 tests.
+
 ## Results (fill in per session)
 
 ### E1 (2026-07-20) — MEASURED. The bottleneck is not frame rate; it is observability.
