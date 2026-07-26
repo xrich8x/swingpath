@@ -117,7 +117,10 @@ class Stats:
     avg_speed_kmh: float
     top_speed_kmh: float
     shot_mix: dict[str, int]
-    line_calls: dict[str, int]       # {"in": n, "out": m}
+    line_calls: dict[str, int]       # {"in": n, "out": m, "uncertain": k}
+                                     # in/out = confident calls only; uncertain =
+                                     # far-court bounces too perspective-amplified
+                                     # to judge (see compute_stats)
     # Metres each player ran (court-plane path length), {"A": near, "B": far}. The
     # far player's value is approximate (perspective amplifies its position jitter).
     distance_run_m: dict[str, float] = field(default_factory=dict)
@@ -161,9 +164,15 @@ def compute_stats(shots: list[Shot], rallies: list[Rally]) -> Stats:
     shot_mix: dict[str, int] = {}
     for s in shots:
         shot_mix[s.type] = shot_mix.get(s.type, 0) + 1
+    # Headline in/out count ONLY confident calls: a far-court bounce grazing the
+    # horizon is perspective-amplified noise (the low-camera reality), so an
+    # in/out verdict there isn't trustworthy. Such calls go to `uncertain` rather
+    # than inflating the score line — the Court view still plots them, drawn
+    # hollow. (Demo shots default call_confident=True, so uncertain == 0.)
     line_calls = {
-        "in": sum(1 for s in shots if s.call == "in"),
-        "out": sum(1 for s in shots if s.call == "out"),
+        "in": sum(1 for s in shots if s.call == "in" and getattr(s, "call_confident", True)),
+        "out": sum(1 for s in shots if s.call == "out" and getattr(s, "call_confident", True)),
+        "uncertain": sum(1 for s in shots if not getattr(s, "call_confident", True)),
     }
     return Stats(
         shot_count=len(shots),

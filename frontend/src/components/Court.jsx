@@ -197,6 +197,11 @@ export default function Court({ match, selectedRally, onSelectRally }) {
               <div>
                 <span className="dot dot-out" /> {match.stats.line_calls.out} out
               </div>
+              {(match.stats.line_calls.uncertain || 0) > 0 && (
+                <div title="Bounce too far from the camera to judge in/out — drawn hollow.">
+                  <span className="dot dot-uncertain" /> {match.stats.line_calls.uncertain} uncertain
+                </div>
+              )}
             </div>
           </div>
         ) : (

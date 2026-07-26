@@ -1429,7 +1429,15 @@ def _build_match_from_events(
         # it only for a well-observed, plausible GROUND shot; a validated physics arc
         # (below) re-confirms speed it actually measured.
         PLAUSIBLE_KMH = 160.0   # amateur ground strokes rarely exceed this on a phone
-        speed_confident = (real_fraction(h, land) >= 0.5 and real_landing
+        # Perspective amplification (the low-camera reality): where the court
+        # grazes the horizon, metres-per-pixel explodes, so a few px of ball
+        # jitter become decimetres and the average speed over that span is noise.
+        # A speed is trustworthy only if BOTH ends of the shot sit in the reliable
+        # (low metre/pixel) band - the same test the line call uses at the bounce.
+        hit_scale = scale_at(h)
+        scale_ok = (hit_scale is not None and hit_scale <= UNRELIABLE_SCALE
+                    and land_scale is not None and land_scale <= UNRELIABLE_SCALE)
+        speed_confident = (real_fraction(h, land) >= 0.5 and real_landing and scale_ok
                            and not p["is_serve"] and speed <= PLAUSIBLE_KMH)
         call_confident = (land_scale is not None and land_scale <= UNRELIABLE_SCALE
                           and real_landing)

@@ -639,8 +639,9 @@
       "backhand": 1
     },
     "line_calls": {
-      "in": 2,
-      "out": 0
+      "in": 0,
+      "out": 0,
+      "uncertain": 2
     },
     "distance_run_m": {
       "A": 64.2,

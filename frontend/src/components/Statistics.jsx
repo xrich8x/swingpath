@@ -84,6 +84,11 @@ export default function Statistics({ match }) {
               <div>
                 <span className="dot dot-out" /> Out — {s.line_calls.out} ({100 - inPct}%)
               </div>
+              {(s.line_calls.uncertain || 0) > 0 && (
+                <div title="Bounce landed in the far court, too perspective-amplified for a single camera to judge — excluded from in/out.">
+                  <span className="dot dot-uncertain" /> Uncertain — {s.line_calls.uncertain}
+                </div>
+              )}
             </div>
             <p className="muted">
               Speeds are average ball speed and read ~15–20% under a radar gun — expected,
