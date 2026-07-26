@@ -981,8 +981,47 @@ def detect_court_amateur(frame: np.ndarray, max_lines: int = 6,
 
 
 # --- Homography refinement (snap the overlay onto the real lines) ------------
+def _resolvability_weights(H0: np.ndarray, samples: np.ndarray,
+                           w: int, h: int) -> Optional[np.ndarray]:
+    """Weight each court-line sample by its MEASUREMENT PRECISION = 1 / (court
+    metres per image pixel) at its projection under H0.
+
+    This is proper weighted least squares: a court line near the horizon is
+    compressed into a few pixels, so a pixel of paint error there is many metres
+    and must not drag the fit; a line in the well-resolved near/mid court is
+    trustworthy and should drive the angle + depth (the user's own point — anchor
+    on the service/near lines you can actually see). On a well-framed elevated
+    clip near/far scale is similar, so the weights are ~uniform and this reduces
+    to the old equal-weight fit; on a low camera the crushed far court is
+    down-weighted automatically. Weights are computed ONCE from the seed H (the
+    bounded search moves corners <=60px, so the map stays valid) — cheap. Returns
+    None if H0 is degenerate."""
+    try:
+        proj = court_to_image(H0, samples)
+    except Exception:
+        return None
+    wts = np.empty(len(samples))
+    for i, p in enumerate(proj):
+        try:
+            wts[i] = 1.0 / max(court_scale_m_per_px(H0, p), 1e-3)
+        except Exception:
+            wts[i] = 0.0
+    if not (wts > 0).any():
+        return None
+    # Clip the weight RATIO to <=8x: pure 1/scale can span ~24x on a very low
+    # camera, which over-focuses on the near court and, on clips whose near paint
+    # is faint, latches onto the wrong near features (measured on the court gold
+    # set: capping at 8x gave the best aggregate — median 10.4->8.9px, worst-case
+    # fits >20px cut 40->30 — while uncapped/sqrt were worse). The far court is
+    # still down-weighted, just not ignored.
+    wmax = wts.max()
+    wts = np.clip(wts, wmax / 8.0, None)
+    m = wts.mean()
+    return wts / m if m > 0 else None
+
+
 def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: float = 35.0,
-                              boxes=None, mask_fn=None):
+                              boxes=None, mask_fn=None, resolvability_weight: bool = False):
     """Snap a rough 4-corner calibration onto the white lines — BOUNDED.
 
     The unbounded refine_homography collapses to degenerate solutions (it will
@@ -996,6 +1035,19 @@ def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: floa
     `mask_fn` selects the white-line detector (default white_line_mask, the
     tophat+Otsu classical one). Pass line_ridge_mask for amateur/indoor footage,
     where tophat+Otsu collapses — measured to snap rough clicks far tighter there.
+
+    `resolvability_weight` (default OFF): weight each projected line sample by its
+    measurement precision (1 / court-metres-per-pixel), so the well-resolved
+    near/mid court drives the fit and a crushed/horizon-grazing far court can't
+    drag it (see _resolvability_weights). Near the horizon a sub-pixel corner
+    error blows up to many pixels, so an equal-weight fit "rocks" — fitting the
+    near half OR the far half but not both; the precision weighting picks the
+    resolvable one. It is a TRADE-OFF, not a free win: on the court gold set it
+    improves the aggregate and fixes the worst low-camera fits but slightly
+    regresses a few well-framed clips, so it is OFF on the automatic pipeline
+    path (keeps the measured scorecard) and turned ON only by the interactive
+    Court Setup tool, where the user is looking at wide/low footage and confirms
+    the overlay by eye.
     """
     import cv2
     from scipy.optimize import minimize
@@ -1015,6 +1067,14 @@ def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: floa
     h, w = mask.shape
     samples = _sample_court_lines(step_m=0.3)
 
+    weights = None
+    if resolvability_weight:
+        try:
+            weights = _resolvability_weights(
+                compute_homography(court_pts, x0.reshape(-1, 2)), samples, w, h)
+        except Exception:
+            weights = None
+
     def cost(x):
         try:
             H = compute_homography(court_pts, x.reshape(-1, 2))
@@ -1026,7 +1086,13 @@ def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: floa
         inside = (pts[:, 0] >= -40) & (pts[:, 0] < w + 40) & (pts[:, 1] >= 0) & (pts[:, 1] < h)
         if inside.sum() < len(pts) * 0.5:
             return 25.0
-        return float(dt[ys[inside], xs[inside]].mean())
+        vals = dt[ys[inside], xs[inside]]
+        if weights is not None:
+            wv = weights[inside]
+            s = wv.sum()
+            if s > 0:
+                return float((vals * wv).sum() / s)
+        return float(vals.mean())
 
     bounds = [(v - max_move_px, v + max_move_px) for v in x0]
     res = minimize(cost, x0, method="Nelder-Mead", bounds=bounds,
@@ -1037,7 +1103,8 @@ def refine_homography_bounded(frame: np.ndarray, named_points, max_move_px: floa
 
 
 def snap_to_lines(frame: np.ndarray, named, *, min_coverage: float = 0.40,
-                  max_move_px: float = 30.0, mask_fn=None):
+                  max_move_px: float = 30.0, mask_fn=None,
+                  resolvability_weight: bool = False):
     """Snap a manual/auto court calibration onto the amateur white lines — GUARDED.
 
     Refines the four doubles corners so the projected court lines land on real
@@ -1050,6 +1117,10 @@ def snap_to_lines(frame: np.ndarray, named, *, min_coverage: float = 0.40,
     vs the input. So on surfaces whose lines the white-line mask can't see (clay:
     dusty orange paint), coverage stays low, the snap is REFUSED, and the caller's
     original clicks are returned unchanged (safe fallback to manual, as documented).
+
+    `resolvability_weight` weights the fit by measurement precision so the
+    well-resolved near/mid court drives it (see refine_homography_bounded); OFF by
+    default (used only by the interactive Court Setup tool).
 
     Returns (H, named_out, snapped: bool, cov_before, cov_after). On skip/refuse,
     named_out is the input `named` and H is built from it unchanged.
@@ -1068,7 +1139,8 @@ def snap_to_lines(frame: np.ndarray, named, *, min_coverage: float = 0.40,
     cov_before = court_line_coverage(frame, H_before, mask_fn=mf)[0]
     try:
         H_after, refined, _ = refine_homography_bounded(
-            frame, corners, max_move_px=max_move_px, mask_fn=mf)
+            frame, corners, max_move_px=max_move_px, mask_fn=mf,
+            resolvability_weight=resolvability_weight)
     except Exception:
         return H_before, named, False, cov_before, cov_before
     cov_after = court_line_coverage(frame, H_after, mask_fn=mf)[0]

@@ -8,6 +8,9 @@ regulation court. Two guarantees are tested:
      re-fitting the OUTPUT finds a ~0px camera residual.
 """
 
+import math
+
+import numpy as np
 import pytest
 
 pytest.importorskip("cv2")
@@ -50,3 +53,39 @@ def test_impossible_quad_is_corrected_to_a_legal_shape():
     res2 = ad.cam_fit_quad(locked, calibration, court, _W, _H)
     assert res2 is not None
     assert res2[2] < 1.5             # the output itself is a real camera shape
+
+
+# A mildly ROLLED camera (phone on a fence/tripod is only roughly level; a real
+# clip measured -1.1deg): (Cx, Cy, Cz, yaw, pitch, focal_px, roll_rad).
+_ROLLED_POSE = (court.DOUBLES_WIDTH / 2.0, -6.0, 4.0, 0.0, 0.3, 1100.0,
+                math.radians(2.5))
+
+
+def _rolled_quad():
+    q = ad._cam_corners(_ROLLED_POSE, _W, _H, court)
+    assert q is not None
+    return {k: [float(v[0]), float(v[1])] for k, v in q.items()}
+
+
+def _mean_corner_err(a, b):
+    return float(np.mean([math.hypot(a[k][0] - b[k][0], a[k][1] - b[k][1])
+                          for k in ad.DBL]))
+
+
+def test_trusted_lock_keeps_camera_roll():
+    """The overlay tool / pipeline lock is the TRUSTED path (allow_roll=True): a
+    real camera with a few degrees of mounting roll must be reproduced, not
+    flattened to roll=0. The roll-FROZEN candidate lock cannot express the roll,
+    so it drags the whole court off the true (on-paint) corners - exactly the
+    'corners are close but Snap won't lock onto the lines' bug on rolled clips.
+    """
+    q = _rolled_quad()   # the true, on-paint corners of a rolled camera
+    frozen, _m0, _f0 = ad.lock_quad(dict(q), calibration, court, _W, _H,
+                                    allow_roll=False)
+    rolled, _m1, _f1 = ad.lock_quad(dict(q), calibration, court, _W, _H,
+                                    allow_roll=True)
+    e_rolled = _mean_corner_err(rolled, q)
+    e_frozen = _mean_corner_err(frozen, q)
+    assert e_rolled < 1.5                 # roll expressed -> stays on the paint
+    assert e_frozen > 3.0                 # roll=0 cannot fit a rolled court
+    assert e_rolled < e_frozen / 3.0      # a large win, not a marginal one

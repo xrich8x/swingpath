@@ -30,6 +30,68 @@ sys.path.insert(0, str(REPO / "tools"))
 DBL = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"]
 
 
+def clean_plate_and_motion(video_path, n=80, span_s=60.0, start_frac=0.30):
+    """TEMPORAL FILTERING for the setup tool: a short-window median clean plate
+    plus an MTI (moving-target) mask.
+
+    The court is static and the players move, so the per-pixel MEDIAN across a
+    short window wipes players/ball/passing shadows off the court and leaves the
+    lines UNOCCLUDED — no player standing on the baseline we need to snap to.
+    The window must be SHORT (identical light + framing): medianing across a
+    whole match blends changing exposure/drift and FADES the lines (measured in
+    tools/eval_court_cleanplate.py). Alongside the plate we compute an MTI mask —
+    per-pixel temporal spread, so anything that MOVED is flagged — used to keep a
+    residual ghost (a player who lingered on a line) out of the snap's polish.
+
+    Returns (plate_bgr, static_mask_uint8) with static_mask==255 where stable, or
+    (None, None) if the clip is too short to build a plate (caller uses 1 frame).
+    """
+    import cv2
+    import numpy as np
+
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        return None, None
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    if total <= 0:
+        cap.release()
+        return None, None
+    start = int(total * start_frac)
+    span = min(int(span_s * fps), max(1, total - start - 1))
+    frames = []
+    for i in np.linspace(start, start + span, n).astype(int):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(i))
+        ok, im = cap.read()
+        if ok:
+            frames.append(im)
+    cap.release()
+    if len(frames) < 20:
+        return None, None
+    stack = np.stack(frames, axis=0)
+    plate = np.median(stack, axis=0).astype(np.uint8)
+    # MTI: flag the PLAYERS (compact, high-amplitude movers) so a ghost of a
+    # player who lingered on a line stays out of the snap. It must NOT flag
+    # diffuse background motion — swaying trees, drifting clouds, compression
+    # flicker, small camera shake — or it erodes the very lines we snap to (that
+    # over-masking made a real clip keep only 14% of its line pixels). So: a high
+    # temporal-std threshold, an open to drop speckle, and keep only LARGE
+    # connected components (a body, not leaves). The caller also guards its use.
+    gray = stack[..., :3].astype(np.float32).mean(axis=3)
+    moving = (gray.std(axis=0) > 30.0).astype(np.uint8)
+    moving = cv2.morphologyEx(
+        moving, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)))
+    num, lab, st, _ = cv2.connectedComponentsWithStats(moving, 8)
+    min_area = 0.0008 * gray.shape[1] * gray.shape[2]   # ~a player, not leaf specks
+    big = np.zeros_like(moving)
+    for i in range(1, num):
+        if st[i, cv2.CC_STAT_AREA] >= min_area:
+            big[lab == i] = 1
+    moving = cv2.dilate(big, cv2.getStructuringElement(cv2.MORPH_RECT, (11, 11)))
+    static = (1 - moving).astype(np.uint8) * 255
+    return plate, static
+
+
 def auto_fit(frame):
     """Auto-detect the court, snap it onto the lines, re-lock the shape to a real
     camera view (courtfit.auto_fit_frame — the same recipe the pipeline and the
@@ -38,6 +100,19 @@ def auto_fit(frame):
     use = courtfit.auto_fit_frame(frame, calibration, court)
     if use is None:
         return None
+    # auto_fit_frame locks roll-FROZEN (it is shared with the multi-frame consensus
+    # candidate path, where the confidence law needs roll=0). This seed is the
+    # tool's own trusted opening display, so re-lock it roll-ALLOWED and polish it
+    # onto the paint: a mildly rolled phone/fence camera then opens already ON the
+    # lines instead of a few px off (see lock_shape for the roll rationale).
+    h, w = frame.shape[:2]
+    try:
+        locked, _moved, _fit = courtfit.lock_quad(
+            use, calibration, court, w, h,
+            dt=courtfit.line_distance_map(frame, calibration), allow_roll=True)
+        use = locked
+    except Exception:
+        pass   # keep the roll-frozen seed if the trusted re-lock can't fit
     print("[setup] auto-fit court")
     return {k: [float(use[k][0]), float(use[k][1])] for k in DBL}
 
@@ -217,15 +292,42 @@ def build_handler(state):
     h, w = frame.shape[:2]
     ok, buf = cv2.imencode(".jpg", frame)
     jpg = buf.tobytes()
-    dt = ad.line_distance_map(frame, calibration)   # for Snap's polish stage
+
+    # Snap's polish samples this distance-to-line map. Build it from the plate's
+    # ridge mask with any MTI-flagged moving pixels removed, so a lingering player
+    # ghost can't pull the polish off the real paint (temporal filtering, cont.).
+    # GUARDED: the MTI mask is applied only if it keeps most of the line signal —
+    # if it would erase the paint (background motion leaking in), it is ignored,
+    # since the median plate already removed the movers. MTI can only help here.
+    static = state.get("static_mask")
+
+    def _ridge(f):
+        m = calibration.line_ridge_mask(f)
+        if static is not None and static.shape == m.shape:
+            masked = cv2.bitwise_and(m, static)
+            total = int((m > 0).sum())
+            if total and int((masked > 0).sum()) >= 0.60 * total:
+                return masked      # MTI trimmed a mover, kept the lines -> use it
+        return m                   # MTI too aggressive (or absent) -> plate only
+
+    dt = ad.line_distance_map(frame, calibration, mask_fn=_ridge)
 
     def corners_named(d):
         return {k: [float(d[k][0]), float(d[k][1])] for k in DBL}
 
     def lock_shape(named, use_dt=False):
-        """Closest physical camera view of the quad -> (corners, moved_px)."""
+        """Closest physical camera view of the quad -> (corners, moved_px).
+
+        TRUSTED path (allow_roll=True): the user placed/snapped these corners, so
+        the camera fit may use its bounded roll DOF. Phones and fence clips are
+        only ROUGHLY level - forcing roll=0 takes a correctly-snapped overlay and
+        shoves it OFF the paint (measured: ~1.6px at 1deg, ~5px at 2deg, ~10px at
+        3deg of camera roll). This mirrors courtfit.shape_lock and
+        pipeline.calibrate_video; only the auto-detect CANDIDATE search keeps roll
+        frozen (see courtfit.cam_fit_quad) - a different regime, don't confuse them."""
         locked, moved, _fit = ad.lock_quad(named, calibration, court, w, h,
-                                           dt=dt if use_dt else None)
+                                           dt=dt if use_dt else None,
+                                           allow_roll=True)
         return locked, moved
 
     class Handler(BaseHTTPRequestHandler):
@@ -270,9 +372,14 @@ def build_handler(state):
                 # keep any improvement (min_coverage=0 -> no absolute gate; the
                 # user is looking at the result). snap_court owns the
                 # white-then-clay retry policy; wider basin than the pipeline.
+                # resolvability_weight: weight the fit by measurement precision so
+                # the well-resolved near/mid court (service boxes, near baseline,
+                # sidelines) drives angle + depth and a crushed/horizon-grazing far
+                # court can't drag it off. This is the interactive path (the user
+                # confirms by eye); the automatic pipeline stays equal-weight.
                 _Hs, out, snapped, tag, c1 = ad.snap_court(
                     frame, named, calibration, court,
-                    min_coverage=0.0, max_move_px=60.0)
+                    min_coverage=0.0, max_move_px=60.0, resolvability_weight=True)
                 use = out if all(k in out for k in DBL) else named
                 # The corner-snap moves 4 corners independently — re-lock to a
                 # physical camera view (with the paint polish) before returning.
@@ -331,11 +438,16 @@ def load_frame(args):
             raise SystemExit(f"no frames in {d}")
         return cv2.imread(str(jpgs[len(jpgs) // 2]))
     if args.video:
+        # A MIDDLE frame (a rally, not the intro) — the plate below replaces this
+        # when temporal filtering is on; this is the single-frame fallback.
         cap = cv2.VideoCapture(args.video)
+        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+        if total > 1:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, total // 2)
         ok, im = cap.read()
         cap.release()
         if not ok:
-            raise SystemExit(f"cannot read first frame of {args.video}")
+            raise SystemExit(f"cannot read a frame of {args.video}")
         return im
     raise SystemExit("pass --clip, --frame, or --video")
 
@@ -344,16 +456,35 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--clip", help="gold clip id (uses a middle frame)")
     ap.add_argument("--frame", help="path to a single image")
-    ap.add_argument("--video", help="path to a video (uses the first frame)")
+    ap.add_argument("--video", help="path to a video (temporal clean plate by default)")
     ap.add_argument("--out", default="court_pts.json", help="where Save writes the keypoints")
     ap.add_argument("--no-auto", action="store_true",
                     help="skip the auto-detect+snap at startup (start from a plain overlay)")
+    ap.add_argument("--no-plate", action="store_true",
+                    help="skip the temporal clean plate for --video (use one raw frame)")
     ap.add_argument("--port", type=int, default=8770)
     ap.add_argument("--no-browser", action="store_true")
     args = ap.parse_args()
 
     frame = load_frame(args)
-    state = {"frame": frame, "out": args.out, "seed": None}
+    static_mask = None
+
+    # TEMPORAL FILTERING (default for --video): calibrate on a short-window median
+    # clean plate — players/ball wiped off, lines unoccluded — so the snap has the
+    # cleanest possible paint to lock onto. Falls back to one frame if too short.
+    if args.video and not args.no_plate:
+        print("[setup] building a temporal clean plate (players removed)...")
+        plate, static_mask = clean_plate_and_motion(args.video)
+        if plate is not None:
+            frame = plate
+            static_pct = 100.0 * float((static_mask > 0).mean())
+            print(f"[setup] clean plate ready; MTI marks {static_pct:.0f}% of the "
+                  "frame static (moving pixels kept out of the snap)")
+        else:
+            print("[setup] clip too short for a clean plate; using one frame")
+
+    state = {"frame": frame, "out": args.out, "seed": None,
+             "static_mask": static_mask}
 
     # Auto-fit on startup by default: detect the court, then snap it onto the lines,
     # so the overlay opens already fitted and the user only nudges if it's off.

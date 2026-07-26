@@ -889,7 +889,7 @@ class CourtWatchdog:
 
 
 def snap_court(frame, named, calibration, court, *,
-               min_coverage=0.40, max_move_px=30.0):
+               min_coverage=0.40, max_move_px=30.0, resolvability_weight=False):
     """Guarded corner snap with a CLAY retry.
 
     White/ridge lines first (the measured default). When that path REFUSES —
@@ -900,15 +900,22 @@ def snap_court(frame, named, calibration, court, *,
     stays bounded (+-max_move_px), so the worst it can do is tighten onto
     nearby clay texture; callers re-lock the shape afterwards regardless.
 
+    `resolvability_weight` (OFF by default) weights the fit by measurement
+    precision so the well-resolved near/mid court drives it — used by the
+    interactive Court Setup tool, not the automatic pipeline (see
+    calibration.refine_homography_bounded).
+
     Returns (H, named_out, snapped, tag, coverage) — tag "snap", "snap-clay",
     or None when both paths refused (named_out is then the input)."""
     H, out, snapped, _c0, c1 = calibration.snap_to_lines(
-        frame, named, min_coverage=min_coverage, max_move_px=max_move_px)
+        frame, named, min_coverage=min_coverage, max_move_px=max_move_px,
+        resolvability_weight=resolvability_weight)
     if snapped:
         return H, out, True, "snap", c1
     H2, out2, snapped2, _c0, c2 = calibration.snap_to_lines(
         frame, named, min_coverage=min_coverage, max_move_px=max_move_px,
-        mask_fn=lambda f: _clay_mask(f, calibration))
+        mask_fn=lambda f: _clay_mask(f, calibration),
+        resolvability_weight=resolvability_weight)
     if snapped2:
         return H2, out2, True, "snap-clay", c2
     return H, named, False, None, c1
