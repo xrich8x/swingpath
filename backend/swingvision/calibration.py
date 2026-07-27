@@ -193,6 +193,38 @@ def court_scale_m_per_px(H: np.ndarray, image_xy: Sequence[float]) -> float:
     return float(max(np.hypot(*(cx - c0)), np.hypot(*(cy - c0))))
 
 
+# 1 px of ball-centroid error beyond this many court-metres is too noisy to trust
+# for a speed or an in/out call. THE single source of truth for "reliable": the
+# analysis gates shot confidence on it (pipeline._build_match) and the Court Setup
+# tool reports how much of the court clears it, so the setup guidance and the
+# resulting match.json can never disagree about what counts as measurable.
+RELIABLE_SCALE_M_PER_PX = 0.09
+
+
+def reliable_court_span(H: np.ndarray, samples: int = 240) -> tuple[float, float]:
+    """How much of the court this camera can actually measure.
+
+    Walks the centre line from the near to the far baseline and asks, at each
+    depth, whether one pixel of error stays under RELIABLE_SCALE_M_PER_PX. Near
+    the horizon it does not (perspective amplification), so a low camera loses
+    the far half. Returns (fraction_of_court_depth, reliable_until_y_m) — the
+    honest "how much of the court will this setup actually measure" number the
+    framing guide shows.
+    """
+    ys = np.linspace(0.0, court.LENGTH, samples)
+    good, until = 0, 0.0
+    for y in ys:
+        p = court_to_image(H, [(court.DOUBLES_WIDTH / 2.0, float(y))])[0]
+        try:
+            ok = court_scale_m_per_px(H, p) <= RELIABLE_SCALE_M_PER_PX
+        except Exception:
+            ok = False
+        if ok:
+            good += 1
+            until = max(until, float(y))
+    return good / len(ys), until
+
+
 def reprojection_error(
     H: np.ndarray,
     court_points: Sequence[Sequence[float]],

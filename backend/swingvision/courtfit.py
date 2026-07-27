@@ -921,6 +921,90 @@ def snap_court(frame, named, calibration, court, *,
     return H, named, False, None, c1
 
 
+# --- Setup guidance (the SwingVision-style framing check) -------------------
+# Two questions a user can actually act on, kept separate because the fixes are
+# different: "can I SEE the court properly?" (framing - move/aim/zoom) and "is my
+# ANGLE good enough?" (height - remount higher). Both are measured, never guessed.
+CAM_H_LOW, CAM_H_GOOD = 2.0, 2.5      # metres above the court plane
+CAM_H_MAX = 15.0                       # above this the fit is not a real amateur mount
+
+
+def setup_verdict(frame, named, calibration, court):
+    """Grade a court setup for the user: view + angle, each with plain-English fixes.
+
+    `named` is the current {corner: [x, y]} placement. Returns a JSON-ready dict:
+      view  = {level good|warn|poor, corners_visible, centrality, coverage, msg}
+      angle = {level, height_m, hfov_deg, roll_deg, reliable_frac, reliable_to_m, msg}
+    'reliable_frac' is the share of the court this camera can actually MEASURE
+    (calibration.reliable_court_span) - the number that turns "mount it higher"
+    from an opinion into a measurement.
+    """
+    h, w = frame.shape[:2]
+    quad = {k: [float(named[k][0]), float(named[k][1])] for k in DBL}
+    H = calibration.homography_from_landmarks(quad)
+
+    # --- view: is the court properly in frame? (existing measured grader) ---
+    fr = calibration.framing_report(frame, H)
+    view_msgs = [m for m in fr.messages if not m.startswith("Framing looks good")]
+    view = {"level": fr.level, "corners_visible": int(fr.corners_visible),
+            "centrality": round(float(fr.centrality), 2),
+            "coverage": round(float(fr.coverage), 2),
+            "msg": (view_msgs[0] if view_msgs else
+                    "Whole court in frame, centred, lines clear.")}
+
+    # --- angle: how much of the court can this camera actually measure? ---
+    fit = cam_fit_quad(quad, calibration, court, w, h, allow_roll=True)
+    frac, until = calibration.reliable_court_span(H)
+    angle = {"reliable_frac": round(float(frac), 3),
+             "reliable_to_m": round(float(until), 1)}
+    if fit is None:
+        angle.update(level="poor", height_m=None, hfov_deg=None, roll_deg=None,
+                     msg="This shape isn't a real camera's view of a court - "
+                         "re-place the corners.")
+        return {"view": view, "angle": angle}
+
+    cam = fit[3]
+    Cz = abs(float(cam[2]))
+    angle.update(height_m=round(Cz, 2),
+                 hfov_deg=round(calibration.hfov_from_focal(cam[5], w), 0),
+                 roll_deg=round(math.degrees(cam[6] if len(cam) > 6 else 0.0), 1))
+    pct = int(round(frac * 100))
+    net_y = float(court.NET_Y)
+
+    # Grade on the MEASURED reach, not on height alone. Height is only a proxy:
+    # the reliable span also depends on how far back the camera sits, the lens,
+    # and the RESOLUTION (720p resolves far less court than 1080p). Never claim
+    # the far half is covered unless the span actually passes the net - saying
+    # "good, includes the far half" at an 8.8 m reach would be a plain lie.
+    if Cz > CAM_H_MAX:
+        angle.update(level="poor",
+                     msg=f"Implied camera height {Cz:.0f} m isn't a real mount - "
+                         "check the corner placement.")
+        return {"view": view, "angle": angle}
+
+    reach = (f"reliable to ~{until:.0f} m of {court.LENGTH:.0f} m "
+             f"({'past' if until >= net_y else 'short of'} the net at {net_y:.0f} m)")
+    if until >= court.LENGTH * 0.85:
+        angle.update(level="good",
+                     msg=f"Strong angle ({Cz:.1f} m): ~{pct}% of the court is "
+                         f"measurable - {reach}.")
+    elif until >= net_y:
+        angle.update(level="good",
+                     msg=f"Good angle ({Cz:.1f} m): ~{pct}% measurable, {reach}. "
+                         "Both service boxes are covered.")
+    elif Cz < CAM_H_LOW:
+        angle.update(level="poor",
+                     msg=f"Camera is low ({Cz:.1f} m): only ~{pct}% of the court is "
+                         f"measurable, {reach}. Raise it to ~2.5 m+ behind the "
+                         "baseline; beyond that, calls and speeds are marked uncertain.")
+    else:
+        angle.update(level="warn",
+                     msg=f"Usable ({Cz:.1f} m) but only ~{pct}% of the court is "
+                         f"measurable, {reach}. Higher and/or further back (or a "
+                         "tighter lens) extends it past the net.")
+    return {"view": view, "angle": angle}
+
+
 def auto_fit_frame(frame, calibration, court):
     """The full single-frame recipe: line-fit autodetect -> guarded corner snap
     -> physical shape re-lock. Returns {corner:[x,y]} or None (no lock)."""

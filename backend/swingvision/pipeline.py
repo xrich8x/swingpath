@@ -1281,8 +1281,10 @@ def _build_match_from_events(
     from . import analytics, calibration, events
 
     # 1 px of ball-centroid error beyond this many court-metres is too noisy to
-    # trust for speed / an in-or-out call (~ the far-baseline band on a baseline cam).
-    UNRELIABLE_SCALE = 0.09
+    # trust for speed / an in-or-out call (~ the far-baseline band on a baseline
+    # cam). Shared with the Court Setup framing guide, which tells the user how
+    # much of the court clears this same bar - one definition of "reliable".
+    UNRELIABLE_SCALE = calibration.RELIABLE_SCALE_M_PER_PX
 
     players = [Player(id="A", name="Player A (near)"), Player(id="B", name="Player B (far)")]
     shots: list[Shot] = []
