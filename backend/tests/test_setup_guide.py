@@ -103,6 +103,36 @@ def test_never_claims_far_half_when_span_stops_short_of_the_net():
             assert "past the net" in msg
 
 
+def test_advice_stays_within_a_reachable_mount():
+    """Realism guard: a phone tripod is ~1.5 m and a fence clamp ~2.5-3 m, so the
+    guide must never tell someone to MOUNT at a height they cannot reach. Only the
+    advice is checked - factual text ("1.4 m up", "24 m") legitimately has numbers."""
+    import re
+    mount_tips = [t for t in courtfit._setup_tips(Cz=1.4, back_m=6.0, frame_w=1920)
+                  if "fence" in t or "tripod" in t or "clamp" in t]
+    assert mount_tips, "a low camera should get a mount tip"
+    for t in mount_tips:
+        for h in re.findall(r"([\d.]+)\s*m\b", t):
+            assert float(h) <= 3.0, f"advises an unreachable mount height: {t}"
+    assert any("fence" in t for t in mount_tips)     # the realistic lever
+
+
+def test_low_resolution_is_called_out_first():
+    """For someone stuck low, resolution is the cheapest big win (measured: 720p
+    17% vs 4K 48% at 1.5 m / 6 m back), so it must lead the advice."""
+    tips = courtfit._setup_tips(Cz=1.5, back_m=6.0, frame_w=1280)
+    assert tips and "resolution" in tips[0]
+    assert not any("resolution" in t for t in
+                   courtfit._setup_tips(Cz=1.5, back_m=6.0, frame_w=3840))
+
+
+def test_step_back_only_suggested_when_actually_close():
+    assert any("further back" in t for t in
+               courtfit._setup_tips(Cz=2.0, back_m=1.0, frame_w=1920))
+    assert not any("further back" in t for t in
+                   courtfit._setup_tips(Cz=2.0, back_m=6.0, frame_w=1920))
+
+
 def test_setup_gate_matches_the_analysis_gate():
     """The framing guide and the shot-confidence gate must use ONE definition of
     reliable, or the setup advice would contradict the resulting match.json."""

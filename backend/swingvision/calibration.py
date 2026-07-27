@@ -918,13 +918,20 @@ def framing_report(frame: np.ndarray, H: np.ndarray, *,
     msgs: list[str] = []
     if n_vis < 4:
         off = ", ".join(_CORNER_PRETTY[n] for n, ok in visible.items() if not ok)
-        msgs.append(f"Corner(s) off-screen: {off} - zoom out or reposition so the "
-                    f"whole court is in the frame.")
+        # "Zoom out" is the wrong instinct: a wider lens fits the court by making
+        # it SMALLER, which costs measurable court (a 110deg lens measures ~half
+        # what a 60deg one does from the same spot). Stepping back fits the same
+        # court without throwing away resolution.
+        msgs.append(f"Corner(s) off-screen: {off} - step further back behind the "
+                    f"baseline so the whole court fits, rather than switching to a "
+                    f"wider/ultrawide lens.")
     if cen < min_centrality:
         msgs.append("Court is off-centre - aim the camera at the middle of the court.")
     if elev < min_elevation:
-        msgs.append("Camera looks low/flat - mount it higher (~5 ft, behind the "
-                    "baseline) so the far half isn't crushed.")
+        # Realistic mounts only: a fence clamp (~2.5 m) is the practical ceiling,
+        # a standing tripod is ~1.5 m. Never advise a height nobody can reach.
+        msgs.append("Camera looks low/flat - if you can, clamp it to the fence "
+                    "(~2.5 m) rather than a standing tripod, and stand further back.")
     if cov < min_coverage:
         msgs.append("Court lines are hard to detect - set the corners manually, or "
                     "improve lighting/framing.")

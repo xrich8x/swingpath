@@ -928,6 +928,35 @@ def snap_court(frame, named, calibration, court, *,
 CAM_H_LOW, CAM_H_GOOD = 2.0, 2.5      # metres above the court plane
 CAM_H_MAX = 15.0                       # above this the fit is not a real amateur mount
 
+# REALISTIC MOUNTS ONLY. A phone tripod stands ~1.5 m; a fence clamp reaches
+# ~2.5-3 m. Nobody mounts at 5 m, so advice above CAM_H_REACHABLE is useless and
+# we never give it. Measured sweep (lens framed to fit the court, reliable span):
+#   1.5 m tripod, 6 m back : 720p 17% | 1080p 27% | 1440p 35% | 4K 48%
+#   2.5 m fence,  6 m back, 4K : 71%   (10 m back: 80%, reaching 19 m)
+# So the big levers for someone stuck low are RESOLUTION and STEPPING BACK, not
+# height - stepping back also has an optimum (~4-6 m at 1.5 m high; further is
+# worse), because the court shrinks in frame faster than perspective flattens.
+CAM_H_REACHABLE = 2.6      # a fence clamp; do not advise above this
+BACK_MIN_M = 3.0           # closer than this and stepping back is the easy win
+RES_MIN_W = 1920           # below 1080p, resolution is the cheapest fix there is
+
+
+def _setup_tips(Cz, back_m, frame_w):
+    """Prioritised, ACHIEVABLE fixes for a setup that can't measure enough court.
+    Ordered by (free and effective) first: resolution, distance, then height."""
+    tips = []
+    if frame_w < RES_MIN_W:
+        tips.append(f"record at a higher resolution (this is {frame_w}px wide - "
+                    "1080p or 4K roughly doubles the measurable court, and it's free)")
+    if back_m is not None and back_m < BACK_MIN_M:
+        tips.append(f"stand further back (~{BACK_MIN_M:.0f}-6 m behind the baseline, "
+                    f"currently ~{back_m:.0f} m) and zoom in so the court still fills "
+                    "the frame")
+    if Cz < CAM_H_REACHABLE:
+        tips.append("clamp the phone to the fence (~2.5 m) instead of a standing "
+                    "tripod (~1.5 m)")
+    return tips
+
 
 def setup_verdict(frame, named, calibration, court):
     """Grade a court setup for the user: view + angle, each with plain-English fixes.
@@ -984,24 +1013,28 @@ def setup_verdict(frame, named, calibration, court):
 
     reach = (f"reliable to ~{until:.0f} m of {court.LENGTH:.0f} m "
              f"({'past' if until >= net_y else 'short of'} the net at {net_y:.0f} m)")
+    back_m = abs(float(cam[1])) if cam[1] < 0 else None   # metres behind the baseline
+    angle["back_m"] = round(back_m, 1) if back_m is not None else None
+    tips = _setup_tips(Cz, back_m, w)
+    fix = (" Best fixes: " + "; ".join(tips) + ".") if tips else ""
+
     if until >= court.LENGTH * 0.85:
         angle.update(level="good",
-                     msg=f"Strong angle ({Cz:.1f} m): ~{pct}% of the court is "
+                     msg=f"Strong setup ({Cz:.1f} m): ~{pct}% of the court is "
                          f"measurable - {reach}.")
     elif until >= net_y:
         angle.update(level="good",
-                     msg=f"Good angle ({Cz:.1f} m): ~{pct}% measurable, {reach}. "
+                     msg=f"Good setup ({Cz:.1f} m): ~{pct}% measurable, {reach}. "
                          "Both service boxes are covered.")
     elif Cz < CAM_H_LOW:
         angle.update(level="poor",
-                     msg=f"Camera is low ({Cz:.1f} m): only ~{pct}% of the court is "
-                         f"measurable, {reach}. Raise it to ~2.5 m+ behind the "
-                         "baseline; beyond that, calls and speeds are marked uncertain.")
+                     msg=f"Only ~{pct}% of the court is measurable from here "
+                         f"({Cz:.1f} m up), {reach}; past that, calls and speeds are "
+                         f"marked uncertain.{fix}")
     else:
         angle.update(level="warn",
                      msg=f"Usable ({Cz:.1f} m) but only ~{pct}% of the court is "
-                         f"measurable, {reach}. Higher and/or further back (or a "
-                         "tighter lens) extends it past the net.")
+                         f"measurable, {reach}.{fix}")
     return {"view": view, "angle": angle}
 
 
