@@ -133,6 +133,28 @@ def test_step_back_only_suggested_when_actually_close():
                    courtfit._setup_tips(Cz=2.0, back_m=6.0, frame_w=1920))
 
 
+def test_stepping_back_is_never_presented_as_mandatory():
+    """A fence is often right behind the baseline, and a phone user can always
+    zoom out. Measured: 4K ultrawide 2 m back (35%, 8.3 m) BEATS 1080p normal 6 m
+    back (27%, 6.3 m) - so a wider lens is a legitimate answer, never a mistake,
+    and the step-back tip must offer zooming out as the alternative."""
+    tips = courtfit._setup_tips(Cz=1.5, back_m=1.5, frame_w=1280)
+    back_tip = [t for t in tips if "further back" in t]
+    assert back_tip and "zoom out" in back_tip[0]
+    # resolution leads, because it is what pays for the wider lens
+    assert "resolution" in tips[0]
+
+
+def test_offscreen_corner_advice_allows_zooming_out():
+    """Getting all four corners in frame outranks lens width: an extrapolated
+    corner is worse than a wider view."""
+    Hm, corners = _cam(1.5, _f(40))          # tight lens: corners fall outside
+    frame = _draw(Hm)
+    v = courtfit.setup_verdict(frame, corners, C, court)
+    if v["view"]["corners_visible"] < 4:
+        assert "zoom out" in v["view"]["msg"]
+
+
 def test_setup_gate_matches_the_analysis_gate():
     """The framing guide and the shot-confidence gate must use ONE definition of
     reliable, or the setup advice would contradict the resulting match.json."""

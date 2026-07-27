@@ -928,33 +928,43 @@ def snap_court(frame, named, calibration, court, *,
 CAM_H_LOW, CAM_H_GOOD = 2.0, 2.5      # metres above the court plane
 CAM_H_MAX = 15.0                       # above this the fit is not a real amateur mount
 
-# REALISTIC MOUNTS ONLY. A phone tripod stands ~1.5 m; a fence clamp reaches
+# REALISTIC SETUPS ONLY. A phone tripod stands ~1.5 m; a fence clamp reaches
 # ~2.5-3 m. Nobody mounts at 5 m, so advice above CAM_H_REACHABLE is useless and
 # we never give it. Measured sweep (lens framed to fit the court, reliable span):
 #   1.5 m tripod, 6 m back : 720p 17% | 1080p 27% | 1440p 35% | 4K 48%
 #   2.5 m fence,  6 m back, 4K : 71%   (10 m back: 80%, reaching 19 m)
-# So the big levers for someone stuck low are RESOLUTION and STEPPING BACK, not
-# height - stepping back also has an optimum (~4-6 m at 1.5 m high; further is
-# worse), because the court shrinks in frame faster than perspective flattens.
+#   STUCK 2 m from the fence, 1.5 m high (needs the 0.5x ultrawide to fit):
+#     720p 17% | 1080p 22% | 4K 35%   -- and 4K-ultrawide-up-close (35%, 8.3 m)
+#     BEATS 1080p-normal-stepped-back (27%, 6.3 m).
+# So RESOLUTION is the dominant free lever: it more than pays for a wide lens.
+# Zooming out to fit the court is fine - a phone user can always do that, and an
+# off-frame corner (extrapolated) is worse than a wider view. Stepping back is a
+# bonus when there is room, and has an optimum (~4-6 m at 1.5 m; further is worse).
 CAM_H_REACHABLE = 2.6      # a fence clamp; do not advise above this
-BACK_MIN_M = 3.0           # closer than this and stepping back is the easy win
+BACK_ROOMY_M = 3.0         # beyond this, stepping back is no longer the easy win
 RES_MIN_W = 1920           # below 1080p, resolution is the cheapest fix there is
 
 
 def _setup_tips(Cz, back_m, frame_w):
     """Prioritised, ACHIEVABLE fixes for a setup that can't measure enough court.
-    Ordered by (free and effective) first: resolution, distance, then height."""
+
+    Ordered by payoff-per-effort. Resolution leads because it is free, works from
+    wherever you are standing, and measurably beats repositioning (see the sweep
+    above) - crucially it also buys back what the 0.5x ultrawide costs, so a user
+    penned in behind the baseline is never stuck.
+    """
     tips = []
     if frame_w < RES_MIN_W:
         tips.append(f"record at a higher resolution (this is {frame_w}px wide - "
-                    "1080p or 4K roughly doubles the measurable court, and it's free)")
-    if back_m is not None and back_m < BACK_MIN_M:
-        tips.append(f"stand further back (~{BACK_MIN_M:.0f}-6 m behind the baseline, "
-                    f"currently ~{back_m:.0f} m) and zoom in so the court still fills "
-                    "the frame")
+                    "1080p or 4K roughly doubles the measurable court, it's free, "
+                    "and it more than pays for zooming out to fit the court in)")
     if Cz < CAM_H_REACHABLE:
         tips.append("clamp the phone to the fence (~2.5 m) instead of a standing "
                     "tripod (~1.5 m)")
+    if back_m is not None and back_m < BACK_ROOMY_M:
+        tips.append(f"if you have room, stand a few metres further back "
+                    f"(~4-6 m behind the baseline, currently ~{back_m:.0f} m); if a "
+                    "fence is behind you, just zoom out instead")
     return tips
 
 

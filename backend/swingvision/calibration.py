@@ -918,13 +918,15 @@ def framing_report(frame: np.ndarray, H: np.ndarray, *,
     msgs: list[str] = []
     if n_vis < 4:
         off = ", ".join(_CORNER_PRETTY[n] for n, ok in visible.items() if not ok)
-        # "Zoom out" is the wrong instinct: a wider lens fits the court by making
-        # it SMALLER, which costs measurable court (a 110deg lens measures ~half
-        # what a 60deg one does from the same spot). Stepping back fits the same
-        # court without throwing away resolution.
-        msgs.append(f"Corner(s) off-screen: {off} - step further back behind the "
-                    f"baseline so the whole court fits, rather than switching to a "
-                    f"wider/ultrawide lens.")
+        # Getting all four corners in frame is non-negotiable (off-frame corners
+        # are extrapolated), so use whatever it takes - the phone's 0.5x ultrawide
+        # is a legitimate answer when a fence is right behind you. A wider lens
+        # does cost resolution, but RECORDING RESOLUTION more than pays it back:
+        # measured, 4K ultrawide 2 m back beats 1080p normal 6 m back (35% vs 27%
+        # of the court measurable). Step back only if you happen to have room.
+        msgs.append(f"Corner(s) off-screen: {off} - zoom out (the 0.5x ultrawide is "
+                    f"fine) or step back until all four corners are in frame, then "
+                    f"record at the highest resolution your phone offers.")
     if cen < min_centrality:
         msgs.append("Court is off-centre - aim the camera at the middle of the court.")
     if elev < min_elevation:
