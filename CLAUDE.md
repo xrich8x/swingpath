@@ -205,7 +205,16 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   chain (it had been scoring the retired live-ball filter), far-court is reported as
   both `far_px` and `far_geo`, and train_ballnet's gold guard is derived from
   data/gold manifests (the old `--exclude indoor_elev` default matched no directory
-  and had been protecting nothing). 166 tests.
+  and had been protecting nothing). Detector baseline on merged code (ballnet_v21,
+  vs human clicks, 1201 ball frames): pooled recall 69.4%, far_px 68.8%, far_geo
+  72.5%, false-fire 34.8%. MEASURED NEGATIVE: depth-aware smoothing (scale the
+  Kalman's process noise by the local m/px) is NOT a lever — median-referenced is
+  worse (false-fire 19->27%), tighten-only is +1.2pt far / -0.8pt overall / 5% less
+  jerk, inside noise. Kept off by default with the numbers in the docstring.
+  CAVEAT on far_geo: it is "the part of the clip we cannot measure in", and on a low
+  camera that is most of the frame (am_hard_utr: 141 of 175 clicks), so it reads
+  ABOVE overall recall there. Only compare it between clips of similar measurable
+  depth. 167 tests.
 
 ## Conventions
 
