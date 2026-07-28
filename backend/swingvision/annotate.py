@@ -198,31 +198,23 @@ def render_match_video(
         H_frames = [_cam_row_to_A(row) @ H for row in cam]
         H_frames += [H_frames[-1] if H_frames else H] * (n_all - len(H_frames))
 
-    # Prefer the CLEANED court track (off-court/teleport detections already nulled)
-    # projected back to image — so a far-court false lock can't draw the ball in the
-    # crowd. `real` marks frames backed by a kept detection: solid marker near real
-    # evidence, a faded GHOST marker across short interpolated gaps (the ball hasn't
-    # gone anywhere — we just missed a few blurry frames), nothing on long gaps.
-    if ball_court is not None and H is not None:
-        sm_c = smooth_and_fill([tuple(p) if p else None for p in ball_court], window=7, polyorder=2)
-        sm = np.array([calibration.court_to_image(H_frames[i], [sm_c[i]])[0]
-                       for i in range(len(sm_c))]) if len(sm_c) else np.zeros((0, 2))
-        real = [p is not None for p in ball_court]
-    else:
-        sm = smooth_and_fill([tuple(p) if p else None for p in ball_px], window=7, polyorder=2)
-        real = [p is not None for p in ball_px]
+    # Ball overlay comes straight from the SMOOTHED image track (ball.smooth_forecast):
+    # denoised real detections + the short gaps it interpolated, with long / dead-time
+    # gaps left empty. We draw it directly in image pixels — NOT reprojected from the
+    # court track and NOT re-smoothed. Both of those (the old path) go wrong: a second
+    # smooth_and_fill overshoots and re-fills the gaps the smoother intentionally
+    # dropped, and reprojection through an imperfect calibration throws the dot across
+    # the frame — either way the trail draws long lines through the court. `ball_coasted`
+    # marks an interpolated frame -> faded GHOST; a real detection -> solid; None ->
+    # nothing (the ball is genuinely gone, so is the marker).
+    ball_coasted = perception.get("ball_coasted") or [False] * n_all
+    sm = np.array([[np.nan, np.nan] if p is None else [float(p[0]), float(p[1])]
+                   for p in ball_px], float)
+    present = [p is not None for p in ball_px]
+    real = [present[i] and not ball_coasted[i] for i in range(n_all)]
+    ghost = [present[i] and ball_coasted[i] for i in range(n_all)]
     n_f = len(sm)
-    drawable = [any(real[j] for j in range(max(0, i - 2), min(n_f, i + 3))) for i in range(n_f)]
-    # Ghost: inside an interpolated gap of <= GAP_MAX frames bounded by real
-    # detections on both sides (so the interpolation is anchored, not a guess).
-    GAP_MAX = 8
-    ghost = [False] * n_f
-    real_idx = [i for i in range(n_f) if real[i]]
-    for a, b in zip(real_idx, real_idx[1:]):
-        if 1 < b - a <= GAP_MAX:
-            for j in range(a + 1, b):
-                if not drawable[j]:
-                    ghost[j] = True
+    drawable = real
 
     # Map each shot to its processed-frame index + a label.
     labels: dict[int, tuple[str, str, bool, bool]] = {}
@@ -274,18 +266,19 @@ def render_match_video(
                         thick = 2 if (drawable[k] and drawable[k - 1]) else 1
                         cv2.line(frame, (int(sm[k - 1, 0]), int(sm[k - 1, 1])),
                                  (int(sm[k, 0]), int(sm[k, 1])), BALL_COLOR, thick, cv2.LINE_AA)
-                bx, by = int(sm[proc, 0]), int(sm[proc, 1])
-                if drawable[proc]:
-                    cv2.circle(frame, (bx, by), 7, BALL_COLOR, 2, cv2.LINE_AA)
-                elif ghost[proc]:
-                    cv2.circle(frame, (bx, by), 6, BALL_COLOR, 1, cv2.LINE_AA)
-                if proc in labels and drawable[proc]:
-                    st, spd, is_in, call_conf = labels[proc]
-                    col = IN_COLOR if is_in else OUT_COLOR
-                    cv2.circle(frame, (bx, by), 16, col, 3, cv2.LINE_AA)
-                    tag = f"{st}  {spd}  {'IN' if is_in else 'OUT'}{'' if call_conf else '?'}"
-                    cv2.putText(frame, tag, (bx + 20, by), cv2.FONT_HERSHEY_SIMPLEX,
-                                0.7, col, 2, cv2.LINE_AA)
+                if present[proc]:
+                    bx, by = int(sm[proc, 0]), int(sm[proc, 1])
+                    if drawable[proc]:
+                        cv2.circle(frame, (bx, by), 7, BALL_COLOR, 2, cv2.LINE_AA)
+                    elif ghost[proc]:
+                        cv2.circle(frame, (bx, by), 6, BALL_COLOR, 1, cv2.LINE_AA)
+                    if proc in labels and drawable[proc]:
+                        st, spd, is_in, call_conf = labels[proc]
+                        col = IN_COLOR if is_in else OUT_COLOR
+                        cv2.circle(frame, (bx, by), 16, col, 3, cv2.LINE_AA)
+                        tag = f"{st}  {spd}  {'IN' if is_in else 'OUT'}{'' if call_conf else '?'}"
+                        cv2.putText(frame, tag, (bx + 20, by), cv2.FONT_HERSHEY_SIMPLEX,
+                                    0.7, col, 2, cv2.LINE_AA)
                 # Shot chart owns the top-left; filename moves to the top-right.
                 n_vis = sum(1 for f0 in chart_fis if f0 <= proc)
                 _draw_shot_chart(frame, chart_shots[:n_vis],

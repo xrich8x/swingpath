@@ -32,7 +32,8 @@
       "Bash(curl -s \"https://raw.githubusercontent.com/yastrebksv/TrackNet/main/infer_on_video.py\")",
       "Bash(curl -s \"https://raw.githubusercontent.com/yastrebksv/TrackNet/main/general.py\")",
       "Bash(tail -6 \"C:/Users/richm/AppData/Local/Temp/claude/E--Claude-Outputs-Cowork-Tasks-Swing-Vision/cf49ba9e-92cd-43d1-ac36-637f2d70db3d/tasks/bmyojmgzc.output\")",
-      "Bash(tail -6 \"C:/Users/richm/AppData/Local/Temp/claude/E--Claude-Outputs-Cowork-Tasks-Swing-Vision/cf49ba9e-92cd-43d1-ac36-637f2d70db3d/tasks/bddgo8ecw.output\")"
+      "Bash(tail -6 \"C:/Users/richm/AppData/Local/Temp/claude/E--Claude-Outputs-Cowork-Tasks-Swing-Vision/cf49ba9e-92cd-43d1-ac36-637f2d70db3d/tasks/bddgo8ecw.output\")",
+      "Bash(./backend/.venv-train/Scripts/python.exe tools/eval_ball_predictor.py --weights data/output/synth/ballpred_rally2/best.pt --p0 net)"
     ]
   }
 }

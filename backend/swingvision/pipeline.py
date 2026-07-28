@@ -1257,19 +1257,54 @@ def analyze_video(
     # pixels per frame at 60 as at 30).
     ball_px = ball_mod.rectify_track(ball_px, max_speed_px=3000.0 / fps_eff,
                                      resid_px=35.0)
-    # Offline live-ball pass (E3e). The per-frame gates judge one detection at a
-    # time; this judges each contiguous locked RUN as a whole and drops the ones
-    # that never behave like a struck ball. It is the counterweight to the now
-    # height-aware court gate: measured on the yt_rally2 gold labels, opening that
-    # gate took recall 49.2% -> 72.9% but doubled no-ball false fires to 46.2%,
-    # and this pass puts them back to 23.1% while keeping far-court recall at
-    # 66.7% (hit@10 71.3%). Net vs the previous release: +22 points of recall at
-    # identical false-fire.
-    n_before = sum(p is not None for p in ball_px)
-    ball_px = ball_mod.filter_live_ball(ball_px, homography=H_metric)
-    n_after = sum(p is not None for p in ball_px)
-    print(f"[analyze] live-ball filter: {n_before} -> {n_after} locks "
-          f"({n_before - n_after} dropped)")
+    # Image-space false-lock suppression (E5+). Two recall-safe kinematic tests —
+    # a lock that holds still is a fixture; a lock that never forms a multi-frame
+    # trajectory is a mislock on a moving player. Both stay in pixels, so the
+    # monocular z-ambiguity that makes the court gate useless in the far court
+    # (real far ball and fixture project to overlapping court coords) never
+    # enters. Measured on yt_rally2 gold: no-ball false-fire 61.5% -> 15.4% at a
+    # 3.9-pt recall cost — catches the persistent far-band fixture runs the
+    # per-frame static gate and the live-ball court test both let through.
+    n_before_sup = sum(p is not None for p in ball_px)
+    ball_px = ball_mod.suppress_false_locks(ball_px, fps_eff=fps_eff)
+    print(f"[analyze] false-lock suppression: {n_before_sup} -> "
+          f"{sum(p is not None for p in ball_px)} locks")
+    # Court-region gate (E5+): drop locks that fall outside the main court's IMAGE
+    # region — the ball tracked on an adjacent court. Image-space, because a real
+    # airborne far ball's z=0 court projection overlaps an adjacent court, so
+    # court-space can't separate them (measured). Needs calibration; a clip with no
+    # homography keeps every lock.
+    if H is not None:
+        n_gate = sum(p is not None for p in ball_px)
+        ball_px = ball_mod.gate_ball_to_court(ball_px, H, (width, height))
+        print(f"[analyze] court-region gate: {n_gate} -> "
+              f"{sum(p is not None for p in ball_px)} locks")
+    # NOTE (E5+): the offline live-ball filter (ball_mod.filter_live_ball) used to
+    # run here. It is now RETIRED from the pipeline — superseded by
+    # suppress_false_locks above. Re-measured on both calibrated gold clips
+    # (fresh, current code) it adds ~0 false-fire reduction once the persistence +
+    # min-segment passes have run, and costs real recall: its flicker test keys off
+    # an absolute image-pixel displacement, which discriminates against far-court
+    # balls (they legitimately move only a few px/frame), and its off-court test
+    # projects to the ground plane — meaningless for an airborne far ball, whose
+    # z=0 projection scatters across the whole court (measured: real far balls span
+    # court-y -229..+1667 m, overlapping the false locks completely). Pooled effect
+    # of keeping it: false-fire 6.0% -> 4.0% but recall 50.2% -> 40.5%. The 2-point
+    # precision gain is not worth 10 points of recall. The function + its unit
+    # tests are kept for reference and for any future recall-aware revival.
+    #
+    # Kalman smooth + forecast (E5+): the detector loses the ball mid-flight and its
+    # per-frame locks jitter. A constant-acceleration Kalman filter + RTS smoother
+    # (ball.smooth_forecast) denoises the real detections and forecasts through gaps
+    # with one ballistic model — no kink where a fill meets a detection, outliers
+    # gated by innovation, and a reset at hits so corners stay sharp. `ball_coasted`
+    # flags forecast frames (dim them, keep out of speed/bounce); remaining gaps at
+    # segment boundaries are bridged by smooth_and_fill downstream. Supersedes the
+    # per-gap polyfit coast_fill (kept in the module for reference/tests).
+    ball_px, ball_coasted, ball_kconf = ball_mod.smooth_forecast(ball_px, fps_eff=fps_eff)
+    print(f"[analyze] kalman smooth+forecast: "
+          f"{sum(1 for p in ball_px if p is not None)} frames visible "
+          f"({sum(ball_coasted)} forecast, flagged low-confidence)")
     ball_court_raw: list[Optional[list[float]]] = []
     ball_conf: list[Optional[float]] = []
     for i, px in enumerate(ball_px):
@@ -1380,6 +1415,7 @@ def analyze_video(
         # already rejected), not the raw image detections — otherwise a far-court
         # false lock draws the ball flying into the crowd.
         perception = {"ball_px": ball_px, "ball_court": ball_court_raw,
+                      "ball_coasted": ball_coasted,
                       "near_kpts": near_kpts, "far_kpts": far_kpts,
                       "cam_motion": cam_motion}
         annotate_mod.render_match_video(video_path, H, perception, match, ann_path,

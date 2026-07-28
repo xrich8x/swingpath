@@ -24,6 +24,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
 
 CLIPS = [
+    ("am_hard_utr", "data/am_hard_utr.mp4"),   # NEW 1080p gold (primary)
     ("gold_shell", "data/gold_shell.mp4"),
     ("gold_clay", "data/gold_clay.mp4"),
     ("gold_am", "data/gold_am.mp4"),
@@ -32,11 +33,13 @@ CLIPS = [
 ]
 
 
-def score_clip(det, video, labels, radius=10.0, far_y=260.0):
+def score_clip(det, video, labels, radius=10.0, far_frac=0.36):
     gold = {int(k): v for k, v in json.loads(Path(labels).read_text(encoding="utf-8"))["labels"].items()}
     ball = {f: v for f, v in gold.items() if v.get("ball") and not v.get("unsure")}
     noball = {f: v for f, v in gold.items() if v.get("ball") is False and not v.get("unsure")}
     cap = cv2.VideoCapture(str(video))
+    # far-court band as a fraction of frame height, so 720p and 1080p are comparable
+    far_y = far_frac * (cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 720.0)
     hit = tot = fhit = ftot = fp = ftt = 0
     want = sorted(set(ball) | set(noball))
     for f in want:

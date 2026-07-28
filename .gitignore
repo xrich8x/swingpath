@@ -15,6 +15,9 @@ backend/weights/*.pth.tar
 !backend/weights/ballnet.pt
 !backend/weights/ballnet_v0.pt
 !backend/weights/ballnet_v2.pt
+!backend/weights/ballnet_pre_visweighted.pt
+!backend/weights/ballnet_v21.pt
+!backend/weights/ballnet_v3.pt
 !backend/weights/courtnet_ft.pt
 !backend/weights/courtnet_ft_v0_notready.pt
 
@@ -41,6 +44,10 @@ data/output/*
 !data/output/fps/
 !data/output/fps/*.json
 data/output/fps/*.png
+# Re-including the fps/ directory above also un-ignored the rendered videos it
+# holds (46 MB of *.annotated.mp4). Videos stay ignored one level down too —
+# they are regenerable from the JSON caches with `run.py analyze --annotate`.
+data/output/fps/*.mp4
 # ...and the one evidence image from the 2026-07-05 regression investigation.
 !data/output/regression_diff.jpg
 data/*.mp4
@@ -57,6 +64,9 @@ data/court_dataset/
 # tools/select_gold_frames.py --extract-only; the manifest + labels JSON in
 # data/gold/ ARE committed — they are the human benchmark, HANDOFF §8 fix 1.4)
 data/gold/frames/
+
+# Throwaway probe scripts from a working session (a real tool belongs in tools/)
+scratchpad/
 
 # Editor / OS
 .DS_Store

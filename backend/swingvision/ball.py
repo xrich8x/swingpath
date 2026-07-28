@@ -271,6 +271,347 @@ def filter_live_ball(
     return out
 
 
+def suppress_false_locks(
+    positions: Sequence[Optional[Sequence[float]]],
+    *,
+    fps_eff: float = 30.0,
+    static_radius_px: float = 12.0,
+    static_dur_s: float = 0.20,
+    seg_step_px: Optional[float] = None,
+    seg_dur_s: float = 0.15,
+) -> list[Optional[list[float]]]:
+    """Recall-safe, image-space removal of false ball locks (E5+).
+
+    Both tests come from one physical fact: a real ball is ALWAYS moving across
+    the screen; a fixture (burned-in HUD, net post, line marker, logo) is not, and
+    a mislock on a player/racket flares for only a few frames without ever forming
+    a trajectory. Neither test touches the court projection, so the monocular
+    z-ambiguity that makes the court gate a no-op in the far court (a real far
+    ball and a fixture project to the same overlapping court coords — measured)
+    never enters here.
+
+      - persistence: a lock that stays within `static_radius_px` for
+        `static_dur_s` seconds of consecutive processed frames is a fixture. The
+        online static-lock gate keys off a per-frame step threshold and misses a
+        lock that creeps sub-threshold; this catches the whole slow-drifting run.
+      - min-segment: a lock must belong to a run of >= `seg_dur_s` seconds of
+        consecutive locks each within `seg_step_px` of the previous (a
+        ball-plausible trajectory). A 1-4 frame excursion that never forms a
+        track — a mislock jumping around a moving player — is dropped.
+
+    Durations scale to fps (a fixture is static for a TIME, not a frame count).
+    Measured on the yt_rally2 gold labels: no-ball false-fire 61.5% -> 15.4% at a
+    3.9-point recall cost (47.7% -> 43.8%). Survivors are in-court mislocks that
+    only a more precise detector removes. Persistence runs first so fixtures can't
+    chain into a real segment and mask the min-segment test.
+    """
+    out: list[Optional[list[float]]] = [
+        None if p is None else [float(p[0]), float(p[1])] for p in positions
+    ]
+    n = len(out)
+    static_run = max(4, round(static_dur_s * fps_eff))
+    seg_len = max(3, round(seg_dur_s * fps_eff))
+    step = seg_step_px if seg_step_px is not None else 6600.0 / max(fps_eff, 1.0)
+
+    # persistence: wipe any run held within static_radius_px for static_run frames
+    i = 0
+    while i < n:
+        if out[i] is None:
+            i += 1
+            continue
+        j = i + 1
+        while j < n and out[j] is not None \
+                and np.hypot(out[j][0] - out[i][0], out[j][1] - out[i][1]) <= static_radius_px:
+            j += 1
+        if j - i >= static_run:
+            for k in range(i, j):
+                out[k] = None
+        i = j
+
+    # min-segment: keep only ball-plausible trajectory runs of >= seg_len frames
+    keep = [False] * n
+    i = 0
+    while i < n:
+        if out[i] is None:
+            i += 1
+            continue
+        j = i + 1
+        while j < n and out[j] is not None \
+                and np.hypot(out[j][0] - out[j - 1][0], out[j][1] - out[j - 1][1]) <= step:
+            j += 1
+        if j - i >= seg_len:
+            for k in range(i, j):
+                keep[k] = True
+        i = j
+    for k in range(n):
+        if not keep[k]:
+            out[k] = None
+    return out
+
+
+def coast_fill(
+    positions: Sequence[Optional[Sequence[float]]],
+    *,
+    fps_eff: float = 30.0,
+    max_arc_gap_s: float = 0.40,
+    hit_reversal_px: float = 8.0,
+    win: int = 4,
+) -> tuple[list[Optional[list[float]]], list[bool]]:
+    """Fill interior track gaps by COASTING along the ball's arc, not a straight
+    line (physics, not ML). Between two locks the ball is ballistic, so a degree-2
+    fit x(t), y(t) through the surrounding locks follows the real parabola where a
+    straight line floats. Returns (filled, coasted) — `coasted[k]` marks every
+    frame we GUESSED (no detection), so the renderer can dim it and speed/bounce
+    logic can refuse to trust it.
+
+    Honesty rules baked in:
+      - only gaps up to `max_arc_gap_s` seconds are arc-coasted; the fit is only
+        trustworthy over a short flight. Longer gaps still get filled so the ball
+        doesn't vanish, but with a conservative straight line (an arc extrapolated
+        over ~1 s swings wildly), and every filled frame is flagged coasted.
+      - a gap where the ball's horizontal velocity REVERSES is a hit/bounce inside
+        the gap — the arc changes there, so we fall back to a straight line rather
+        than coast a single parabola through the corner.
+      - edge gaps (missing a lock on one side) are left empty: with nothing to
+        anchor one end, any guess is unbounded.
+    """
+    out: list[Optional[list[float]]] = [
+        None if p is None else [float(p[0]), float(p[1])] for p in positions
+    ]
+    n = len(out)
+    coasted = [False] * n
+    max_arc = max(2, round(max_arc_gap_s * fps_eff))
+
+    def fill_linear(a, b):
+        for k in range(a + 1, b):
+            t = (k - a) / (b - a)
+            out[k] = [positions[a][0] + t * (positions[b][0] - positions[a][0]),
+                      positions[a][1] + t * (positions[b][1] - positions[a][1])]
+            coasted[k] = True
+
+    i = 0
+    while i < n:
+        if positions[i] is None:
+            i += 1
+            continue
+        j = i + 1
+        while j < n and positions[j] is None:
+            j += 1
+        if j >= n:                       # trailing edge gap: no right anchor
+            break
+        L = j - i - 1
+        if L <= 0:
+            i = j
+            continue
+        left = [k for k in range(max(0, i - win + 1), i + 1) if positions[k] is not None]
+        right = [k for k in range(j, min(n, j + win)) if positions[k] is not None]
+        pre_v = positions[i][0] - positions[left[0]][0] if len(left) >= 2 else 0.0
+        post_v = positions[right[-1]][0] - positions[j][0] if len(right) >= 2 else pre_v
+        reversal = pre_v * post_v < 0 and (abs(pre_v) > hit_reversal_px or abs(post_v) > hit_reversal_px)
+        anchors = left + right
+        if L <= max_arc and len(anchors) >= 3 and not reversal:
+            ts = np.asarray(anchors, float)
+            px = np.polyfit(ts, [positions[k][0] for k in anchors], 2)
+            py = np.polyfit(ts, [positions[k][1] for k in anchors], 2)
+            for k in range(i + 1, j):
+                out[k] = [float(np.polyval(px, k)), float(np.polyval(py, k))]
+                coasted[k] = True
+        else:
+            fill_linear(i, j)            # long gap or a hit inside it: straight line
+        i = j
+    return out, coasted
+
+
+def gate_ball_to_court(
+    positions: Sequence[Optional[Sequence[float]]],
+    homography,
+    img_wh: Sequence[float],
+    *,
+    runoff_m: float = 3.0,
+    top_extra_px: float = 220.0,
+    side_extra_px: float = 120.0,
+) -> list[Optional[list[float]]]:
+    """Reject ball locks that fall OUTSIDE the main court's IMAGE region — the ball
+    tracked on an adjacent court. Court-SPACE gating can't do this: a real airborne
+    far ball's ground (z=0) projection scatters as far sideways as an adjacent court
+    (measured on gold — real far balls reach court-x 32), so it overlaps the very
+    thing we want to reject. Image space separates them: the doubles court + runoff
+    projects to a trapezoid, a ball a few metres above the court appears inside it or
+    just above its far edge (the airborne band), and anything left/right of that band
+    is on another court.
+
+    Needs a valid homography (returns the input unchanged without one — an amateur
+    clip with no calibration keeps every lock). Measured on yt_rally2 with the
+    CORRECT calibration: keeps ~97% of real balls (97% far-court) while dropping the
+    adjacent-court locks. top/side_extra_px are tuned for 1280x720 — scale for other
+    resolutions.
+    """
+    out: list[Optional[list[float]]] = [
+        None if p is None else [float(p[0]), float(p[1])] for p in positions
+    ]
+    if homography is None:
+        return out
+    import cv2
+
+    from . import calibration, court as _court
+    ro = runoff_m
+    poly_m = [(-ro, -ro), (_court.DOUBLES_WIDTH + ro, -ro),
+              (_court.DOUBLES_WIDTH + ro, _court.LENGTH + ro), (-ro, _court.LENGTH + ro)]
+    poly = np.array([calibration.court_to_image(homography, [p])[0] for p in poly_m],
+                    np.float32).reshape(-1, 1, 2)
+    far_y = float(min(poly[2, 0, 1], poly[3, 0, 1]))
+    lx = float(min(poly[2, 0, 0], poly[3, 0, 0])) - side_extra_px
+    rx = float(max(poly[2, 0, 0], poly[3, 0, 0])) + side_extra_px
+    for i, p in enumerate(out):
+        if p is None:
+            continue
+        on = cv2.pointPolygonTest(poly, (p[0], p[1]), False) >= 0
+        if not on:                              # airborne band just above the far edge
+            on = (far_y - top_extra_px) < p[1] < far_y and lx <= p[0] <= rx
+        if not on:
+            out[i] = None
+    return out
+
+
+def _ca_transition() -> np.ndarray:
+    """Constant-acceleration state transition for one axis at dt=1: p+=v+a/2, v+=a."""
+    return np.array([[1.0, 1.0, 0.5], [0.0, 1.0, 1.0], [0.0, 0.0, 1.0]])
+
+
+def _ca_process(sigma_jerk: float) -> np.ndarray:
+    """Continuous white-noise-jerk process covariance for one axis at dt=1."""
+    return (sigma_jerk ** 2) * np.array([[1/20, 1/8, 1/6],
+                                         [1/8, 1/3, 1/2],
+                                         [1/6, 1/2, 1.0]])
+
+
+def smooth_forecast(
+    positions: Sequence[Optional[Sequence[float]]],
+    *,
+    fps_eff: float = 30.0,
+    meas_var: float = 25.0,
+    sigma_jerk: float = 1.0,
+    gate_chi2: float = 13.8,
+    reset_after: int = 3,
+    max_gap_s: float = 0.4,
+) -> tuple[list[Optional[list[float]]], list[bool], list[float]]:
+    """Smooth AND forecast the ball track with one physics model — a constant-
+    acceleration Kalman filter + RTS (forward-backward) smoother in image pixels.
+
+    Supersedes per-gap polyfit coasting: a single ballistic model governs the whole
+    track, so noisy detections are DENOISED, gaps are FORECAST by the same model
+    (no kink where a fill meets a detection), outlier locks are GATED OUT by their
+    innovation, and the posterior covariance yields a per-frame confidence that
+    decays the longer the ball is unseen.
+
+    Hits/bounces (a sharp direction change) would otherwise be rounded by one
+    smooth arc, so they trigger a RESET: `reset_after` consecutive gated detections
+    (the model is stale) start a new segment, and the RTS pass never bridges across
+    a reset — corners stay sharp.
+
+    Only INTERPOLATION is emitted: a denoised detection, or a gap of at most
+    `max_gap_s` seconds bounded by an accepted detection on BOTH sides. Forward /
+    backward EXTRAPOLATION past a segment's outermost detections is dropped — that
+    is where a constant-acceleration model runs away off-screen and paints a
+    phantom ball through dead time. When the ball is genuinely gone, so is the dot.
+
+    Returns (smoothed, coasted, confidence): `smoothed[i]` is (x, y) or None,
+    `coasted[i]` marks interpolated frames (no detection — dim it and keep it out
+    of speed/bounce), `confidence[i]` in [0, 1].
+
+    Tuned on 1280x720@30fps gold + demo footage (meas_var=25 -> ~5px detector
+    noise; sigma_jerk=1.0): jerkiness 9.9 -> 5.6 px/frame^2 at -1.6 pt hit@10.
+    """
+    n = len(positions)
+    out: list[Optional[list[float]]] = [None] * n
+    coasted = [False] * n
+    conf = [0.0] * n
+    if n == 0:
+        return out, coasted, conf
+
+    F = np.zeros((6, 6)); F[:3, :3] = _ca_transition(); F[3:, 3:] = _ca_transition()
+    Q = np.zeros((6, 6)); Q[:3, :3] = _ca_process(sigma_jerk); Q[3:, 3:] = _ca_process(sigma_jerk)
+    Hm = np.zeros((2, 6)); Hm[0, 0] = 1.0; Hm[1, 3] = 1.0
+    R = np.eye(2) * meas_var
+    I6 = np.eye(6)
+    max_gap = max(2, round(max_gap_s * fps_eff))
+
+    def seed(z):
+        s = np.array([z[0], 0.0, 0.0, z[1], 0.0, 0.0])
+        C = np.diag([meas_var, 400.0, 100.0, meas_var, 400.0, 100.0])
+        return s, C
+
+    seg_id = [-1] * n
+    xf: list = [None] * n; Pf: list = [None] * n     # posterior
+    xp: list = [None] * n; Pp: list = [None] * n     # prior
+    used = [False] * n
+    x = P = None; seg = 0; miss = 0; rej = 0
+
+    for i in range(n):
+        z = positions[i]
+        if x is None:                       # (re)acquire on the next detection
+            if z is not None:
+                x, P = seed(z)
+                xp[i], Pp[i], xf[i], Pf[i] = x.copy(), P.copy(), x.copy(), P.copy()
+                used[i] = True; seg_id[i] = seg
+            continue
+        x = F @ x; P = F @ P @ F.T + Q
+        xp[i], Pp[i] = x.copy(), P.copy()
+        accept = False
+        if z is not None:
+            y = np.array([z[0], z[1]]) - Hm @ x
+            S = Hm @ P @ Hm.T + R
+            if float(y @ np.linalg.solve(S, y)) <= gate_chi2:
+                K = P @ Hm.T @ np.linalg.inv(S)
+                x = x + K @ y; P = (I6 - K @ Hm) @ P
+                accept = True; rej = 0; miss = 0
+            else:
+                rej += 1
+        if not accept:
+            miss += 1
+        used[i] = accept
+        xf[i], Pf[i] = x.copy(), P.copy(); seg_id[i] = seg
+        if rej >= reset_after or miss >= max_gap:
+            x = P = None; seg += 1; rej = 0; miss = 0
+            if z is not None and accept is False and rej == 0:  # re-seed on this lock
+                x, P = seed(z)
+                xp[i], Pp[i], xf[i], Pf[i] = x.copy(), P.copy(), x.copy(), P.copy()
+                used[i] = True; seg_id[i] = seg
+
+    # RTS smoother, within each segment only (never across a reset)
+    xs = [None if xf[i] is None else xf[i].copy() for i in range(n)]
+    Ps = [None if Pf[i] is None else Pf[i].copy() for i in range(n)]
+    for i in range(n - 2, -1, -1):
+        if xf[i] is None or xs[i + 1] is None or seg_id[i] != seg_id[i + 1] or Pp[i + 1] is None:
+            continue
+        C = Pf[i] @ F.T @ np.linalg.inv(Pp[i + 1])
+        xs[i] = xf[i] + C @ (xs[i + 1] - xp[i + 1])
+        Ps[i] = Pf[i] + C @ (Ps[i + 1] - Pp[i + 1]) @ C.T
+
+    def emit(i, is_coast):
+        out[i] = [float(xs[i][0]), float(xs[i][3])]
+        coasted[i] = is_coast
+        pv = float(Ps[i][0, 0] + Ps[i][3, 3]) if Ps[i] is not None else 0.0
+        conf[i] = 1.0 / (1.0 + pv / (4.0 * meas_var))
+
+    # Interpolation only: every accepted detection, plus gaps <= max_gap frames that
+    # are bounded by an accepted detection on both sides within one segment. Leading/
+    # trailing extrapolation (a segment's forecast tail) is never emitted.
+    accepted_by_seg: dict[int, list[int]] = {}
+    for i in range(n):
+        if used[i] and seg_id[i] >= 0 and xs[i] is not None:
+            accepted_by_seg.setdefault(seg_id[i], []).append(i)
+    for U in accepted_by_seg.values():
+        for u in U:
+            emit(u, False)
+        for a, b in zip(U, U[1:]):
+            if 1 < (b - a) <= max_gap + 1:
+                for k in range(a + 1, b):
+                    if xs[k] is not None:
+                        emit(k, True)
+    return out, coasted, conf
+
+
 def _interp_nan(a: np.ndarray) -> np.ndarray:
     """Linearly interpolate NaNs in a 1-D array; edge-fill the ends."""
     idx = np.arange(len(a))
@@ -401,18 +742,26 @@ class OurBallDetector:
 
         from ._ballnet import BallNet
 
-        # Weights precedence: explicit arg > BALLNET_WEIGHTS env > default v1.
-        # The env hook lets a benchmark run point at ballnet_v2.pt without
-        # touching the shipped ballnet.pt or the pipeline call chain; the
-        # chosen file is recorded in the perception-cache provenance below.
-        weights = weights or os.environ.get("BALLNET_WEIGHTS", "weights/ballnet.pt")
+        # Weights precedence: explicit arg > BALLNET_WEIGHTS env > shipped default.
+        # Default is the hard-negative model ballnet_v21.pt (E5+): measured through
+        # the tracker + suppress_false_locks on the two calibrated gold clips it
+        # roughly halves no-ball false-fire vs ballnet.pt (pooled 14% -> 6%) at
+        # flat pooled recall (51.8% -> 50.2%) — precision the tracker turns into
+        # cleaner tracks. The env hook still points a benchmark at any weight file
+        # without touching the pipeline call chain; the file is recorded in the
+        # perception-cache provenance below.
+        weights = weights or os.environ.get("BALLNET_WEIGHTS", "weights/ballnet_v21.pt")
         torch.set_num_threads(os.cpu_count() or torch.get_num_threads())
         self.device = device
         self.weights_path = weights   # recorded in the perception-cache provenance
         self.score_thresh = score_thresh
-        self.model = BallNet()
         ckpt = torch.load(weights, map_location=device, weights_only=False)
-        self.model.load_state_dict(ckpt["model_state_dict"], strict=True)
+        sd = ckpt["model_state_dict"]
+        # A v4+ (motion-attention) checkpoint carries the motion-prompt params; build
+        # the matching arch so plain v3/v21 checkpoints still load unchanged.
+        motion = any(k.startswith("motion.") for k in sd)
+        self.model = BallNet(motion_attention=motion)
+        self.model.load_state_dict(sd, strict=True)
         self.model.eval().to(device)
         self._buf: deque = deque(maxlen=3)
         self.last_sub = None   # best sub-threshold response (tracker rescue)

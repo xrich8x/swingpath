@@ -212,6 +212,9 @@ def main():
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--exclude", nargs="*", default=["indoor_elev"],
                     help="dataset dirs to skip (default: the gold benchmark clip)")
+    ap.add_argument("--motion-attention", action="store_true", dest="motion_attention",
+                    help="TrackNetV4-style learnable motion attention (frame-diff gate) "
+                         "in BallNet — for the v4 model")
     args = ap.parse_args()
 
     train_ds = BallWindows(args.data, "train", exclude=args.exclude)
@@ -224,9 +227,10 @@ def main():
                           pin_memory=(args.device == "cuda"))
     val_ld = DataLoader(val_ds, batch_size=args.batch, num_workers=2)
 
-    model = BallNet().to(args.device)
+    model = BallNet(motion_attention=args.motion_attention).to(args.device)
     n_par = sum(p.numel() for p in model.parameters())
-    print(f"BallNet params: {n_par/1e6:.2f}M")
+    print(f"BallNet params: {n_par/1e6:.2f}M"
+          f"{' (+motion-attention)' if args.motion_attention else ''}")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs)
     # reduction='none' so we can weight each sample by its visibility (OCC_WEIGHT for

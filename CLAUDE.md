@@ -139,6 +139,46 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   negatives were the wrong negatives; v2.1 needs HARD negatives (HUD/adjacent/
   edges) + a far-court recipe (sharper input, real far labels). Not "more
   epochs". weights/ballnet_v2.pt shipped as baseline; v1 kept for reference.
+- Session E5+ (2026-07-25): FALSE-ALARM reduction, measured on the 2 calibrated
+  gold clips (tools/eval_model_filters.py, fresh runs). THREE things. (1) The
+  court+vertical gate is a proven DEAD END for false alarms: a real airborne far
+  ball and a fixture project to overlapping court coords (real far balls span
+  court-y -229..+1667 m), so no court envelope separates them without wiping far
+  recall. (2) NEW ball.suppress_false_locks — two recall-safe image-space tests
+  (persistence run-in-radius; min-segment length; a real ball never holds still
+  and always forms a multi-frame track). Wired into pipeline after rectify_track;
+  calibration-free so it helps every clip incl. amateur. (3) The live-ball filter
+  is RETIRED from the pipeline (function+tests kept): net-negative once suppress
+  runs (its image-px flicker + z=0 off-court tests punish far balls). Net pooled:
+  no-ball false-fire 14% -> 6.0% at flat recall (51.8 -> 50.2). ballnet_v21.pt
+  (hard negatives) is now the DEFAULT detector (was ballnet.pt) — only affects
+  calibrated clips. Stale-cache lesson: the old 50-67% figures were from a cache
+  built at an old commit; always re-perceive. NOT yet committed (branch work).
+- Session E5+ smoothing+forecast (2026-07-25): the detector loses the ball
+  mid-flight and its per-frame locks jitter ("janky"). ball.smooth_forecast is now
+  the pipeline smoother/forecaster — a constant-acceleration KALMAN FILTER + RTS
+  (forward-backward) smoother in image pixels: denoises real detections, forecasts
+  through gaps with one ballistic model (no kink at fill/detection boundaries),
+  gates outlier locks by innovation, and RESETS at hits (sustained gated frames ->
+  new segment; RTS never bridges a reset, so corners stay sharp). Returns
+  (smoothed, coasted mask, confidence). Tuned meas_var=25 (~5px), sigma_jerk=1.0:
+  demo30 jerkiness 9.9 -> 4.1 px/frame^2 (2.4x smoother) at -1.6pt gold hit@10.
+  Wired into pipeline replacing the earlier ball.coast_fill (kept in module +
+  tested). CRITICAL FIX after first cut: the CA model EXTRAPOLATED past the last
+  detection -> ran off-screen ("insane") and painted a phantom ball through dead
+  time (gold no-ball false-fire +9). smooth_forecast now emits ONLY interpolation:
+  denoised detections + gaps <= max_gap_s(0.4s) bounded by a detection on BOTH
+  sides; no forward/backward extrapolation. Off-frame 6->0, phantoms +9->+1.
+  Also: annotate.py now draws the ball straight from the smoothed image-space
+  ball_px + the coasted flag (ghost=interpolated), NOT reprojected/re-smoothed
+  from the court track (reprojection through an imperfect H threw the trail across
+  the frame). And overlay.draw_court now CLIPS court lines at the horizon (w<=0 /
+  off-frame) — a low camera put the far baseline past infinity and drew stray
+  lines to the corners (seen on demo30 AND yt_rally2). Verified end-to-end:
+  run.py analyze yt_rally2 --annotate -> clean ball trail + court overlay, avg
+  70 / top 95 km/h. demo30's manual corners are DEGENERATE (0.2 m camera, floored
+  speeds) — that clip needs re-calibration. amber/coasted still to be excluded
+  from speed/bounce (finishing step). 148 tests. NOT yet committed.
 
 ## Conventions
 
@@ -197,3 +237,10 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
 - Bounce detection is a single-camera heuristic (no true height) — improving it
   is a known open task, not a bug.
 - Calibration quality + a fixed camera dominate accuracy more than model choice.
+- CALIBRATION FILES: some committed `data/*_pts.json` are DEGENERATE (corners
+  swapped / near-baseline at top of frame / camera height <2 m) and silently break
+  the court overlay + ball gating. KNOWN BAD: yt_court_pts_doubles.json,
+  yt_court_pts_refined.json, demo30_pts.json. KNOWN GOOD: yt_rally2_pts.json,
+  yt_match40_pts.json, yt_court_pts.json. ALWAYS validate a corners file before use:
+  `tools/validate_new_clip.py --audit data/<clip>_pts.json` (checks camera height
+  2-15 m, orientation, no horizon-crossing). demo30 needs re-calibration.

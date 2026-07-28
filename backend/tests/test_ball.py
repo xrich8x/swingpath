@@ -1,5 +1,7 @@
 """Trajectory smoothing: gap filling and denoising (ball.smooth_and_fill)."""
 
+import math
+
 import numpy as np
 import pytest
 
@@ -221,6 +223,153 @@ def test_filter_live_ball_offcourt():
     out = filter_live_ball(on + [None] + off, homography=H)
     assert out[0:6] == on, "an on-court moving run must be kept"
     assert all(p is None for p in out[7:13]), "an off-court run is dropped"
+
+
+def test_suppress_false_locks_persistent_fixture():
+    """A lock that holds still for >=0.2s of frames is a fixture (HUD/net post):
+    the whole slow-drifting run is wiped, while a real moving ball is kept."""
+    from swingvision.ball import suppress_false_locks
+
+    ball = [[100.0 + 20 * i, 200.0 + 8 * i] for i in range(8)]      # clear trajectory
+    fixture = [[600.0 + 0.4 * i, 50.0 - 0.3 * i] for i in range(10)]  # creeps <12px
+    out = suppress_false_locks(ball + [None] + fixture, fps_eff=30.0)
+    assert out[0:8] == ball, "a moving ball run must survive"
+    assert all(p is None for p in out[9:19]), "a persistent near-static run is wiped"
+
+
+def test_suppress_false_locks_short_excursion():
+    """A 1-3 frame mislock that never forms a >=0.15s trajectory is dropped;
+    a sustained ball-plausible segment is kept."""
+    from swingvision.ball import suppress_false_locks
+
+    ball = [[100.0 + 25 * i, 300.0 - 6 * i] for i in range(7)]      # 7-frame track
+    blip = [[900.0, 80.0], [40.0, 500.0]]                          # 2-frame jumpy blip
+    out = suppress_false_locks(ball + [None] + blip, fps_eff=30.0)
+    assert out[0:7] == ball, "a sustained ball segment must survive"
+    assert all(p is None for p in out[8:10]), "a 2-frame chaotic blip is dropped"
+
+
+def test_suppress_false_locks_scales_with_fps():
+    """The static duration is a TIME, not a frame count: at 60fps it takes twice
+    as many frames to call a lock a fixture."""
+    from swingvision.ball import suppress_false_locks
+
+    fixture = [[500.0, 100.0] for _ in range(7)]   # 7 identical frames
+    # 0.2s = 6 frames at 30fps -> the 7-frame static run is a fixture, wiped. The
+    # moving tail starts well away from the fixture so it forms its own segment.
+    moving = [[800.0 + 30 * i, 400.0 + 30 * i] for i in range(12)]
+    at30 = suppress_false_locks(fixture + moving, fps_eff=30.0)
+    assert all(p is None for p in at30[0:7]), "static run wiped at 30fps"
+    assert at30[7:] == moving, "moving tail kept"
+
+
+def test_coast_fill_follows_the_arc():
+    """A mid-flight gap is filled along the ball's parabola, not a straight line:
+    on data that IS a parabola the coast recovers it near-exactly, far closer than
+    linear interpolation would."""
+    from swingvision.ball import coast_fill
+
+    true = [[10.0 * t, 2.0 * (t - 10) ** 2 + 100.0] for t in range(21)]
+    gap = {7, 8, 9, 10, 11, 12, 13}                      # 7-frame gap, anchors 6 & 14
+    track = [None if t in gap else list(true[t]) for t in range(21)]
+    filled, coasted = coast_fill(track, fps_eff=30.0)
+    assert math.dist(filled[10], true[10]) < 3.0, "arc-coast should recover the parabola"
+    # a straight chord between anchors 6 and 14 floats ~32px above the true apex
+    lin_y = true[6][1] + (true[14][1] - true[6][1]) * (10 - 6) / (14 - 6)
+    assert abs(lin_y - true[10][1]) > 10.0, "sanity: linear really is far off here"
+    assert coasted[10] is True and coasted[6] is False
+
+
+def test_coast_fill_flags_guessed_frames():
+    from swingvision.ball import coast_fill
+
+    track = [[0.0, 0.0], [10.0, 5.0], None, None, [40.0, 20.0], [50.0, 25.0]]
+    filled, coasted = coast_fill(track, fps_eff=30.0)
+    assert all(p is not None for p in filled), "interior gap gets filled"
+    assert coasted == [False, False, True, True, False, False]
+
+
+def test_coast_fill_linear_fallback_across_a_hit():
+    """Horizontal velocity reverses inside the gap (a hit/bounce) -> don't coast a
+    single parabola through the corner; fall back to a straight line."""
+    from swingvision.ball import coast_fill
+
+    track = [[0.0, 50.0], [10.0, 40.0], [20.0, 30.0], None, None, None,
+             [20.0, 30.0], [10.0, 40.0], [0.0, 50.0]]
+    filled, coasted = coast_fill(track, fps_eff=30.0)
+    # linear between [20,30] and [20,30] stays put; a parabola fit to the reversing
+    # anchors would bulge sideways. Assert it did NOT bulge.
+    assert abs(filled[4][0] - 20.0) < 1.0 and abs(filled[4][1] - 30.0) < 1.0
+    assert coasted[4] is True
+
+
+def test_coast_fill_leaves_edge_gaps_empty():
+    """A gap with no anchor on one side is unbounded -> left empty, not guessed."""
+    from swingvision.ball import coast_fill
+
+    lead = coast_fill([None, None, [10.0, 10.0], [20.0, 12.0]], fps_eff=30.0)[0]
+    assert lead[0] is None and lead[1] is None
+    trail = coast_fill([[10.0, 10.0], [20.0, 12.0], None, None], fps_eff=30.0)[0]
+    assert trail[2] is None and trail[3] is None
+
+
+def test_smooth_forecast_denoises_and_preserves_line():
+    """A noisy straight track is denoised: the smoothed points sit far closer to
+    the true line than the noisy inputs, without lagging off it."""
+    from swingvision.ball import smooth_forecast
+
+    rng = np.random.default_rng(0)
+    true = [(5.0 * t, 100.0 + 3.0 * t) for t in range(40)]
+    noisy = [[x + rng.normal(0, 4), y + rng.normal(0, 4)] for x, y in true]
+    sm, coasted, conf = smooth_forecast(noisy, fps_eff=30.0)
+    raw_err = np.mean([math.dist(noisy[t], true[t]) for t in range(40)])
+    sm_err = np.mean([math.dist(sm[t], true[t]) for t in range(5, 35)])
+    assert sm_err < raw_err * 0.7, f"smoothing should cut error (raw {raw_err:.1f}, sm {sm_err:.1f})"
+    assert not any(coasted), "no gaps -> nothing is a forecast"
+
+
+def test_smooth_forecast_forecasts_through_a_gap():
+    """A gap in a smooth track is forecast along the motion and flagged coasted."""
+    from swingvision.ball import smooth_forecast
+
+    track = [[5.0 * t, 100.0 + 2.0 * t] for t in range(30)]
+    for t in (12, 13, 14, 15):
+        track[t] = None
+    sm, coasted, conf = smooth_forecast(track, fps_eff=30.0)
+    assert sm[13] is not None and coasted[13] is True
+    assert math.dist(sm[13], (5.0 * 13, 100.0 + 2.0 * 13)) < 6.0, "forecast should follow the line"
+    assert conf[13] < conf[5], "confidence decays inside a gap"
+
+
+def test_smooth_forecast_gates_an_outlier():
+    """A single wild lock (a fixture flash) is rejected, not tracked."""
+    from swingvision.ball import smooth_forecast
+
+    track = [[5.0 * t, 100.0] for t in range(30)]
+    track[15] = [900.0, 700.0]                     # teleport outlier
+    sm, coasted, conf = smooth_forecast(track, fps_eff=30.0)
+    assert math.dist(sm[15], (5.0 * 15, 100.0)) < 20.0, "outlier must be gated out"
+
+
+def test_gate_ball_to_court_rejects_adjacent():
+    """A lock inside the court's image trapezoid is kept; one far to the side (an
+    adjacent court) is dropped. Simple affine homography: (x,y)m -> (30x+100, 700-30y)px."""
+    from swingvision.ball import gate_ball_to_court
+
+    H = np.array([[30.0, 0, 100], [0, -30, 700], [0, 0, 1]])
+    track = [[265.0, 343.0], None, [850.0, 343.0]]   # on-court, gap, adjacent-court
+    out = gate_ball_to_court(track, H, (1280, 720))
+    assert out[0] == [265.0, 343.0], "on-court lock kept"
+    assert out[1] is None
+    assert out[2] is None, "adjacent-court lock rejected"
+
+
+def test_gate_ball_to_court_no_homography_passthrough():
+    """No calibration -> keep every lock (an amateur clip must not lose the ball)."""
+    from swingvision.ball import gate_ball_to_court
+
+    track = [[10.0, 10.0], None, [900.0, 50.0]]
+    assert gate_ball_to_court(track, None, (1280, 720)) == [[10.0, 10.0], None, [900.0, 50.0]]
 
 
 def test_cap_court_jumps_scales_with_gap():
