@@ -238,9 +238,22 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   is a known open task, not a bug.
 - Calibration quality + a fixed camera dominate accuracy more than model choice.
 - CALIBRATION FILES: some committed `data/*_pts.json` are DEGENERATE (corners
-  swapped / near-baseline at top of frame / camera height <2 m) and silently break
-  the court overlay + ball gating. KNOWN BAD: yt_court_pts_doubles.json,
-  yt_court_pts_refined.json, demo30_pts.json. KNOWN GOOD: yt_rally2_pts.json,
-  yt_match40_pts.json, yt_court_pts.json. ALWAYS validate a corners file before use:
-  `tools/validate_new_clip.py --audit data/<clip>_pts.json` (checks camera height
-  2-15 m, orientation, no horizon-crossing). demo30 needs re-calibration.
+  swapped / near-baseline at top of frame / a shape no real camera produces) and
+  silently break the court overlay + ball gating. ALWAYS audit before use:
+  `tools/validate_new_clip.py --audit data/*_pts*.json` — it reads each clip's own
+  resolution and fits the actual camera (`courtfit.cam_fit_quad`, roll allowed)
+  rather than assuming a 70 deg lens.
+  The decisive number is the FIT RESIDUAL — how far the corners sit from the
+  nearest legal camera view. It separates the set cleanly:
+  KNOWN GOOD (<2.5 px): yt_match40_pts 0.9, yt_rally2_pts 1.4, yt_court_pts 2.1,
+  court_pts_refined 2.3, eala_pts_auto 3.7, am_hard_utr_pts 0.7.
+  KNOWN BAD (>10 px): court_pts 38, yt_court_pts_refined 48,
+  yt_court_pts_doubles 54, yt_court_pts_singles 91, demo30_pts 565.
+  demo30 needs re-calibration.
+  A LOW camera is not degenerate — it is the amateur case this project targets;
+  what it costs is measurable DEPTH, so the audit reports that in metres via
+  `calibration.reliable_court_span`. Note the primary 1080p gold clip
+  `am_hard_utr` fits a **1.74 m** camera (hfov 86 deg, 0.7 px — good corners,
+  low mount) and is measurable only to **court-y 7.5 m of 23.77 (32% of depth)**:
+  it does not reach the net at 11.885 m. Treat any far-court number on that clip
+  as detection recall, NOT as a measurement.
