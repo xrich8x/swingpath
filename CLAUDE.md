@@ -214,7 +214,24 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   CAVEAT on far_geo: it is "the part of the clip we cannot measure in", and on a low
   camera that is most of the frame (am_hard_utr: 141 of 175 clicks), so it reads
   ABOVE overall recall there. Only compare it between clips of similar measurable
-  depth. 167 tests.
+  depth.
+- Session E6, part 2: the gate bug had SIBLINGS. Every pixel threshold in the ball
+  path was tuned at 1280x720 and applied unchanged at 1080p, where the same physical
+  motion covers 1.5x the pixels. All now scale by `res_scale = frame_height/720`,
+  which is an EXACT no-op at 720p (pinned by tests AND by a byte-identical
+  end-to-end yt_rally2 match.json). Fixed: `BallTracker.gate` (association radius,
+  70 -> 105 px at 1080p), `rectify_track` max_speed_px/resid_px, and
+  `suppress_false_locks`' seg_step_px. `smooth_forecast` is now SCALE-EQUIVARIANT —
+  its meas_var (px^2), sigma_jerk (px) and seed variances all scale, which matters
+  because the innovation gate `y'S^-1y <= chi2` otherwise inflates by 2.25x at 1080p
+  and rejects real detections as outliers. Measured on am_hard_utr, FULL shipped
+  chain vs human clicks: recall 36.6 -> 41.1%, far_geo 41.8 -> 46.8%, far_px
+  7.7 -> 15.4%, false-fire 20.8 -> 17.0% — BOTH axes better, not a trade.
+  ONE THRESHOLD DELIBERATELY DOES NOT SCALE: `static_radius_px` (the fixture test).
+  Theory says it should; measurement says scaling it 12 -> 18 px halves false-fire
+  (13.2 -> 5.7%) but costs 4.3 pts of far-court recall, because on a 1.74 m camera a
+  far ball's 0.2 s excursion clears 12 px but not 18 and gets reclassified as a
+  fixture. 170 tests.
 
 ## Conventions
 
