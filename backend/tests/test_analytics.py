@@ -43,6 +43,33 @@ def test_speed_requires_forward_time():
     raise AssertionError("expected ValueError for non-positive dt")
 
 
+def test_stats_exclude_low_confidence_calls_and_speeds():
+    """Low-camera reality: far-court bounces are perspective-amplified noise. Their
+    in/out verdict must NOT inflate the headline score (it goes to `uncertain`) and
+    their speed must NOT enter the avg/top speed."""
+    from swingvision import schema
+
+    def mk(i, call, call_conf, speed, speed_conf):
+        return schema.Shot(
+            id=i, rally_id=0, player="A", type="forehand", t_hit_s=float(i),
+            speed_kmh=speed, hit_xy=[1.0, 1.0], bounce_xy=[2.0, 2.0],
+            bounce_t_s=float(i) + 0.5, is_in=(call == "in"), call=call,
+            call_confident=call_conf, speed_confident=speed_conf)
+
+    shots = [
+        mk(0, "in", True, 100.0, True),
+        mk(1, "out", True, 80.0, True),
+        mk(2, "in", False, 200.0, False),    # far court: uncertain call, noisy speed
+        mk(3, "out", False, 50.0, False),
+    ]
+    rally = schema.Rally(id=0, start_s=0.0, end_s=4.0, shot_ids=[0, 1, 2, 3], winner="A")
+    st = schema.compute_stats(shots, [rally])
+
+    assert st.line_calls == {"in": 1, "out": 1, "uncertain": 2}
+    assert st.avg_speed_kmh == 90.0     # mean of the two confident speeds (100, 80)
+    assert st.top_speed_kmh == 100.0    # 200 km/h noise excluded
+
+
 # --- Serve placement (geometry) --------------------------------------------
 # Left box spans x in [1.37, 5.485]; right box [5.485, 9.60]. Bands are 0.7 m.
 T = analytics.SERVE_T_BAND_M       # 0.7

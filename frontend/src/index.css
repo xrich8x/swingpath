@@ -213,6 +213,8 @@ body {
 }
 .dot-in { background: var(--in); }
 .dot-out { background: var(--out); }
+/* Uncertain (far-court) calls: hollow, matching the hollow markers on the court plot. */
+.dot-uncertain { background: transparent; border: 1.5px dashed var(--muted, #93a2b3); }
 
 .scrubber-head { display: flex; align-items: center; justify-content: space-between; }
 .scrubber-controls { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; }

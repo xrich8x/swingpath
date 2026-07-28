@@ -1492,8 +1492,10 @@ def _build_match_from_events(
     from . import analytics, calibration, events
 
     # 1 px of ball-centroid error beyond this many court-metres is too noisy to
-    # trust for speed / an in-or-out call (~ the far-baseline band on a baseline cam).
-    UNRELIABLE_SCALE = 0.09
+    # trust for speed / an in-or-out call (~ the far-baseline band on a baseline
+    # cam). Shared with the Court Setup framing guide, which tells the user how
+    # much of the court clears this same bar - one definition of "reliable".
+    UNRELIABLE_SCALE = calibration.RELIABLE_SCALE_M_PER_PX
 
     players = [Player(id="A", name="Player A (near)"), Player(id="B", name="Player B (far)")]
     shots: list[Shot] = []
@@ -1640,7 +1642,15 @@ def _build_match_from_events(
         # it only for a well-observed, plausible GROUND shot; a validated physics arc
         # (below) re-confirms speed it actually measured.
         PLAUSIBLE_KMH = 160.0   # amateur ground strokes rarely exceed this on a phone
-        speed_confident = (real_fraction(h, land) >= 0.5 and real_landing
+        # Perspective amplification (the low-camera reality): where the court
+        # grazes the horizon, metres-per-pixel explodes, so a few px of ball
+        # jitter become decimetres and the average speed over that span is noise.
+        # A speed is trustworthy only if BOTH ends of the shot sit in the reliable
+        # (low metre/pixel) band - the same test the line call uses at the bounce.
+        hit_scale = scale_at(h)
+        scale_ok = (hit_scale is not None and hit_scale <= UNRELIABLE_SCALE
+                    and land_scale is not None and land_scale <= UNRELIABLE_SCALE)
+        speed_confident = (real_fraction(h, land) >= 0.5 and real_landing and scale_ok
                            and not p["is_serve"] and speed <= PLAUSIBLE_KMH)
         call_confident = (land_scale is not None and land_scale <= UNRELIABLE_SCALE
                           and real_landing)
