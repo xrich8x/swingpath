@@ -1306,6 +1306,11 @@ def analyze_video(
     # consumes it: the binary `ball_coasted` already answers the only question the
     # analysis asks ("was the ball SEEN here?"), and a continuous threshold on top
     # would be an unmeasured knob. Left named so it is obviously available, not lost.
+    # NOTE: smooth_forecast can take a per-frame metre/pixel scale and make its
+    # process noise depth-aware. MEASURED AND NOT USED — see its docstring; on
+    # yt_rally2 gold it moved nothing that matters (far hit@10 +1.2 pt, overall
+    # -0.8, false-fire flat, jerkiness 2.04 -> 1.94 px/frame^2, all inside noise on
+    # 258 labelled frames) and the median-referenced variant was actively worse.
     ball_px, ball_coasted, _ball_kconf = ball_mod.smooth_forecast(ball_px, fps_eff=fps_eff)
     print(f"[analyze] kalman smooth+forecast: "
           f"{sum(1 for p in ball_px if p is not None)} frames visible "

@@ -378,6 +378,26 @@ def _pts_homography(kp_names, kp_px):
     return calibration.compute_homography([court.LANDMARKS[n] for n in kp_names], kp_px)
 
 
+def test_smooth_forecast_scale_is_opt_in():
+    """Passing no scale must reproduce the shipped behaviour exactly, and passing a
+    flat scale must be a no-op (the rescale normalises on the clip's own spread)."""
+    from swingvision.ball import smooth_forecast
+
+    track = [[10.0 + 4 * i, 200.0 - 0.3 * i * i] for i in range(30)]
+    base, _, _ = smooth_forecast(track, fps_eff=30.0)
+    flat, _, _ = smooth_forecast(track, fps_eff=30.0, scale_m_per_px=[0.05] * 30)
+    for a, b in zip(base, flat):
+        assert (a is None) == (b is None)
+        if a is not None:
+            assert abs(a[0] - b[0]) < 1e-6 and abs(a[1] - b[1]) < 1e-6
+
+    # A varying scale must change something, or the option is doing nothing at all.
+    ramp, _, _ = smooth_forecast(track, fps_eff=30.0,
+                                 scale_m_per_px=[0.02 + 0.02 * i for i in range(30)])
+    assert any(abs(a[0] - c[0]) > 1e-9 or abs(a[1] - c[1]) > 1e-9
+               for a, c in zip(base, ramp) if a is not None and c is not None)
+
+
 def test_gate_scales_with_resolution():
     """The SAME scene at 720p and 1080p must gate identically.
 

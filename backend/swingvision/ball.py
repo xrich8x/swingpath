@@ -557,6 +557,9 @@ def smooth_forecast(
     gate_chi2: float = 13.8,
     reset_after: int = 3,
     max_gap_s: float = 0.4,
+    scale_m_per_px: Optional[Sequence[Optional[float]]] = None,
+    max_jerk_ratio: float = 4.0,
+    jerk_ref_pct: float = 50.0,
 ) -> tuple[list[Optional[list[float]]], list[bool], list[float]]:
     """Smooth AND forecast the ball track with one physics model — a constant-
     acceleration Kalman filter + RTS (forward-backward) smoother in image pixels.
@@ -582,6 +585,30 @@ def smooth_forecast(
     `coasted[i]` marks interpolated frames (no detection — dim it and keep it out
     of speed/bounce), `confidence[i]` in [0, 1].
 
+    `scale_m_per_px` (optional, per frame) makes the process noise DEPTH-AWARE:
+    the filter works in image pixels, but a physical jerk of J m/s^3 shows up as
+    J / court_scale_m_per_px px/s^3, so one pixel `sigma_jerk` is only correct at
+    one court depth. sigma is rescaled by `scale[jerk_ref_pct] / scale[i]`, clamped
+    to `max_jerk_ratio`.
+
+    MEASURED, AND NOT USED BY THE PIPELINE (tools/eval_smoother.py, yt_rally2 gold,
+    both arms fed identical pre-smoother locks):
+
+        reference     hit@10   far    false-fire   jerk px/frame^2
+        constant       43.4%  24.4%      19.2%          2.04
+        median         43.8%  25.0%      26.9%          2.63
+        p10            42.6%  25.6%      19.2%          1.94
+        p2             41.5%  25.6%      19.2%          1.87
+
+    The idea is sound and the effect is real but negligible. Normalising on the
+    median makes it actively WORSE: half the frames get LOOSER than the tuned
+    value, and that near-court loosening both de-smooths the track and lets more
+    junk through the innovation gate (false-fire 19 -> 27%). Tightening only (p10)
+    buys +1.2 pt far-court hit@10 and 5% less jerk for -0.8 pt overall — inside
+    noise on 258 labelled frames, and nowhere near the 2.4x the Kalman itself
+    bought. Kept as an off-by-default option so the measurement isn't repeated.
+    Without it (the default, and every uncalibrated clip) behaviour is unchanged.
+
     Tuned on 1280x720@30fps gold + demo footage (meas_var=25 -> ~5px detector
     noise; sigma_jerk=1.0): jerkiness 9.9 -> 5.6 px/frame^2 at -1.6 pt hit@10.
     """
@@ -598,6 +625,19 @@ def smooth_forecast(
     R = np.eye(2) * meas_var
     I6 = np.eye(6)
     max_gap = max(2, round(max_gap_s * fps_eff))
+
+    # Per-frame process-noise multiplier. Q scales with sigma_jerk^2, so a sigma
+    # ratio of (median_scale / scale[i]) is a Q factor of its square.
+    qfac = np.ones(n)
+    if scale_m_per_px is not None:
+        sc = np.array([np.nan if (i >= len(scale_m_per_px) or scale_m_per_px[i] is None)
+                       else float(scale_m_per_px[i]) for i in range(n)])
+        good = np.isfinite(sc) & (sc > 1e-9)
+        if good.any():
+            ref = float(np.percentile(sc[good], jerk_ref_pct))
+            ratio = np.ones(n)
+            ratio[good] = np.clip(ref / sc[good], 1.0 / max_jerk_ratio, max_jerk_ratio)
+            qfac = ratio ** 2
 
     def seed(z):
         s = np.array([z[0], 0.0, 0.0, z[1], 0.0, 0.0])
@@ -618,7 +658,7 @@ def smooth_forecast(
                 xp[i], Pp[i], xf[i], Pf[i] = x.copy(), P.copy(), x.copy(), P.copy()
                 used[i] = True; seg_id[i] = seg
             continue
-        x = F @ x; P = F @ P @ F.T + Q
+        x = F @ x; P = F @ P @ F.T + Q * qfac[i]
         xp[i], Pp[i] = x.copy(), P.copy()
         accept = False
         if z is not None:
