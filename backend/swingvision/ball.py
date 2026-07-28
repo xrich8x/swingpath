@@ -300,13 +300,21 @@ def suppress_false_locks(
         ball-plausible trajectory). A 1-4 frame excursion that never forms a
         track — a mislock jumping around a moving player — is dropped.
 
-    Durations scale to fps (a fixture is static for a TIME, not a frame count) and
-    the two PIXEL thresholds scale with `res_scale` = frame_height / 720, because
-    they are 720p-tuned and the same physical motion covers 1.5x the pixels at
-    1080p. Left unscaled, `seg_step_px` breaks a real 1080p track into sub-minimum
-    segments and the min-segment test then deletes it — the same failure mode that
-    made the court-region gate drop 85% of far-court balls on am_hard_utr. Both are
-    exact no-ops at 1280x720.
+    Durations scale to fps (a fixture is static for a TIME, not a frame count).
+    `seg_step_px` also scales with `res_scale` = frame_height / 720: it is a
+    ball-MOTION threshold, and the same physical motion covers 1.5x the pixels at
+    1080p, so frozen it chops a real track into sub-minimum segments that the
+    min-segment test then deletes wholesale. No-op at 1280x720.
+
+    `static_radius_px` deliberately does NOT scale, though the theory says it
+    should (both bounds that set it — detector jitter and real ball excursion —
+    are pixel quantities). MEASURED on am_hard_utr, scaling it 12 -> 18 px halved
+    false-fire (13.2% -> 5.7%) but cost 3.4 pts of recall and 4.3 pts of far-court
+    (far_geo 36.9% -> 32.6%). The reason is the low-camera reality this clip is:
+    a far ball there moves so little that its 0.2 s excursion clears 12 px but not
+    18, so the wider radius reclassifies real far balls as fixtures. Far-court
+    recall is the thing this whole gate ladder exists to protect, so the radius
+    stays put.
 
     Measured on the yt_rally2 gold labels: no-ball false-fire 61.5% -> 15.4% at a
     3.9-point recall cost (47.7% -> 43.8%). Survivors are in-court mislocks that
@@ -320,7 +328,6 @@ def suppress_false_locks(
     static_run = max(4, round(static_dur_s * fps_eff))
     seg_len = max(3, round(seg_dur_s * fps_eff))
     rs = max(float(res_scale), 1e-6)
-    static_radius_px = static_radius_px * rs
     step = (seg_step_px if seg_step_px is not None
             else 6600.0 * rs / max(fps_eff, 1.0))
 
