@@ -1157,7 +1157,11 @@ class BallTracker:
         self.bg = background
         self.inv_scale = inv_scale
         self.use_bgsub = use_bgsub and background is not None
-        self.gate = gate
+        # Association radius, in pixels — so it depends on the frame size. 70 px was
+        # tuned at 1280x720; at 1080p the same physical ball travels 1.5x as far
+        # between frames, and a frozen radius rejects the fastest REAL balls as
+        # off-path. Same failure the court-region gate had. Identity at 720p.
+        self.gate = gate * (self.H / 720.0)
         self.max_coast = max_coast
         self.max_bg_run = max_bg_run
         self.fg_thresh = fg_thresh

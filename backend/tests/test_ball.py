@@ -378,6 +378,22 @@ def _pts_homography(kp_names, kp_px):
     return calibration.compute_homography([court.LANDMARKS[n] for n in kp_names], kp_px)
 
 
+def test_tracker_gate_scales_with_frame_height():
+    """The velocity-association radius is in pixels, so it must follow the frame
+    size. Identity at 720p; 1.5x at 1080p."""
+    from swingvision.ball import BallTracker
+
+    class _Null:
+        def reset(self):
+            pass
+
+        def detect(self, frame):
+            return None
+
+    assert BallTracker(_Null(), (1280, 720), use_bgsub=False).gate == 70.0
+    assert BallTracker(_Null(), (1920, 1080), use_bgsub=False).gate == 105.0
+
+
 def test_suppress_res_scale_is_identity_at_720p():
     """res_scale=1.0 must reproduce the shipped 720p behaviour bit for bit, and a
     1080p scale must be more permissive (a real ball covers 1.5x the pixels there,
