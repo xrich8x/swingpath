@@ -179,6 +179,33 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   70 / top 95 km/h. demo30's manual corners are DEGENERATE (0.2 m camera, floored
   speeds) — that clip needs re-calibration. amber/coasted still to be excluded
   from speed/bounce (finishing step). 148 tests. NOT yet committed.
+- Session E6 (2026-07-28): MERGED the court-detection work (setup guide, roll-aware
+  snap, `calibration.RELIABLE_SCALE_M_PER_PX`, `reliable_court_span`) and made the
+  ball stack GEOMETRY-AWARE. Thesis: the ball stack was half physical, half
+  720p-pixel-tuned, and the court work published the conversion factor. THREE
+  results. (1) `gate_ball_to_court` took `img_wh` and never used it — its 220/120 px
+  airborne margins were frozen at the 1280x720 they were tuned on. Measured against
+  human gold clicks (tools/eval_court_gate.py): on the 720p clips every variant
+  keeps 100%, but on am_hard_utr (1080p) the shipped gate kept **15.4% of far-court
+  balls** — the GATE, not the detector, was deleting the far ball. Replaced with a
+  derivation: the court+runoff box extruded to ball height, projected; a box is
+  convex so its image is the hull of its 8 corners. 100% retention pooled (617 balls
+  / 255 far). Needs the camera, not just H, hence `calibration.camera_pose_m` +
+  `project_court_3d`. (2) `smooth_and_fill` re-created the phantom ball in COURT
+  space (it fills every gap incl. the edges), so events/speed saw a ball through
+  dead time even though the renderer did not. Contacts now require a frame the ball
+  was actually on (`events.drop_events_without_ball`): yt_rally2 bounces 6 -> 3,
+  half were phantoms. Coasted frames no longer count as real detections in
+  `real_fraction` (closes the old open item). (3) The `avg 0.0 km/h` symptom is
+  DIAGNOSED, not a bug: the pipeline now prints why each speed was rejected — on
+  yt_rally2 it is `2x seen 28%<50%, 1x seen 45%, 1x seen 49%, 1x seen 23%, 1x serve`.
+  Four shots have under half their hit->landing span backed by a real detection.
+  Verified the same 0.0 with the pre-change rule, so this is detection COVERAGE
+  within a rally, not the confidence gate. Also: eval ladder now matches the shipped
+  chain (it had been scoring the retired live-ball filter), far-court is reported as
+  both `far_px` and `far_geo`, and train_ballnet's gold guard is derived from
+  data/gold manifests (the old `--exclude indoor_elev` default matched no directory
+  and had been protecting nothing). 166 tests.
 
 ## Conventions
 
