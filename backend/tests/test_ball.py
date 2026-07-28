@@ -378,6 +378,34 @@ def _pts_homography(kp_names, kp_px):
     return calibration.compute_homography([court.LANDMARKS[n] for n in kp_names], kp_px)
 
 
+def test_smooth_forecast_is_scale_equivariant():
+    """The same scene at 1.5x resolution must give exactly 1.5x the track.
+
+    Without it the innovation gate y'S^-1y inflates by the square of the scale
+    (S built from a 720p meas_var, y measured in 1080p pixels), so real detections
+    are rejected as outliers on bigger frames.
+    """
+    from swingvision.ball import smooth_forecast
+
+    track = [[40.0 + 9 * i, 300.0 - 0.4 * i * i] for i in range(24)]
+    track[7] = [track[7][0] + 55.0, track[7][1] - 55.0]      # one outlier to gate
+    base, cb, _ = smooth_forecast(track, fps_eff=30.0)
+
+    s = 1.5
+    big = [[p[0] * s, p[1] * s] for p in track]
+    scaled, cs, _ = smooth_forecast(big, fps_eff=30.0, res_scale=s)
+
+    assert cb == cs, "the same frame must be gated/coasted at either resolution"
+    for a, b in zip(base, scaled):
+        assert (a is None) == (b is None)
+        if a is not None:
+            assert abs(a[0] * s - b[0]) < 1e-6 and abs(a[1] * s - b[1]) < 1e-6
+
+    # res_scale=1.0 is the shipped 720p path, untouched.
+    same, _, _ = smooth_forecast(track, fps_eff=30.0, res_scale=1.0)
+    assert same == base
+
+
 def test_tracker_gate_scales_with_frame_height():
     """The velocity-association radius is in pixels, so it must follow the frame
     size. Identity at 720p; 1.5x at 1080p."""

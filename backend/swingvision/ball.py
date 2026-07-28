@@ -571,6 +571,7 @@ def smooth_forecast(
     scale_m_per_px: Optional[Sequence[Optional[float]]] = None,
     max_jerk_ratio: float = 4.0,
     jerk_ref_pct: float = 50.0,
+    res_scale: float = 1.0,
 ) -> tuple[list[Optional[list[float]]], list[bool], list[float]]:
     """Smooth AND forecast the ball track with one physics model — a constant-
     acceleration Kalman filter + RTS (forward-backward) smoother in image pixels.
@@ -630,6 +631,18 @@ def smooth_forecast(
     if n == 0:
         return out, coasted, conf
 
+    # Resolution. meas_var is px^2 and sigma_jerk is px, both tuned at 1280x720.
+    # Their RATIO sets the smoothing bandwidth, so leaving both frozen keeps the
+    # smoothing itself correct at any resolution — but it does NOT keep the
+    # innovation GATE correct. That test is y' S^-1 y <= gate_chi2, and with S
+    # built from a 720p meas_var while y is 1.5x larger at 1080p, the statistic
+    # inflates by 2.25x: real detections get gated out as outliers, which both
+    # loses them and triggers spurious segment resets. Scaling both restores exact
+    # scale-equivariance. Identity at 720p.
+    rs = max(float(res_scale), 1e-6)
+    meas_var = meas_var * rs * rs
+    sigma_jerk = sigma_jerk * rs
+
     F = np.zeros((6, 6)); F[:3, :3] = _ca_transition(); F[3:, 3:] = _ca_transition()
     Q = np.zeros((6, 6)); Q[:3, :3] = _ca_process(sigma_jerk); Q[3:, 3:] = _ca_process(sigma_jerk)
     Hm = np.zeros((2, 6)); Hm[0, 0] = 1.0; Hm[1, 3] = 1.0
@@ -650,9 +663,13 @@ def smooth_forecast(
             ratio[good] = np.clip(ref / sc[good], 1.0 / max_jerk_ratio, max_jerk_ratio)
             qfac = ratio ** 2
 
+    # Seed velocity/acceleration variances are px^2/frame^n, so they scale with
+    # resolution squared like meas_var does.
+    v0, a0 = 400.0 * rs * rs, 100.0 * rs * rs
+
     def seed(z):
         s = np.array([z[0], 0.0, 0.0, z[1], 0.0, 0.0])
-        C = np.diag([meas_var, 400.0, 100.0, meas_var, 400.0, 100.0])
+        C = np.diag([meas_var, v0, a0, meas_var, v0, a0])
         return s, C
 
     seg_id = [-1] * n

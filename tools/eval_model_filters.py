@@ -165,7 +165,7 @@ def main():
         measure(tr, ballg, noball, step, "+ suppress_false_locks", far_px, far_geo)
         tr = B.gate_ball_to_court(tr, H, (W, Hh), hfov_deg=hfov)
         measure(tr, ballg, noball, step, "+ court-region gate", far_px, far_geo)
-        tr, coasted, _conf = B.smooth_forecast(tr, fps_eff=fps_eff)
+        tr, coasted, _conf = B.smooth_forecast(tr, fps_eff=fps_eff, res_scale=rs)
         measure(tr, ballg, noball, step, "+ kalman smooth (FULL)", far_px, far_geo,
                 coasted=coasted)
     print("\nMeasured against human gold clicks; hit = within 10 px. far_px = top "
