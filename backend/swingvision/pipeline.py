@@ -1302,7 +1302,11 @@ def analyze_video(
     # flags forecast frames (dim them, keep out of speed/bounce); remaining gaps at
     # segment boundaries are bridged by smooth_and_fill downstream. Supersedes the
     # per-gap polyfit coast_fill (kept in the module for reference/tests).
-    ball_px, ball_coasted, ball_kconf = ball_mod.smooth_forecast(ball_px, fps_eff=fps_eff)
+    # The third return is the smoother's per-frame covariance confidence. Nothing
+    # consumes it: the binary `ball_coasted` already answers the only question the
+    # analysis asks ("was the ball SEEN here?"), and a continuous threshold on top
+    # would be an unmeasured knob. Left named so it is obviously available, not lost.
+    ball_px, ball_coasted, _ball_kconf = ball_mod.smooth_forecast(ball_px, fps_eff=fps_eff)
     print(f"[analyze] kalman smooth+forecast: "
           f"{sum(1 for p in ball_px if p is not None)} frames visible "
           f"({sum(ball_coasted)} forecast, flagged low-confidence)")
@@ -1327,6 +1331,14 @@ def analyze_video(
     # the track after any dropout (see cap_court_jumps).
     ball_court_raw = ball_mod.cap_court_jumps(ball_court_raw,
                                               max_step_m=84.0 / fps_eff)
+    # smooth_and_fill bridges EVERY remaining gap, including the leading/trailing
+    # ones, so `track` is dense over the whole clip — including stretches where
+    # there was no ball at all. That is the same phantom smooth_forecast was
+    # rewritten to stop drawing, re-created one stage later in court space where
+    # the renderer never shows it but hits, bounces and speed all consume it.
+    # Keep the dense array (downstream geometry wants no holes) and carry the
+    # validity alongside it, so an event can be required to sit on a real ball.
+    ball_valid = [p is not None for p in ball_court_raw]
     smoothed = smooth_and_fill(ball_court_raw, window=7, polyorder=2)
     track = [(i / fps_eff, float(smoothed[i, 0]), float(smoothed[i, 1])) for i in range(n)]
 
@@ -1354,6 +1366,14 @@ def analyze_video(
         hit_idx = sorted(events.detect_hits(track, angle_thresh_deg=70, min_gap_s=0.3))
         bounce_idx = sorted(events.detect_bounces(track, min_speed_drop=0.55))
         events_src = "angle+speedmin (no pose)"
+    # Drop any contact found on a frame the ball was never actually at — see
+    # events.drop_events_without_ball.
+    n_ev = len(hit_idx), len(bounce_idx)
+    hit_idx = events.drop_events_without_ball(hit_idx, ball_valid)
+    bounce_idx = events.drop_events_without_ball(bounce_idx, ball_valid)
+    if (len(hit_idx), len(bounce_idx)) != n_ev:
+        print(f"[analyze] dropped events on no-ball frames: "
+              f"hits {n_ev[0]}->{len(hit_idx)}, bounces {n_ev[1]}->{len(bounce_idx)}")
     print(f"[analyze] events: {len(hit_idx)} hits, {len(bounce_idx)} bounces "
           f"[{events_src}]")
     if not hit_idx:
@@ -1384,7 +1404,7 @@ def analyze_video(
     match = _build_match_from_events(
         track, hit_idx, bounce_idx, near_court, far_court, fps_eff, width, height,
         video_path, physics_shots, ball_conf, near_kpts, far_kpts, H_metric,
-        singles=not use_doubles, lens_k1=lens_k1
+        singles=not use_doubles, lens_k1=lens_k1, ball_coasted=ball_coasted
     )
     # Carry the calibration in the match: the dashboard's Court Setup seeds its
     # adjustable overlay from these corners, and camera-change events tell the
@@ -1478,7 +1498,7 @@ def _estimate_speed_spin(ball_px, near_court, far_court, named_corners, H, img_w
 def _build_match_from_events(
     track, hit_idx, bounce_idx, near_court, far_court, fps, width, height, video_path,
     physics_shots=None, ball_conf=None, near_kpts=None, far_kpts=None, H=None, singles=True,
-    lens_k1=0.0,
+    lens_k1=0.0, ball_coasted=None,
 ) -> Match:
     """Turn ball track + contacts + player positions into a schema.Match.
 
@@ -1489,6 +1509,10 @@ def _build_match_from_events(
     `ball_conf` is the per-frame metre/pixel scale (calibration.court_scale_m_per_px);
     where it is large (the far court grazing the horizon) speeds and line calls are
     flagged low-confidence rather than reported as fact.
+
+    `ball_coasted` flags frames the Kalman smoother forecast rather than saw. They
+    carry a scale like any other frame, so without this the confidence tests count
+    a physics guess as a measurement.
     """
     from . import analytics, calibration, events
 
@@ -1509,12 +1533,22 @@ def _build_match_from_events(
 
     n_track = len(track)
 
+    def coasted_at(i):
+        return bool(ball_coasted[i]) if ball_coasted and 0 <= i < len(ball_coasted) else False
+
+    def real_at(i):
+        """A frame the ball was actually SEEN on. `ball_conf` alone is not that
+        test: the Kalman smoother forecasts through short gaps, and those frames
+        carry a scale too. They are a physics guess, not a measurement."""
+        return scale_at(i) is not None and not coasted_at(i)
+
     def real_fraction(a, b):
         """Fraction of frames in [a, b] backed by a real (non-interpolated)
         detection — interpolated/edge-filled spans carry no speed information."""
         a = max(0, a); b = min(n_track - 1, b)
-        span = [scale_at(i) for i in range(a, b + 1)]
-        return sum(v is not None for v in span) / max(len(span), 1)
+        if b < a:
+            return 0.0
+        return sum(real_at(i) for i in range(a, b + 1)) / float(b - a + 1)
 
     def real_continuation(i, win=5):
         """Fraction of the few frames after a landing backed by real detections. A
@@ -1531,6 +1565,7 @@ def _build_match_from_events(
     # PHASE 1 — gather each plausible stroke's geometry. Classification happens in
     # phase 2, after handedness has been inferred from the whole match.
     pending: list[dict] = []
+    unconfident: list[str] = []   # why each shot's speed was not trusted
     for k, h in enumerate(hit_idx):
         next_hit = hit_idx[k + 1] if k + 1 < len(hit_idx) else len(track) - 1
         bounces_after = [b for b in bounce_idx
@@ -1651,10 +1686,21 @@ def _build_match_from_events(
         hit_scale = scale_at(h)
         scale_ok = (hit_scale is not None and hit_scale <= UNRELIABLE_SCALE
                     and land_scale is not None and land_scale <= UNRELIABLE_SCALE)
-        speed_confident = (real_fraction(h, land) >= 0.5 and real_landing and scale_ok
+        seen_frac = real_fraction(h, land)
+        speed_confident = (seen_frac >= 0.5 and real_landing and scale_ok
                            and not p["is_serve"] and speed <= PLAUSIBLE_KMH)
         call_confident = (land_scale is not None and land_scale <= UNRELIABLE_SCALE
                           and real_landing)
+        if not speed_confident:
+            # Say WHY. "avg 0.0 km/h" with every shot silently unconfident is
+            # indistinguishable from a broken pipeline; the reason is the fix.
+            why = ("serve" if p["is_serve"] else
+                   f"seen {seen_frac:.0%}<50%" if seen_frac < 0.5 else
+                   "landing not tracked past bounce" if not real_landing else
+                   (f"scale {max(v for v in (hit_scale, land_scale) if v is not None):.3f}"
+                    f">{UNRELIABLE_SCALE} m/px" if not scale_ok else
+                    f"{speed:.0f}>{PLAUSIBLE_KMH:.0f} km/h"))
+            unconfident.append(why)
         if p["ends_point"]:
             force_break.append(len(shots))
         shots.append(
@@ -1694,6 +1740,11 @@ def _build_match_from_events(
                 # A measured arc outranks the pose heuristic for stroke style.
                 if s.type in ("forehand", "backhand") and abs(best["topspin_rpm"]) > 300:
                     s.spin_style = "topspin" if best["topspin_rpm"] > 0 else "slice"
+
+    if unconfident:
+        from collections import Counter
+        tally = ", ".join(f"{n}x {why}" for why, n in Counter(unconfident).most_common())
+        print(f"[analyze] speed not trusted for {len(unconfident)}/{len(shots)} shots: {tally}")
 
     # Segment shots into rallies by the gap between consecutive hits — and break
     # unconditionally after any shot whose SECOND bounce ended the point.

@@ -198,6 +198,23 @@ def detect_hits_by_gap(
     return hits
 
 
+def drop_events_without_ball(idx: Sequence[int], valid: Sequence[bool]) -> list[int]:
+    """Keep only contacts that sit on a frame the ball was actually somewhere.
+
+    The court track handed to the detectors is dense — gaps are interpolated so
+    downstream geometry never sees a hole — but a stretch with no ball at all gets
+    bridged too. That straight line through dead time meets real motion at a sharp
+    angle (reads as a hit) and holds a constant speed (its ends read as minima, i.e.
+    bounces). `valid` marks the frames a ball position was genuinely derived for, so
+    those inventions can be dropped without touching anything real.
+
+    Frames the Kalman smoother interpolated across a short gap ARE valid: a bounce
+    often falls between two detections, and dropping those would cost real landings.
+    """
+    n = len(valid)
+    return [i for i in idx if 0 <= i < n and valid[i]]
+
+
 def drop_midflight_hits(hits: Sequence[int], track: Track, *,
                         hold_s: float = 0.33) -> list[int]:
     """Reject "hits" that are really mid-flight points (Session E3g).

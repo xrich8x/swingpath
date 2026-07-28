@@ -3,9 +3,21 @@
 from swingvision.events import (
     classify_shot,
     classify_spin,
+    drop_events_without_ball,
     infer_handedness,
     segment_rallies,
 )
+
+
+def test_drop_events_without_ball():
+    """A contact on a frame with no ball is smooth_and_fill's straight line through
+    dead time, not a stroke. Frames the Kalman interpolated stay valid."""
+    valid = [True, True, False, False, False, True, True]
+    assert drop_events_without_ball([1, 3, 6], valid) == [1, 6]
+    assert drop_events_without_ball([2, 4], valid) == []
+    assert drop_events_without_ball([0, 1, 5, 6], valid) == [0, 1, 5, 6]
+    # Out-of-range indices are dropped, not raised on.
+    assert drop_events_without_ball([-1, 99, 0], valid) == [0]
 
 
 def _kpts(shoulder_x=500.0, shoulder_y=300.0, hip_y=450.0,
