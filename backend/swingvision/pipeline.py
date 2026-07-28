@@ -1276,7 +1276,8 @@ def analyze_video(
     # homography keeps every lock.
     if H is not None:
         n_gate = sum(p is not None for p in ball_px)
-        ball_px = ball_mod.gate_ball_to_court(ball_px, H, (width, height))
+        ball_px = ball_mod.gate_ball_to_court(ball_px, H, (width, height),
+                                              hfov_deg=camera_hfov_deg)
         print(f"[analyze] court-region gate: {n_gate} -> "
               f"{sum(p is not None for p in ball_px)} locks")
     # NOTE (E5+): the offline live-ball filter (ball_mod.filter_live_ball) used to

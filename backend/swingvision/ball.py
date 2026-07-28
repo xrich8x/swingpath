@@ -422,12 +422,76 @@ def coast_fill(
     return out, coasted
 
 
+def play_volume_polygon(
+    homography,
+    img_wh: Sequence[float],
+    *,
+    hfov_deg: Optional[float] = None,
+    runoff_m: float = 3.0,
+    max_ball_height_m: float = 6.0,
+    top_extra_px: float = 220.0,
+    side_extra_px: float = 120.0,
+) -> Optional[np.ndarray]:
+    """Image-space region a ball in play can occupy: the projection of the court +
+    runoff box extruded to `max_ball_height_m`. Returns an (N,1,2) float32 contour
+    for `cv2.pointPolygonTest`, or None without a homography.
+
+    A ball is not on the court plane, so the plane's trapezoid is the wrong shape —
+    a lob sits well above its far edge. The box IS convex, so its image is exactly
+    the convex hull of its eight projected corners. That derivation is the whole
+    point: it self-scales with resolution, camera height and lens, where a fixed
+    pixel margin does not.
+
+    Two rungs:
+      A. `hfov_deg` given and the pose solves -> the real extruded hull.
+      B. otherwise -> the ground trapezoid plus a pixel band above its far edge,
+         the pre-existing behaviour, but with the margins scaled off the frame
+         size instead of being frozen at the 1280x720 they were tuned on.
+    """
+    import cv2
+
+    from . import calibration, court as _court
+
+    ro = runoff_m
+    ground = [(-ro, -ro), (_court.DOUBLES_WIDTH + ro, -ro),
+              (_court.DOUBLES_WIDTH + ro, _court.LENGTH + ro), (-ro, _court.LENGTH + ro)]
+    if homography is None:
+        return None
+
+    # --- Rung A: the honest extruded play volume --------------------------------
+    if hfov_deg:
+        box = [(x, y, 0.0) for x, y in ground] + \
+              [(x, y, float(max_ball_height_m)) for x, y in ground]
+        pts = calibration.project_court_3d(homography, img_wh, box, float(hfov_deg))
+        if pts is not None:
+            hull = cv2.convexHull(pts.astype(np.float32))
+            return hull.reshape(-1, 1, 2)
+
+    # --- Rung B: ground trapezoid + a resolution-scaled airborne band -----------
+    W, Hh = float(img_wh[0]), float(img_wh[1])
+    top_extra = top_extra_px * (Hh / 720.0)
+    side_extra = side_extra_px * (W / 1280.0)
+    poly = np.array([calibration.court_to_image(homography, [p])[0] for p in ground],
+                    np.float64)
+    if not np.isfinite(poly).all():
+        return None
+    far_y = float(min(poly[2, 1], poly[3, 1]))
+    lx = float(min(poly[2, 0], poly[3, 0])) - side_extra
+    rx = float(max(poly[2, 0], poly[3, 0])) + side_extra
+    band = np.array([[lx, far_y - top_extra], [rx, far_y - top_extra],
+                     [rx, far_y], [lx, far_y]], np.float64)
+    hull = cv2.convexHull(np.vstack([poly, band]).astype(np.float32))
+    return hull.reshape(-1, 1, 2)
+
+
 def gate_ball_to_court(
     positions: Sequence[Optional[Sequence[float]]],
     homography,
     img_wh: Sequence[float],
     *,
+    hfov_deg: Optional[float] = None,
     runoff_m: float = 3.0,
+    max_ball_height_m: float = 6.0,
     top_extra_px: float = 220.0,
     side_extra_px: float = 120.0,
 ) -> list[Optional[list[float]]]:
@@ -435,40 +499,39 @@ def gate_ball_to_court(
     tracked on an adjacent court. Court-SPACE gating can't do this: a real airborne
     far ball's ground (z=0) projection scatters as far sideways as an adjacent court
     (measured on gold — real far balls reach court-x 32), so it overlaps the very
-    thing we want to reject. Image space separates them: the doubles court + runoff
-    projects to a trapezoid, a ball a few metres above the court appears inside it or
-    just above its far edge (the airborne band), and anything left/right of that band
-    is on another court.
+    thing we want to reject. Image space separates them.
 
-    Needs a valid homography (returns the input unchanged without one — an amateur
-    clip with no calibration keeps every lock). Measured on yt_rally2 with the
-    CORRECT calibration: keeps ~97% of real balls (97% far-court) while dropping the
-    adjacent-court locks. top/side_extra_px are tuned for 1280x720 — scale for other
-    resolutions.
+    The accepted region is `play_volume_polygon` — the court + runoff extruded to
+    ball height and projected. Needs a valid homography (returns the input unchanged
+    without one — an amateur clip with no calibration keeps every lock).
+
+    Retention measured against HUMAN GOLD CLICKS (tools/eval_court_gate.py; every
+    labelled ball frame is a real ball, so these are ceilings), far band = the top
+    36% of frame height:
+
+                          all balls        far court
+        extruded volume   100% (617)       100% (255)
+        scaled band        99.0%            97.6%
+        220/120 px fixed   98.1%            95.7%
+
+    The pooled numbers hide the point. On the two 720p clips all three agree at
+    100%; the entire gap is am_hard_utr (1080p, 1.74 m camera), where the fixed
+    margins kept only 15.4% of far-court balls and scaling them recovered just
+    53.8%. The gate — not the detector — was deleting the far ball on exactly the
+    amateur footage this project targets.
     """
     out: list[Optional[list[float]]] = [
         None if p is None else [float(p[0]), float(p[1])] for p in positions
     ]
-    if homography is None:
+    poly = play_volume_polygon(homography, img_wh, hfov_deg=hfov_deg, runoff_m=runoff_m,
+                               max_ball_height_m=max_ball_height_m,
+                               top_extra_px=top_extra_px, side_extra_px=side_extra_px)
+    if poly is None:
         return out
     import cv2
 
-    from . import calibration, court as _court
-    ro = runoff_m
-    poly_m = [(-ro, -ro), (_court.DOUBLES_WIDTH + ro, -ro),
-              (_court.DOUBLES_WIDTH + ro, _court.LENGTH + ro), (-ro, _court.LENGTH + ro)]
-    poly = np.array([calibration.court_to_image(homography, [p])[0] for p in poly_m],
-                    np.float32).reshape(-1, 1, 2)
-    far_y = float(min(poly[2, 0, 1], poly[3, 0, 1]))
-    lx = float(min(poly[2, 0, 0], poly[3, 0, 0])) - side_extra_px
-    rx = float(max(poly[2, 0, 0], poly[3, 0, 0])) + side_extra_px
     for i, p in enumerate(out):
-        if p is None:
-            continue
-        on = cv2.pointPolygonTest(poly, (p[0], p[1]), False) >= 0
-        if not on:                              # airborne band just above the far edge
-            on = (far_y - top_extra_px) < p[1] < far_y and lx <= p[0] <= rx
-        if not on:
+        if p is not None and cv2.pointPolygonTest(poly, (p[0], p[1]), False) < 0:
             out[i] = None
     return out
 

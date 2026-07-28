@@ -101,13 +101,13 @@ def image_to_court(H: np.ndarray, points: Sequence[Sequence[float]]) -> np.ndarr
     return _apply(np.linalg.inv(H), pts)
 
 
-def camera_position_m(H: np.ndarray, img_wh: Sequence[float],
-                      hfov_deg: float = 70.0) -> Optional[np.ndarray]:
-    """The camera's 3D position in court metres (x, y, height), or None.
+def camera_pose_m(H: np.ndarray, img_wh: Sequence[float],
+                  hfov_deg: float = 70.0) -> Optional[tuple]:
+    """The full camera pose behind `H`: `(K, rvec, tvec)`, or None.
 
-    Same PnP solve as `camera_height_m`, but the full position — the horizontal
-    part is what an airborne ball's ground projection slides toward, so anything
-    reasoning about ball height needs it (see `BallTracker._court_ok`).
+    `H` maps the court's GROUND PLANE to the image and nothing else, so it cannot
+    place a point above the court. Recovering the pose can. Solved by PnP from
+    the four doubles corners under the given horizontal field of view.
     """
     try:
         import cv2
@@ -127,6 +127,60 @@ def camera_position_m(H: np.ndarray, img_wh: Sequence[float],
         ok, rvec, tvec = cv2.solvePnP(world, img, K, None, flags=cv2.SOLVEPNP_IPPE)
         if not ok:
             return None
+        return K, rvec, tvec
+    except Exception:
+        return None
+
+
+def project_court_3d(H: np.ndarray, img_wh: Sequence[float],
+                     points_xyz: Sequence[Sequence[float]],
+                     hfov_deg: float = 70.0) -> Optional[np.ndarray]:
+    """Project court points WITH HEIGHT `(x_m, y_m, z_m)` to image pixels, or None.
+
+    The alternative — mapping a ball at height z to the ground point it shares a
+    ray with, `C + (ch/(ch - z)) * (B - C)`, then applying H — blows up as z
+    approaches the camera height and is undefined above it. That is not an exotic
+    case: our primary gold clip is a 1.74 m phone mount, where any ball above
+    head height has no ground intersection at all. Going through the pose stays
+    finite for every z.
+
+    Returns None if the pose is unrecoverable or any point falls behind the
+    camera (where perspective projection is meaningless, not merely inaccurate).
+    """
+    try:
+        import cv2
+
+        pose = camera_pose_m(H, img_wh, hfov_deg)
+        if pose is None:
+            return None
+        K, rvec, tvec = pose
+        pts = np.asarray(points_xyz, dtype=np.float64).reshape(-1, 3)
+        R, _ = cv2.Rodrigues(rvec)
+        depth = (R @ pts.T + tvec.reshape(3, 1))[2]
+        if not np.all(depth > 1e-6):
+            return None
+        out, _ = cv2.projectPoints(pts, rvec, tvec, K, None)
+        out = out.reshape(-1, 2)
+        return out if np.isfinite(out).all() else None
+    except Exception:
+        return None
+
+
+def camera_position_m(H: np.ndarray, img_wh: Sequence[float],
+                      hfov_deg: float = 70.0) -> Optional[np.ndarray]:
+    """The camera's 3D position in court metres (x, y, height), or None.
+
+    Same PnP solve as `camera_height_m`, but the full position — the horizontal
+    part is what an airborne ball's ground projection slides toward, so anything
+    reasoning about ball height needs it (see `BallTracker._court_ok`).
+    """
+    try:
+        import cv2
+
+        pose = camera_pose_m(H, img_wh, hfov_deg)
+        if pose is None:
+            return None
+        _K, rvec, tvec = pose
         R, _ = cv2.Rodrigues(rvec)
         cam = (-R.T @ tvec).ravel().astype(float)
         cam[2] = abs(cam[2])

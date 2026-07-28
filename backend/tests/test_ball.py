@@ -372,6 +372,67 @@ def test_gate_ball_to_court_no_homography_passthrough():
     assert gate_ball_to_court(track, None, (1280, 720)) == [[10.0, 10.0], None, [900.0, 50.0]]
 
 
+def _pts_homography(kp_names, kp_px):
+    from swingvision import calibration, court
+
+    return calibration.compute_homography([court.LANDMARKS[n] for n in kp_names], kp_px)
+
+
+def test_gate_scales_with_resolution():
+    """The SAME scene at 720p and 1080p must gate identically.
+
+    The old band was 220/120 px absolute, so doubling the frame height halved the
+    airborne allowance in court terms. Measured on the am_hard_utr gold clicks it
+    kept only 15.4% of far-court balls at 1080p (vs 100% of the 720p clips) — the
+    gate, not the detector, was deleting the far ball.
+    """
+    from swingvision.ball import gate_ball_to_court
+
+    names = ("near_bl_doubles", "near_br_doubles", "far_bl_doubles", "far_br_doubles")
+    px720 = [[200.0, 640.0], [1080.0, 640.0], [520.0, 300.0], [760.0, 300.0]]
+    H720 = _pts_homography(names, px720)
+    H1080 = _pts_homography(names, [[x * 1.5, y * 1.5] for x, y in px720])
+
+    # One ball, high over the far court: 200 px above the far edge at 720p, the
+    # same place = 300 px above it at 1080p. The old absolute 220 px band keeps it
+    # at 720p and rejects it at 1080p purely because the frame got bigger.
+    lock720, lock1080 = [640.0, 100.0], [960.0, 150.0]
+    keep = lambda t, H, wh, **kw: gate_ball_to_court([t], H, wh, **kw)[0] is not None
+
+    assert keep(lock720, H720, (1280, 720)), "in play at 720p"
+    assert keep(lock1080, H1080, (1920, 1080)), "same ball must stay in play at 1080p"
+    # Pin the bug this replaced: with the margins frozen at their 720p values the
+    # 1080p verdict flips. (Undo the scaling to reproduce the shipped behaviour.)
+    assert not keep(lock1080, H1080, (1920, 1080),
+                    top_extra_px=220.0 * 720.0 / 1080.0,
+                    side_extra_px=120.0 * 1280.0 / 1920.0), "test no longer discriminates"
+
+
+def test_gate_keeps_an_airborne_far_ball():
+    """A lob over the far court is inside the PLAY VOLUME even though it is well
+    outside the ground plane's trapezoid. The extruded box is what makes that a
+    derivation instead of a tuned pixel margin."""
+    from swingvision import calibration, court
+    from swingvision.ball import gate_ball_to_court, play_volume_polygon
+
+    names = ("near_bl_doubles", "near_br_doubles", "far_bl_doubles", "far_br_doubles")
+    px = [[200.0, 640.0], [1080.0, 640.0], [520.0, 300.0], [760.0, 300.0]]
+    H = _pts_homography(names, px)
+    wh = (1280, 720)
+    hfov = 70.0
+
+    # Where a ball 4 m above the far baseline's midpoint actually appears.
+    mid_x = court.DOUBLES_WIDTH / 2.0
+    aloft = calibration.project_court_3d(H, wh, [(mid_x, court.LENGTH, 4.0)], hfov)
+    assert aloft is not None, "pose must solve for this synthetic camera"
+    p = [float(aloft[0][0]), float(aloft[0][1])]
+
+    ground = calibration.court_to_image(H, [(mid_x, court.LENGTH)])[0]
+    assert p[1] < ground[1], "an airborne ball sits ABOVE its ground point in frame"
+    assert gate_ball_to_court([p], H, wh, hfov_deg=hfov)[0] is not None
+    assert play_volume_polygon(H, wh, hfov_deg=hfov) is not None
+
+
 def test_cap_court_jumps_scales_with_gap():
     """The displacement budget must grow with elapsed frames (E3b regression).
 
