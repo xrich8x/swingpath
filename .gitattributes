@@ -1,0 +1,3 @@
+# Python sources are LF in git. Two files on a working branch got written back as
+# CRLF, which turned a 213-line merge into a 3335-line whole-file conflict.
+*.py text eol=lf
