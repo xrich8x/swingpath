@@ -111,8 +111,9 @@ def main() -> None:
     from swingvision.ball import OurBallDetector
     det = OurBallDetector(device=args.device)
     print(f"weights={args.weights}\n")
-    print(f"{'clip':<12}{'recall':>8}{'far_px':>8}{'far_geo':>9}{'false-fire':>12}")
-    print("-" * 49)
+    print(f"{'clip':<12}{'recall':>8}{'far_px':>8}{'far_geo':>9}{'false-fire':>12}"
+          f"   {'band sizes px/geo':>16}")
+    print("-" * 68)
     agg = {"hit": 0, "tot": 0, "fhit": 0, "ftot": 0, "fp": 0, "ftt": 0,
            "ghit": 0, "gtot": 0}
     for tag, video, pts in CLIPS:
@@ -121,22 +122,35 @@ def main() -> None:
             continue
         r = score_clip(det, REPO / video, labels, H=load_H(pts))
         geo = "      -" if r["geo"] is None else f"{r['geo']:>6.1f}%"
-        print(f"{tag:<12}{r['recall']:>7.1f}%{r['far']:>7.1f}%{geo:>9}{r['ff']:>11.1f}%")
+        # Print how many clicks each band holds. Without it far_geo is easy to
+        # misread: on a low camera the unmeasurable zone covers most of the court,
+        # so far_geo stops being a "far court" sample and becomes "nearly the whole
+        # clip" — which is why it can sit ABOVE the overall recall.
+        span = f"{r['nfar']}/{r['ngeo']} of {r['n']}"
+        print(f"{tag:<12}{r['recall']:>7.1f}%{r['far']:>7.1f}%{geo:>9}{r['ff']:>11.1f}%"
+              f"   {span:>16}")
         agg["hit"] += r["recall"] / 100 * r["n"]; agg["tot"] += r["n"]
         agg["fhit"] += r["far"] / 100 * r["nfar"]; agg["ftot"] += r["nfar"]
         agg["fp"] += r["ff"] / 100 * r["nnb"]; agg["ftt"] += r["nnb"]
         if r["geo"] is not None:
             agg["ghit"] += r["geo"] / 100 * r["ngeo"]; agg["gtot"] += r["ngeo"]
-    print("-" * 49)
+    print("-" * 68)
     pooled_geo = ("      -" if agg["gtot"] == 0
                   else f"{100*agg['ghit']/agg['gtot']:>6.1f}%")
+    pooled_span = f"{agg['ftot']}/{agg['gtot']} of {agg['tot']}"
     print(f"{'POOLED':<12}{100*agg['hit']/max(agg['tot'],1):>7.1f}%"
           f"{100*agg['fhit']/max(agg['ftot'],1):>7.1f}%{pooled_geo:>9}"
-          f"{100*agg['fp']/max(agg['ftt'],1):>11.1f}%")
-    print("\nMeasured against human gold clicks (hit = within 10 px). far_px = top "
-          "36% of frame height, on every clip. far_geo = where 1 px costs more than "
-          "RELIABLE_SCALE_M_PER_PX of court — the honest 'can we measure here' band, "
-          "but it needs a calibration so only 3 of 6 clips have it.")
+          f"{100*agg['fp']/max(agg['ftt'],1):>11.1f}%   {pooled_span:>16}")
+    print("\nMeasured against human gold clicks (hit = within 10 px).")
+    print("far_px  = top 36% of frame height. Available on every clip, comparable "
+          "across resolutions; THE HEADLINE.")
+    print("far_geo = where 1 px of centroid error costs more than "
+          "RELIABLE_SCALE_M_PER_PX of court. Needs a calibration (3 of 6 clips).")
+    print("CAREFUL: far_geo is not a synonym for 'far court'. It is 'the part of "
+          "this clip we cannot measure in', and on a low camera that is most of the "
+          "frame — am_hard_utr is measurable to only 32% of court depth, so its "
+          "far_geo band includes easy near-court balls and reads ABOVE overall "
+          "recall. Compare far_geo only between clips of similar measurable depth.")
 
 
 if __name__ == "__main__":
