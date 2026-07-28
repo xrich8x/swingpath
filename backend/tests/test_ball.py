@@ -378,6 +378,26 @@ def _pts_homography(kp_names, kp_px):
     return calibration.compute_homography([court.LANDMARKS[n] for n in kp_names], kp_px)
 
 
+def test_suppress_res_scale_is_identity_at_720p():
+    """res_scale=1.0 must reproduce the shipped 720p behaviour bit for bit, and a
+    1080p scale must be more permissive (a real ball covers 1.5x the pixels there,
+    so the same track must not become 'too jumpy to be a trajectory')."""
+    from swingvision.ball import suppress_false_locks
+
+    # A ball moving ~55 px/frame at 720p; at 1080p the same motion is ~82 px/frame.
+    t720 = [[100.0 + 55 * i, 300.0 + 20 * i] for i in range(12)]
+    t1080 = [[150.0 + 82 * i, 450.0 + 30 * i] for i in range(12)]
+
+    a = suppress_false_locks(t720, fps_eff=60.0)
+    b = suppress_false_locks(t720, fps_eff=60.0, res_scale=1.0)
+    assert a == b
+
+    kept720 = sum(p is not None for p in suppress_false_locks(t720, fps_eff=60.0))
+    kept1080 = sum(p is not None for p in
+                   suppress_false_locks(t1080, fps_eff=60.0, res_scale=1080.0 / 720.0))
+    assert kept1080 >= kept720, "the same physical track must survive at 1080p"
+
+
 def test_smooth_forecast_scale_is_opt_in():
     """Passing no scale must reproduce the shipped behaviour exactly, and passing a
     flat scale must be a no-op (the rescale normalises on the clip's own spread)."""

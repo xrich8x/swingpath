@@ -155,12 +155,13 @@ def main():
     for w in args.weights:
         print(f"[{Path(w).name}]", flush=True)
         raw = perceive(video, w, args.device, H, cam_xyz, W, Hh, fps_eff, step)
-        # The ladder below mirrors pipeline.analyze_video exactly.
+        # The ladder below mirrors pipeline.analyze_video exactly, res_scale included.
+        rs = Hh / 720.0
         measure(raw, ballg, noball, step, "tracker gates only", far_px, far_geo)
         tr = B.remove_outliers(list(raw), max_jump=max(W, Hh) * 0.06)
-        tr = B.rectify_track(tr, max_speed_px=3000.0 / fps_eff, resid_px=35.0)
+        tr = B.rectify_track(tr, max_speed_px=3000.0 * rs / fps_eff, resid_px=35.0 * rs)
         measure(tr, ballg, noball, step, "+ rectify", far_px, far_geo)
-        tr = B.suppress_false_locks(tr, fps_eff=fps_eff)
+        tr = B.suppress_false_locks(tr, fps_eff=fps_eff, res_scale=rs)
         measure(tr, ballg, noball, step, "+ suppress_false_locks", far_px, far_geo)
         tr = B.gate_ball_to_court(tr, H, (W, Hh), hfov_deg=hfov)
         measure(tr, ballg, noball, step, "+ court-region gate", far_px, far_geo)

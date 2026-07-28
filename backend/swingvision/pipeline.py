@@ -1254,9 +1254,14 @@ def analyze_video(
     # teleports in the drawn path 124 -> 20 with hit@10 unchanged. Nulled points
     # become gaps the physics-aware interpolation coasts through — a straight coast
     # beats a wrong lock. Pixel step scales with fps (a real ball covers half the
-    # pixels per frame at 60 as at 30).
-    ball_px = ball_mod.rectify_track(ball_px, max_speed_px=3000.0 / fps_eff,
-                                     resid_px=35.0)
+    # pixels per frame at 60 as at 30) AND with resolution — these numbers were
+    # tuned at 1280x720, where the same physical motion covers 2/3 the pixels it
+    # does at 1080p. Frozen, they read as "too fast to be real" on a bigger frame
+    # and delete the fastest real balls. res_scale is 1.0 at 720p by construction.
+    res_scale = height / 720.0
+    ball_px = ball_mod.rectify_track(ball_px,
+                                     max_speed_px=3000.0 * res_scale / fps_eff,
+                                     resid_px=35.0 * res_scale)
     # Image-space false-lock suppression (E5+). Two recall-safe kinematic tests —
     # a lock that holds still is a fixture; a lock that never forms a multi-frame
     # trajectory is a mislock on a moving player. Both stay in pixels, so the
@@ -1266,7 +1271,8 @@ def analyze_video(
     # 3.9-pt recall cost — catches the persistent far-band fixture runs the
     # per-frame static gate and the live-ball court test both let through.
     n_before_sup = sum(p is not None for p in ball_px)
-    ball_px = ball_mod.suppress_false_locks(ball_px, fps_eff=fps_eff)
+    ball_px = ball_mod.suppress_false_locks(ball_px, fps_eff=fps_eff,
+                                            res_scale=res_scale)
     print(f"[analyze] false-lock suppression: {n_before_sup} -> "
           f"{sum(p is not None for p in ball_px)} locks")
     # Court-region gate (E5+): drop locks that fall outside the main court's IMAGE

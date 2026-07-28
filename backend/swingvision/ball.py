@@ -279,6 +279,7 @@ def suppress_false_locks(
     static_dur_s: float = 0.20,
     seg_step_px: Optional[float] = None,
     seg_dur_s: float = 0.15,
+    res_scale: float = 1.0,
 ) -> list[Optional[list[float]]]:
     """Recall-safe, image-space removal of false ball locks (E5+).
 
@@ -299,7 +300,14 @@ def suppress_false_locks(
         ball-plausible trajectory). A 1-4 frame excursion that never forms a
         track — a mislock jumping around a moving player — is dropped.
 
-    Durations scale to fps (a fixture is static for a TIME, not a frame count).
+    Durations scale to fps (a fixture is static for a TIME, not a frame count) and
+    the two PIXEL thresholds scale with `res_scale` = frame_height / 720, because
+    they are 720p-tuned and the same physical motion covers 1.5x the pixels at
+    1080p. Left unscaled, `seg_step_px` breaks a real 1080p track into sub-minimum
+    segments and the min-segment test then deletes it — the same failure mode that
+    made the court-region gate drop 85% of far-court balls on am_hard_utr. Both are
+    exact no-ops at 1280x720.
+
     Measured on the yt_rally2 gold labels: no-ball false-fire 61.5% -> 15.4% at a
     3.9-point recall cost (47.7% -> 43.8%). Survivors are in-court mislocks that
     only a more precise detector removes. Persistence runs first so fixtures can't
@@ -311,7 +319,10 @@ def suppress_false_locks(
     n = len(out)
     static_run = max(4, round(static_dur_s * fps_eff))
     seg_len = max(3, round(seg_dur_s * fps_eff))
-    step = seg_step_px if seg_step_px is not None else 6600.0 / max(fps_eff, 1.0)
+    rs = max(float(res_scale), 1e-6)
+    static_radius_px = static_radius_px * rs
+    step = (seg_step_px if seg_step_px is not None
+            else 6600.0 * rs / max(fps_eff, 1.0))
 
     # persistence: wipe any run held within static_radius_px for static_run frames
     i = 0
