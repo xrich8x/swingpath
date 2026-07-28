@@ -14,9 +14,14 @@ NO ball, trained against an all-zero heatmap. v1 never saw a negative, which is
 why it fires at junk whenever play stops (60% FP on the human gold benchmark).
 Val negatives report the false-fire rate (peak >= 0.5, the OurBallDetector
 default score_thresh); model selection uses hit@10 minus false-fire so a
-checkpoint can't win by firing everywhere. --exclude skips clips: indoor_elev
-(= yt_rally2) is excluded BY DEFAULT — it is the human gold benchmark clip and
-must never be trained on.
+checkpoint can't win by firing everywhere.
+
+GOLD PROTECTION: training on a clip a human hand-labelled would make every
+benchmark number a lie (ML_PRACTICES: never let a model grade its own homework).
+The forbidden set is derived from data/gold/*.manifest.json — the source video of
+every gold clip — and checked against each dataset dir's recorded source, so a
+newly labelled clip is protected the moment it exists. --exclude skips further
+dirs by name and now ERRORS on a name that matches nothing.
 """
 
 from __future__ import annotations
@@ -69,6 +74,71 @@ def _motion_blur_kernel(size, angle_deg):
     k = cv2.warpAffine(k, M, (size, size))
     s = k.sum()
     return k / s if s > 0 else k
+
+
+def gold_source_videos(root):
+    """Basenames of the source videos behind every hand-labelled gold clip.
+
+    Read from data/gold/*.manifest.json rather than hardcoded, because a hardcoded
+    list rots silently: --exclude's default was ["indoor_elev"], a directory that
+    does not exist in data/ball_dataset and never did, so the stated protection had
+    been enforcing nothing — and could not have covered am_hard_utr when that clip
+    was labelled. Deriving it means a new gold clip is protected on arrival.
+    """
+    import glob
+
+    gold_dir = os.path.join(os.path.dirname(os.path.abspath(root)), "gold")
+    out = {}
+    for p in glob.glob(os.path.join(gold_dir, "*.manifest.json")):
+        if ".court." in os.path.basename(p):
+            continue    # court-corner labels, not a ball benchmark
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                m = json.load(f)
+        except Exception:
+            continue
+        vid = m.get("video")
+        if vid:
+            out[os.path.basename(vid).lower()] = m.get("clip", os.path.basename(p))
+    return out
+
+
+def assert_no_gold_leak(root, exclude):
+    """Abort if any dataset dir was built from a gold clip's video, or if an
+    --exclude name matches no directory (a guard that silently matches nothing is
+    worse than no guard — it reads as protection in the log)."""
+    gold = gold_source_videos(root)
+    dirs, leaks = [], []
+    for tag in sorted(os.listdir(root)):
+        d = os.path.join(root, tag)
+        lp = os.path.join(d, "labels.json")
+        if not os.path.isfile(lp):
+            continue
+        dirs.append(tag)
+        if tag in exclude:
+            continue
+        try:
+            with open(lp, "r", encoding="utf-8") as f:
+                vid = (json.load(f).get("provenance") or {}).get("video")
+        except Exception:
+            vid = None
+        if vid and os.path.basename(vid).lower() in gold:
+            leaks.append((tag, gold[os.path.basename(vid).lower()]))
+    if leaks:
+        lines = "\n".join(f"    {t}  <- gold clip '{c}'" for t, c in leaks)
+        raise SystemExit(
+            "REFUSING TO TRAIN: these dataset dirs come from hand-labelled gold "
+            f"clips, which are the TEST set:\n{lines}\n"
+            "Every benchmark number would be measuring the model on its own "
+            "training data. Remove the dir or pass it to --exclude deliberately.")
+    unknown = [e for e in exclude if e not in dirs]
+    if unknown:
+        raise SystemExit(
+            f"--exclude names no dataset dir: {unknown}\n"
+            f"    available: {dirs}\n"
+            "Refusing to run rather than print a protection that isn't happening.")
+    print(f"[gold-guard] {len(gold)} gold clips known, none present in {len(dirs)} "
+          f"dataset dirs")
 
 
 class BallWindows(Dataset):
@@ -210,13 +280,16 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--out", default="weights/ballnet.pt")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    ap.add_argument("--exclude", nargs="*", default=["indoor_elev"],
-                    help="dataset dirs to skip (default: the gold benchmark clip)")
+    ap.add_argument("--exclude", nargs="*", default=[],
+                    help="extra dataset dirs to skip. Gold clips are excluded "
+                         "automatically from data/gold/*.manifest.json; a name here "
+                         "that matches no dir is an error, not a no-op")
     ap.add_argument("--motion-attention", action="store_true", dest="motion_attention",
                     help="TrackNetV4-style learnable motion attention (frame-diff gate) "
                          "in BallNet — for the v4 model")
     args = ap.parse_args()
 
+    assert_no_gold_leak(args.data, args.exclude)
     train_ds = BallWindows(args.data, "train", exclude=args.exclude)
     val_ds = BallWindows(args.data, "val", augment=False, exclude=args.exclude)
     tp, tn = train_ds.counts()

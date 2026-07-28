@@ -23,24 +23,50 @@ import numpy as np
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
 
+# clip -> (video, calibration or None). Only three gold clips have a calibration,
+# so the geometry-based far band exists only for those; the pixel band covers all.
 CLIPS = [
-    ("am_hard_utr", "data/am_hard_utr.mp4"),   # NEW 1080p gold (primary)
-    ("gold_shell", "data/gold_shell.mp4"),
-    ("gold_clay", "data/gold_clay.mp4"),
-    ("gold_am", "data/gold_am.mp4"),
-    ("yt_rally2", "data/yt_rally2.mp4"),
-    ("yt_match40", "data/yt_match40.mp4"),
+    ("am_hard_utr", "data/am_hard_utr.mp4", "data/am_hard_utr_pts.json"),  # 1080p gold (primary)
+    ("gold_shell", "data/gold_shell.mp4", None),
+    ("gold_clay", "data/gold_clay.mp4", None),
+    ("gold_am", "data/gold_am.mp4", None),
+    ("yt_rally2", "data/yt_rally2.mp4", "data/yt_rally2_pts.json"),
+    ("yt_match40", "data/yt_match40.mp4", "data/yt_match40_pts.json"),
 ]
+CORN = ("near_bl_doubles", "near_br_doubles", "far_bl_doubles", "far_br_doubles")
 
 
-def score_clip(det, video, labels, radius=10.0, far_frac=0.36):
+def load_H(pts_rel):
+    if not pts_rel or not (REPO / pts_rel).exists():
+        return None
+    from swingvision import calibration, court
+    kp = json.loads((REPO / pts_rel).read_text(encoding="utf-8"))
+    return calibration.compute_homography([court.LANDMARKS[n] for n in CORN],
+                                          [kp[n] for n in CORN])
+
+
+def score_clip(det, video, labels, radius=10.0, far_frac=0.36, H=None):
+    from swingvision import calibration
     gold = {int(k): v for k, v in json.loads(Path(labels).read_text(encoding="utf-8"))["labels"].items()}
     ball = {f: v for f, v in gold.items() if v.get("ball") and not v.get("unsure")}
     noball = {f: v for f, v in gold.items() if v.get("ball") is False and not v.get("unsure")}
     cap = cv2.VideoCapture(str(video))
     # far-court band as a fraction of frame height, so 720p and 1080p are comparable
     far_y = far_frac * (cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 720.0)
-    hit = tot = fhit = ftot = fp = ftt = 0
+
+    def unmeasurable(v):
+        """Is this click where 1 px of error costs more than RELIABLE_SCALE_M_PER_PX
+        of court? The pixel band is a proxy for this; with a calibration we can ask
+        directly, and the two disagree a lot on a low camera."""
+        if H is None:
+            return False
+        try:
+            return calibration.court_scale_m_per_px(H, (v["x"], v["y"])) > \
+                calibration.RELIABLE_SCALE_M_PER_PX
+        except Exception:
+            return False
+
+    hit = tot = fhit = ftot = fp = ftt = ghit = gtot = 0
     want = sorted(set(ball) | set(noball))
     for f in want:
         frames = []
@@ -63,12 +89,16 @@ def score_clip(det, video, labels, radius=10.0, far_frac=0.36):
             if v["y"] < far_y:
                 ftot += 1
                 fhit += ok10
+            if unmeasurable(v):
+                gtot += 1
+                ghit += ok10
         else:
             ftt += 1
             fp += p is not None
     cap.release()
     return dict(recall=100 * hit / max(tot, 1), far=100 * fhit / max(ftot, 1),
-                ff=100 * fp / max(ftt, 1), n=tot, nfar=ftot, nnb=ftt)
+                geo=(None if gtot == 0 else 100 * ghit / gtot),
+                ff=100 * fp / max(ftt, 1), n=tot, nfar=ftot, nnb=ftt, ngeo=gtot)
 
 
 def main() -> None:
@@ -81,22 +111,32 @@ def main() -> None:
     from swingvision.ball import OurBallDetector
     det = OurBallDetector(device=args.device)
     print(f"weights={args.weights}\n")
-    print(f"{'clip':<12}{'recall':>8}{'far':>8}{'false-fire':>12}")
-    print("-" * 40)
-    agg = {"hit": 0, "tot": 0, "fhit": 0, "ftot": 0, "fp": 0, "ftt": 0}
-    for tag, video in CLIPS:
+    print(f"{'clip':<12}{'recall':>8}{'far_px':>8}{'far_geo':>9}{'false-fire':>12}")
+    print("-" * 49)
+    agg = {"hit": 0, "tot": 0, "fhit": 0, "ftot": 0, "fp": 0, "ftt": 0,
+           "ghit": 0, "gtot": 0}
+    for tag, video, pts in CLIPS:
         labels = REPO / "data" / "gold" / f"{tag}.labels.json"
         if not labels.exists() or not (REPO / video).exists():
             continue
-        r = score_clip(det, REPO / video, labels)
-        print(f"{tag:<12}{r['recall']:>7.1f}%{r['far']:>7.1f}%{r['ff']:>11.1f}%")
+        r = score_clip(det, REPO / video, labels, H=load_H(pts))
+        geo = "      -" if r["geo"] is None else f"{r['geo']:>6.1f}%"
+        print(f"{tag:<12}{r['recall']:>7.1f}%{r['far']:>7.1f}%{geo:>9}{r['ff']:>11.1f}%")
         agg["hit"] += r["recall"] / 100 * r["n"]; agg["tot"] += r["n"]
         agg["fhit"] += r["far"] / 100 * r["nfar"]; agg["ftot"] += r["nfar"]
         agg["fp"] += r["ff"] / 100 * r["nnb"]; agg["ftt"] += r["nnb"]
-    print("-" * 40)
+        if r["geo"] is not None:
+            agg["ghit"] += r["geo"] / 100 * r["ngeo"]; agg["gtot"] += r["ngeo"]
+    print("-" * 49)
+    pooled_geo = ("      -" if agg["gtot"] == 0
+                  else f"{100*agg['ghit']/agg['gtot']:>6.1f}%")
     print(f"{'POOLED':<12}{100*agg['hit']/max(agg['tot'],1):>7.1f}%"
-          f"{100*agg['fhit']/max(agg['ftot'],1):>7.1f}%"
+          f"{100*agg['fhit']/max(agg['ftot'],1):>7.1f}%{pooled_geo:>9}"
           f"{100*agg['fp']/max(agg['ftt'],1):>11.1f}%")
+    print("\nMeasured against human gold clicks (hit = within 10 px). far_px = top "
+          "36% of frame height, on every clip. far_geo = where 1 px costs more than "
+          "RELIABLE_SCALE_M_PER_PX of court — the honest 'can we measure here' band, "
+          "but it needs a calibration so only 3 of 6 clips have it.")
 
 
 if __name__ == "__main__":
