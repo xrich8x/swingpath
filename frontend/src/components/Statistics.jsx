@@ -281,12 +281,21 @@ export default function Statistics({ match }) {
 
   // Headline speeds count only confidently-projected shots (far-court bounces are
   // perspective-amplified noise); surface how many shots backed the number.
+  // When nothing met the strict bar the backend falls back to estimates and sets
+  // speed_estimated, rather than reporting 0.0 — which read as a broken pipeline
+  // and was the normal case on an amateur-height camera. Label it honestly: the
+  // number is real, its uncertainty is measured (vs the SwingVision HUD), and it
+  // must never be presented as a measurement.
   const shots = match.shots || [];
   const confidentSpeeds = shots.filter((sh) => sh.speed_confident !== false && sh.speed_kmh > 0).length;
-  const speedSub =
-    confidentSpeeds > 0
+  const estimated = s.speed_estimated === true;
+  const errPct = s.speed_err_pct || 0;
+  const speedSub = estimated
+    ? `estimate — typically ±${Math.round(errPct)}%`
+    : confidentSpeeds > 0
       ? `${confidentSpeeds} confidently-tracked shot${confidentSpeeds === 1 ? "" : "s"}`
       : "low confidence — far court";
+  const speedPrefix = estimated ? "~" : "";
 
   // Serve/rally analytics are additive — older match.json simply lack them.
   const servePlacement = s.serve_placement || {};
@@ -300,8 +309,16 @@ export default function Statistics({ match }) {
       <div className="tiles">
         <Tile label="Shots" value={s.shot_count} />
         <Tile label="Rallies" value={s.rally_count} />
-        <Tile label="Avg speed" value={fmtSpeed(s.avg_speed_kmh)} sub={speedSub} />
-        <Tile label="Top speed" value={fmtSpeed(s.top_speed_kmh)} sub={speedSub} />
+        <Tile
+          label="Avg speed"
+          value={s.avg_speed_kmh > 0 ? `${speedPrefix}${fmtSpeed(s.avg_speed_kmh)}` : fmtSpeed(s.avg_speed_kmh)}
+          sub={speedSub}
+        />
+        <Tile
+          label="Top speed"
+          value={s.top_speed_kmh > 0 ? `${speedPrefix}${fmtSpeed(s.top_speed_kmh)}` : fmtSpeed(s.top_speed_kmh)}
+          sub={speedSub}
+        />
         <Tile
           label="Avg spin"
           value={avgSpin != null ? `${avgSpin} rpm` : "—"}

@@ -1327,8 +1327,17 @@ def analyze_video(
     print(f"[analyze] kalman smooth+forecast: "
           f"{sum(1 for p in ball_px if p is not None)} frames visible "
           f"({sum(ball_coasted)} forecast, flagged low-confidence)")
+    # WAS THE BALL SEEN is an image-space fact and must not be confused with
+    # CAN WE PLACE IT ON THE COURT. The runoff test below answers the second: an
+    # airborne ball's z=0 projection legitimately overshoots the baseline (the same
+    # monocular z-ambiguity that killed court-space gating), so a perfectly tracked
+    # lob lands outside the box and gets no court position. That is fine for the
+    # court track — but treating it as "no ball" is what collapsed real_fraction to
+    # 37% clip-wide on yt_rally2 and left every shot below the 50% speed bar.
+    ball_seen = [p is not None and not ball_coasted[i] for i, p in enumerate(ball_px)]
     ball_court_raw: list[Optional[list[float]]] = []
     ball_conf: list[Optional[float]] = []
+    n_offcourt = 0
     for i, px in enumerate(ball_px):
         if px is None:
             ball_court_raw.append(None)
@@ -1343,6 +1352,10 @@ def analyze_video(
         else:
             ball_court_raw.append(None)
             ball_conf.append(None)
+            n_offcourt += 1
+    print(f"[analyze] ball seen on {sum(ball_seen)} frames; "
+          f"{sum(p is not None for p in ball_court_raw)} placed on the court "
+          f"({n_offcourt} projected outside the runoff box — airborne, not missing)")
     # 84 m/s (~300 km/h) expressed per PROCESSED frame — the old fixed 2.8 m was
     # only correct at 30 fps and, being gap-blind, cascaded into culling most of
     # the track after any dropout (see cap_court_jumps).
@@ -1355,7 +1368,11 @@ def analyze_video(
     # the renderer never shows it but hits, bounces and speed all consume it.
     # Keep the dense array (downstream geometry wants no holes) and carry the
     # validity alongside it, so an event can be required to sit on a real ball.
-    ball_valid = [p is not None for p in ball_court_raw]
+    # Validity is "the smoother emitted a ball here" — which already excludes true
+    # dead time, since smooth_forecast interpolates only between detections. It is
+    # deliberately NOT the runoff test: an airborne ball with no court position was
+    # still THERE, and rejecting a contact on that basis loses real events.
+    ball_valid = [p is not None for p in ball_px]
     smoothed = smooth_and_fill(ball_court_raw, window=7, polyorder=2)
     track = [(i / fps_eff, float(smoothed[i, 0]), float(smoothed[i, 1])) for i in range(n)]
 
@@ -1421,7 +1438,8 @@ def analyze_video(
     match = _build_match_from_events(
         track, hit_idx, bounce_idx, near_court, far_court, fps_eff, width, height,
         video_path, physics_shots, ball_conf, near_kpts, far_kpts, H_metric,
-        singles=not use_doubles, lens_k1=lens_k1, ball_coasted=ball_coasted
+        singles=not use_doubles, lens_k1=lens_k1, ball_coasted=ball_coasted,
+        ball_seen=ball_seen
     )
     # Carry the calibration in the match: the dashboard's Court Setup seeds its
     # adjustable overlay from these corners, and camera-change events tell the
@@ -1515,7 +1533,7 @@ def _estimate_speed_spin(ball_px, near_court, far_court, named_corners, H, img_w
 def _build_match_from_events(
     track, hit_idx, bounce_idx, near_court, far_court, fps, width, height, video_path,
     physics_shots=None, ball_conf=None, near_kpts=None, far_kpts=None, H=None, singles=True,
-    lens_k1=0.0, ball_coasted=None,
+    lens_k1=0.0, ball_coasted=None, ball_seen=None,
 ) -> Match:
     """Turn ball track + contacts + player positions into a schema.Match.
 
@@ -1530,6 +1548,11 @@ def _build_match_from_events(
     `ball_coasted` flags frames the Kalman smoother forecast rather than saw. They
     carry a scale like any other frame, so without this the confidence tests count
     a physics guess as a measurement.
+
+    `ball_seen` is the image-space "the detector actually had the ball here" mask.
+    It is what the coverage tests should use — `ball_conf` answers a different
+    question (did the ground projection land on the court) that a real airborne
+    ball routinely fails.
     """
     from . import analytics, calibration, events
 
@@ -1554,10 +1577,18 @@ def _build_match_from_events(
         return bool(ball_coasted[i]) if ball_coasted and 0 <= i < len(ball_coasted) else False
 
     def real_at(i):
-        """A frame the ball was actually SEEN on. `ball_conf` alone is not that
-        test: the Kalman smoother forecasts through short gaps, and those frames
-        carry a scale too. They are a physics guess, not a measurement."""
-        return scale_at(i) is not None and not coasted_at(i)
+        """A frame the ball was actually SEEN on — an image-space fact.
+
+        Two things this deliberately is NOT. It is not `ball_conf is not None`:
+        that answers "did the z=0 projection land inside the runoff box", which a
+        real airborne ball routinely fails, and using it here counted a tracked lob
+        as a missing ball (45% of the track on yt_rally2). And it is not merely
+        "the smoother emitted a position": a coasted frame is a physics guess, not
+        a measurement.
+        """
+        if ball_seen is not None:
+            return bool(ball_seen[i]) if 0 <= i < len(ball_seen) else False
+        return scale_at(i) is not None and not coasted_at(i)   # legacy callers
 
     def real_fraction(a, b):
         """Fraction of frames in [a, b] backed by a real (non-interpolated)
@@ -1687,7 +1718,14 @@ def _build_match_from_events(
         # if the bounce itself is a real detection in the reliable (low metre/pixel)
         # court band, not a far-baseline frame grazing the horizon.
         land_scale = scale_at(land)
-        real_landing = land < n_track - 1 and real_continuation(land) >= 0.4  # bounce, not drop-out
+        if land >= n_track - 1:
+            # The clip ends on this landing, so "was it still tracked afterwards"
+            # is UNANSWERABLE, not false. The old `land < n_track - 1` made the
+            # final shot of every clip permanently unconfident. Ask the closest
+            # question we can instead: was the landing frame itself a detection.
+            real_landing = real_at(land)
+        else:
+            real_landing = real_continuation(land) >= 0.4  # bounce, not drop-out
         # Without a physics fit (which needs the true camera FOV — see
         # speed-physics-diagnosis: monocular optics are ill-conditioned on arbitrary
         # footage), the naive average OVER-reads airborne balls (a serve/lob projects
@@ -1695,29 +1733,39 @@ def _build_match_from_events(
         # it only for a well-observed, plausible GROUND shot; a validated physics arc
         # (below) re-confirms speed it actually measured.
         PLAUSIBLE_KMH = 160.0   # amateur ground strokes rarely exceed this on a phone
-        # Perspective amplification (the low-camera reality): where the court
-        # grazes the horizon, metres-per-pixel explodes, so a few px of ball
-        # jitter become decimetres and the average speed over that span is noise.
-        # A speed is trustworthy only if BOTH ends of the shot sit in the reliable
-        # (low metre/pixel) band - the same test the line call uses at the bounce.
         hit_scale = scale_at(h)
         scale_ok = (hit_scale is not None and hit_scale <= UNRELIABLE_SCALE
                     and land_scale is not None and land_scale <= UNRELIABLE_SCALE)
         seen_frac = real_fraction(h, land)
-        speed_confident = (seen_frac >= 0.5 and real_landing and scale_ok
+        # `scale_ok` used to gate speed too. It is now MEASURED not to predict speed
+        # error, and if anything to predict it backwards (tools/speed_band.py vs the
+        # SwingVision HUD on yt_rally2, n=11):
+        #     scale_ok PASS  median |err| 41.6%   (n=3)
+        #     scale_ok FAIL  median |err| 19.2%   (n=8)
+        # That reads oddly until you see which shots pass: both endpoints near the
+        # camera means a SHORT ball, where a path integral over a few metres is
+        # proportionally worst. Speed error is dominated by span length and by
+        # hit->landing pairing, not by per-pixel geometric precision. The gate stays
+        # on the LINE CALL, where a bounce position genuinely needs precise geometry.
+        speed_confident = (seen_frac >= 0.5 and real_landing
                            and not p["is_serve"] and speed <= PLAUSIBLE_KMH)
         call_confident = (land_scale is not None and land_scale <= UNRELIABLE_SCALE
                           and real_landing)
         if not speed_confident:
-            # Say WHY. "avg 0.0 km/h" with every shot silently unconfident is
-            # indistinguishable from a broken pipeline; the reason is the fix.
-            why = ("serve" if p["is_serve"] else
-                   f"seen {seen_frac:.0%}<50%" if seen_frac < 0.5 else
-                   "landing not tracked past bounce" if not real_landing else
-                   (f"scale {max(v for v in (hit_scale, land_scale) if v is not None):.3f}"
-                    f">{UNRELIABLE_SCALE} m/px" if not scale_ok else
-                    f"{speed:.0f}>{PLAUSIBLE_KMH:.0f} km/h"))
-            unconfident.append(why)
+            # Say WHY, and say EVERY why. This was a first-match if-chain, which
+            # under-reported badly: on yt_rally2 it blamed `scale` once when scale
+            # actually failed 8 of 12 times, hidden behind `seen`. A diagnostic that
+            # hides the co-cause sends you optimising the wrong thing.
+            why = []
+            if p["is_serve"]:
+                why.append("serve")
+            if seen_frac < 0.5:
+                why.append(f"seen {seen_frac:.0%}<50%")
+            if not real_landing:
+                why.append("landing not tracked past bounce")
+            if speed > PLAUSIBLE_KMH:
+                why.append(f"{speed:.0f}>{PLAUSIBLE_KMH:.0f} km/h")
+            unconfident.append("+".join(why) if why else "unknown")
         if p["ends_point"]:
             force_break.append(len(shots))
         shots.append(

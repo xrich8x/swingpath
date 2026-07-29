@@ -224,9 +224,11 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   `suppress_false_locks`' seg_step_px. `smooth_forecast` is now SCALE-EQUIVARIANT —
   its meas_var (px^2), sigma_jerk (px) and seed variances all scale, which matters
   because the innovation gate `y'S^-1y <= chi2` otherwise inflates by 2.25x at 1080p
-  and rejects real detections as outliers. Measured on am_hard_utr, FULL shipped
-  chain vs human clicks: recall 36.6 -> 41.1%, far_geo 41.8 -> 46.8%, far_px
-  7.7 -> 15.4%, false-fire 20.8 -> 17.0% — BOTH axes better, not a trade.
+  and rejects real detections as outliers. **The before/after numbers first recorded
+  here (recall 36.6 -> 41.1%, false-fire 20.8 -> 17.0%) are WITHDRAWN** — they came
+  from a scorer that mis-aligned decimated frames (see E6 part 3). The scaling
+  changes themselves stand: they are exact no-ops at 720p, pinned by tests and by a
+  byte-identical end-to-end yt_rally2 match.json.
   ONE THRESHOLD DELIBERATELY DOES NOT SCALE: `static_radius_px` (the fixture test).
   Theory says it should; measurement says scaling it 12 -> 18 px halves false-fire
   (13.2 -> 5.7%) but costs 4.3 pts of far-court recall, because on a 1.74 m camera a

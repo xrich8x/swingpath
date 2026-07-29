@@ -29,6 +29,18 @@ from . import analytics, court
 
 SCHEMA_VERSION = "1.0"
 
+# Typical |error| of an UNCONFIDENT ("approx") shot speed, per cent. Measured with
+# tools/speed_band.py against the SwingVision HUD on yt_rally2: 10 matched
+# groundstrokes, median |err| 19.2%, MAE 27.8%, bias -15.5%.
+#
+# Two things this number is not. It is not a guarantee — n=10 on ONE clip, and the
+# HUD is itself a single-camera estimate, not radar. And the negative bias is NOT a
+# calibration error to be corrected away: ours is the AVERAGE ball speed over the
+# flight while a racquet-speed readout is the launch speed, and CLAUDE.md has
+# recorded that ~15-20% gap as expected physics since before this was measured.
+# "Fixing" it to match the HUD would be fitting to a number we do not trust.
+SPEED_ESTIMATE_ERR_PCT = 25.0
+
 # Shot type vocabulary used across backend + frontend.
 SHOT_TYPES = ("serve", "forehand", "backhand", "volley", "overhead")
 
@@ -121,6 +133,14 @@ class Stats:
                                      # in/out = confident calls only; uncertain =
                                      # far-court bounces too perspective-amplified
                                      # to judge (see compute_stats)
+    # True when avg/top speed fall back to unconfident ESTIMATES because no shot met
+    # the strict bar — the normal case on an amateur-height camera. The UI must
+    # label these as estimates, not present them as measurements.
+    speed_estimated: bool = False
+    # Typical |error| of an estimated speed, per cent, measured against the
+    # SwingVision HUD (tools/speed_band.py). Calibration is thin — 10 groundstrokes
+    # on ONE clip — so it is a band, not a guarantee.
+    speed_err_pct: float = 0.0
     # Metres each player ran (court-plane path length), {"A": near, "B": far}. The
     # far player's value is approximate (perspective amplifies its position jitter).
     distance_run_m: dict[str, float] = field(default_factory=dict)
@@ -222,10 +242,21 @@ def derive_serve_order(shots: list[Shot]) -> dict[int, str]:
 def compute_stats(shots: list[Shot], rallies: list[Rally]) -> Stats:
     """Derive the summary stats block from shots + rallies. Deterministic; the
     dashboard renders these directly."""
-    # Headline avg/top speed use ONLY confidently-projected shots — a far-court
-    # reading is perspective-amplified noise, so we report 0 ("—" in the UI) rather
-    # than surface it as a measured number. (Demo shots default speed_confident=True.)
+    # Headline avg/top speed prefer confidently-measured shots. When NONE are
+    # confident we now fall back to the estimates rather than reporting 0.0.
+    # Reporting 0.0 was indistinguishable from a broken pipeline, and it was the
+    # normal case: on a low camera the strict bar is rarely met, yet the estimates
+    # measure ~19% median error against the SwingVision HUD (tools/speed_band.py) —
+    # as good as anything this project has recorded. `speed_estimated` tells the UI
+    # to label the number as an estimate rather than present it as measured.
+    # Serves are excluded from the fallback: their speed is a different quantity
+    # (measured -57% vs the HUD) and the pipeline never marks them confident.
     speeds = [s.speed_kmh for s in shots if s.speed_kmh > 0 and getattr(s, "speed_confident", True)]
+    speed_estimated = False
+    if not speeds:
+        speeds = [s.speed_kmh for s in shots
+                  if s.speed_kmh > 0 and s.type != "serve"]
+        speed_estimated = bool(speeds)
     shot_mix: dict[str, int] = {}
     for s in shots:
         shot_mix[s.type] = shot_mix.get(s.type, 0) + 1
@@ -285,6 +316,8 @@ def compute_stats(shots: list[Shot], rallies: list[Rally]) -> Stats:
     return Stats(
         shot_count=len(shots),
         rally_count=len(rallies),
+        speed_estimated=speed_estimated,
+        speed_err_pct=SPEED_ESTIMATE_ERR_PCT if speed_estimated else 0.0,
         avg_speed_kmh=round(sum(speeds) / len(speeds), 1) if speeds else 0.0,
         top_speed_kmh=round(max(speeds), 1) if speeds else 0.0,
         shot_mix=shot_mix,

@@ -68,6 +68,31 @@ def test_stats_exclude_low_confidence_calls_and_speeds():
     assert st.line_calls == {"in": 1, "out": 1, "uncertain": 2}
     assert st.avg_speed_kmh == 90.0     # mean of the two confident speeds (100, 80)
     assert st.top_speed_kmh == 100.0    # 200 km/h noise excluded
+    assert st.speed_estimated is False  # confident shots exist, so no fallback
+
+
+def test_stats_fall_back_to_estimates_rather_than_reporting_zero():
+    """When NO shot meets the strict bar — the normal case on an amateur-height
+    camera — report the estimates and flag them, instead of 0.0. Reporting 0.0 is
+    indistinguishable from a broken pipeline, and the estimates measure ~19% median
+    error against the HUD. Serves are excluded: their speed is a different quantity."""
+    from swingvision import schema
+
+    def mk(i, kind, speed):
+        return schema.Shot(
+            id=i, rally_id=0, player="A", type=kind, t_hit_s=float(i),
+            speed_kmh=speed, hit_xy=[1.0, 1.0], bounce_xy=[2.0, 2.0],
+            bounce_t_s=float(i) + 0.5, is_in=True, call="in",
+            call_confident=False, speed_confident=False)
+
+    shots = [mk(0, "serve", 180.0), mk(1, "forehand", 70.0), mk(2, "backhand", 50.0)]
+    rally = schema.Rally(id=0, start_s=0.0, end_s=3.0, shot_ids=[0, 1, 2], winner="A")
+    st = schema.compute_stats(shots, rally and [rally])
+
+    assert st.speed_estimated is True
+    assert st.avg_speed_kmh == 60.0     # (70 + 50) / 2 — the 180 serve is excluded
+    assert st.top_speed_kmh == 70.0
+    assert st.speed_err_pct == schema.SPEED_ESTIMATE_ERR_PCT
 
 
 # --- Serve placement (geometry) --------------------------------------------
