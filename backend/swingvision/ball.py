@@ -279,6 +279,7 @@ def suppress_false_locks(
     static_dur_s: float = 0.20,
     seg_step_px: Optional[float] = None,
     seg_dur_s: float = 0.15,
+    seg_gap_s: float = 0.0,
     res_scale: float = 1.0,
 ) -> list[Optional[list[float]]]:
     """Recall-safe, image-space removal of false ball locks (E5+).
@@ -346,21 +347,41 @@ def suppress_false_locks(
                 out[k] = None
         i = j
 
-    # min-segment: keep only ball-plausible trajectory runs of >= seg_len frames
+    # min-segment: keep only ball-plausible trajectory runs SPANNING >= seg_len
+    # frames. A run may bridge up to `seg_gap` missing frames.
+    #
+    # That tolerance is the whole point. The test used to require STRICTLY
+    # consecutive detections, which made it exponentially harsher as fps rose:
+    # seg_len is a time (0.15 s), so at fps_eff 60 it demanded NINE unbroken
+    # detections, and at a realistic ~60% per-frame recall that is ~1% likely. One
+    # blink in the middle of a real trajectory split it into two short runs and
+    # both were deleted. A real ball is still a real ball when the detector
+    # misses a frame; what makes it real is that it keeps MOVING plausibly.
+    seg_gap = max(0, int(round(seg_gap_s * fps_eff)))
     keep = [False] * n
     i = 0
     while i < n:
         if out[i] is None:
             i += 1
             continue
-        j = i + 1
-        while j < n and out[j] is not None \
-                and np.hypot(out[j][0] - out[j - 1][0], out[j][1] - out[j - 1][1]) <= step:
-            j += 1
-        if j - i >= seg_len:
-            for k in range(i, j):
+        run = [i]
+        j = i
+        while True:
+            k = j + 1
+            while k < n and out[k] is None and k - j <= seg_gap:
+                k += 1
+            if k >= n or out[k] is None or (k - j) > seg_gap + 1:
+                break
+            # Budget the step by the frames actually skipped, so bridging a gap
+            # cannot smuggle in a teleport.
+            if np.hypot(out[k][0] - out[j][0], out[k][1] - out[j][1]) > step * (k - j):
+                break
+            run.append(k)
+            j = k
+        if run[-1] - run[0] + 1 >= seg_len:
+            for k in run:
                 keep[k] = True
-        i = j
+        i = j + 1
     for k in range(n):
         if not keep[k]:
             out[k] = None

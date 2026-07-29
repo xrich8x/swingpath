@@ -422,6 +422,32 @@ def test_tracker_gate_scales_with_frame_height():
     assert BallTracker(_Null(), (1920, 1080), use_bgsub=False).gate == 105.0
 
 
+def test_suppress_min_segment_survives_a_detector_blink():
+    """A real trajectory with one missed frame in the middle must survive.
+
+    The min-segment test used to require STRICTLY consecutive detections while its
+    length threshold scaled with fps, so at 60 fps it demanded 9 unbroken locks —
+    at a realistic ~60% per-frame recall, roughly a 1% event. One blink split a
+    real ball's run in two and both halves fell under the bar and were deleted.
+    """
+    from swingvision.ball import suppress_false_locks
+
+    # A ball crossing the frame at ~40 px/frame for 12 frames, blinking once.
+    track = [[100.0 + 40 * i, 300.0 + 12 * i] for i in range(12)]
+    track[6] = None
+
+    strict = suppress_false_locks(list(track), fps_eff=60.0, seg_gap_s=0.0)
+    lenient = suppress_false_locks(list(track), fps_eff=60.0, seg_gap_s=0.05)
+
+    assert sum(p is not None for p in strict) == 0, "test no longer pins the bug"
+    assert sum(p is not None for p in lenient) == 11, "the blink must be bridged"
+
+    # Bridging must not smuggle in a teleport: the step budget scales with the gap.
+    jump = [[100.0, 300.0], [140.0, 312.0], None, [9000.0, 9000.0], [9040.0, 9012.0]]
+    out = suppress_false_locks(jump, fps_eff=60.0, seg_gap_s=0.05)
+    assert out[3] is None and out[4] is None, "a gap must not license a teleport"
+
+
 def test_suppress_res_scale_is_identity_at_720p():
     """res_scale=1.0 must reproduce the shipped 720p behaviour bit for bit, and a
     1080p scale must be more permissive (a real ball covers 1.5x the pixels there,
