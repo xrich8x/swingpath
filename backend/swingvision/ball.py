@@ -1229,6 +1229,15 @@ class BallTracker:
         self.static_run = 0
         self.static_anchors: list = []
         self.n_static = 0   # fixture zones found (for the analyze log)
+        # WHY a frame produced no lock. The counters above all count successes, so
+        # a missing ball was previously unattributable — the difference between
+        # "the detector never saw it" and "we gated it away" had to be inferred.
+        self.n_no_det = 0          # no detector fired at all
+        self.n_rej_court_acq = 0   # a detection existed, court gate rejected it (acquiring)
+        self.n_rej_court_cont = 0  # ...rejected while continuing a track
+        self.n_rej_static = 0      # survived the court gate, failed the fixture test
+        self.n_rej_vel = 0         # on-court and moving, but off the predicted path
+        self.n_untracked = 0       # frames entered with no live track
 
     def _court_ok(self, pt, acquiring: bool) -> bool:
         """Court-plausibility of an image-space candidate, allowing for BALL HEIGHT.
@@ -1318,11 +1327,26 @@ class BallTracker:
         # detections are the model candidates for this frame.
         dets = [d.detect(frame) for d in self.detectors]
         acquiring = self.last is None
+        if acquiring:
+            self.n_untracked += 1
+        raw = [d for d in dets if d is not None]
+        if not raw:
+            self.n_no_det += 1
         # Court-plausibility gate: drop candidates whose ground back-projection is
         # nowhere near the court (crowd, scoreboard, birds) BEFORE the velocity
         # logic sees them — smooth off-court drift must never extend a track.
-        model_cands = [d for d in dets if d is not None and self._court_ok(d, acquiring)
-                       and self._static_ok(d)]
+        on_court = [d for d in raw if self._court_ok(d, acquiring)]
+        if raw and not on_court:
+            # Attribute the loss to the mode that caused it: the ACQUIRE envelope is
+            # much tighter than the continue one, so a frame rejected while acquiring
+            # is a track that never got to start.
+            if acquiring:
+                self.n_rej_court_acq += 1
+            else:
+                self.n_rej_court_cont += 1
+        model_cands = [d for d in on_court if self._static_ok(d)]
+        if on_court and not model_cands:
+            self.n_rej_static += 1
         pred = None
         if self.last is not None:
             pred = (self.last[0] + self.vel[0], self.last[1] + self.vel[1])
@@ -1334,6 +1358,8 @@ class BallTracker:
                 near = min(model_cands, key=lambda c: np.hypot(c[0] - pred[0], c[1] - pred[1]))
                 if np.hypot(near[0] - pred[0], near[1] - pred[1]) <= self.gate * (2 + self.miss):
                     chosen = near
+                else:
+                    self.n_rej_vel += 1
             if chosen is not None:
                 self.n_tnet += 1
         # Sub-threshold rescue while COASTING mid-track: each detector exposes its

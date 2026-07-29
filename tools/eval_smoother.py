@@ -50,17 +50,27 @@ def jerkiness(track):
 
 
 def score(track, ball, noball, step, far_y):
+    # Only frames the decimation actually processed are scoreable — see
+    # tools/eval_gold.py:cache_index. Scoring an odd gold frame against the
+    # even frame before it counts a timing offset as a miss.
+    def at(f):
+        return (f // step) if (f % step == 0 and f // step < len(track)) else None
+
     hit = tot = fh = ft = 0
     for f, v in ball.items():
-        pf = f // step
-        p = track[pf] if pf < len(track) else None
+        pf = at(f)
+        if pf is None:
+            continue
+        tot += 1
+        p = track[pf]
         ok = p is not None and math.dist(p, (v["x"], v["y"])) <= 10.0
-        hit += ok; tot += 1
+        hit += ok
         if v["y"] < far_y:
             ft += 1; fh += ok
-    fires = sum(1 for f in noball if (f // step) < len(track) and track[f // step] is not None)
+    nb = [f for f in noball if at(f) is not None]
+    fires = sum(1 for f in nb if track[at(f)] is not None)
     return (100 * hit / max(tot, 1), 100 * fh / max(ft, 1),
-            100 * fires / max(len(noball), 1))
+            100 * fires / max(len(nb), 1))
 
 
 def main() -> None:

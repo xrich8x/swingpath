@@ -80,12 +80,14 @@ def far_masks(ball, H, wh):
     return px, geo
 
 
-def perceive(video, weights, device, H, cam_xyz, W, Hh, fps_eff, step):
+def perceive(video, weights, device, H, cam_xyz, W, Hh, fps_eff, step,
+             acquire_bound_m=4.0):
     os.environ["BALLNET_WEIGHTS"] = weights
     from swingvision.ball import OurBallDetector, BallTracker
     det = OurBallDetector(device=device)
     tracker = BallTracker([det], (W, Hh), use_bgsub=False, homography=H,
-                          fps=fps_eff, cam_xyz=cam_xyz)
+                          fps=fps_eff, cam_xyz=cam_xyz,
+                          acquire_bound_m=acquire_bound_m)
     cap = cv2.VideoCapture(str(video))
     ball_px = []
     idx = 0
@@ -99,17 +101,40 @@ def perceive(video, weights, device, H, cam_xyz, W, Hh, fps_eff, step):
         idx += 1
     cap.release()
     print(f"  perceived {len(ball_px)} frames in {time.time()-t0:.0f}s", flush=True)
+    print(f"  locks: model={tracker.n_tnet} | misses: no-detection={tracker.n_no_det}, "
+          f"court-gate(acq)={tracker.n_rej_court_acq}, "
+          f"court-gate(cont)={tracker.n_rej_court_cont}, "
+          f"fixture={tracker.n_rej_static}, off-path={tracker.n_rej_vel}, "
+          f"untracked-frames={tracker.n_untracked}", flush=True)
     return ball_px
 
 
+def index_of(step, n):
+    """gold frame -> position in the track, or None if that frame was never processed.
+
+    The guard matters more than it looks. At step=2 on a 60 fps clip, HALF the gold
+    frames are odd; without `f % step == 0` they get scored against the ball's
+    position one source frame earlier, against a 10 px tolerance — which on a
+    1080p clip is often further than the ball moves. `tools/eval_gold.py` has had
+    this guard all along; this tool did not, so its recall numbers understated the
+    tracker by counting a timing offset as a miss.
+    """
+    return lambda f: (f // step) if (f % step == 0 and f // step < n) else None
+
+
 def measure(tr, ball, noball, step, tag, far_px, far_geo, coasted=None):
-    fires = [f for f in noball if (f // step) < len(tr) and tr[f // step] is not None]
-    hit = 0
+    at = index_of(step, len(tr))
+    fires = [f for f in noball if at(f) is not None and tr[at(f)] is not None]
+    n_nb = sum(1 for f in noball if at(f) is not None)
+    hit = tot = 0
     hp = tp = hg = tg = 0
     ghost = 0
     for f, v in ball.items():
-        pf = f // step
-        p = tr[pf] if pf < len(tr) else None
+        pf = at(f)
+        if pf is None:
+            continue                     # not a processed frame: unscoreable, not a miss
+        tot += 1
+        p = tr[pf]
         ok = p is not None and math.dist(p, (v["x"], v["y"])) <= 10.0
         hit += ok
         if ok and coasted is not None and pf < len(coasted) and coasted[pf]:
@@ -120,8 +145,8 @@ def measure(tr, ball, noball, step, tag, far_px, far_geo, coasted=None):
             tg += 1; hg += ok
     geo = "     -" if tg == 0 else f"{100*hg/tg:>5.1f}%"
     note = "" if coasted is None else f"  ({ghost} of the hits interpolated)"
-    print(f"    {tag:<32}{100*len(fires)/max(len(noball),1):>7.1f}%"
-          f"{100*hit/max(len(ball),1):>9.1f}%{100*hp/max(tp,1):>10.1f}%{geo:>9}"
+    print(f"    {tag:<32}{100*len(fires)/max(n_nb,1):>7.1f}%"
+          f"{100*hit/max(tot,1):>9.1f}%{100*hp/max(tp,1):>10.1f}%{geo:>9}"
           f"   fires={len(fires)}{note}")
 
 
@@ -130,6 +155,15 @@ def main():
     ap.add_argument("--weights", nargs="+", required=True)
     ap.add_argument("--clip", default="yt_rally2", choices=list(CLIPS))
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--acquire-bound", type=float, default=4.0,
+                    help="court envelope (m) a candidate must fall inside to START a "
+                         "track; continuing one uses 10 m. Measured on am_hard_utr the "
+                         "4 m default can seed from only 62.9%% of real ball positions "
+                         "and 0 of 13 far-court ones")
+    ap.add_argument("--frame-step", type=int, default=None,
+                    help="override the ~30fps decimation; 1 makes every gold frame "
+                         "scoreable (2x the GPU time) and is the cross-check that the "
+                         "decimated run is not hiding anything")
     args = ap.parse_args()
 
     from swingvision import calibration, ball as B
@@ -139,22 +173,32 @@ def main():
     W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)); Hh = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     src_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0; cap.release()
     H, hfov = build_calib(pts_rel, (W, Hh))
-    step = max(1, round(src_fps / 30.0))
+    step = args.frame_step or max(1, round(src_fps / 30.0))
     fps_eff = src_fps / step
     cam_xyz = calibration.camera_position_m(H, (W, Hh), hfov)
     ballg, noball = gold(labels_rel)
     far_px, far_geo = far_masks(ballg, H, (W, Hh))
     frac, until = calibration.reliable_court_span(H)
+    # How much of the gold set this decimation can even see. Silently dropping half
+    # the labels and calling the remainder "recall" is how the old version of this
+    # tool understated the tracker.
+    scoreable = sum(1 for f in ballg if f % step == 0)
     print(f"{args.clip} {W}x{Hh} @ {src_fps:.0f}fps, step={step}, fps_eff={fps_eff:.0f}, "
-          f"hfov={hfov:.0f}deg, cam={None if cam_xyz is None else np.round(cam_xyz,1)}")
+          f"hfov={hfov:.0f}deg, cam={None if cam_xyz is None else np.round(cam_xyz,1)}, "
+          f"acquire_bound={args.acquire_bound:.0f}m")
     print(f"  measurable to court-y {until:.1f} m of 23.8 ({100*frac:.0f}% of depth); "
           f"{len(ballg)} ball / {len(noball)} no-ball; "
           f"far_px={len(far_px)}, far_geo={len(far_geo)}")
+    if scoreable < len(ballg):
+        print(f"  NOTE step={step} processes only {scoreable}/{len(ballg)} labelled ball "
+              f"frames; the other {len(ballg)-scoreable} are SKIPPED, not counted as "
+              f"misses. Use --frame-step 1 to score all of them.")
     print(f"    {'stage':<32}{'false-fire':>7}{'recall':>9}{'far_px':>10}{'far_geo':>9}\n"
           + "-" * 76)
     for w in args.weights:
         print(f"[{Path(w).name}]", flush=True)
-        raw = perceive(video, w, args.device, H, cam_xyz, W, Hh, fps_eff, step)
+        raw = perceive(video, w, args.device, H, cam_xyz, W, Hh, fps_eff, step,
+                       acquire_bound_m=args.acquire_bound)
         # The ladder below mirrors pipeline.analyze_video exactly, res_scale included.
         rs = Hh / 720.0
         measure(raw, ballg, noball, step, "tracker gates only", far_px, far_geo)

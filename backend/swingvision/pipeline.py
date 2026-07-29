@@ -1061,6 +1061,11 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
     print(f"[analyze] ball locked via model={tracker.n_tnet}, "
           f"background-recovered={tracker.n_bg}, "
           f"static-fixtures-suppressed={tracker.n_static}")
+    print(f"[analyze] ball NOT locked: no-detection={tracker.n_no_det}, "
+          f"court-gate(acquiring)={tracker.n_rej_court_acq}, "
+          f"court-gate(continuing)={tracker.n_rej_court_cont}, "
+          f"fixture={tracker.n_rej_static}, off-path={tracker.n_rej_vel} "
+          f"[{tracker.n_untracked} frames had no live track]")
 
     if cache_path:
         with open(cache_path, "w", encoding="utf-8") as f:
