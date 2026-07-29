@@ -1170,6 +1170,20 @@ class BallTracker:
         # CONTINUE one (loose — a real airborne ball projects past the baseline, but
         # nothing real projects 20+ m beyond it). This kills the smooth drift into
         # the crowd that the velocity gate alone allowed.
+        #
+        # MEASURED: raising acquire_bound_m 4 -> 10 (matching continue) is NOT worth
+        # it, despite a static analysis predicting it would be free. Evaluated at the
+        # gold clicks, the 4 m envelope can seed from only 62.9% of real ball
+        # positions and 0 of 13 far-court ones, versus 88.6% / 13 of 13 at 10 m — but
+        # end to end on am_hard_utr that bought almost nothing, because a track
+        # rejected on one frame re-acquires a frame or two later anyway:
+        #     acquire 4 m   FULL recall 43.4%  far_geo 47.5%  false-fire 7.5%
+        #     acquire 10 m  FULL recall 44.0%  far_geo 48.2%  false-fire 9.4%
+        # +0.6 pt of recall for +1.9 pt of false-fire — and on 53 no-ball frames that
+        # is literally one extra fire. Both inside noise. The acquire-rejection count
+        # did halve (694 -> 308), which is why the static prediction looked good; it
+        # simply is not the binding constraint. Per-gate counters (n_rej_court_acq et
+        # al) exist now, so this is re-measurable rather than re-arguable.
         self.Hinv = None if homography is None else np.linalg.inv(np.asarray(homography, float))
         self.acquire_bound_m = acquire_bound_m
         self.continue_bound_m = continue_bound_m

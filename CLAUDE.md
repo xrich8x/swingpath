@@ -233,7 +233,34 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   Theory says it should; measurement says scaling it 12 -> 18 px halves false-fire
   (13.2 -> 5.7%) but costs 4.3 pts of far-court recall, because on a 1.74 m camera a
   far ball's 0.2 s excursion clears 12 px but not 18 and gets reclassified as a
-  fixture. 170 tests.
+  fixture.
+- Session E6, part 3 — SPEEDS ON THE DASHBOARD, and a measurement debt repaid.
+  (1) MEASUREMENT BUG, now fixed: `eval_model_filters`/`eval_smoother` scored gold
+  frame f against track index `f//step` without checking f was processed, so at
+  step=2 every ODD gold frame was compared against the position one frame earlier.
+  Blast radius is exactly known from gold-frame parity: **yt_rally2 is 100% even, so
+  every number on it stands**; am_hard_utr is 48.6% odd, so this session's ladder
+  runs understated the tracker. Corrected re-baseline (step=1, all 175 gold frames,
+  shipped chain): tracker-gates-only 39.4 -> **52.6%**, FULL 41.1 -> **43.4%** recall
+  at **7.5%** false-fire. The earlier E6 part-2 before/after pair is WITHDRAWN.
+  (2) NEW per-gate MISS counters (the four old counters only counted successes).
+  On am_hard_utr, 28998 frames: no-detection **7934** dominates; court-gate 694
+  (acquiring) + 1834 (continuing); off-path 1324; fixture **0**. Also visible:
+  `suppress_false_locks` costs **15 pts of recall** at 1080p (50.3 -> 35.4), far more
+  than the 3.9 pts documented at 720p — the next thing to re-tune.
+  (3) `avg 0.0 km/h` FIXED -> **62.8 km/h avg / 91.9 top**, 7 of 14 shots confident.
+  Two causes. AIRBORNE != MISSING: the runoff box left 42% of tracked frames with no
+  court position, and `real_at` treated that as "ball not seen", collapsing coverage
+  to 37%. And `scale_ok` is MEASURED ANTI-CORRELATED with speed accuracy (PASS
+  median |err| 41.6% vs FAIL 19.2% — passing it means a SHORT ball, where a path
+  integral is proportionally worst), so it is off the speed test and stays on the
+  line call. Validated vs the SwingVision HUD (tools/speed_band.py): published
+  n=7 median 29.7% bias -13.9%, suppressed n=6 median 33.3% bias -32.8%. The
+  negative bias is EXPECTED PHYSICS (average flight speed vs launch speed) and must
+  not be "corrected" — see the Gotchas entry.
+  (4) MEASURED NEGATIVE: raising `acquire_bound_m` 4 -> 10 m. Static analysis said it
+  was free (seeding 62.9 -> 88.6% of gold positions, far-court 0/13 -> 13/13); end to
+  end it bought +0.6 pt recall for +1.9 pt false-fire. Not shipped. 171 tests.
 
 ## Conventions
 
