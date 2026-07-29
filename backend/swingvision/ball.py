@@ -278,7 +278,7 @@ def suppress_false_locks(
     static_radius_px: float = 12.0,
     static_dur_s: float = 0.20,
     seg_step_px: Optional[float] = None,
-    seg_dur_s: float = 0.15,
+    seg_dur_s: float = 0.10,
     seg_gap_s: float = 0.0,
     res_scale: float = 1.0,
 ) -> list[Optional[list[float]]]:
@@ -321,6 +321,32 @@ def suppress_false_locks(
     3.9-point recall cost (47.7% -> 43.8%). Survivors are in-court mislocks that
     only a more precise detector removes. Persistence runs first so fixtures can't
     chain into a real segment and mask the min-segment test.
+
+    `seg_dur_s` was 0.15 and is now 0.10 — this stage is a pure precision/recall
+    dial and 0.15 sat too far toward precision. Swept with tools/tune_suppress.py
+    at the SHIPPED frame rate against human gold clicks:
+
+        clip           seg_dur  recall  far_geo  false-fire
+        yt_rally2        0.15    69.4%   69.8%     19.2%
+        yt_rally2        0.10    72.5%   74.3%     23.1%
+        am_hard_utr      0.15    50.0%   54.8%     16.7%
+        am_hard_utr      0.10    54.4%   60.3%     25.0%
+
+    The per-frame false-fire rise looks bad and does not reach the product: end to
+    end on yt_rally2 the shot list is IDENTICAL (14 hits, 8 bounces, 14 shots — no
+    phantom events), because `drop_events_without_ball` and the smoother's segment
+    logic absorb stray locks that never form a trajectory. What does reach the
+    product is accuracy, because better coverage means better tracks — median
+    groundstroke speed error against the SwingVision HUD fell 29.9% -> 20.3%, and
+    one more shot became confident.
+
+    `seg_gap_s` (bridging a detector blink inside a run) is a MEASURED NO-OP at the
+    shipped rate and stays at 0. The strict-consecutiveness problem it fixes is real
+    but only bites at high fps: seg_dur is a TIME, so at fps_eff 60 the old rule
+    demanded nine unbroken detections (~1% likely at 60% per-frame recall), while at
+    the shipped ~30 fps it is only four. Swept at 30 fps, bridging gaps mostly
+    chains false locks together — 0.15/0.03 gave 71.3% recall at 23.1% false-fire,
+    strictly worse than 0.10/0.00's 72.5% at the same 23.1%.
     """
     out: list[Optional[list[float]]] = [
         None if p is None else [float(p[0]), float(p[1])] for p in positions

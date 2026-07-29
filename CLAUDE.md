@@ -246,8 +246,10 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   (2) NEW per-gate MISS counters (the four old counters only counted successes).
   On am_hard_utr, 28998 frames: no-detection **7934** dominates; court-gate 694
   (acquiring) + 1834 (continuing); off-path 1324; fixture **0**. Also visible:
-  `suppress_false_locks` costs **15 pts of recall** at 1080p (50.3 -> 35.4), far more
-  than the 3.9 pts documented at 720p — the next thing to re-tune.
+  `suppress_false_locks` is the largest recall cost in the chain. (The "15 pts"
+  first written here was measured at `--frame-step 1`, i.e. fps_eff 60, which is NOT
+  the shipped config; at the shipped ~30 fps it costs **5.4 pts on yt_rally2 and
+  10.0 pts on am_hard_utr**. Corrected, and swept in E6 part 4.)
   (3) `avg 0.0 km/h` FIXED -> **62.8 km/h avg / 91.9 top**, 7 of 14 shots confident.
   Two causes. AIRBORNE != MISSING: the runoff box left 42% of tracked frames with no
   court position, and `real_at` treated that as "ball not seen", collapsing coverage

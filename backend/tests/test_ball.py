@@ -433,11 +433,14 @@ def test_suppress_min_segment_survives_a_detector_blink():
     from swingvision.ball import suppress_false_locks
 
     # A ball crossing the frame at ~40 px/frame for 12 frames, blinking once.
+    # seg_dur is pinned rather than taking the default: this tests the GAP
+    # mechanism, and must keep doing so if the shipped duration is re-tuned.
     track = [[100.0 + 40 * i, 300.0 + 12 * i] for i in range(12)]
     track[6] = None
+    kw = dict(fps_eff=60.0, seg_dur_s=0.15)   # seg_len = 9 frames
 
-    strict = suppress_false_locks(list(track), fps_eff=60.0, seg_gap_s=0.0)
-    lenient = suppress_false_locks(list(track), fps_eff=60.0, seg_gap_s=0.05)
+    strict = suppress_false_locks(list(track), seg_gap_s=0.0, **kw)
+    lenient = suppress_false_locks(list(track), seg_gap_s=0.05, **kw)
 
     assert sum(p is not None for p in strict) == 0, "test no longer pins the bug"
     assert sum(p is not None for p in lenient) == 11, "the blink must be bridged"
