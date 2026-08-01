@@ -15,6 +15,7 @@ import json
 import math
 import os
 import sys
+import time
 from pathlib import Path
 
 import cv2
@@ -101,16 +102,12 @@ def score_clip(det, video, labels, radius=10.0, far_frac=0.36, H=None):
                 ff=100 * fp / max(ftt, 1), n=tot, nfar=ftot, nnb=ftt, ngeo=gtot)
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--weights", required=True)
-    ap.add_argument("--device", default="cpu")
-    args = ap.parse_args()
-
-    os.environ["BALLNET_WEIGHTS"] = args.weights
+def score_weights(weights, device, rows):
+    """Print the table for one checkpoint and append its rows to `rows`."""
+    os.environ["BALLNET_WEIGHTS"] = weights
     from swingvision.ball import OurBallDetector
-    det = OurBallDetector(device=args.device)
-    print(f"weights={args.weights}\n")
+    det = OurBallDetector(device=device)
+    print(f"weights={weights}\n")
     print(f"{'clip':<12}{'recall':>8}{'far_px':>8}{'far_geo':>9}{'false-fire':>12}"
           f"   {'band sizes px/geo':>16}")
     print("-" * 68)
@@ -129,6 +126,13 @@ def main() -> None:
         span = f"{r['nfar']}/{r['ngeo']} of {r['n']}"
         print(f"{tag:<12}{r['recall']:>7.1f}%{r['far']:>7.1f}%{geo:>9}{r['ff']:>11.1f}%"
               f"   {span:>16}")
+        rows.append({"weights": os.path.basename(weights), "clip": tag,
+                     "recall": round(r["recall"], 1),
+                     "far_px": round(r["far"], 1),
+                     "far_geo": None if r["geo"] is None else round(r["geo"], 1),
+                     "false_fire": round(r["ff"], 1),
+                     "n_ball": r["n"], "n_far": r["nfar"],
+                     "n_geo": r["ngeo"], "n_noball": r["nnb"]})
         agg["hit"] += r["recall"] / 100 * r["n"]; agg["tot"] += r["n"]
         agg["fhit"] += r["far"] / 100 * r["nfar"]; agg["ftot"] += r["nfar"]
         agg["fp"] += r["ff"] / 100 * r["nnb"]; agg["ftt"] += r["nnb"]
@@ -141,6 +145,51 @@ def main() -> None:
     print(f"{'POOLED':<12}{100*agg['hit']/max(agg['tot'],1):>7.1f}%"
           f"{100*agg['fhit']/max(agg['ftot'],1):>7.1f}%{pooled_geo:>9}"
           f"{100*agg['fp']/max(agg['ftt'],1):>11.1f}%   {pooled_span:>16}")
+    rows.append({"weights": os.path.basename(weights), "clip": "POOLED",
+                 "recall": round(100 * agg["hit"] / max(agg["tot"], 1), 1),
+                 "far_px": round(100 * agg["fhit"] / max(agg["ftot"], 1), 1),
+                 "far_geo": (None if agg["gtot"] == 0
+                             else round(100 * agg["ghit"] / agg["gtot"], 1)),
+                 "false_fire": round(100 * agg["fp"] / max(agg["ftt"], 1), 1),
+                 "n_ball": agg["tot"], "n_far": agg["ftot"],
+                 "n_geo": agg["gtot"], "n_noball": agg["ftt"]})
+    print()
+    return agg
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--weights", required=True, nargs="+",
+                    help="one or more checkpoints; each is scored on every clip")
+    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--json", dest="json_out",
+                    help="also write the table as JSON (for tools/lab_server.py)")
+    args = ap.parse_args()
+
+    rows = []
+    for w in args.weights:
+        score_weights(w, args.device, rows)
+
+    if args.json_out:
+        pooled = next((r for r in rows if r["clip"] == "POOLED"), {})
+        payload = {
+            "tool": "eval_detector_gold",
+            "created": time.strftime("%Y-%m-%d %H:%M:%S"),
+            # ML_PRACTICES: every number states what it was measured against.
+            "measured_against":
+                f"human gold clicks on {len({r['clip'] for r in rows}) - 1} clips; "
+                f"hit = detector peak within 10 px of the click "
+                f"({pooled.get('n_ball', 0)} ball frames, "
+                f"{pooled.get('n_noball', 0)} no-ball frames)",
+            "weights": args.weights,
+            "device": args.device,
+            "rows": rows,
+        }
+        Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.json_out).write_text(json.dumps(payload, indent=1),
+                                       encoding="utf-8")
+        print(f"wrote {args.json_out}")
+
     print("\nMeasured against human gold clicks (hit = within 10 px).")
     print("far_px  = top 36% of frame height. Available on every clip, comparable "
           "across resolutions; THE HEADLINE.")

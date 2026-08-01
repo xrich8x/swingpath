@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 from statistics import median
 
@@ -201,6 +202,8 @@ def main() -> None:
                     help="test the learned CourtNet (detect_court_learned) instead "
                          "of the classical detector")
     ap.add_argument("--markdown", default=None)
+    ap.add_argument("--json", dest="json_out",
+                    help="also write the table as JSON (for tools/lab_server.py)")
     args = ap.parse_args()
 
     clips = args.clips
@@ -215,23 +218,84 @@ def main() -> None:
     if not rows:
         raise SystemExit("no scorable clips (need at least one with labels)")
 
+    # Which of these clips is the model allowed to be graded on? A clip whose
+    # human labels were converted into CourtNet's training set (its
+    # data/court_dataset/<clip>/ dir exists) is the model's own homework. 17 of
+    # the 20 court gold clips are in exactly that position, so a single pooled
+    # number over all of them reads as accuracy and is mostly self-grading.
+    trained_on = {p.name for p in (REPO / "data" / "court_dataset").glob("*")
+                  if p.is_dir()}
+    for r in rows:
+        r["trained_on"] = r["clip"] in trained_on
+
     hdr = (f"{'clip':22s} {'usable':>6s} {'detect%':>7s} {'kp_err':>7s} "
-           f"{'corner':>7s} {'within%':>7s} {'court_IoU':>9s} {'false%':>7s}")
+           f"{'corner':>7s} {'within%':>7s} {'court_IoU':>9s} {'false%':>7s} "
+           f"{'split':>10s}")
     lines = [hdr, "-" * len(hdr)]
     for r in rows:
         lines.append(
             f"{r['clip']:22s} {r['usable']:6d} {fmt(r['detect_pct']):>7s} "
             f"{fmt(r['kp_err']):>7s} {fmt(r['corner_err']):>7s} "
             f"{fmt(r['within_pct']):>7s} {fmt(r['iou'],'{:.3f}'):>9s} "
-            f"{fmt(r['false_pct']):>7s}")
+            f"{fmt(r['false_pct']):>7s} "
+            f"{'TRAINED-ON' if r['trained_on'] else 'held-out':>10s}")
+
+    def pool(subset):
+        tot = sum(r["usable"] for r in subset)
+        det = sum(round(r["usable"] * r["detect_pct"] / 100) for r in subset)
+        return len(subset), det, tot, (100 * det / tot if tot else 0.0)
+
+    held = [r for r in rows if not r["trained_on"]]
+    seen = [r for r in rows if r["trained_on"]]
+    lines.append("-" * len(hdr))
+    for name, subset in (("HELD-OUT", held), ("trained-on", seen)):
+        if subset:
+            n, det, tot, pct = pool(subset)
+            lines.append(f"{name:22s} {tot:6d} {pct:6.1f}%    "
+                         f"({det} of {tot} frames, {n} clips)")
     out = "\n".join(lines)
     print(out)
+    # Deliberately NOT printing one number over all rows. The honest headline is
+    # the held-out line; pooling the two together is the self-grading trap.
+    if seen and held:
+        print(f"\nREAD THE HELD-OUT LINE. {len(seen)} of {len(rows)} clips were "
+              f"turned into CourtNet training data (data/court_dataset/), so "
+              f"their scores are the model marking its own homework. Only the "
+              f"{len(held)} held-out clips are a benchmark.")
+    elif seen and not held:
+        print(f"\nWARNING: every clip scored here is in CourtNet's training set. "
+              f"There is no held-out benchmark left — these numbers cannot tell "
+              f"you whether the model generalises.")
     print(f"\ntol={args.tol}px  |  detect%/within%/IoU higher=better  |  "
           f"kp_err/corner/false% lower=better")
 
     if args.markdown:
         Path(args.markdown).write_text("```\n" + out + "\n```\n", encoding="utf-8")
         print(f"\nwrote {args.markdown}")
+
+    if args.json_out:
+        payload = {
+            "tool": "eval_court",
+            "created": time.strftime("%Y-%m-%d %H:%M:%S"),
+            # ML_PRACTICES: name the ground truth and the denominator.
+            "measured_against":
+                f"human-clicked court corners; within% is inside {args.tol:g} px. "
+                f"HELD-OUT: {pool(held)[3]:.1f}% detect over {pool(held)[2]} "
+                f"frames on {len(held)} clips. The other {len(seen)} clips are in "
+                f"CourtNet's training set and are NOT a benchmark",
+            "held_out": {"clips": len(held), "frames": pool(held)[2],
+                         "detect_pct": round(pool(held)[3], 1)},
+            "trained_on": {"clips": len(seen), "frames": pool(seen)[2],
+                           "detect_pct": round(pool(seen)[3], 1)},
+            "detector": "learned CourtNet" if args.learned else "classical",
+            "tol_px": args.tol,
+            "min_confidence": args.min_confidence,
+            "rows": rows,
+        }
+        Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.json_out).write_text(json.dumps(payload, indent=1),
+                                       encoding="utf-8")
+        print(f"\nwrote {args.json_out}")
 
 
 if __name__ == "__main__":

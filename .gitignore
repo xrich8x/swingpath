@@ -78,3 +78,12 @@ Thumbs.db
 # regenerable from YouTube by id in the filename - never belongs in git)
 data/highlights/
 data/output/synth/*.npz
+
+# Lab (tools/lab_server.py) job artifacts. Same policy as data/output: the JSON
+# evidence IS committed — an eval scored against human gold is a result, and a
+# result nobody can reproduce isn't one — but the raw subprocess logs are bulky
+# and regenerable, so they stay out. data/clips/ (the train-vs-gold declaration
+# for each clip) is deliberately NOT ignored: it is the record of which footage
+# is benchmark and which is training data.
+data/runs/*.log
+data/incoming/

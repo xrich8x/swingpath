@@ -148,6 +148,13 @@ def measure(tr, ball, noball, step, tag, far_px, far_geo, coasted=None):
     print(f"    {tag:<32}{100*len(fires)/max(n_nb,1):>7.1f}%"
           f"{100*hit/max(tot,1):>9.1f}%{100*hp/max(tp,1):>10.1f}%{geo:>9}"
           f"   fires={len(fires)}{note}")
+    return {"stage": tag,
+            "false_fire": round(100 * len(fires) / max(n_nb, 1), 1),
+            "recall": round(100 * hit / max(tot, 1), 1),
+            "far_px": round(100 * hp / max(tp, 1), 1),
+            "far_geo": None if tg == 0 else round(100 * hg / tg, 1),
+            "fires": len(fires), "n_scored": tot, "n_noball": n_nb,
+            "interpolated_hits": None if coasted is None else ghost}
 
 
 def main():
@@ -164,6 +171,8 @@ def main():
                     help="override the ~30fps decimation; 1 makes every gold frame "
                          "scoreable (2x the GPU time) and is the cross-check that the "
                          "decimated run is not hiding anything")
+    ap.add_argument("--json", dest="json_out",
+                    help="also write the ladder as JSON (for tools/lab_server.py)")
     args = ap.parse_args()
 
     from swingvision import calibration, ball as B
@@ -195,26 +204,57 @@ def main():
               f"misses. Use --frame-step 1 to score all of them.")
     print(f"    {'stage':<32}{'false-fire':>7}{'recall':>9}{'far_px':>10}{'far_geo':>9}\n"
           + "-" * 76)
+    rows = []
     for w in args.weights:
         print(f"[{Path(w).name}]", flush=True)
         raw = perceive(video, w, args.device, H, cam_xyz, W, Hh, fps_eff, step,
                        acquire_bound_m=args.acquire_bound)
         # The ladder below mirrors pipeline.analyze_video exactly, res_scale included.
         rs = Hh / 720.0
-        measure(raw, ballg, noball, step, "tracker gates only", far_px, far_geo)
+        stages = [measure(raw, ballg, noball, step, "tracker gates only",
+                          far_px, far_geo)]
         tr = B.remove_outliers(list(raw), max_jump=max(W, Hh) * 0.06)
         tr = B.rectify_track(tr, max_speed_px=3000.0 * rs / fps_eff, resid_px=35.0 * rs)
-        measure(tr, ballg, noball, step, "+ rectify", far_px, far_geo)
+        stages.append(measure(tr, ballg, noball, step, "+ rectify", far_px, far_geo))
         tr = B.suppress_false_locks(tr, fps_eff=fps_eff, res_scale=rs)
-        measure(tr, ballg, noball, step, "+ suppress_false_locks", far_px, far_geo)
+        stages.append(measure(tr, ballg, noball, step, "+ suppress_false_locks",
+                              far_px, far_geo))
         tr = B.gate_ball_to_court(tr, H, (W, Hh), hfov_deg=hfov)
-        measure(tr, ballg, noball, step, "+ court-region gate", far_px, far_geo)
+        stages.append(measure(tr, ballg, noball, step, "+ court-region gate",
+                              far_px, far_geo))
         tr, coasted, _conf = B.smooth_forecast(tr, fps_eff=fps_eff, res_scale=rs)
-        measure(tr, ballg, noball, step, "+ kalman smooth (FULL)", far_px, far_geo,
-                coasted=coasted)
+        stages.append(measure(tr, ballg, noball, step, "+ kalman smooth (FULL)",
+                              far_px, far_geo, coasted=coasted))
+        for s in stages:
+            rows.append({"weights": Path(w).name, "clip": args.clip, **s})
     print("\nMeasured against human gold clicks; hit = within 10 px. far_px = top "
           f"{FAR_FRAC:.0%} of frame height. far_geo = court_scale_m_per_px > "
           f"{calibration.RELIABLE_SCALE_M_PER_PX} (needs calibration).")
+
+    if args.json_out:
+        payload = {
+            "tool": "eval_model_filters",
+            "created": time.strftime("%Y-%m-%d %H:%M:%S"),
+            # ML_PRACTICES: state what the number was measured against, and the
+            # denominator. `scoreable` matters here — a decimated run cannot see
+            # every gold frame, and calling the remainder "recall" is exactly how
+            # this tool understated the tracker before the alignment fix.
+            "measured_against":
+                f"human gold clicks on {args.clip}; hit = within 10 px. "
+                f"{scoreable} of {len(ballg)} labelled ball frames scoreable at "
+                f"step={step}; {len(noball)} no-ball frames",
+            "clip": args.clip, "weights": args.weights, "device": args.device,
+            "frame_step": step, "fps_eff": round(fps_eff, 2),
+            "resolution": f"{W}x{Hh}",
+            "scoreable": scoreable, "n_ball_labelled": len(ballg),
+            "n_noball": len(noball),
+            "measurable_depth_m": round(until, 1),
+            "rows": rows,
+        }
+        Path(args.json_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.json_out).write_text(json.dumps(payload, indent=1),
+                                       encoding="utf-8")
+        print(f"wrote {args.json_out}")
 
 
 if __name__ == "__main__":

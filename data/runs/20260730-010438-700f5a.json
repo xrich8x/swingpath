@@ -1,0 +1,26 @@
+{
+ "id": "20260730-010438-700f5a",
+ "kind": "eval",
+ "label": "eval court: all",
+ "argv": [
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\backend\\.venv-train\\Scripts\\python.exe",
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\tools\\eval_court.py",
+  "--all",
+  "--json",
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\runs\\20260730-010438.court.eval.json"
+ ],
+ "cwd": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision",
+ "meta": {
+  "kind": "court",
+  "weights": [],
+  "clip": "",
+  "json": "data/runs/20260730-010438.court.eval.json"
+ },
+ "status": "done",
+ "rc": 0,
+ "error": null,
+ "created": "2026-07-30 01:04:38",
+ "started": "2026-07-30 01:04:38",
+ "ended": "2026-07-30 01:04:43",
+ "elapsed_s": 5.0
+}

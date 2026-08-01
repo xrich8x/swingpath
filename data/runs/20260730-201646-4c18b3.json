@@ -1,0 +1,21 @@
+{
+ "id": "20260730-201646-4c18b3",
+ "kind": "intake",
+ "label": "validate loop_demo",
+ "argv": [
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\backend\\.venv\\Scripts\\python.exe",
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\tools\\validate_new_clip.py",
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\train_clips\\tC0z7FYvMks.mp4"
+ ],
+ "cwd": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision",
+ "meta": {
+  "clip": "loop_demo"
+ },
+ "status": "done",
+ "rc": 0,
+ "error": null,
+ "created": "2026-07-30 20:16:46",
+ "started": "2026-07-30 20:16:46",
+ "ended": "2026-07-30 20:16:46",
+ "elapsed_s": 0.2
+}

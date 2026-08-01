@@ -31,6 +31,7 @@ import json
 import os
 import random
 import sys
+import time
 
 import cv2
 import numpy as np
@@ -272,6 +273,27 @@ def evaluate(model, loader, device, fire_thresh=0.5):
     return med, hit10, ff
 
 
+def hms(seconds: float) -> str:
+    """Compact wall-clock, because 'how long will this take' had no answer.
+
+    Nothing in this project recorded training time — the ballnet_v21 log has no
+    timestamps at all — so an epoch count was the only handle on a run's cost.
+    """
+    seconds = int(max(0, seconds))
+    h, rem = divmod(seconds, 3600)
+    m, s = divmod(rem, 60)
+    return f"{h}h{m:02d}m" if h else (f"{m}m{s:02d}s" if m else f"{s}s")
+
+
+def emit(**fields) -> None:
+    """One machine-readable line per epoch, for tools/lab_server.py.
+
+    Prefixed so it is trivially separable from the human log and harmless if
+    nothing is reading it: the Lab charts these, a terminal user ignores them.
+    """
+    print("LABJSON:" + json.dumps(fields), flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="../data/ball_dataset")
@@ -313,7 +335,12 @@ def main():
                                 reduction="none")
 
     best = -1.0
+    t_start = time.time()
+    emit(kind="start", epochs=args.epochs, out=args.out, device=args.device,
+         train_pos=tp, train_neg=tn, val_pos=vp, val_neg=vn,
+         params_m=round(n_par / 1e6, 2), excluded=args.exclude)
     for ep in range(1, args.epochs + 1):
+        t_ep = time.time()
         model.train()
         tot = 0.0
         for inp, hm, _, w in train_ld:
@@ -336,10 +363,24 @@ def main():
             os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
             torch.save({"model_state_dict": model.state_dict()}, args.out)
             marker = "  <- saved"
-        print(f"epoch {ep:3d}  loss {tot/max(len(train_ld),1):.4f}  "
+        ep_s = time.time() - t_ep
+        eta = ep_s * (args.epochs - ep)
+        loss = tot / max(len(train_ld), 1)
+        print(f"epoch {ep:3d}  loss {loss:.4f}  "
               f"val median {med:.1f}px  within10px {hit10*100:.1f}%  "
-              f"false-fire {ff*100:.1f}%{marker}", flush=True)
-    print(f"best (hit@10 - false-fire): {best*100:.1f}%  -> {args.out}")
+              f"false-fire {ff*100:.1f}%{marker}"
+              f"   [{hms(ep_s)}/epoch, eta {hms(eta)}]", flush=True)
+        emit(kind="epoch", epoch=ep, epochs=args.epochs, loss=round(loss, 5),
+             median_px=None if med != med else round(med, 2),
+             hit10=round(hit10 * 100, 2), false_fire=round(ff * 100, 2),
+             score=round(score * 100, 2), saved=bool(marker),
+             epoch_s=round(ep_s, 1), elapsed_s=round(time.time() - t_start, 1),
+             eta_s=round(eta, 1))
+    total = time.time() - t_start
+    print(f"best (hit@10 - false-fire): {best*100:.1f}%  -> {args.out}"
+          f"   (total {hms(total)})")
+    emit(kind="final", best=round(best * 100, 2), out=args.out,
+         total_s=round(total, 1))
 
 
 if __name__ == "__main__":

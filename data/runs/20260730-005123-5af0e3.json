@@ -1,0 +1,30 @@
+{
+ "id": "20260730-005123-5af0e3",
+ "kind": "train",
+ "label": "train ballnet -> ballnet_labsmoke.pt",
+ "argv": [
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\backend\\.venv-train\\Scripts\\python.exe",
+  "train_ballnet.py",
+  "--epochs",
+  "1",
+  "--out",
+  "weights/ballnet_labsmoke.pt",
+  "--device",
+  "cuda"
+ ],
+ "cwd": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\backend",
+ "meta": {
+  "model": "ballnet",
+  "out": "ballnet_labsmoke.pt",
+  "epochs": 1,
+  "exclude": [],
+  "prefix": "ballnet"
+ },
+ "status": "done",
+ "rc": 0,
+ "error": null,
+ "created": "2026-07-30 00:51:23",
+ "started": "2026-07-30 00:51:23",
+ "ended": "2026-07-30 01:03:17",
+ "elapsed_s": 714.6
+}

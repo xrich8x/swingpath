@@ -1,0 +1,36 @@
+{
+ "id": "20260730-201646-4a526b",
+ "kind": "frames",
+ "label": "ball frames: loop_demo -> data/labels",
+ "argv": [
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\backend\\.venv\\Scripts\\python.exe",
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\tools\\select_gold_frames.py",
+  "--video",
+  "data/train_clips/tC0z7FYvMks.mp4",
+  "--clip",
+  "loop_demo",
+  "--target",
+  "12",
+  "--match",
+  "",
+  "--caches",
+  "--out",
+  "data/labels",
+  "--keypoints",
+  ""
+ ],
+ "cwd": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision",
+ "meta": {
+  "clip": "loop_demo",
+  "kind": "ball",
+  "pool": "train",
+  "out": "data/labels"
+ },
+ "status": "done",
+ "rc": 0,
+ "error": null,
+ "created": "2026-07-30 20:16:46",
+ "started": "2026-07-30 20:16:46",
+ "ended": "2026-07-30 20:17:48",
+ "elapsed_s": 61.4
+}

@@ -88,6 +88,59 @@ def static_flags(ball_px: list) -> list[bool]:
     return flags
 
 
+def parse_time(tok: str) -> float:
+    """'95', '1:35' or '1:02:03' -> seconds."""
+    parts = tok.strip().split(":")
+    if not all(p.strip() != "" for p in parts):
+        raise SystemExit(f"bad timestamp {tok!r}")
+    try:
+        vals = [float(p) for p in parts]
+    except ValueError:
+        raise SystemExit(f"bad timestamp {tok!r}")
+    if len(vals) > 3:
+        raise SystemExit(f"bad timestamp {tok!r} (max h:m:s)")
+    secs = 0.0
+    for v in vals:
+        secs = secs * 60 + v
+    return secs
+
+
+def parse_segments(spec: str, fps: float, step: int, n_idx: int):
+    """'1:30-2:10,5:00-5:45' -> the set of cache indices inside those windows.
+
+    Returns (None, []) when no spec is given, meaning "the whole clip".
+
+    WHY THIS EXISTS: on a 20-minute recording, sampling uniformly spends most of
+    the labelling budget on players walking between points. Restricting to the
+    rallies you care about puts every click on a frame that can actually teach
+    something — which for the far-court ball is the whole game.
+    """
+    if not spec or not spec.strip():
+        return None, []
+    allowed: set[int] = set()
+    windows = []
+    for chunk in spec.split(","):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        if "-" not in chunk:
+            raise SystemExit(f"segment {chunk!r} must look like 1:30-2:10")
+        a, b = chunk.split("-", 1)
+        t0, t1 = parse_time(a), parse_time(b)
+        if t1 <= t0:
+            raise SystemExit(f"segment {chunk!r} ends before it starts")
+        i0 = max(0, int(round(t0 * fps / step)))
+        i1 = min(n_idx - 1, int(round(t1 * fps / step)))
+        if i1 < i0:
+            raise SystemExit(f"segment {chunk!r} is outside the clip")
+        allowed.update(range(i0, i1 + 1))
+        windows.append({"from_s": round(t0, 2), "to_s": round(t1, 2),
+                        "frames": i1 - i0 + 1})
+    if not allowed:
+        raise SystemExit("no frames fall inside the requested segments")
+    return allowed, windows
+
+
 def spread(candidates: list[int], quota: int) -> list[int]:
     """Pick up to quota items evenly spaced across a sorted candidate list."""
     if len(candidates) <= quota:
@@ -140,6 +193,11 @@ def main() -> None:
         "data/output/demo30b.perception.json",           # ballnet-only
     ], help="perception caches; first = reference for the disagree bucket")
     ap.add_argument("--target", type=int, default=250)
+    ap.add_argument("--segments", default="",
+                    help="only sample inside these time windows of the source "
+                         "video, e.g. '1:30-2:10,5:00-5:45'. Use this on long "
+                         "recordings so the labelling budget lands on rallies "
+                         "instead of on players walking between points")
     ap.add_argument("--out", default="data/gold")
     ap.add_argument("--extract-only", action="store_true",
                     help="re-extract JPEGs for an existing manifest (after re-clone)")
@@ -209,18 +267,40 @@ def main() -> None:
         consensus.append(np.median(np.array(pts), axis=0).tolist() if pts else None)
         any_static.append(any(t[i] is not None and s[i] for t, s in zip(tracks, stat)))
 
+    # --- optional time-window restriction ----------------------------------
+    allowed, windows = parse_segments(args.segments, fps, step, n_idx)
+    if allowed is not None:
+        total_s = sum(w["to_s"] - w["from_s"] for w in windows)
+        print(f"segments: {len(windows)} window(s), {total_s:.1f}s of "
+              f"{n_video/fps:.0f}s ({len(allowed)} of {n_idx} sampleable frames)")
+        for w in windows:
+            print(f"  {w['from_s']:.1f}s - {w['to_s']:.1f}s  ({w['frames']} frames)")
+        # Frames a few milliseconds apart are near-duplicates. That is fine, even
+        # desirable, for TRAINING material — consecutive frames of one far-court
+        # flight are exactly the hard case. It is bad for a TEST set, where 250
+        # labels drawn from 3 moments measure those 3 moments, not the clip.
+        spacing_s = total_s / max(args.target, 1)
+        if spacing_s < 0.25:
+            print(f"  NOTE: ~{spacing_s:.2f}s between samples — these labels will "
+                  f"be highly correlated. Good for training the hard case; "
+                  f"do NOT read a benchmark off a set this narrow.")
+
     # --- bucket candidates (cache indices) ---------------------------------
     if not tracks:
-        buckets = {"uniform": spread(list(range(n_idx)), args.target)}
+        pool = sorted(allowed) if allowed is not None else list(range(n_idx))
+        buckets = {"uniform": spread(pool, args.target)}
         write_outputs(args, manifest_path, frames_dir, video_path, buckets,
-                      step, n_video, fps, width, height)
+                      step, n_video, fps, width, height, windows=windows)
         return
 
     quota = args.target // 5
     taken: set[int] = set()
 
     def claim(cands: list[int], quota: int, sampler=spread) -> list[int]:
-        picked = sampler(sorted(set(cands) - taken), quota)
+        pool = set(cands) - taken
+        if allowed is not None:
+            pool &= allowed
+        picked = sampler(sorted(pool), quota)
         taken.update(picked)
         return picked
 
@@ -288,13 +368,13 @@ def main() -> None:
                 buckets["near"].append(i)
 
     write_outputs(args, manifest_path, frames_dir, video_path, buckets,
-                  step, n_video, fps, width, height)
+                  step, n_video, fps, width, height, windows=windows)
 
 
 def write_outputs(args, manifest_path: Path, frames_dir: Path,
                   video_path: Path, buckets: dict[str, list[int]],
                   step: int, n_video: int, fps: float,
-                  width: int, height: int) -> None:
+                  width: int, height: int, windows: list | None = None) -> None:
     frames = sorted(
         ({"frame": i * step, "bucket": name}
          for name, idxs in buckets.items() for i in idxs),
@@ -319,6 +399,11 @@ def write_outputs(args, manifest_path: Path, frames_dir: Path,
             "disagree_px": DISAGREE_PX,
             "caches": args.caches, "match": args.match,
             "keypoints": args.keypoints,
+            # Recorded so a later reader can tell whether this manifest covers
+            # the whole clip or a few chosen rallies — it changes what the set
+            # is allowed to be used for.
+            "segments": getattr(args, "segments", "") or None,
+            "segment_windows": windows or None,
         },
         "bucket_counts": {k: len(v) for k, v in buckets.items()},
         "frames": frames,

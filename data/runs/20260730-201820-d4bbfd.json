@@ -1,0 +1,27 @@
+{
+ "id": "20260730-201820-d4bbfd",
+ "kind": "dataset",
+ "label": "human labels -> dataset: loop_demo",
+ "argv": [
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\backend\\.venv\\Scripts\\python.exe",
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\tools\\labels_to_dataset.py",
+  "--clip",
+  "loop_demo_human",
+  "--video",
+  "data/train_clips/tC0z7FYvMks.mp4",
+  "--labels",
+  "data/labels/loop_demo.labels.json"
+ ],
+ "cwd": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision",
+ "meta": {
+  "clip": "loop_demo",
+  "source": "human"
+ },
+ "status": "done",
+ "rc": 0,
+ "error": null,
+ "created": "2026-07-30 20:18:20",
+ "started": "2026-07-30 20:18:20",
+ "ended": "2026-07-30 20:18:21",
+ "elapsed_s": 0.6
+}
