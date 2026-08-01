@@ -202,4 +202,206 @@ Two traps this project has already fallen into — avoid both:
 
 ## Results
 
-_(fill in as it ships)_
+Ran 2026-08-01. Steps 1–3; Steps 4 and 5 gated on Step 2 and reported below.
+Every number is measured against human gold clicks (`data/gold/*.labels.json`)
+or the SwingVision HUD (`data/gold/hud_yt_rally2.json`), and says which.
+
+### Step 1 — the product metric. Two of four candidates survived contact.
+
+**MEASURED, and it kills a metric: "phantom speed" is identically zero.** The 17
+HUD readings in `hud_yt_rally2.json` tile source frames 62–2214 with a constant
+2-frame gap (the step=2 decimation). The HUD is a persistent *panel* showing the
+last stroke until the next replaces it, not a sparse event list, so there is no
+instant at which it "has no reading" and every shot we emit falls inside some
+panel. Dropped. Replaced by `surplus_shots`, tie-break evidence only.
+
+**"Visible ghost ball" already existed** — it is the eval ladder's FULL-row
+`fires`. `annotate.py` draws a ball iff `ball_px[i] is not None` on the same
+post-`smooth_forecast` track the ladder scores. Only the split was missing: the
+renderer draws a real detection as a solid disc and an interpolated one as a
+faded ring, so a change that converts solid ghosts to faded ones has removed
+nothing. Now printed as `fires=6 (5 solid, 1 faded)`.
+
+**`hud_compare.py`'s matcher was wrong, and fixing it moves a published number.**
+Greedy-forward with a hard `lag >= 0` floor — but our `t_hit_s` carries its own
+±2-frame error, so a panel can be stamped slightly *before* the hit it describes.
+MEASURED on `rally2_seg10`: the shot at t=14.73 could not claim the 14.60 panel
+(lag −0.13 s), took the 16.20 one instead (+1.47 s vs a typical +0.5–0.9), and
+orphaned the real shot at t=15.73 — which gold clicks independently exonerate.
+One 0.13 s error cascaded into two wrong verdicts and manufactured a phantom.
+Replaced with an order-preserving assignment; window −0.25..2.0. Coverage on that
+file 11/17 → 12/17. **Every coverage figure quoted before this fix is void.**
+
+`tools/event_audit.py` adjudicates hits and landings against the clicks. It runs
+on **yt_rally2 only** — gold is a uniform grid and the share of frames with a
+decided label within ±3 is 64.7% there versus **5.5% on am_hard_utr**, the clip
+with the worst false-fire. Two honesty properties: an event with no decided label
+within k leaves the *denominator*; and landings that coincide with a hit
+(5 of 12 here — every shot carries a `bounce_t_s` whether or not a bounce was
+detected) leave the landing denominator, because counting both lists naively
+reported the single t=26.6 phantom twice.
+
+Baseline at this commit — yt_rally2, shipped `frame_step`:
+
+    per-frame FF 23.1% at 72.5% recall | ghost 6/26 (5 solid, 1 faded) |
+    phantom hits 1/8 | phantom landings 1/4 | surplus shots 3/12 (1 conf) |
+    HUD 9/17
+
+Power, stated up front: n=8 adjudicable hits; 2/12 carries a 95% Wilson CI of
+[5%, 45%]. A phantom-rate claim needs the raw **count** to move by ≥3.
+
+### Step 2 — the tally. The confusers MOVE.
+
+All 71 raw false locks on human-labelled no-ball frames, all six gold clips,
+viewed as cross-haired crops (`tools/inspect_false_locks.py --contact-sheet`).
+The pooled 34.8% reproduces `data/output/gold_v21_e6.txt` clip for clip.
+
+| what it fired at | n | % |
+|---|---|---|
+| **racquet** | 22 | 31.0% |
+| **player** | 20 | 28.2% |
+| background | 8 | 11.3% |
+| fence | 7 | 9.9% |
+| court_line | 5 | 7.0% |
+| court_surface | 4 | 5.6% |
+| held_ball | 2 | 2.8% |
+| signage | 2 | 2.8% |
+| net | 1 | 1.4% |
+
+**Moving with a person 59.2% · static scenery 38.0% · real ball not in play 2.8%.**
+Through the shipped chain (3 calibrated clips, `--frame-step 1`) 24 of 103
+survive at 23.3% and the mix barely shifts: 54.2% / 45.8% / 0%.
+
+A correction made mid-analysis, recorded because it reversed the answer:
+am_hard_utr has a tight image-space cluster (5 locks in an 11×14 px box across
+frames 9666–28531) and on a fixed camera that reads as a world-fixed object.
+First pass called it spare balls at the net base. **Wrong** — frames 12338–12350
+show it sweeping upward with the ball-feeder's arm. It is the light-coloured head
+of a swung racquet. Classification is data:
+`data/gold/false_lock_classes.json`.
+
+**Step 5 (motion attention) is SKIPPED, on this evidence.** The brief conditions
+it on the survivors being static or low-motion. They are not. The largest single
+class — a racquet head at 31% — is a ball-sized, frequently ball-coloured object
+travelling on an arc, which is precisely what a motion-difference gate cannot
+separate from a ball. `_ballnet.MotionPrompt` stays untrained.
+
+**Step 4's mining criterion needs rethinking, not just re-running.** "A lock that
+does not move for several frames is provably a fixture" reaches at most the 38%
+scenery slice, and the kinematic alternative (never joins a multi-frame track) is
+no better — a swung racquet forms a perfectly smooth track. The signal that
+separates 59% of these is that they are **attached to a person**, and the
+pipeline already runs pose. Recorded for a future session; the parity re-mine is
+still worth doing and the gap is wider than the brief states — four dirs are
+under-mined, not two: `yt_am_dbl_classb` 3%, `yt_col_hard_zheng` 6%,
+`yt_ewqSn18xdsY` 9%, `yt_tC0z7FYvMks` 9%, against a legacy tier of 15–26%.
+
+Nothing here is a live-ball problem: stationary real balls are 2.8% raw and 0%
+through the chain.
+
+### Step 3 — the score-threshold sweep, done for the first time.
+
+`score_thresh = 0.5` was hardcoded in four places, threaded from no caller,
+exposed by no CLI, and absent from the provenance stamp. It is now a dial on
+`eval_detector_gold`, `eval_model_filters`, `ball_perception`, `tune_suppress`
+and `run.py analyze`, and it is stamped and mismatch-checked.
+
+**The sweep costs one GPU pass, not one per threshold.** `detect()` takes the
+heatmap argmax and only *then* compares to the threshold, so the peak's position
+is threshold-independent; recording the peak value makes every threshold an
+in-memory comparison. Exact, not approximate — pinned by
+`tests/test_score_thresh.py` against a real per-threshold pass, and the swept
+0.50 row reproduces `gold_v21_e6.txt` digit for digit on all six clips.
+
+Raw detector, `ballnet_v21`, pooled over all six gold clips (1201 ball / 204
+no-ball frames), vs human gold clicks:
+
+| thresh | recall | far_px | far_geo | false-fire | recall−ff |
+|---|---|---|---|---|---|
+| 0.30 | 71.3% | 71.5% | 74.5% | 46.6% | 24.7 |
+| 0.40 | 70.4% | 70.0% | 73.4% | 38.7% | 31.7 |
+| **0.50** | **69.4%** | **68.8%** | **72.5%** | **34.8%** | **34.6** |
+| 0.60 | 68.0% | 67.8% | 70.8% | 30.9% | 37.1 |
+| 0.70 | 66.1% | 65.9% | 69.1% | 23.0% | 43.1 |
+| 0.80 | 62.9% | 60.8% | 65.1% | 16.7% | 46.2 |
+| 0.90 | 56.0% | 53.2% | 58.8% | 9.8% | 46.2 |
+
+There is a real curve and 0.5 is not on its knee: 0.5 → 0.7 buys 11.8 points of
+false-fire for 3.3 of recall, and the trade turns bad after (0.8 → 0.9 is 6.9 for
+6.9). `recall − false-fire` is a **shortlisting device only** — it cannot see
+whether a lock became a drawn ball or an event. 0.6 and 0.7 went to the chain
+A/B and were picked on the product metric.
+
+#### Chain A/B verdict: MEASURED NEGATIVE. The threshold stays at 0.5.
+
+Baseline, 0.6 and 0.7 through the full shipped chain, all three calibrated clips
+at `--frame-step 1` (so every gold label is scoreable — am_hard_utr is 48.6% odd
+frames), same commit, same session. Gates applied by `tools/score_thresh_gates.py`
+in their pre-registered order.
+
+| arm | clip | recall | far_geo | false-fire | ghost fires |
+|---|---|---|---|---|---|
+| base | am_hard_utr | 54.9% | 61.0 | 17.0% | 9 (5 solid, 4 faded) |
+| base | yt_match40 | 65.2% | 66.9 | 29.2% | 7 (3 solid, 4 faded) |
+| base | yt_rally2 | 75.2% | 72.6 | 30.8% | 8 (4 solid, 4 faded) |
+| 0.6 | am_hard_utr | 51.4% | 57.4 | 13.2% | 7 (4 solid, 3 faded) |
+| 0.6 | yt_match40 | 64.7% | 66.2 | 20.8% | 5 (1 solid, 4 faded) |
+| 0.6 | yt_rally2 | 74.0% | 70.9 | 26.9% | 7 (2 solid, 5 faded) |
+| 0.7 | am_hard_utr | 46.9% | 52.5 | 13.2% | 7 (3 solid, 4 faded) |
+| 0.7 | yt_match40 | 60.9% | 61.9 | 20.8% | 5 (1 solid, 4 faded) |
+| 0.7 | yt_rally2 | 69.0% | 63.1 | 26.9% | 7 (0 solid, 7 faded) |
+
+Pooled recall over 617 labelled ball frames: **66.5% → 64.8% at 0.6 → 60.3% at
+0.7.** Both **FAIL Gate 1** (limit −1.0 pt pooled, −2.0 pt far_geo on any clip):
+0.6 loses 1.6 pooled and 3.6 far_geo on am_hard_utr; 0.7 loses 6.1 pooled and
+5.0–9.5 far_geo on **every** clip.
+
+**Gate ordering earned its keep.** At 0.6 the ghost-ball criterion (Gate 2)
+would have PASSED — solid fires fall on all three clips, 5→4, 3→1, 4→2, and rise
+on none. Reading the table in any other order, that looks like the win this
+session was for. Gate 1 is first precisely so a recall regression cannot be
+rationalised away by a precision number that improved.
+
+**The mechanism is the real result, and it generalises past this knob.** Raising
+the detector threshold does **not** remove ghost balls, because `smooth_forecast`
+fills the gaps a stricter detector creates. On yt_rally2 at 0.7 the chain reaches
+**zero** false fires after `suppress_false_locks` — tracker-gates-only false-fire
+falls 30.8% → 3.8%, suppression takes it to 0 — and then the smoother puts back 7,
+**all faded**. Total ghosts move 8 → 7, which is noise, while recall pays 6.2
+points and far_geo 9.5. The solid/faded split is the only reason this is visible;
+the per-frame false-fire number (30.8% → 26.9%) makes 0.7 look like a modest win.
+
+So the ghost ball on a no-ball frame is not, at the margin, a detector-precision
+problem at all — it is the smoother interpolating through dead time. Anything
+that makes the detector quieter hands the same frames to the smoother instead.
+That points the next attempt at `smooth_forecast`'s gap-filling policy (it already
+refuses to extrapolate; the open question is whether it should refuse to bridge a
+gap that has no *event* support either), not at the detector.
+
+`score_thresh` stays at **0.5**. The dial, the provenance stamp and the sweep
+tooling ship anyway — the value of 0.5 is now measured rather than inherited, and
+the next person can re-sweep in one GPU pass.
+
+Confirmed no-op: re-running `run.py analyze` on yt_rally2 at the shipped settings
+after all of this session's `ball.py` changes reproduces the pre-change
+match.json exactly — same 12 shots, 6 rallies, identical stats and score.
+
+### Steps 4 and 5 — not run, and why
+
+- **Step 5 (motion attention v4): skipped on Step 2's evidence**, as the brief's
+  own condition directs. The survivors move.
+- **Step 4 (re-mine + v3.1): deferred, and its criterion needs redesign first.**
+  The parity gap is real and wider than the brief states, but re-mining to parity
+  with the *existing* static-lock criterion would only deepen a negative set that
+  Step 2 shows addresses ≤38% of the confusers. The pose-proximity criterion is
+  the change worth making, and it is a session of its own.
+
+### For the next session
+
+1. `smooth_forecast` gap-filling is now the prime suspect for ghost balls, ahead
+   of detector precision. Test: require event or trajectory support before
+   bridging a gap, and measure on ghost `fires_real`/`fires_coasted`.
+2. Pose-proximity hard-negative mining (calibration-free, addresses the 59%).
+3. Re-mine the four under-mined training dirs to parity — after (2), not before.
+4. `mine_hard_negatives.py` hardcodes `"detector": "BallNet (weights/ballnet.pt)"`
+   in its provenance regardless of what actually loaded. Fix before any re-mine.

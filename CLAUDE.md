@@ -263,6 +263,62 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   (4) MEASURED NEGATIVE: raising `acquire_bound_m` 4 -> 10 m. Static analysis said it
   was free (seeding 62.9 -> 88.6% of gold positions, far-court 0/13 -> 13/13); end to
   end it bought +0.6 pt recall for +1.9 pt false-fire. Not shipped. 171 tests.
+- Session F (2026-08-01): FALSE FIRE, measured on what the user actually sees.
+  Steps 1-3 of docs/sessions/SESSION_F_false_fire.md; steps 4-5 gated and not run.
+  (1) THE PRODUCT METRIC. Per-frame false-fire is not the product (E6 pt 4 raised
+  it 19.2 -> 23.1% for ZERO extra phantom events), so it is now reported next to a
+  product number and picked on that. "Visible ghost ball" ALREADY EXISTED as the
+  eval ladder's FULL-row `fires` — annotate.py draws a ball iff ball_px[i] is not
+  None on the same post-smooth_forecast track — and only needed splitting into
+  `(N solid, M faded)`, because the renderer draws a real detection as a solid disc
+  and an interpolated one as a faded ring. NEW tools/event_audit.py adjudicates
+  each hit/landing against human clicks, on **yt_rally2 only**: gold is a uniform
+  grid and the share of frames with a decided label within +/-3 is 64.7% there vs
+  **5.5% on am_hard_utr**, the clip with the WORST false-fire. So event metrics are
+  the narrow half of any decision and ghost ball (3 clips) is the wide half.
+  DROPPED as unmeasurable: "phantom speed". The 17 HUD readings tile source frames
+  62-2214 with a constant 2-frame gap — the HUD is a persistent PANEL, not an event
+  list — so "a shot the HUD has no reading for" is identically empty. Replaced by
+  `surplus_shots`, tie-break evidence only. RETRACTED: every hud_compare.py coverage
+  figure quoted before this session. Its greedy matcher had a hard `lag >= 0` floor,
+  but our t_hit_s carries its own +/-2-frame error; on rally2_seg10 the shot at
+  t=14.73 could not claim the 14.60 panel (lag -0.13), took the 16.20 one (+1.47 vs
+  a typical +0.5..0.9) and orphaned the real shot at 15.73 that gold clicks
+  exonerate. One 0.13 s error cascaded into two wrong verdicts. Now an
+  order-preserving assignment; coverage on that file 11/17 -> 12/17.
+  (2) THE CONFUSERS MOVE — this is the load-bearing finding. All 71 raw false locks
+  on human no-ball frames, all six gold clips, classified by eye from contact sheets
+  (data/gold/false_lock_classes.json): racquet 31.0%, player 28.2%, background
+  11.3%, fence 9.9%, court_line 7.0%, court_surface 5.6%, held_ball 2.8%, signage
+  2.8%, net 1.4%. **MOVING WITH A PERSON 59.2% / static scenery 38.0% / real ball
+  not in play 2.8%**; through the chain 54/46/0. So (a) STEP 5 MOTION ATTENTION IS
+  SKIPPED — it suppresses static confusers and the largest class is a ball-sized,
+  ball-coloured racquet head on an arc; (b) mine_hard_negatives' static-lock
+  criterion reaches only that 38%, and the kinematic alternative is no better since
+  a swung racquet forms a smooth track — the signal is PERSON-ATTACHMENT and the
+  pipeline already runs pose; (c) this is not the live-ball question.
+  TRAP: a tight image-space cluster on a FIXED camera is not necessarily a fixture.
+  am_hard_utr's (5 locks in an 11x14 px box across 19k frames) was first read as
+  balls on the court; the video shows it sweeping up with the feeder's arm.
+  (3) SCORE_THRESH is now a dial (CLI on 5 tools + BALLNET_SCORE_THRESH env),
+  STAMPED in the perception provenance and mismatch-checked, and swept for the
+  first time — 0.5 was inherited and hardcoded in four places. The sweep costs ONE
+  GPU pass, not one per threshold: detect() argmaxes BEFORE thresholding, so the
+  peak position is threshold-independent. Exact, pinned by tests and by the swept
+  0.50 row reproducing data/output/gold_v21_e6.txt digit for digit.
+  MEASURED NEGATIVE — 0.5 STAYS. Pooled chain recall over 617 labelled ball frames
+  66.5% -> 64.8% at 0.6 -> 60.3% at 0.7; both FAIL the pre-registered recall gate.
+  THE MECHANISM GENERALISES PAST THIS KNOB: raising the threshold does NOT remove
+  ghost balls, because `smooth_forecast` fills the gaps a stricter detector creates.
+  On yt_rally2 at 0.7 the chain reaches ZERO fires after suppress_false_locks, then
+  the smoother puts back 7, ALL FADED — total ghosts 8 -> 7 (noise) for 6.2 pts of
+  recall and 9.5 of far_geo. Only the solid/faded split makes that visible; the
+  per-frame number (30.8 -> 26.9%) makes 0.7 look like a win. The ghost ball is, at
+  the margin, the SMOOTHER interpolating through dead time, not detector precision
+  — that is where the next attempt goes. Gate ordering earned its keep: at 0.6 the
+  ghost-ball gate would have PASSED (solid fires down on all 3 clips, up on none)
+  and only the recall gate, deliberately ordered first, killed it. 209 tests; the
+  shipped 0.5 path is verified byte-identical end to end.
 
 ## Conventions
 
