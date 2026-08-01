@@ -1,0 +1,61 @@
+{
+ "tool": "human/reviewer classification of tools/inspect_false_locks.py --stage raw",
+ "created": "2026-08-01",
+ "weights": "weights/ballnet_v21.pt",
+ "source": "data/output/f_falselocks_raw.json + the contact sheets f_falselocks_raw_*.png",
+ "method": "Every one of the 71 locks the raw detector places on a human-labelled no-ball frame was viewed as a 140 px crop with the lock cross-haired. Ambiguous cases were re-cut at 64 px and, where that was still not decisive, checked against consecutive source frames from the video to see whether the object moved.",
+ "classes": {
+  "racquet": "racquet head, frame, throat or grip. Ball-sized, often ball-coloured, MOVES on an arc.",
+  "player": "body, limb, shoe, head, clothing.",
+  "held_ball": "a real ball not in play - held in the hand, resting on the strings, or sitting in a courtside basket.",
+  "court_line": "painted line or its intersection.",
+  "court_surface": "plain court with no feature at the lock.",
+  "fence": "fence, windscreen, netting behind the court.",
+  "net": "net cord, tape, post, or equipment sitting against the net.",
+  "signage": "advertising banner or burned-in graphic.",
+  "background": "trees, buildings, spectators, anything off the court."
+ },
+ "corrections": "A first pass read the am_hard_utr cluster at x~990-1001, y~488-502 as balls lying on the court by the net. That was WRONG. Frames 12338-12350 pulled from the video show the object sweeping upward with the feeder's arm: it is the light-coloured head of a racquet being swung. The cluster is tight in image space only because the feeder stands in the same place, not because the object is static. Recorded because the corrected reading reverses the Step 5 decision.",
+ "labels": {
+  "am_hard_utr": {
+   "3028": "net", "3261": "player", "6405": "player", "6521": "fence",
+   "8152": "player", "9316": "racquet", "9666": "racquet", "9782": "held_ball",
+   "9899": "racquet", "12344": "racquet", "13043": "player", "13159": "player",
+   "13276": "racquet", "13392": "racquet", "14440": "background",
+   "15721": "player", "20147": "player", "22359": "player",
+   "23873": "background", "24339": "background", "24572": "fence",
+   "24688": "court_line", "25038": "court_line", "27134": "racquet",
+   "28531": "racquet", "28881": "court_surface"
+  },
+  "gold_shell": {
+   "248": "player", "745": "racquet", "1084": "court_line", "1559": "racquet",
+   "2123": "racquet", "2462": "fence", "2485": "player", "2530": "racquet",
+   "2666": "court_line", "3253": "racquet", "3366": "signage",
+   "3547": "court_surface", "3908": "player", "4111": "signage",
+   "4473": "fence", "4834": "racquet", "5331": "racquet"
+  },
+  "gold_clay": {"4740": "fence"},
+  "gold_am": {
+   "45": "background", "294": "background", "429": "racquet", "1017": "racquet",
+   "1107": "racquet", "2530": "racquet", "2982": "player", "3004": "player",
+   "3524": "racquet", "3727": "court_surface", "4879": "player",
+   "4925": "background"
+  },
+  "yt_match40": {
+   "172": "player", "4121": "player", "4224": "court_surface",
+   "4533": "racquet", "4773": "background", "5425": "court_surface",
+   "3571": "player", "8928": "player", "9100": "held_ball", "9271": "player",
+   "9889": "player"
+  },
+  "yt_rally2": {
+   "18": "fence", "24": "fence", "522": "player", "1494": "racquet",
+   "1598": "fence", "1600": "fence", "1602": "background",
+   "2130": "player", "2186": "player", "2196": "court_line"
+  }
+ },
+ "chain_only": "am_hard_utr 22359/28881, yt_rally2 522/1598/1600, yt_match40 3571 appear only in the --stage chain tally. They are frames where the raw detector placed nothing but the tracker's background-subtraction recovery did, or where step=1 made a gold frame scoreable that the shipped step=2 skips.",
+ "uncertain": {
+  "yt_match40:4773": "a bright yellow-green blob in the ivy behind the court. Filed as background; it could equally be a real stray ball caught in the hedge, which would make it held_ball. Either reading leaves it in the 'not the in-play ball' group and neither changes the tally's conclusion.",
+  "am_hard_utr:3028": "a dark object resting against the net - a bag or a ball hopper. Filed as net."
+ }
+}
