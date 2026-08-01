@@ -144,6 +144,21 @@ def adjudicate(t_s, src_fps, decided, k, tr, at, click_ok=True):
     return ("localised" if ok else "ball_elsewhere"), f, near, d, coasted
 
 
+def landing_verdict(verdict, coasted):
+    """Collapse a landing's presence verdict into the three-way split.
+
+    A landing legitimately falls on an interpolated frame — pipeline.py states
+    the exact contact usually lands BETWEEN detections, and `ball_valid` is
+    deliberately computed from a mask that includes coasted frames. Scoring a
+    coasted landing as a phantom would blame the smoother for doing its job, so
+    only a landing on a human "no ball" counts. `unknown` passes through
+    untouched: it is out of the denominator either way.
+    """
+    if verdict in ("ball_present", "localised", "ball_elsewhere"):
+        return "coasted" if coasted else "real_detection"
+    return verdict
+
+
 def coverage_at(decided_frames, n_frames, k):
     """Share of all source frames that an event could be adjudicated on at
     tolerance k. Printed at several k so nobody tunes k until they like the
@@ -252,13 +267,8 @@ def main() -> None:
             verdict, f, near, d, _ = adjudicate(t, src_fps, decided, args.k, tr, at,
                                                 click_ok=want_click)
             c = coast_at(t)
-            # A landing legitimately falls on an interpolated frame — pipeline.py
-            # says the exact contact usually lands between detections — so a
-            # coasted bounce is reclassified rather than blamed. Only a landing on
-            # a human "no ball" is a phantom.
-            if kind == "landings" and verdict in ("ball_present", "localised",
-                                                  "ball_elsewhere"):
-                verdict = "coasted" if c else "real_detection"
+            if kind == "landings":
+                verdict = landing_verdict(verdict, c)
             rows.append(dict(id=i, t_s=round(t, 2), src_frame=f,
                              nearest_label=near, d_frames=d, verdict=verdict,
                              coasted=c))

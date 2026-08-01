@@ -10,6 +10,7 @@ calibration is ready; the perception loop is the stubbed seam (see pipeline.py).
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 from swingvision import pipeline
@@ -28,6 +29,13 @@ def _cmd_demo(args: argparse.Namespace) -> int:
 
 
 def _cmd_analyze(args: argparse.Namespace) -> int:
+    if args.score_thresh is not None:
+        # Env hook rather than a threaded argument: the detector is constructed
+        # in several places inside the pipeline (main, far-court tile, probe) and
+        # a flag that reached only some of them would produce a run that is half
+        # one operating point and half another. Stamped into the cache
+        # provenance, so a stale cache from another threshold is reported.
+        os.environ["BALLNET_SCORE_THRESH"] = str(args.score_thresh)
     match = pipeline.analyze_video(
         args.video,
         keypoints_path=args.keypoints,
@@ -154,6 +162,12 @@ def build_parser() -> argparse.ArgumentParser:
                               "tracknet suits broadcast, wasb suits amateur/720p), force "
                               "tracknet | wasb | fusion, or ours (weights/ballnet.pt, "
                               "trained on this project's own data via train_ballnet.py)")
+    analyze.add_argument("--score-thresh", type=float, default=None,
+                         dest="score_thresh",
+                         help="ball detector accept threshold (default 0.5). Higher "
+                              "is stricter: fewer false locks, less far-court recall. "
+                              "Swept against human gold clicks with "
+                              "tools/eval_detector_gold.py --score-thresh")
     analyze.add_argument("--annotate", action="store_true", dest="annotate",
                          help="also render an annotated overlay video (court + players + "
                               "ball + shot labels) next to the match.json")

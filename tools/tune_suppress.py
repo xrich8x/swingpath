@@ -78,8 +78,16 @@ def main() -> None:
     ap.add_argument("--clip", default="am_hard_utr", choices=list(CLIPS))
     ap.add_argument("--weights", default="weights/ballnet_v21.pt")
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--score-thresh", type=float, default=None,
+                    help="detector accept threshold (default 0.5). Unlike the "
+                         "suppress parameters below this one lives INSIDE the "
+                         "detector, so it costs a fresh perception pass per value "
+                         "here and cannot be swept in memory alongside them")
     ap.add_argument("--frame-step", type=int, default=None)
     args = ap.parse_args()
+
+    if args.score_thresh is not None:
+        os.environ["BALLNET_SCORE_THRESH"] = str(args.score_thresh)
 
     video_rel, pts_rel, labels_rel = CLIPS[args.clip]
     video = REPO / video_rel

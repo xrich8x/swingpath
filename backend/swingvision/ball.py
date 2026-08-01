@@ -915,7 +915,28 @@ class OurBallDetector:
     """OUR ball detector — swingvision._ballnet.BallNet trained on this project's
     own pseudo-label dataset (backend/train_ballnet.py), no third-party weights.
     Same detect() interface/convention as WASBDetector (3 frames newest-first,
-    512x288, /255; heatmap peak above score_thresh)."""
+    512x288, /255; heatmap peak above score_thresh).
+
+    SCORE_THRESH: 0.5 was an inherited default and had never been swept until
+    Session F. Swept against human gold clicks on all six gold clips
+    (tools/eval_detector_gold.py --score-thresh; 1201 ball / 204 no-ball frames):
+
+        thresh  recall  far_px  far_geo  false-fire  recall-ff
+         0.30    71.3%   71.5%    74.5%     46.6%       24.7
+         0.40    70.4%   70.0%    73.4%     38.7%       31.7
+         0.50    69.4%   68.8%    72.5%     34.8%       34.6   <- shipped
+         0.60    68.0%   67.8%    70.8%     30.9%       37.1
+         0.70    66.1%   65.9%    69.1%     23.0%       43.1
+         0.80    62.9%   60.8%    65.1%     16.7%       46.2
+         0.90    56.0%   53.2%    58.8%      9.8%       46.2
+
+    The trade is strongly favourable up to ~0.7 (0.5 -> 0.7 buys 11.8 points of
+    false-fire for 3.3 of recall) and turns bad after it (0.8 -> 0.9 is 6.9 for
+    6.9). But `recall - false-fire` is a SHORTLISTING device only — it cannot see
+    whether a lock ever became a drawn ball or an event, and the whole point of
+    E6 was that far-court recall is the expensive thing. The shipped value is
+    decided on the product metric; see the Session F entry in CLAUDE.md.
+    """
 
     in_w, in_h = 512, 288
 
@@ -939,7 +960,14 @@ class OurBallDetector:
         torch.set_num_threads(os.cpu_count() or torch.get_num_threads())
         self.device = device
         self.weights_path = weights   # recorded in the perception-cache provenance
-        self.score_thresh = score_thresh
+        # Same env-hook pattern as the weights above, and for the same reason: it
+        # points a benchmark at a different operating point without threading an
+        # argument through every construction site. 0.5 is an INHERITED default
+        # that was never swept until Session F; the sweep is in the class
+        # docstring. It is stamped into the perception-cache provenance, because
+        # a cache built at one threshold is not a cache for another.
+        env_thresh = os.environ.get("BALLNET_SCORE_THRESH")
+        self.score_thresh = float(env_thresh) if env_thresh else score_thresh
         ckpt = torch.load(weights, map_location=device, weights_only=False)
         sd = ckpt["model_state_dict"]
         # A v4+ (motion-attention) checkpoint carries the motion-prompt params; build
@@ -950,10 +978,20 @@ class OurBallDetector:
         self.model.eval().to(device)
         self._buf: deque = deque(maxlen=3)
         self.last_sub = None   # best sub-threshold response (tracker rescue)
+        # The peak and its position REGARDLESS of the threshold. detect() picks
+        # the peak by argmax and only THEN compares it to score_thresh, so the
+        # location does not depend on the threshold at all — which means a
+        # threshold sweep can be done in memory from one perception pass instead
+        # of one GPU pass per threshold. Nothing in the pipeline reads these;
+        # they exist so a benchmark can sweep honestly.
+        self.last_score = 0.0
+        self.last_pt = None
 
     def reset(self) -> None:
         self._buf.clear()
         self.last_sub = None
+        self.last_score = 0.0
+        self.last_pt = None
 
     def detect(self, frame) -> Optional[tuple[float, float]]:
         import cv2
@@ -971,6 +1009,8 @@ class OurBallDetector:
             hm = torch.sigmoid(self.model(inp)[0, 0]).cpu().numpy()
         iy, ix = np.unravel_index(hm.argmax(), hm.shape)
         pt = (float(ix) * W / self.in_w, float(iy) * H / self.in_h)
+        self.last_score = float(hm[iy, ix])
+        self.last_pt = pt
         if hm[iy, ix] < self.score_thresh:
             # Weak response kept as a tracker-gated rescue candidate.
             self.last_sub = pt if hm[iy, ix] >= 0.5 * self.score_thresh else None

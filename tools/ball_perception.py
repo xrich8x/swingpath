@@ -79,6 +79,10 @@ def main() -> None:
                     help="BallNet checkpoint for --ball-model ours (else BALLNET_WEIGHTS env)")
     ap.add_argument("--tracknet-weights", default="weights/tracknet.pt")
     ap.add_argument("--device", default="cpu")
+    ap.add_argument("--score-thresh", type=float, default=None,
+                    help="detector accept threshold (default 0.5). Recorded in "
+                         "the cache provenance below, because a cache built at "
+                         "one threshold is not a cache for another")
     ap.add_argument("--frame-step", type=int, default=1)
     ap.add_argument("--target-fps", type=float, default=None,
                     help="decimate to this frame rate instead of --frame-step "
@@ -105,6 +109,8 @@ def main() -> None:
 
     if args.ballnet_weights:
         os.environ["BALLNET_WEIGHTS"] = args.ballnet_weights
+    if args.score_thresh is not None:
+        os.environ["BALLNET_SCORE_THRESH"] = str(args.score_thresh)
 
     import cv2
     from swingvision import calibration
@@ -216,6 +222,7 @@ def main() -> None:
                 "video": Path(args.video).name,
                 "weight_files": weight_files,
                 "device": args.device,
+                "score_thresh": os.environ.get("BALLNET_SCORE_THRESH", "0.5"),
                 "court_gate": gate_H is not None,
                 "static_gate": [tracker.static_step_px, tracker.static_min_run],
             },

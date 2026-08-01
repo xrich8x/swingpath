@@ -202,9 +202,17 @@ def main():
                     help="override the ~30fps decimation; 1 makes every gold frame "
                          "scoreable (2x the GPU time) and is the cross-check that the "
                          "decimated run is not hiding anything")
+    ap.add_argument("--score-thresh", type=float, default=None,
+                    help="detector accept threshold (default: the shipped 0.5). "
+                         "Set via the env hook so it reaches every construction "
+                         "site, and it IS stamped into the provenance, so a cache "
+                         "cannot be reused across arms by accident")
     ap.add_argument("--json", dest="json_out",
                     help="also write the ladder as JSON (for tools/lab_server.py)")
     args = ap.parse_args()
+
+    if args.score_thresh is not None:
+        os.environ["BALLNET_SCORE_THRESH"] = str(args.score_thresh)
 
     from swingvision import calibration, ball as B
     video_rel, pts_rel, labels_rel = CLIPS[args.clip]
@@ -275,6 +283,7 @@ def main():
                 f"{scoreable} of {len(ballg)} labelled ball frames scoreable at "
                 f"step={step}; {len(noball)} no-ball frames",
             "clip": args.clip, "weights": args.weights, "device": args.device,
+            "score_thresh": args.score_thresh,
             "frame_step": step, "fps_eff": round(fps_eff, 2),
             "resolution": f"{W}x{Hh}",
             "scoreable": scoreable, "n_ball_labelled": len(ballg),

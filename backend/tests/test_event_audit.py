@@ -7,7 +7,7 @@ twice.
 
 import pytest
 
-from event_audit import adjudicate, coverage_at, wilson95
+from event_audit import adjudicate, coverage_at, landing_verdict, wilson95
 
 
 # frame -> click dict (ball) or False (no ball). `unsure` labels never appear
@@ -81,6 +81,28 @@ def test_unprocessed_frame_falls_back_to_ball_present():
     there and the audit must not read that as the ball being elsewhere."""
     assert adjudicate(100 / FPS, FPS, DECIDED, 3, track_with(100, (50.0, 60.0)),
                       lambda f: None)[0] == "ball_present"
+
+
+def test_a_coasted_landing_is_not_a_phantom():
+    """The three-way split. pipeline.py says the exact contact usually falls
+    BETWEEN detections, so a landing on an interpolated frame is the smoother
+    working, not a false fire. Calling it a phantom would make every recall
+    improvement look like a precision regression."""
+    assert landing_verdict("ball_present", True) == "coasted"
+    assert landing_verdict("ball_present", False) == "real_detection"
+    assert landing_verdict("localised", True) == "coasted"
+    assert landing_verdict("ball_elsewhere", False) == "real_detection"
+
+
+def test_a_landing_on_a_no_ball_click_stays_a_phantom():
+    """Only the third bucket counts against us, and the coasted flag must not
+    launder it."""
+    assert landing_verdict("phantom_ball", True) == "phantom_ball"
+    assert landing_verdict("phantom_ball", False) == "phantom_ball"
+
+
+def test_unknown_landings_pass_through_the_split_untouched():
+    assert landing_verdict("unknown", None) == "unknown"
 
 
 def test_wilson_interval_is_wide_at_this_n():

@@ -78,7 +78,7 @@ def gold_noball(clip):
                   if v.get("ball") is False and not v.get("unsure"))
 
 
-def describe(locks, i, fps_eff, radius=15.0, R=8):
+def describe(locks, i, radius=15.0, R=8):
     """Local motion around one lock: how far it roams, and how long it holds.
 
     A real ball traverses the frame; a fixture sits still; a mislock on a moving
@@ -288,7 +288,7 @@ def main() -> None:
             # am_hard_utr, and "displacement over +/-8 of those" is a number
             # about the rally, not about the lock. Left blank rather than
             # printed as if it were evidence.
-            roam, run = describe(seq, i, None) if args.stage == "chain" \
+            roam, run = describe(seq, i) if args.stage == "chain" \
                 else (None, None)
             coast = ctx.get(f, (None, None, None, None))[2]
             rows.append(dict(clip=clip, frame=f, x=round(p[0], 1),

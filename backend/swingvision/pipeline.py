@@ -730,6 +730,25 @@ def _git_commit():
         return None
 
 
+def _ball_score_thresh():
+    """The detector accept threshold this run will use.
+
+    Read from the env hook rather than from a detector instance so the stamp is
+    correct even on the paths that build no OurBallDetector (tracknet/wasb),
+    where it records the value a `--score-thresh` would have applied.
+    """
+    from .ball import OurBallDetector
+    v = os.environ.get("BALLNET_SCORE_THRESH")
+    if v:
+        try:
+            return float(v)
+        except ValueError:
+            pass
+    import inspect as _inspect
+    return float(_inspect.signature(OurBallDetector.__init__)
+                 .parameters["score_thresh"].default)
+
+
 def _build_provenance(ball_model, weight_files, pose_model, device,
                       camera_hfov_deg, cam_h, gate_on, H,
                       static_gate=(3.0, 5)):
@@ -742,6 +761,11 @@ def _build_provenance(ball_model, weight_files, pose_model, device,
         "device": device,
         "camera_hfov_deg": round(float(camera_hfov_deg), 2),
         "court_gate_min_cam_h_m": COURT_GATE_MIN_CAM_H,
+        # The detector's accept threshold. It changes which frames have a ball at
+        # all, so a cache built at one value is not a cache for another — and
+        # until Session F it was neither stamped nor reachable, which meant a
+        # sweep would have silently re-read the previous arm's results.
+        "ball_score_thresh": _ball_score_thresh(),
         "static_gate_step_px_min_run": [float(static_gate[0]), int(static_gate[1])],
         "camera_height_m": round(float(cam_h), 2) if cam_h is not None else None,
         "court_gate_on": bool(gate_on),
@@ -766,6 +790,10 @@ def _provenance_mismatches(prov, device, camera_hfov_deg, H):
     if rec_gate is not None and abs(rec_gate - COURT_GATE_MIN_CAM_H) > 1e-9:
         diffs.append(f"court-gate height threshold: cache used {rec_gate} m, "
                      f"the code now uses {COURT_GATE_MIN_CAM_H} m")
+    rec_st = prov.get("ball_score_thresh")
+    if rec_st is not None and abs(rec_st - _ball_score_thresh()) > 1e-9:
+        diffs.append(f"ball score threshold: cache was built at {rec_st}, "
+                     f"this run uses {_ball_score_thresh()}")
     rec_h = prov.get("homography_sha256")
     if rec_h and rec_h != _homography_fingerprint(H):
         diffs.append("court calibration: the homography/keypoints differ from "
