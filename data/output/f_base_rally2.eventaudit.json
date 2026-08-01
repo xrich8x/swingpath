@@ -1,0 +1,298 @@
+{
+ "tool": "event_audit",
+ "created": "2026-08-01 08:37:46",
+ "commit": "5baee38",
+ "arm": "baseline ballnet_v21 thresh=0.5",
+ "match": "f_base_rally2.json",
+ "clip": "yt_rally2",
+ "src_fps": 60.0,
+ "frame_step": 2,
+ "tolerance_frames": 3,
+ "adjudicable_share_pct": {
+  "2": 52.6,
+  "3": 64.7,
+  "5": 80.7
+ },
+ "measured_against": "human gold clicks on yt_rally2: 284 decided labels (258 ball, 26 no-ball; unsure excluded from both sides). An event is adjudicated only if a decided label lies within 3 source frames. A 'ball present' verdict means a ball was VISIBLE in that frame, NOT that a stroke occurred.",
+ "hits": {
+  "n": 12,
+  "adjudicable": 8,
+  "phantom_ball": 1,
+  "phantom_pct": 12.5,
+  "ci95_pct": [
+   2,
+   47
+  ],
+  "tally": {
+   "unknown": 4,
+   "localised": 6,
+   "phantom_ball": 1,
+   "ball_elsewhere": 1
+  },
+  "rows": [
+   {
+    "id": 0,
+    "t_s": 7.97,
+    "src_frame": 478,
+    "nearest_label": 482,
+    "d_frames": 4,
+    "verdict": "unknown",
+    "coasted": false
+   },
+   {
+    "id": 1,
+    "t_s": 11.6,
+    "src_frame": 696,
+    "nearest_label": 696,
+    "d_frames": 0,
+    "verdict": "localised",
+    "coasted": false
+   },
+   {
+    "id": 2,
+    "t_s": 15.73,
+    "src_frame": 944,
+    "nearest_label": 942,
+    "d_frames": 2,
+    "verdict": "localised",
+    "coasted": false
+   },
+   {
+    "id": 3,
+    "t_s": 18.97,
+    "src_frame": 1138,
+    "nearest_label": 1138,
+    "d_frames": 0,
+    "verdict": "localised",
+    "coasted": false
+   },
+   {
+    "id": 4,
+    "t_s": 22.57,
+    "src_frame": 1354,
+    "nearest_label": 1354,
+    "d_frames": 0,
+    "verdict": "localised",
+    "coasted": false
+   },
+   {
+    "id": 5,
+    "t_s": 24.4,
+    "src_frame": 1464,
+    "nearest_label": 1454,
+    "d_frames": 10,
+    "verdict": "unknown",
+    "coasted": false
+   },
+   {
+    "id": 6,
+    "t_s": 25.87,
+    "src_frame": 1552,
+    "nearest_label": 1554,
+    "d_frames": 2,
+    "verdict": "localised",
+    "coasted": false
+   },
+   {
+    "id": 7,
+    "t_s": 26.6,
+    "src_frame": 1596,
+    "nearest_label": 1598,
+    "d_frames": 2,
+    "verdict": "phantom_ball",
+    "coasted": false
+   },
+   {
+    "id": 8,
+    "t_s": 27.77,
+    "src_frame": 1666,
+    "nearest_label": 1662,
+    "d_frames": 4,
+    "verdict": "unknown",
+    "coasted": true
+   },
+   {
+    "id": 9,
+    "t_s": 29.47,
+    "src_frame": 1768,
+    "nearest_label": 1764,
+    "d_frames": 4,
+    "verdict": "unknown",
+    "coasted": false
+   },
+   {
+    "id": 10,
+    "t_s": 30.1,
+    "src_frame": 1806,
+    "nearest_label": 1806,
+    "d_frames": 0,
+    "verdict": "ball_elsewhere",
+    "coasted": false
+   },
+   {
+    "id": 11,
+    "t_s": 33.4,
+    "src_frame": 2004,
+    "nearest_label": 2006,
+    "d_frames": 2,
+    "verdict": "localised",
+    "coasted": false
+   }
+  ]
+ },
+ "bounces": {
+  "n": 12,
+  "adjudicable": 4,
+  "phantom_ball": 1,
+  "phantom_pct": 25.0,
+  "ci95_pct": [
+   5,
+   70
+  ],
+  "tally": {
+   "real_detection": 2,
+   "unknown": 3,
+   "also_a_hit": 5,
+   "coasted": 1,
+   "phantom_ball": 1
+  },
+  "rows": [
+   {
+    "id": 0,
+    "t_s": 9.9,
+    "src_frame": 594,
+    "nearest_label": 596,
+    "d_frames": 2,
+    "verdict": "real_detection",
+    "coasted": false
+   },
+   {
+    "id": 1,
+    "t_s": 13.0,
+    "src_frame": 780,
+    "nearest_label": 774,
+    "d_frames": 6,
+    "verdict": "unknown",
+    "coasted": false
+   },
+   {
+    "id": 2,
+    "t_s": 17.43,
+    "src_frame": 1046,
+    "nearest_label": 1038,
+    "d_frames": 8,
+    "verdict": "unknown",
+    "coasted": false
+   },
+   {
+    "id": 3,
+    "t_s": 22.23,
+    "src_frame": 1334,
+    "nearest_label": 1344,
+    "d_frames": 10,
+    "verdict": "unknown",
+    "coasted": false
+   },
+   {
+    "id": 4,
+    "t_s": 24.2,
+    "src_frame": 1452,
+    "nearest_label": 1454,
+    "d_frames": 2,
+    "verdict": "real_detection",
+    "coasted": false
+   },
+   {
+    "id": 5,
+    "t_s": 25.87,
+    "src_frame": 1552,
+    "nearest_label": null,
+    "d_frames": null,
+    "verdict": "also_a_hit",
+    "coasted": null
+   },
+   {
+    "id": 6,
+    "t_s": 26.6,
+    "src_frame": 1596,
+    "nearest_label": null,
+    "d_frames": null,
+    "verdict": "also_a_hit",
+    "coasted": null
+   },
+   {
+    "id": 7,
+    "t_s": 27.67,
+    "src_frame": 1660,
+    "nearest_label": 1660,
+    "d_frames": 0,
+    "verdict": "coasted",
+    "coasted": true
+   },
+   {
+    "id": 8,
+    "t_s": 29.47,
+    "src_frame": 1768,
+    "nearest_label": null,
+    "d_frames": null,
+    "verdict": "also_a_hit",
+    "coasted": null
+   },
+   {
+    "id": 9,
+    "t_s": 30.1,
+    "src_frame": 1806,
+    "nearest_label": null,
+    "d_frames": null,
+    "verdict": "also_a_hit",
+    "coasted": null
+   },
+   {
+    "id": 10,
+    "t_s": 33.4,
+    "src_frame": 2004,
+    "nearest_label": null,
+    "d_frames": null,
+    "verdict": "also_a_hit",
+    "coasted": null
+   },
+   {
+    "id": 11,
+    "t_s": 36.9,
+    "src_frame": 2214,
+    "nearest_label": 2214,
+    "d_frames": 0,
+    "verdict": "phantom_ball",
+    "coasted": false
+   }
+  ]
+ },
+ "hud": {
+  "n_hud": 17,
+  "n_ours": 12,
+  "matched": 9,
+  "surplus_shots": 3,
+  "surplus_confident_shots": 1,
+  "coverage_pct": 52.9,
+  "matcher": "monotonic-dp"
+ },
+ "ghost_ball": {
+  "source": "f_base_yt_rally2.json",
+  "clip": "yt_rally2",
+  "stage": "+ kalman smooth (FULL)",
+  "fires": 6,
+  "fires_real": 5,
+  "fires_coasted": 1,
+  "n_noball": 26,
+  "false_fire_pct": 23.1,
+  "recall_pct": 72.5
+ },
+ "summary": "yt_rally2 | per-frame FF 23.1% | ghost 6/26 (5 solid, 1 faded) | phantom hits 1/8 | phantom landings 1/4 | surplus shots 3/12 (1 conf) | HUD 9/17",
+ "caveats": [
+  "Single clip. yt_rally2 is one continuous 37 s rally with almost no dead time - the regime with the FEWEST phantom opportunities. am_hard_utr, the clip with the worst false-fire, has a decided label only every ~116 frames and cannot be measured this way.",
+  "phantom_ball_under_hit is blind to a bounce misread as a racquet contact: that phantom sits on a real ball and scores clean.",
+  "speed_confident derives from the same ball_px mask a false-fire change modifies, so the confident subset is partially self-graded.",
+  "n=8 adjudicable hits: a 1- or 2-event move is inside the 95% CI. Require a count move of >=3.",
+  "The HUD block is tie-break evidence only. The HUD misses strokes on its own terms, so an unmatched pair is a joint failure this tool cannot attribute."
+ ]
+}

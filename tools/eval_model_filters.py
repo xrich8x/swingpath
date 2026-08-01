@@ -20,6 +20,16 @@ only one of them is available on every clip:
            i.e. where 1 px of centroid error costs more than 9 cm of court. Needs
            a calibration, so it exists only on the calibrated clips — but it is
            the honest answer to "can we actually MEASURE a ball there".
+
+The FULL row's `fires` is also the GHOST-BALL product metric (Session F step 1),
+not merely a per-frame statistic. annotate.py draws a ball iff ball_px[i] is not
+None on this same post-smooth_forecast track, so each fire is a frame where the
+annotated video paints a ball over a human's "no ball" click. It is reported
+split (N solid, M faded) because the renderer distinguishes a real detection
+from an interpolated one, and a change that only converts solid ghosts to faded
+ones has removed nothing. Per-frame false-fire is NOT the product — E6 part 4
+raised it 19.2% -> 23.1% on yt_rally2 for zero extra phantom events — so pick on
+this number and on tools/event_audit.py, never on false-fire alone.
 """
 from __future__ import annotations
 import argparse, json, math, os, sys, time
@@ -126,6 +136,17 @@ def measure(tr, ball, noball, step, tag, far_px, far_geo, coasted=None):
     at = index_of(step, len(tr))
     fires = [f for f in noball if at(f) is not None and tr[at(f)] is not None]
     n_nb = sum(1 for f in noball if at(f) is not None)
+    # `fires` on the FULL row IS the ghost-ball product metric, not a proxy for it.
+    # annotate.py draws a ball iff ball_px[i] is not None on this same post-
+    # smooth_forecast track, so a fire here is a frame where the annotated video
+    # paints a ball on top of a human's "no ball". The split matters because the
+    # renderer draws the two differently — a real detection is a solid disc, an
+    # interpolated one a faded ring — so a coasted false fire is the milder
+    # failure, and a fix that only converts solid ghosts into faded ones has not
+    # actually removed anything.
+    fires_coasted = (None if coasted is None else
+                     sum(1 for f in fires
+                         if at(f) < len(coasted) and coasted[at(f)]))
     hit = tot = 0
     hp = tp = hg = tg = 0
     ghost = 0
@@ -144,16 +165,26 @@ def measure(tr, ball, noball, step, tag, far_px, far_geo, coasted=None):
         if f in far_geo:
             tg += 1; hg += ok
     geo = "     -" if tg == 0 else f"{100*hg/tg:>5.1f}%"
-    note = "" if coasted is None else f"  ({ghost} of the hits interpolated)"
+    if coasted is None:
+        note = ""
+        fires_note = ""
+    else:
+        note = f"  ({ghost} of the hits interpolated)"
+        fires_note = f" ({len(fires) - fires_coasted} solid, {fires_coasted} faded)"
     print(f"    {tag:<32}{100*len(fires)/max(n_nb,1):>7.1f}%"
           f"{100*hit/max(tot,1):>9.1f}%{100*hp/max(tp,1):>10.1f}%{geo:>9}"
-          f"   fires={len(fires)}{note}")
+          f"   fires={len(fires)}{fires_note}{note}")
     return {"stage": tag,
             "false_fire": round(100 * len(fires) / max(n_nb, 1), 1),
             "recall": round(100 * hit / max(tot, 1), 1),
             "far_px": round(100 * hp / max(tp, 1), 1),
             "far_geo": None if tg == 0 else round(100 * hg / tg, 1),
             "fires": len(fires), "n_scored": tot, "n_noball": n_nb,
+            # None on the pre-smoother rows, matching interpolated_hits: there is
+            # no coasted mask before smooth_forecast, so the split is undefined
+            # rather than zero.
+            "fires_coasted": fires_coasted,
+            "fires_real": None if coasted is None else len(fires) - fires_coasted,
             "interpolated_hits": None if coasted is None else ghost}
 
 
