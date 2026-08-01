@@ -308,17 +308,41 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   0.50 row reproducing data/output/gold_v21_e6.txt digit for digit.
   MEASURED NEGATIVE — 0.5 STAYS. Pooled chain recall over 617 labelled ball frames
   66.5% -> 64.8% at 0.6 -> 60.3% at 0.7; both FAIL the pre-registered recall gate.
-  THE MECHANISM GENERALISES PAST THIS KNOB: raising the threshold does NOT remove
-  ghost balls, because `smooth_forecast` fills the gaps a stricter detector creates.
-  On yt_rally2 at 0.7 the chain reaches ZERO fires after suppress_false_locks, then
-  the smoother puts back 7, ALL FADED — total ghosts 8 -> 7 (noise) for 6.2 pts of
-  recall and 9.5 of far_geo. Only the solid/faded split makes that visible; the
-  per-frame number (30.8 -> 26.9%) makes 0.7 look like a win. The ghost ball is, at
-  the margin, the SMOOTHER interpolating through dead time, not detector precision
-  — that is where the next attempt goes. Gate ordering earned its keep: at 0.6 the
-  ghost-ball gate would have PASSED (solid fires down on all 3 clips, up on none)
-  and only the recall gate, deliberately ordered first, killed it. 209 tests; the
-  shipped 0.5 path is verified byte-identical end to end.
+  Raising the threshold does NOT remove ghost balls: on yt_rally2 at 0.7 the chain
+  reaches ZERO fires after suppress_false_locks and the smoother puts 7 back —
+  total 8 -> 7 (noise) for 6.2 pts of recall and 9.5 of far_geo — while the
+  per-frame number (30.8 -> 26.9%) makes it look like a win. Gate ordering earned
+  its keep: at 0.6 the ghost-ball gate would have PASSED (solid fires down on all
+  3 clips, up on none) and only the recall gate, deliberately ordered first,
+  killed it. 209 tests; the shipped 0.5 path is verified byte-identical end to end.
+  (4) SMOOTHER GAP POLICY — a SECOND measured negative, and it corrects (3).
+  `smooth_forecast`'s max_gap_s=0.4 had never been swept either; it sits at the END
+  of the chain so one perception pass scores every value (tools/tune_smoother.py).
+  Swept at each clip's SHIPPED frame step, pooled over 532 scoreable ball / 74
+  no-ball frames on the 3 calibrated clips:
+      max_gap_s   pooled recall  d recall  worst d far_geo  ghost  solid  faded
+        0.00          61.1%        -5.8         -8.6          11     11      0
+        0.10          61.1%        -5.8         -8.6          10      9      1
+        0.20          62.0%        -4.9         -6.1          13      9      4
+        0.30          66.2%        -0.8         -2.8          16      9      7
+        0.40 shipped  66.9%          -            -           19      9     10
+  Every value FAILS Gate 1. 0.4 stays. THE INVARIANT IS THE FINDING: solid fires
+  are 9 at EVERY setting 0.10-0.40. The gap policy cannot touch them — they are the
+  detector genuinely firing on a racquet/player/fence in dead time, i.e. the Step 2
+  tally. It only moves the faded count (10 -> 0) and charges 5.8 pts of recall to
+  do it. So the ghost ball at the shipped config is 19 fires / 74 no-ball frames,
+  9 SOLID + 10 faded, and BOTH post-hoc knobs now swept trade recall ~1:1 against
+  the faded half while leaving the solid half untouched. NOTHING DOWNSTREAM OF THE
+  DETECTOR REMOVES A SOLID GHOST — the next real work is Step 4 with a
+  POSE-PROXIMITY criterion, not a filter, threshold, or motion attention.
+  RETRACTED from (3) as first written: "the ghost ball is, at the margin, the
+  SMOOTHER interpolating through dead time". That came from a --frame-step 1 run
+  (fps_eff 60, a 24-frame bridge) reading 0 solid / 7 faded; at the SHIPPED step
+  (fps_eff 30, 12-frame bridge) the same clip reads 5 solid / 1 faded, the opposite
+  composition. This is the identical trap recorded in E6 part 3 and it was walked
+  into anyway. STANDING RULE: never quote a --frame-step 1 number as shipped
+  behaviour; use step 1 only for A/B deltas and for clips whose gold parity demands
+  it, and re-measure at the shipped step before concluding a MECHANISM.
 
 ## Conventions
 

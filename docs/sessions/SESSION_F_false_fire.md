@@ -362,21 +362,24 @@ on none. Reading the table in any other order, that looks like the win this
 session was for. Gate 1 is first precisely so a recall regression cannot be
 rationalised away by a precision number that improved.
 
-**The mechanism is the real result, and it generalises past this knob.** Raising
-the detector threshold does **not** remove ghost balls, because `smooth_forecast`
+**Raising the threshold does not remove ghost balls**, because `smooth_forecast`
 fills the gaps a stricter detector creates. On yt_rally2 at 0.7 the chain reaches
 **zero** false fires after `suppress_false_locks` — tracker-gates-only false-fire
-falls 30.8% → 3.8%, suppression takes it to 0 — and then the smoother puts back 7,
-**all faded**. Total ghosts move 8 → 7, which is noise, while recall pays 6.2
-points and far_geo 9.5. The solid/faded split is the only reason this is visible;
-the per-frame false-fire number (30.8% → 26.9%) makes 0.7 look like a modest win.
+falls 30.8% → 3.8%, suppression takes it to 0 — and then the smoother puts back 7.
+Total ghosts move 8 → 7, which is noise, while recall pays 6.2 points and far_geo
+9.5. The per-frame false-fire number (30.8% → 26.9%) makes 0.7 look like a modest
+win; the ghost count shows it is not one.
 
-So the ghost ball on a no-ball frame is not, at the margin, a detector-precision
-problem at all — it is the smoother interpolating through dead time. Anything
-that makes the detector quieter hands the same frames to the smoother instead.
-That points the next attempt at `smooth_forecast`'s gap-filling policy (it already
-refuses to extrapolate; the open question is whether it should refuse to bridge a
-gap that has no *event* support either), not at the detector.
+> **RETRACTED — the sentence that used to follow.** This section originally
+> concluded "the ghost ball is not a detector-precision problem at all — it is the
+> smoother interpolating through dead time", on the strength of that 0.7 arm
+> reading **0 solid, 7 faded**. That was measured at `--frame-step 1`, where
+> fps_eff is 60 and `max_gap_s = 0.4` bridges **24** frames. The shipped config is
+> fps_eff 30 and bridges **12**. At the shipped rate the same clip reads **5
+> solid, 1 faded** — the opposite composition. This is the identical trap
+> CLAUDE.md already records from E6 part 3, and it was walked into anyway. The
+> A/B verdict above is unaffected: all three arms were measured at step 1, so the
+> comparison is internally valid and 0.6/0.7 do fail Gate 1.
 
 `score_thresh` stays at **0.5**. The dial, the provenance stamp and the sweep
 tooling ship anyway — the value of 0.5 is now measured rather than inherited, and
@@ -396,12 +399,56 @@ match.json exactly — same 12 shots, 6 rallies, identical stats and score.
   Step 2 shows addresses ≤38% of the confusers. The pose-proximity criterion is
   the change worth making, and it is a session of its own.
 
+### Step 3, follow-on — the smoother gap policy is a SECOND measured negative
+
+`smooth_forecast`'s `max_gap_s = 0.4` had also never been swept. Like the
+suppress parameters and unlike the score threshold it lives at the *end* of the
+chain, so one perception pass scores every value (`tools/tune_smoother.py`).
+
+Swept at each clip's **shipped** frame step this time, not step 1. Pooled over
+532 scoreable ball frames and 74 no-ball frames on the three calibrated clips
+(am_hard_utr contributes only 90 of its 175 ball and 24 of its 53 no-ball frames,
+because at the shipped step=2 its 48.6%-odd labels are unscoreable):
+
+| max_gap_s | pooled recall | Δ recall | worst Δ far_geo | ghost | solid | faded |
+|---|---|---|---|---|---|---|
+| 0.00 | 61.1% | −5.8 | −8.6 | 11 | **11** | 0 |
+| 0.10 | 61.1% | −5.8 | −8.6 | 10 | **9** | 1 |
+| 0.15 | 61.1% | −5.8 | −8.6 | 12 | **9** | 3 |
+| 0.20 | 62.0% | −4.9 | −6.1 | 13 | **9** | 4 |
+| 0.30 | 66.2% | −0.8 | −2.8 | 16 | **9** | 7 |
+| **0.40** (shipped) | **66.9%** | — | — | 19 | **9** | 10 |
+
+Every value fails Gate 1. **0.4 stays.**
+
+**The invariant is the finding: solid fires are 9 at every setting from 0.10 to
+0.40.** The gap policy cannot touch them — they are the detector genuinely firing
+on a racquet, a player or a fence during dead time, which is precisely the Step 2
+tally. All the policy moves is the faded count (10 → 0), and it charges 5.8 points
+of pooled recall and up to 8.6 of far_geo to do it. (At 0.00 solid *rises* to 11:
+shorter gaps end segments more often, so more detections get re-seeded and emitted
+as real.)
+
+So the ghost ball at the shipped config is **19 fires over 74 no-ball frames, 9
+solid and 10 faded**, and the two post-hoc knobs now swept — detector threshold
+and smoother gap — each trade recall roughly one-for-one against the faded half
+while leaving the solid half untouched.
+
+**Nothing downstream of the detector can remove a solid ghost.** The only thing
+that stops the detector firing on a racquet head is a detector trained not to,
+which makes Step 4 with a **pose-proximity** criterion the next real work — not a
+filter, not a threshold, and not motion attention.
+
 ### For the next session
 
-1. `smooth_forecast` gap-filling is now the prime suspect for ghost balls, ahead
-   of detector precision. Test: require event or trajectory support before
-   bridging a gap, and measure on ghost `fires_real`/`fires_coasted`.
-2. Pose-proximity hard-negative mining (calibration-free, addresses the 59%).
-3. Re-mine the four under-mined training dirs to parity — after (2), not before.
-4. `mine_hard_negatives.py` hardcodes `"detector": "BallNet (weights/ballnet.pt)"`
+1. **Pose-proximity hard-negative mining.** Addresses the 59% and the 9 immovable
+   solid ghosts. Calibration-free, so all 13 training clips qualify. This is the
+   only remaining lever the evidence supports.
+2. Re-mine the four under-mined training dirs to parity — after (1), not before;
+   deepening the current static-lock negatives addresses ≤38% of the confusers.
+3. `mine_hard_negatives.py` hardcodes `"detector": "BallNet (weights/ballnet.pt)"`
    in its provenance regardless of what actually loaded. Fix before any re-mine.
+4. Standing measurement rule, now violated twice in this repo: **never quote a
+   `--frame-step 1` number as shipped behaviour.** Use step 1 only for A/B deltas
+   and for clips whose gold parity demands it, and re-measure at the shipped step
+   before drawing a mechanism conclusion.
