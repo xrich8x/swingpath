@@ -176,8 +176,8 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   off-frame) — a low camera put the far baseline past infinity and drew stray
   lines to the corners (seen on demo30 AND yt_rally2). Verified end-to-end:
   run.py analyze yt_rally2 --annotate -> clean ball trail + court overlay, avg
-  70 / top 95 km/h. demo30's manual corners are DEGENERATE (0.2 m camera, floored
-  speeds) — that clip needs re-calibration. amber/coasted still to be excluded
+  70 / top 95 km/h. demo30's manual corners were DEGENERATE (floored speeds) —
+  RE-CALIBRATED in Session G part 2 to a 1.38 m camera at 0.5 px. amber/coasted still to be excluded
   from speed/bounce (finishing step; CLOSED in E6 — coasted frames no longer count
   as real detections). 148 tests. Committed and pushed (on master).
 - Session E6 (2026-07-28): MERGED the court-detection work (setup guide, roll-aware
@@ -377,6 +377,28 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   median sets a low prior; (3) accept the 9 solid ghosts as the detector's floor at
   this data scale and spend the effort on far-court recall, where E6 showed the GATE
   was deleting real balls, not the detector. 209 tests.
+- Session G part 2 (2026-08-03): calibration stops failing SILENTLY, and demo30 is
+  fixed. (1) `validate_new_clip.py --stamp` writes the verdict it already computes
+  back into each calibration as an `_audit` key (verdict, fit residual, camera
+  height, the frame size used and whether it came from the clip or was assumed,
+  reasons). All 11 committed files stamped. `pipeline.calibrate_video` reads it back
+  and WARNS on DEGENERATE — it warns rather than refuses because coast_fill_probe.py
+  and demo_false_alarm.py point at bad files deliberately. Inert by construction
+  (calibrate_video already strips `_` keys); verified by test AND by confirming every
+  corner VALUE round-tripped identically through the rewrite. (2) demo30
+  RE-CALIBRATED: 564.6 px -> **0.5 px**, hfov 104 deg, camera **1.38 m**, verdict
+  LOW-CAMERA. Auto-calibration cannot do this clip (2 of 8 frames, needs 6), so it
+  was placed in tools/court_setup_server.py — auto-seed then Snap, 90% line coverage,
+  shape-lock ON. (3) HONEST LIMIT, and it matters for the dashboard: fixing the
+  calibration does NOT make demo30 a speed demo. At 1.38 m it is measurable to
+  **court-y 5.2 m of 23.77 (22% of depth)**, and a fresh analyze reports `speed not
+  trusted for 5/5 shots` (coverage 22-48% < 50%; arc reproj 80-157 px vs a 6 px
+  gate). Old outputs quoting demo30 at avg 59.5 / top 166.8 km/h came off the
+  DEGENERATE corners and are junk; the honest read is avg 31.8 / top 50.7 with
+  nothing trusted. The clip is fine for the overlay and the dashboard shell — do not
+  cite its speeds. (4) Two live references to the degenerate `court_pts.json` fixed:
+  the auto-calibration failure message told users to CREATE a file with that exact
+  name, and live_demo.py's docstring pointed at it. 213 tests.
 
 ## Conventions
 
@@ -446,8 +468,15 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   KNOWN GOOD (<2.5 px): yt_match40_pts 0.9, yt_rally2_pts 1.4, yt_court_pts 2.1,
   court_pts_refined 2.3, eala_pts_auto 3.7, am_hard_utr_pts 0.7.
   KNOWN BAD (>10 px): court_pts 38, yt_court_pts_refined 48,
-  yt_court_pts_doubles 54, yt_court_pts_singles 91, demo30_pts 565.
-  demo30 needs re-calibration.
+  yt_court_pts_doubles 54, yt_court_pts_singles 91.
+  demo30_pts was the worst at 565 px and is now RE-CALIBRATED to **0.5 px** — the
+  lowest residual in the repo (Session G part 2). It is LOW-CAMERA, not degenerate.
+  EVERY committed calibration now carries its verdict in an `_audit` key
+  (`tools/validate_new_clip.py --audit <files> --stamp`), and
+  `pipeline.calibrate_video` WARNS loudly when it loads one stamped DEGENERATE —
+  the point being that these files used to fail silently. The stamp is inert:
+  calibrate_video already strips `_`-prefixed keys, pinned by
+  tests/test_calib_audit_stamp.py (which also fails if the degenerate set drifts).
   A LOW camera is not degenerate — it is the amateur case this project targets;
   what it costs is measurable DEPTH, so the audit reports that in metres via
   `calibration.reliable_court_span`. Note the primary 1080p gold clip

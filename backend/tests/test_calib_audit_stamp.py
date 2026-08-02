@@ -82,7 +82,10 @@ def test_committed_calibrations_are_all_stamped():
     data = Path(root).resolve().parents[2] / "data"
     files = sorted(data.glob("*_pts*.json"))
     assert files, "no calibration files found"
-    known_bad = {"court_pts.json", "demo30_pts.json", "yt_court_pts_doubles.json",
+    # demo30_pts.json was the worst of the set at 565 px; it was re-calibrated to
+    # 0.5 px (LOW-CAMERA, a 1.38 m mount) and is deliberately NOT here any more.
+    # This assertion is what caught that change, which is the point of it.
+    known_bad = {"court_pts.json", "yt_court_pts_doubles.json",
                  "yt_court_pts_refined.json", "yt_court_pts_singles.json"}
     seen_bad = set()
     for f in files:
