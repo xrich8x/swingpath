@@ -189,5 +189,117 @@ negatives, depth-aware Kalman noise, `seg_gap_s`). Session F added three more:
 
 ## Results
 
-*(fill in as each step lands — numbers, what they were measured against, and the
-verdict including negatives)*
+### Step 0 — cleared before the session started
+
+The provenance fix landed with the maintenance sweep: `mine_hard_negatives.py` now
+reports the resolved checkpoint path + sha256 + `score_thresh` + device instead of the
+hardcoded `"BallNet (weights/ballnet.pt)"`. The nine eval-ladder `.txt` results are
+committed. So this session began at Step 1.
+
+### Step 1 — MEASURED NEGATIVE. Pose proximity fails its gate, and not narrowly.
+
+`tools/eval_pose_proximity.py`. Scored against human labels only: **44 person-attached
+locks** (racquet 22, player 20, held_ball 2 — 62.0% of the 71 human-classified false
+locks in `data/gold/false_lock_classes.json`) for CATCH, and **1201 frames where a human
+clicked a real ball** across the six gold clips for COLLATERAL.
+
+**Correction to the brief's population:** collateral is over **1201** ball clicks, not
+the 617 the plan quoted. 617 is the CHAIN-level count (calibrated clips, scoreable at
+the shipped frame step); a mining criterion is applied at detector level, on every
+labelled ball frame, so 1201 is the population that can actually be harmed.
+
+Sweeps: radius × keypoint set × two sizing modes (absolute px normalised to 720p, and
+body-relative — a multiple of that person's own bbox height, which is depth-adaptive for
+free). Best catch achievable **at or under the 5% collateral ceiling**:
+
+| pose preset | best catch at collateral ≤ 5% | max catch anywhere | its collateral |
+|---|---|---|---|
+| fast (shipped) | **11.4%** | 38.6% | 22.5% |
+| accurate (yolo11x@1920) | **11.4%** | 43.2% | 23.5% |
+
+The gate wanted ≥ 60% catch at ≤ 5% collateral. It is off by a factor of five, and the
+curve has no knee — catch and collateral rise together at roughly 2:1 across every
+radius, keypoint set and mode tested.
+
+**It is not a pose-quality limitation.** `accurate` was run as the pre-registered
+sensitivity check and moved max catch 38.6 → 43.2% while *raising* collateral. Ruled
+out.
+
+### Why it fails — the racquet is not on the skeleton
+
+Median distance from each lock to the nearest upper-body keypoint, body-relative
+(pose=accurate):
+
+| class | n | median | ≤ 0.20 bh | ≤ 0.50 bh |
+|---|---|---|---|---|
+| **racquet** | 22 | **2.12** | 36% | 41% |
+| player | 20 | 0.76 | 25% | 35% |
+| held_ball | 2 | 0.24 | 50% | 100% |
+
+The largest confuser class sits **two body heights** from the nearest keypoint. That is
+geometry, not noise: a pose skeleton has no racquet, and at contact the head of a 68 cm
+racquet at arm's length is frequently further from the wrist than the ball is. Proximity
+to a skeleton cannot describe the thing doing the confusing.
+
+### The control that rules out the alternative explanation
+
+Pose finds exactly **one** person on 1006 of 1272 frames, and none on 53. That is
+structural, not a bug — five of the six gold clips are low or close cameras where the
+far player is out of frame or unresolvable (`am_hard_utr` is the 1.74 m mount that does
+not reach the net at 11.885 m). So most locks were scored against a skeleton covering
+one of the two people on court, which is a confound.
+
+`gold_shell` is the exception: 2+ people found on **192 of 201** frames. Restricted to
+it:
+
+| radius | catch | collateral |
+|---|---|---|
+| 0.20 bh | **20.0%** | 6.0% |
+| 0.30 bh | **20.0%** | 9.2% |
+| 0.50 bh | **20.0%** | 19.6% |
+
+**Catch is flat at 20.0% while collateral more than triples.** With complete pose, eight
+of ten person-attached locks are beyond half a body height from every upper-body
+keypoint and no radius reaches them. The confound is real but it is not the cause — the
+criterion fails on its own merits.
+
+Also worth recording: on `am_hard_utr` collateral is **14.9% at R = 0.20 bh**, because on
+a 1.74 m camera the ball spends most of its visible life close to a player's body in
+image space. Any person-proximity rule is most dangerous exactly on the amateur footage
+this project targets.
+
+### Verdict and what it means for Steps 2–3
+
+**Steps 2 and 3 are NOT run**, per this brief's own gate. Do not mine pose-proximity
+negatives, and do not train v3.1 on them: at any setting that catches a useful share of
+racquets, the same rule negates 20%+ of the frames where a human saw a real ball.
+
+`mine_hard_negatives.py` is unchanged — no `--criterion` flag was added, because there
+is no criterion worth adding. The static-lock miner still addresses only the 38% static
+share, and that limitation stands unresolved.
+
+**The next lever is not a proximity rule.** The confuser that matters is the racquet, and
+nothing in the current stack localises a racquet. Candidates, in order of how well the
+evidence supports them:
+
+1. **Detect the racquet**, then negate locks on it. A racquet is a distinct, learnable
+   object; the skeleton is the wrong proxy for it. Needs racquet labels, which the
+   project does not have.
+2. **Extended-limb ray** — the racquet lies roughly along elbow→wrist extended by
+   ~0.5–1.0 body heights. Cheap to test with the pose already cached by
+   `eval_pose_proximity.py`, and testable against the same 44 locks before any training.
+   Note the racquet median of 2.12 bh sets a low prior on this working.
+3. Accept that the 9 solid ghosts are the detector's floor at this training-data scale,
+   and spend the effort on far-court recall instead, where E6 showed the gate — not the
+   detector — was deleting real balls.
+
+**Do not re-propose pose proximity** without new evidence that changes one of the two
+measurements above.
+
+### Artefacts
+
+- `tools/eval_pose_proximity.py` — the gate, re-runnable; pose cached per clip and
+  preset so a re-sweep is free.
+- `data/output/g_falselocks_raw.json` — the 71 raw locks with human classes
+  (reproduced Session F's tally exactly: 71 locks / 204 no-ball frames / 34.8%).
+- `data/output/g_pose_proximity{,_accurate}.json` — both sweeps with `measured_against`.

@@ -344,6 +344,39 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   into anyway. STANDING RULE: never quote a --frame-step 1 number as shipped
   behaviour; use step 1 only for A/B deltas and for clips whose gold parity demands
   it, and re-measure at the shipped step before concluding a MECHANISM.
+- Session G (2026-08-02): POSE PROXIMITY IS A MEASURED NEGATIVE. Session F named it
+  "the only remaining lever the evidence supports" — mine "lock near a person" as a
+  hard negative, since 59.2% of confusers move with a person and the static-lock
+  miner reaches only the other 38%. Step 1 (tools/eval_pose_proximity.py) scored the
+  criterion against human labels BEFORE any GPU time: 44 person-attached locks
+  (racquet 22 / player 20 / held_ball 2, from data/gold/false_lock_classes.json) for
+  CATCH, and 1201 frames where a human clicked a real ball for COLLATERAL. NOTE the
+  collateral population is 1201, NOT the 617 chain-level count — a mining criterion
+  is applied at detector level. Gate was catch >= 60% at collateral <= 5%. RESULT: at
+  the 5% ceiling the best catch is 11.4%; max catch anywhere is 43.2% at 23.5%
+  collateral. Off by 5x with NO KNEE — catch and collateral rise together ~2:1 across
+  every radius, keypoint set, and both sizing modes (absolute px normalised to 720p,
+  and body-relative). NOT a pose-quality artefact: the pre-registered `accurate`
+  (yolo11x@1920) check moved max catch 38.6 -> 43.2% while RAISING collateral.
+  WHY IT FAILS, and this is the transferable part: the racquet is not on the
+  skeleton. Median lock-to-nearest-upper-body-keypoint distance is 2.12 BODY HEIGHTS
+  for racquet (n=22), 0.76 for player, 0.24 for held_ball. A pose skeleton has no
+  racquet, and at contact the head of a 68 cm racquet at arm's length is often
+  further from the wrist than the ball is. CONFOUND RULED OUT: pose finds only ONE
+  person on 1006 of 1272 frames (structural — 5 of 6 gold clips are low/close cameras
+  where the far player is unresolvable), but on gold_shell, where 2+ people are found
+  on 192/201 frames, catch is FLAT at 20.0% across R = 0.20/0.30/0.50 body heights
+  while collateral goes 6.0 -> 19.6%. With complete pose, 8 of 10 person-attached
+  locks are still beyond half a body height from every keypoint. Also: am_hard_utr
+  collateral is 14.9% at R=0.20 — a person-proximity rule is MOST dangerous on the
+  low-camera amateur footage this project targets. Steps 2-3 NOT run;
+  mine_hard_negatives.py is unchanged (no --criterion flag, because there is no
+  criterion worth adding). Next levers, best-supported first: (1) detect the RACQUET
+  and negate locks on it (needs labels we don't have); (2) extended elbow->wrist ray
+  — cheap to test against the same 44 locks with the cached pose, but the 2.12 bh
+  median sets a low prior; (3) accept the 9 solid ghosts as the detector's floor at
+  this data scale and spend the effort on far-court recall, where E6 showed the GATE
+  was deleting real balls, not the detector. 209 tests.
 
 ## Conventions
 
