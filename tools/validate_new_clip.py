@@ -18,7 +18,7 @@ Two checks:
   ../backend/.venv/Scripts/python.exe ../tools/validate_new_clip.py --audit ../data/*_pts.json
 """
 from __future__ import annotations
-import argparse, glob, json, sys
+import argparse, glob, json, sys, time
 from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
@@ -97,7 +97,7 @@ def camera_fit(kp, img_wh):
     return None, None, "camera fit unavailable"
 
 
-def calib_sanity(kp_path, img_wh=(1280, 720)):
+def calib_sanity(kp_path, img_wh=(1280, 720), stamp=False, img_wh_from_clip=True):
     kp = json.loads(Path(kp_path).read_text(encoding="utf-8"))
     missing = [n for n in CORN if n not in kp]
     if missing:
@@ -140,6 +140,29 @@ def calib_sanity(kp_path, img_wh=(1280, 720)):
           f"@{fw}x{fh} ({lens}) -> {verdict}")
     for r in reasons + warns:
         print(f"[calib]     - {r}")
+
+    if stamp:
+        # Persist the verdict INTO the file. The audit has always been able to
+        # tell a good calibration from a degenerate one; what it could not do is
+        # stop someone tab-completing `court_pts.json` (38 px) instead of
+        # `court_pts_refined.json` (2.3 px) months later. Written under a single
+        # "_audit" key: every loader in this repo indexes corners by name, so an
+        # extra key is inert, and pipeline.calibrate_video now reads it back and
+        # refuses to load a DEGENERATE file silently.
+        blob = json.loads(Path(kp_path).read_text(encoding="utf-8"))
+        blob["_audit"] = {
+            "tool": "validate_new_clip.py --stamp",
+            "date": time.strftime("%Y-%m-%d"),
+            "verdict": verdict,
+            "fit_residual_px": None if fit_px is None else round(fit_px, 1),
+            "camera_height_m": None if ch is None else round(ch, 2),
+            "img_wh": [fw, fh],
+            "img_wh_source": "clip" if img_wh_from_clip else "assumed",
+            "reasons": reasons + warns,
+        }
+        Path(kp_path).write_text(json.dumps(blob, indent=1), encoding="utf-8")
+        print(f"[calib]     -> stamped _audit verdict={verdict}")
+
     return "FAIL" if reasons else ("WEAK" if warns else "PASS")
 
 
@@ -149,6 +172,10 @@ def main():
     ap.add_argument("--keypoints", help="court corners JSON to sanity-check")
     ap.add_argument("--audit", nargs="*", help="calibration files to audit (geometry only)")
     ap.add_argument("--img-wh", default="1280x720", help="frame size for the calib geometry check")
+    ap.add_argument("--stamp", action="store_true",
+                    help="write the verdict back into each audited file as an "
+                         "\"_audit\" key, so a degenerate calibration announces "
+                         "itself instead of silently breaking the overlay")
     args = ap.parse_args()
     fw, fh = (int(v) for v in args.img_wh.lower().split("x"))
 
@@ -159,14 +186,15 @@ def main():
             import cv2
             c = cv2.VideoCapture(str(args.video)); fw, fh = int(c.get(3)), int(c.get(4)); c.release()
     if args.keypoints:
-        results.append(calib_sanity(args.keypoints, (fw, fh)))
+        results.append(calib_sanity(args.keypoints, (fw, fh), args.stamp,
+                                    img_wh_from_clip=bool(args.video)))
     for f in (args.audit or []):
         # Each audited file gets ITS OWN clip's frame size where we can find it —
         # one --img-wh for a mixed 720p/1080p batch mis-measures every camera.
         wh, found = frame_size_for(f, (fw, fh))
         if not found:
             print(f"[calib] {Path(f).name}: no data/<tag>.mp4 — assuming {wh[0]}x{wh[1]}")
-        results.append(calib_sanity(f, wh))
+        results.append(calib_sanity(f, wh, args.stamp, img_wh_from_clip=found))
     if not results:
         ap.error("give a video, --keypoints, and/or --audit")
     print(f"\nSUMMARY: {results.count('PASS')} pass, {results.count('WEAK')} weak, "

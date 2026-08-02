@@ -2,11 +2,11 @@
 
   # Replay a cached ball track (instant, no inference) — proves the live calling:
   python live_demo.py replay --video ../data/tennis_sample.mp4 \
-      --keypoints ../data/court_pts.json --cache ../data/output/real_match.perception.json
+      --keypoints ../data/court_pts_refined.json --cache ../data/output/real_match.perception.json
 
   # True streaming (runs TrackNet per frame, ~1.4fps on CPU) — same as `run.py live`:
   python live_demo.py stream --video ../data/tennis_sample.mp4 \
-      --keypoints ../data/court_pts.json
+      --keypoints ../data/court_pts_refined.json
 """
 
 from __future__ import annotations

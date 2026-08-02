@@ -420,6 +420,22 @@ def calibrate_video(
         # placed these corners (e.g. a wide lens bends the real lines away from
         # any pinhole view). Their placement is final: no snap, no shape lock.
         manual_exact = bool(raw.pop("_exact", False))
+        # A stamped audit verdict (tools/validate_new_clip.py --stamp) rides along
+        # in "_audit". Five of the committed data/*_pts.json are DEGENERATE — fit
+        # residuals 38-565 px against under 2.5 px for every good one — and the
+        # whole reason the stamp exists is that they break the court overlay and
+        # the ball gate with NO error at all. Warn loudly; do NOT refuse, because a
+        # probe may be pointing at a known-bad file deliberately (tools/
+        # coast_fill_probe.py and demo_false_alarm.py both use demo30_pts.json).
+        audit = raw.get("_audit") or {}
+        if audit.get("verdict") == "DEGENERATE":
+            print(f"[calibrate] WARNING: {keypoints_path} is stamped DEGENERATE "
+                  f"(fit residual {audit.get('fit_residual_px')} px, audited "
+                  f"{audit.get('date')}). The court overlay, the ball gate and every "
+                  f"speed derived from them will be wrong. Re-calibrate with "
+                  f"tools/court_setup_server.py.")
+            for r in audit.get("reasons", []):
+                print(f"[calibrate]          - {r}")
         named = {k: v for k, v in raw.items() if not k.startswith("_")}
     else:
         # TIER 1: line-fit CONSENSUS auto-calibration (courtfit; the measured
@@ -460,9 +476,11 @@ def calibrate_video(
                         f"auto court calibration did not reach high confidence "
                         f"({hint}). Set the court once with the overlay tool:\n"
                         f'  backend/.venv/Scripts/python.exe tools/court_setup_server.py '
-                        f'--video "{video_path}" --out court_pts.json\n'
+                        f'--video "{video_path}" --out my_court_pts.json\n'
                         "(opens pre-fitted - drag to adjust, Snap, Save), then "
-                        "re-run with --keypoints court_pts.json"
+                        "re-run with --keypoints my_court_pts.json\n"
+                        "(NOT court_pts.json — a committed data/court_pts.json "
+                        "already exists and is DEGENERATE at 38 px)"
                     )
                 named = {n: list(xy) for n, xy in detected.items()}
                 source = "auto-classical"
