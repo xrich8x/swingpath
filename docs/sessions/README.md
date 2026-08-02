@@ -15,6 +15,7 @@ Recommended order (B/C/D are independent and can be reordered):
 | D | SESSION_D_highlights.md | Per-rally clips + top-rallies reel (stream-copy strategy) | ~1 session |
 | E | SESSION_E_ball_push.md | The ball stack: tracking → trajectory → arc → speed + spin (multi-session arc, E1-E4). **Read its frame-rate finding first — it constrains the footage the user records.** | multi |
 | F | SESSION_F_false_fire.md | Ball false-fire, without giving back the recall E6 bought. **Steps 1-2 are diagnosis and gate everything else — the static-lock gate never fires on the worst clip, so the confusers are not fixtures.** | ~1 session |
+| G | SESSION_G_pose_proximity.md | Pose-proximity hard negatives — the only lever left after F proved nothing downstream removes a **solid** ghost. **Step 1 scores the criterion against the 71 human-classified false locks before any GPU time; if it fails its gate, stop.** | ~1 session |
 
 Standing rules for every session (from CLAUDE.md + project memory):
 - Measure after each step; show the user the numbers before continuing.
