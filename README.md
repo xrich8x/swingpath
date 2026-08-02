@@ -47,7 +47,11 @@ Then:
    back on the frame so you can confirm it's right.
 2. Analyze — one command runs ball (TrackNet) + players (YOLO-pose), projects to
    court metres, and writes match.json:
-python run.py analyze match.mp4 --keypoints court_pts.json --out ../data/output/match.json
+python run.py analyze match.mp4 --keypoints my_court_pts.json --out ../data/output/match.json
+
+   Audit any calibration before you trust it — some committed `data/*_pts.json` are
+   degenerate and break the overlay + ball gating silently:
+   `python ../tools/validate_new_clip.py --audit my_court_pts.json` (good is < 2.5 px).
 3. View — load that match.json in the dashboard (Load match, top right).
 
 Camera placement matters more than the models (a fixed camera + good calibration

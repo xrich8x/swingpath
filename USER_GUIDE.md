@@ -81,12 +81,17 @@ cd backend && python run.py demo --out ../frontend/src/data/sample_match.json
    pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
    pip install -r requirements-ml.txt
 3. Calibrate. Click the court corners on the first frame:
-   python calibrate.py match.mp4 --out court_pts.json --overlay check.png
+   python calibrate.py match.mp4 --out my_court_pts.json --overlay check.png
    Open check.png — the drawn court lines should sit on the real lines. (A fixed
    camera means you calibrate once per clip.)
+   Then audit it — a bad calibration breaks the overlay and ball gating with no
+   error message, and some committed data/*_pts.json files are degenerate:
+   python ../tools/validate_new_clip.py --audit my_court_pts.json
+   The fit residual is the number that matters: under 2.5 px is good, over 10 px
+   is unusable. Don't name your file court_pts.json — that one is a known-bad one.
 4. Analyze. One command runs ball (TrackNet) + players (YOLO-pose), projects to
    court metres, and writes match.json:
-   python run.py analyze match.mp4 --keypoints court_pts.json --out ../data/output/match.json
+   python run.py analyze match.mp4 --keypoints my_court_pts.json --out ../data/output/match.json
    It prints throughput (fps). Defaults are tuned for speed (~1 fps on CPU):
      --pose-quality fast|balanced|accurate   (accurate resolves a small far
         player on TV-style footage; fast is ~6x quicker and fine for most clips)

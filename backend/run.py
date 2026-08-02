@@ -1,7 +1,7 @@
 """run.py — CLI entry point.
 
     python run.py demo --out ../frontend/src/data/sample_match.json
-    python run.py analyze match.mp4 --keypoints court_pts.json --out ../data/output/match.json
+    python run.py analyze match.mp4 --keypoints my_court_pts.json --out ../data/output/match.json
 
 `demo` writes synthetic data (no model weights). `analyze` runs the real path:
 calibration is ready; the perception loop is the stubbed seam (see pipeline.py).

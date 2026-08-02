@@ -1300,9 +1300,15 @@ def analyze_video(
     # trajectory is a mislock on a moving player. Both stay in pixels, so the
     # monocular z-ambiguity that makes the court gate useless in the far court
     # (real far ball and fixture project to overlapping court coords) never
-    # enters. Measured on yt_rally2 gold: no-ball false-fire 61.5% -> 15.4% at a
-    # 3.9-pt recall cost — catches the persistent far-band fixture runs the
-    # per-frame static gate and the live-ball court test both let through.
+    # enters. It catches the persistent far-band fixture runs that the per-frame
+    # static gate and the live-ball court test both let through.
+    # COST, at each clip's SHIPPED frame step (E6 part 3): this is the LARGEST
+    # recall cost in the chain — 5.4 pts on yt_rally2, 10.0 pts on am_hard_utr.
+    # The "61.5% -> 15.4% at a 3.9-pt recall cost" first recorded here is
+    # SUPERSEDED: it predates the E6 gate rewrite and the retirement of the
+    # live-ball filter that used to run beside it. A companion 15-pt figure was
+    # measured at --frame-step 1 (fps_eff 60), which is NOT the shipped config —
+    # never quote a step-1 number as shipped behaviour (CLAUDE.md, E6 part 3).
     n_before_sup = sum(p is not None for p in ball_px)
     ball_px = ball_mod.suppress_false_locks(ball_px, fps_eff=fps_eff,
                                             res_scale=res_scale)

@@ -31,6 +31,12 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Same weight-fingerprint helper the perception cache stamps with, so a mined
+# negative set and a perception cache name their checkpoint the same way.
+# pipeline's module-level imports are numpy + sibling modules only (no torch),
+# so this stays cheap at import time.
+from swingvision.pipeline import _file_fingerprint  # noqa: E402
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "ball_dataset"))
 STATIC_STEP_PX = 3.0     # a lock moving less than this per frame ...
 STATIC_MIN_RUN = 6       # ... for at least this many frames is a fixture
@@ -89,7 +95,18 @@ def mine_clip(tag: str, det, args) -> dict:
     out = {"hard_negatives": hard, "n_frames": n,
            "provenance": {"tool": "mine_hard_negatives.py",
                           "date": time.strftime("%Y-%m-%d %H:%M:%S"),
-                          "detector": "BallNet (weights/ballnet.pt)",
+                          # Report what ACTUALLY loaded. This was the hardcoded
+                          # string "BallNet (weights/ballnet.pt)" regardless of the
+                          # detector it was handed, so any set mined after the
+                          # default moved to ballnet_v21.pt carried a false
+                          # attribution. score_thresh belongs here too: it decides
+                          # which locks exist, so a set mined at one threshold is
+                          # not a set for another.
+                          "detector": "BallNet",
+                          "weights": {"path": det.weights_path,
+                                      "sha256": _file_fingerprint(det.weights_path)},
+                          "score_thresh": det.score_thresh,
+                          "device": det.device,
                           "static_step_px": STATIC_STEP_PX,
                           "static_min_run": STATIC_MIN_RUN,
                           "n_locks": sum(p is not None for p in locks)}}

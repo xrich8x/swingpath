@@ -153,7 +153,7 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   no-ball false-fire 14% -> 6.0% at flat recall (51.8 -> 50.2). ballnet_v21.pt
   (hard negatives) is now the DEFAULT detector (was ballnet.pt) — only affects
   calibrated clips. Stale-cache lesson: the old 50-67% figures were from a cache
-  built at an old commit; always re-perceive. NOT yet committed (branch work).
+  built at an old commit; always re-perceive. Committed and pushed (on master).
 - Session E5+ smoothing+forecast (2026-07-25): the detector loses the ball
   mid-flight and its per-frame locks jitter ("janky"). ball.smooth_forecast is now
   the pipeline smoother/forecaster — a constant-acceleration KALMAN FILTER + RTS
@@ -178,7 +178,8 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   run.py analyze yt_rally2 --annotate -> clean ball trail + court overlay, avg
   70 / top 95 km/h. demo30's manual corners are DEGENERATE (0.2 m camera, floored
   speeds) — that clip needs re-calibration. amber/coasted still to be excluded
-  from speed/bounce (finishing step). 148 tests. NOT yet committed.
+  from speed/bounce (finishing step; CLOSED in E6 — coasted frames no longer count
+  as real detections). 148 tests. Committed and pushed (on master).
 - Session E6 (2026-07-28): MERGED the court-detection work (setup guide, roll-aware
   snap, `calibration.RELIABLE_SCALE_M_PER_PX`, `reliable_court_span`) and made the
   ball stack GEOMETRY-AWARE. Thesis: the ball stack was half physical, half
