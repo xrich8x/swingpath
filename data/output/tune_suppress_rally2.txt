@@ -1,0 +1,16 @@
+yt_rally2 1280x720 step=2 fps_eff=30 rs=1.00 | perceived 1108 frames in 21s
+gold: 258 ball (179 far_geo) / 26 no-ball
+
+ seg_dur  seg_gap   recall  far_geo  false-fire
+-----------------------------------------------
+   (off)        -    74.8%    74.3%       34.6%
+    0.15     0.00    69.4%    69.8%       19.2%
+    0.15     0.03    71.3%    72.6%       23.1%
+    0.15     0.05    73.3%    74.3%       30.8%
+    0.15     0.10    74.0%    75.4%       30.8%
+    0.10     0.00    72.5%    74.3%       23.1%
+    0.10     0.03    73.3%    75.4%       26.9%
+    0.10     0.05    74.4%    76.0%       34.6%
+    0.10     0.10    74.0%    75.4%       34.6%
+
+FULL shipped chain after suppression (court gate + kalman), scored against human gold clicks. '(off)' is the track entering suppression.

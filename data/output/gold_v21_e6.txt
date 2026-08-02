@@ -1,0 +1,17 @@
+weights=weights/ballnet_v21.pt
+
+clip          recall  far_px  far_geo  false-fire   band sizes px/geo
+--------------------------------------------------------------------
+am_hard_utr    62.3%   46.2%    68.8%       45.3%      13/141 of 175
+gold_shell     77.2%   85.2%        -       30.9%       122/0 of 184
+gold_clay      51.6%   44.9%        -        7.1%        98/0 of 219
+gold_am        72.9%   83.3%        -       37.5%        12/0 of 181
+yt_rally2      76.7%   69.9%    73.2%       26.9%     156/179 of 258
+yt_match40     76.1%   72.1%    75.5%       41.7%      86/139 of 184
+--------------------------------------------------------------------
+POOLED         69.4%   68.8%    72.5%       34.8%    487/459 of 1201
+
+Measured against human gold clicks (hit = within 10 px).
+far_px  = top 36% of frame height. Available on every clip, comparable across resolutions; THE HEADLINE.
+far_geo = where 1 px of centroid error costs more than RELIABLE_SCALE_M_PER_PX of court. Needs a calibration (3 of 6 clips).
+CAREFUL: far_geo is not a synonym for 'far court'. It is 'the part of this clip we cannot measure in', and on a low camera that is most of the frame — am_hard_utr is measurable to only 32% of court depth, so its far_geo band includes easy near-court balls and reads ABOVE overall recall. Compare far_geo only between clips of similar measurable depth.

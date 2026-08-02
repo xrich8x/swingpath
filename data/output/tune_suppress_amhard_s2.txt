@@ -1,0 +1,16 @@
+am_hard_utr 1920x1080 step=2 fps_eff=30 rs=1.50 | perceived 14499 frames in 306s
+gold: 175 ball (141 far_geo) / 53 no-ball
+
+ seg_dur  seg_gap   recall  far_geo  false-fire
+-----------------------------------------------
+   (off)        -    60.0%    64.4%       33.3%
+    0.15     0.00    50.0%    54.8%       16.7%
+    0.15     0.03    50.0%    54.8%       33.3%
+    0.15     0.05    50.0%    54.8%       33.3%
+    0.15     0.10    53.3%    58.9%       58.3%
+    0.10     0.00    54.4%    60.3%       25.0%
+    0.10     0.03    52.2%    57.5%       33.3%
+    0.10     0.05    52.2%    57.5%       33.3%
+    0.10     0.10    53.3%    58.9%       58.3%
+
+FULL shipped chain after suppression (court gate + kalman), scored against human gold clicks. '(off)' is the track entering suppression.

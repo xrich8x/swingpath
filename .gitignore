@@ -38,6 +38,11 @@ data/output/*
 # ball-track regression (HANDOFF.md §6): archived perception caches + match
 # outputs must be recoverable. Videos/images in data/output stay ignored.
 !data/output/*.json
+# Same reasoning for the eval-ladder .txt results. CLAUDE.md cites
+# data/output/gold_v21_e6.txt BY NAME (the Session F score sweep reproduces it
+# digit for digit), so leaving them out meant the repo cited a result it did not
+# contain. Small, text, and they are the evidence.
+!data/output/*.txt
 # Same rule one level down for the Session E1 fps-controlled experiment: the
 # swept perception caches ARE the evidence for the "fps buys precision, not
 # recall" result (HANDOFF.md §13) and must stay reproducible. Images still ignored.

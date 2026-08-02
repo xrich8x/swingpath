@@ -1,0 +1,14 @@
+am_hard_utr 1920x1080 @ 60fps, step=1, fps_eff=60, hfov=86deg, cam=[ 5.6 -5.2  1.8], acquire_bound=4m
+  measurable to court-y 7.5 m of 23.8 (32% of depth); 175 ball / 53 no-ball; far_px=13, far_geo=141
+    stage                           false-fire   recall    far_px  far_geo
+----------------------------------------------------------------------------
+[ballnet_v21.pt]
+  perceived 28998 frames in 430s
+  locks: model=17212 | misses: no-detection=7934, court-gate(acq)=694, court-gate(cont)=1834, fixture=0, off-path=1324, untracked-frames=3359
+    tracker gates only                 30.2%     52.6%      38.5%    57.4%   fires=16
+    + rectify                          26.4%     50.3%      30.8%    55.3%   fires=14
+    + suppress_false_locks              5.7%     35.4%      15.4%    38.3%   fires=3
+    + court-region gate                 5.7%     35.4%      15.4%    38.3%   fires=3
+    + kalman smooth (FULL)              7.5%     43.4%      23.1%    47.5%   fires=4  (15 of the hits interpolated)
+
+Measured against human gold clicks; hit = within 10 px. far_px = top 36% of frame height. far_geo = court_scale_m_per_px > 0.09 (needs calibration).
