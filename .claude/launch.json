@@ -14,18 +14,17 @@
       "port": 8765
     },
     {
-      "name": "court-setup",
-      "runtimeExecutable": "backend/.venv/Scripts/python.exe",
-      "runtimeArgs": ["tools/court_setup_server.py", "--clip", "am_ntrp40", "--no-auto",
-                      "--no-browser", "--out", "court_pts_test.json"],
-      "port": 8770
+      "name": "lab",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["tools/lab_server.py", "--no-browser", "--port", "8790"],
+      "port": 8790
     },
     {
-      "name": "court-setup-demo30",
+      "name": "court-setup",
       "runtimeExecutable": "backend/.venv/Scripts/python.exe",
-      "runtimeArgs": ["tools/court_setup_server.py", "--video", "data/demo30.mp4",
-                      "--no-browser", "--out", "data/demo30_pts_new.json"],
-      "port": 8771
+      "runtimeArgs": ["tools/court_setup_server.py", "--clip", "am_ntrp40",
+                      "--no-browser", "--out", "my_court_pts.json"],
+      "port": 8770
     }
   ]
 }

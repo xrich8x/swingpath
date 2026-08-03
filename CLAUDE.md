@@ -427,6 +427,36 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
 - This is the one place the offline-first principle bends; the architecture is
   ready for real-time, the CPU model isn't fast enough.
 
+## The Lab (tools/lab_server.py) — label, train, score, in a browser
+
+- `py tools/lab_server.py` (stdlib only, no venv needed; it discovers
+  `backend/.venv` for OpenCV and `backend/.venv-train` for torch+CUDA and uses
+  them for the subprocesses). Five tabs: Clips, Label, Train, Score, Jobs.
+- **It is not part of the analyzer.** It never imports `swingvision`, never writes
+  match.json, and cannot change what the dashboard renders — it shells out to the
+  scripts that already exist. Deleting it leaves the product unaffected.
+- Why it exists: labelling and training only ever happened when someone ran a
+  script by hand, so the far-court data that would fix ball recall never
+  accumulated. `tools/lab_jobs.py` is its job runner — ONE job at a time (a single
+  GPU; two runs would OOM or halve each other and make every timing a lie), and
+  every job writes `data/runs/<id>.{json,log}` as it goes, so a crash still leaves
+  the evidence.
+- **The rule it enforces structurally:** a clip is declared gold (TEST, hand-labelled,
+  never trained on) or train at intake, and that choice is ONE-WAY. It refuses to
+  build a training set from a gold clip and refuses to cut gold frames from a train
+  clip. `train_ballnet.assert_no_gold_leak()` remains the second, independent line
+  of defence.
+- The Train tab shows **No-ball** (labels.json's top-up frames) and **Hard negs**
+  (mined confusers, with their share of labels) as SEPARATE columns. They are
+  different files and different numbers; conflating them once made the
+  worst-mined dataset read as the best-covered. Under 8% is flagged — the legacy
+  tier runs 9-26%.
+- A dataset with no recorded source video is not automatically unverifiable:
+  `tools/verify_dataset_not_gold.py` settles it from the pixels (dHash every frame
+  against every gold-manifest clip; a real match is 0-4 of 64 bits, different
+  scenes are 10+) and records `provenance.gold_check`. `amateur` (min 12) and
+  `highangle` (min 15) are cleared this way and show as "checked (pixels)".
+
 ## Mobile / on-device (mobile/)
 
 - For phone deployment (live calls on-device, SwingVision-style): mobile/ has the

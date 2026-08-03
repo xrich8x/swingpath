@@ -80,6 +80,11 @@ backend/run.py       CLI: demo | analyze
 backend/calibrate.py manual click-to-calibrate tool
 backend/tests/       geometry + scoring + detection tests
 frontend/src/        components, lib/court.js, data/sample_match.json
+tools/               dev + ML tooling, not part of the analyzer. Notably:
+  lab_server.py        the Lab — add a clip, label it, train, score, in a browser
+                       (`py tools/lab_server.py`); enforces gold/train separation
+  court_setup_server.py  place the court corners on a clip (browser)
+  validate_new_clip.py   audit a calibration; --stamp records the verdict in it
 
 ## Tests
 
