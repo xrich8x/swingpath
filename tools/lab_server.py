@@ -274,17 +274,38 @@ def dataset_rows() -> list[dict]:
             data = {}
         src = (data.get("provenance") or {}).get("video")
         protected = bool(src) and Path(src).name.lower() in prot["ball"]
+        # TWO DIFFERENT NUMBERS, and conflating them inverted this table.
+        #   negatives      — labels.json's no-ball top-up frames (extend_noball_frames)
+        #   hard_negatives — hard_negatives.json, MINED confuser frames
+        #                    (mine_hard_negatives.py)
+        # This column used to show only the first while the row's pill said "hard
+        # negs", so the dataset Session F identified as the WORST-mined
+        # (yt_am_dbl_classb, 52 mined = 2.5% of labels) read as the BEST-covered
+        # here at 426. The mined fraction is the number three sessions of
+        # false-fire work turned on, so it is now shown as its own column with the
+        # percentage that makes under-mining visible.
+        n_labels = len(data.get("labels", {}) or {})
+        hard = 0
+        hn = d / "hard_negatives.json"
+        if hn.exists():
+            try:
+                hard = len(json.loads(hn.read_text(encoding="utf-8"))
+                           .get("hard_negatives", []) or [])
+            except (json.JSONDecodeError, OSError):
+                hard = 0
         rows.append({
             "name": d.name,
             "path": _rel(d),
             "frames": data.get("n_frames", 0),
-            "labels": len(data.get("labels", {}) or {}),
+            "labels": n_labels,
             "negatives": len(data.get("negatives", []) or []),
+            "hard_count": hard,
+            "hard_pct": round(100.0 * hard / n_labels, 1) if n_labels else 0.0,
             "source": src,
             "protected": protected,
             "verified": bool(src),
             "state": "protected" if protected else ("ok" if src else "unverified"),
-            "hard_negatives": (d / "hard_negatives.json").exists(),
+            "hard_negatives": hn.exists(),
         })
     return rows
 
@@ -962,6 +983,9 @@ LAB_PAGE = r"""<!DOCTYPE html>
   th { color: #8b93a1; font-weight: 600; font-size: 12px;
        text-transform: uppercase; letter-spacing: .03em; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  /* an under-mined dataset: the legacy tier runs 9-26% hard negatives, and
+     dropping under ~8% is what diluted v3 (Session F). Worth seeing at a glance. */
+  td.num.warn { color: #ff9c9c; font-weight: 600; }
   .pill { display: inline-block; padding: 1px 8px; border-radius: 10px;
           font-size: 11px; font-weight: 600; }
   .pill.gold { background: #4d4426; color: #e6d38a; }
@@ -1250,7 +1274,7 @@ async function refresh() {
   // datasets
   const dt = $("#t-data tbody"); dt.innerHTML = "";
   const dh = el("tr");
-  ["Use", "Dataset", "Frames", "Labels", "Negatives", "Source", "Gold check"]
+  ["Use", "Dataset", "Frames", "Labels", "No-ball", "Hard negs", "Source", "Gold check"]
     .forEach(h => dh.appendChild(el("th", null, h))); dt.appendChild(dh);
   OV.datasets.forEach(d => {
     const tr = el("tr");
@@ -1263,6 +1287,13 @@ async function refresh() {
     tr.appendChild(el("td", "num", d.frames));
     tr.appendChild(el("td", "num", d.labels));
     tr.appendChild(el("td", "num", d.negatives));
+    // The mined-confuser count with its share of labels. The legacy tier runs
+    // 9-26%; under ~8% is the dilution Session F measured as the cause of the v3
+    // regression, so it is flagged rather than left for the reader to divide.
+    const hc = el("td", "num", d.hard_count + " (" + d.hard_pct + "%)");
+    if (!d.hard_negatives) { hc.className = "num muted"; hc.textContent = "not mined"; }
+    else if (d.hard_pct < 8) hc.className = "num warn";
+    tr.appendChild(hc);
     tr.appendChild(el("td", "muted", d.source || "not recorded"));
     const f = el("td");
     if (d.state === "protected")
@@ -1270,10 +1301,6 @@ async function refresh() {
     else if (d.state === "unverified")
       f.appendChild(el("span", "pill unver", "UNVERIFIED"));
     else f.appendChild(el("span", "pill ok", "checked"));
-    if (d.hard_negatives) {
-      f.appendChild(document.createTextNode(" "));
-      f.appendChild(el("span", "pill train", "hard negs"));
-    }
     tr.appendChild(f);
     dt.appendChild(tr);
   });
