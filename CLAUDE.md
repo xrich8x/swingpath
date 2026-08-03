@@ -427,6 +427,37 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
 - This is the one place the offline-first principle bends; the architecture is
   ready for real-time, the CPU model isn't fast enough.
 
+- Session G part 3 (2026-08-03): FAR-COURT RECALL IS NO LONGER GATE-SHAPED. The
+  standing recommendation after E6 was "attack far court from the GEOMETRY side,
+  because E6 showed the GATE was deleting real balls, not the detector". Re-measured
+  on all three calibrated gold clips at their SHIPPED frame step
+  (tools/eval_model_filters.py, fresh perception, ballnet_v21). far_geo through the
+  ladder:
+      clip          tracker-gates  +rectify  +suppress  +court-gate  FULL
+      yt_rally2         74.3         74.3      66.5       **66.5**    74.3
+      yt_match40        62.6         62.6      57.6       **57.6**    66.9
+      am_hard_utr       64.4         64.4      58.9       **58.9**    60.3
+  THE COURT GATE COSTS EXACTLY ZERO far-court recall on every clip — E6's fix was
+  complete and there is no second gate bug. The miss counters agree: court-gate
+  misses are 0 on yt_match40, 6 of 1108 frames on yt_rally2, and 2528 of 28998 on
+  am_hard_utr against 7934 no-detection — 3.1x smaller than the detector simply not
+  firing. Pooled, the post-detector chain is far-court NEUTRAL (yt_rally2 74.3 ->
+  74.3, yt_match40 62.6 -> 66.9): suppress_false_locks costs 5.0-7.8 pts of far_geo
+  and the Kalman gives them back.
+  So the remaining far-court gap is DETECTOR-shaped, and the geometry lever is
+  spent. That matches SESSION_E §E3j's prediction that the last ~20% of the ball
+  cannot be taught by pseudo-labels — the teacher cannot see it either — and needs
+  a few hundred HUMAN far-court labels, which is precisely what the Lab exists to
+  collect.
+  ALSO: suppress_false_locks' parameters were ALREADY swept (data/output/
+  tune_suppress_*.txt, committed earlier this session) and never acted on. At the
+  SHIPPED step the shipped setting (seg_dur 0.10, seg_gap 0.00) DOMINATES every
+  alternative on am_hard_utr — best recall (54.4%), best far_geo (60.3%) AND lowest
+  false-fire (25.0%) of all nine rows. The step=1 sweep in the same directory
+  suggests otherwise and is the frame-step trap again: seg_gap is a TIME threshold,
+  so at fps_eff 60 it spans twice the frames. Do not re-sweep it without a new
+  reason.
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers
