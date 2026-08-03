@@ -272,8 +272,16 @@ def dataset_rows() -> list[dict]:
             data = json.loads(labels.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             data = {}
-        src = (data.get("provenance") or {}).get("video")
+        prov = data.get("provenance") or {}
+        src = prov.get("video")
         protected = bool(src) and Path(src).name.lower() in prot["ball"]
+        # A dataset with no recorded source video is not necessarily unverifiable.
+        # tools/verify_dataset_not_gold.py answers the question from the PIXELS —
+        # dHash every frame against every gold clip — and records the verdict
+        # here. "unverified" is then reserved for dirs nobody has checked at all,
+        # rather than covering ones that were checked a harder way.
+        gchk = prov.get("gold_check") or {}
+        hash_clean = gchk.get("verdict") == "not gold"
         # TWO DIFFERENT NUMBERS, and conflating them inverted this table.
         #   negatives      — labels.json's no-ball top-up frames (extend_noball_frames)
         #   hard_negatives — hard_negatives.json, MINED confuser frames
@@ -303,8 +311,13 @@ def dataset_rows() -> list[dict]:
             "hard_pct": round(100.0 * hard / n_labels, 1) if n_labels else 0.0,
             "source": src,
             "protected": protected,
-            "verified": bool(src),
-            "state": "protected" if protected else ("ok" if src else "unverified"),
+            "verified": bool(src) or hash_clean,
+            "state": ("protected" if protected else
+                      "ok" if src else
+                      "hash-checked" if hash_clean else "unverified"),
+            "gold_check": ({"min_hamming": gchk.get("min_hamming"),
+                            "n_clips": len(gchk.get("checked_against") or []),
+                            "date": gchk.get("date")} if gchk else None),
             "hard_negatives": hn.exists(),
         })
     return rows
@@ -1300,18 +1313,34 @@ async function refresh() {
       f.appendChild(el("span", "pill prot", "PROTECTED"));
     else if (d.state === "unverified")
       f.appendChild(el("span", "pill unver", "UNVERIFIED"));
+    else if (d.state === "hash-checked") {
+      const p = el("span", "pill ok", "checked (pixels)");
+      if (d.gold_check)
+        p.title = "No source video recorded, so verify_dataset_not_gold.py compared "
+                + "the frames themselves against " + d.gold_check.n_clips + " gold clips: "
+                + "closest match " + d.gold_check.min_hamming + "/64 bits (a real match is "
+                + "0-4). Checked " + d.gold_check.date + ".";
+      f.appendChild(p);
+    }
     else f.appendChild(el("span", "pill ok", "checked"));
     tr.appendChild(f);
     dt.appendChild(tr);
   });
   const nUnver = OV.datasets.filter(d => d.state === "unverified").length;
-  $("#t-unver").innerHTML = nUnver
-    ? "<b>" + nUnver + "</b> dataset dir(s) record no source video, so the gold " +
+  const nHash = OV.datasets.filter(d => d.state === "hash-checked").length;
+  let note = "";
+  if (nUnver)
+    note += "<b>" + nUnver + "</b> dataset dir(s) record no source video, so the gold " +
       "guard cannot check them either way. train_ballnet passes these silently. " +
       "They are ticked by default (that is the current behaviour) — untick them " +
-      "if you want them out."
-    : "";
-  $("#t-unver").style.display = nUnver ? "" : "none";
+      "if you want them out. Run tools/verify_dataset_not_gold.py to settle it " +
+      "from the pixels instead. ";
+  if (nHash)
+    note += "<b>" + nHash + "</b> dir(s) record no source video but were cleared by " +
+      "comparing their frames against every gold clip (verify_dataset_not_gold.py) — " +
+      "hover the pill for the margin.";
+  $("#t-unver").innerHTML = note;
+  $("#t-unver").style.display = note ? "" : "none";
 
   // weights
   const wt = $("#t-weights tbody"); wt.innerHTML = "";
