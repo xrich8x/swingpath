@@ -458,6 +458,38 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   so at fps_eff 60 it spans twice the frames. Do not re-sweep it without a new
   reason.
 
+- Session G part 4 (2026-08-03): THE RACQUET BOX IS THE RIGHT LOCALISER — and it
+  still misses the pre-registered gate. Session G part 1 killed pose proximity
+  because the racquet is not on the skeleton (2.12 body heights from the nearest
+  keypoint). The follow-up needs racquet labels we do not have — except COCO
+  already ships one: **class 38 "tennis racket"**, in every stock ultralytics
+  checkpoint, so the criterion is testable with ZERO new annotation.
+  `tools/eval_racquet_negation.py`, scored on the SAME populations and the SAME
+  gate as the pose eval (22 racquet-class / 44 person-attached human-classified
+  locks for CATCH; 1201 human ball clicks for COLLATERAL):
+      margin@720p   catch(racquet)   catch(person)   collateral
+          0px           54.5%            36.4%          4.5%
+         20px           54.5%            36.4%          9.2%
+         50px           63.6%            50.0%         18.4%
+  GATE (catch >= 60% at <= 5% collateral) **FAILS** — 54.5% at the 4.5% ceiling.
+  The gate is NOT moved: it was pre-registered and 54.5 < 60.
+  BUT THE MARGIN IS THE FINDING. Pose proximity managed **11.4%** catch at that
+  same 5% ceiling; the racquet box manages **54.5%** — 4.8x better, and 5.5 points
+  short of a gate rather than 5x short. The part-1 diagnosis was right: the
+  skeleton was the wrong proxy and the racquet is the right object. Whether
+  54.5%@4.5% is worth shipping as a MINING criterion (where the economics differ
+  from a runtime filter — a mined negative is a training example, not a deleted
+  detection) is a judgement call that has NOT been made.
+  Stock racket detection genuinely works on this footage: a racket is found on
+  64.5-100% of sampled frames per clip (yt_rally2 64.5%, gold_shell 100%), so the
+  ceiling here is the CRITERION, not the detector.
+  FREE EXTERNAL BASELINE, first this project has had: the same pass scored COCO
+  class 32 "sports ball" against the same human clicks — **32.1% recall @10px
+  (386/1201) vs BallNet v21's 69.4%**. Not like-for-like (COCO's sports ball is
+  trained on large sharp balls, not a 2-4 px blurred far-court one) so read it as a
+  FLOOR, not a rival — but it is an independent confirmation that the in-house
+  detector is worth roughly 2.2x a general-purpose one on this footage.
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers
