@@ -184,6 +184,49 @@ at the bottom.
   *Steal:* use KF/EKF for short gaps but switch to a gravity parabola across the
   flight, and drive the filter with a velocity estimate, not position alone.
 
+### Added 2026-08-06 — the two finds that bear on our MEASURED position
+
+- **RacketVision** (arXiv 2511.17045, Nov 2025 / rev Jan 2026) — a benchmark over
+  table tennis, tennis and badminton, and **the first large-scale fine-grained
+  annotations for RACKET POSE alongside ball positions**. Racket pose is **5
+  keypoints: top, bottom, handle, left, right**. VERIFIED USABLE: MIT licence,
+  downloadable from Hugging Face (`linfeng302/RacketVision`), and pretrained
+  weights ship for all three tasks (BallTrack, RacketPose, TrajPred) via
+  `download_checkpoints.py`. NOT stated in the README: per-sport frame counts, and
+  whether the footage is broadcast or amateur — check before trusting transfer.
+  *Why it matters here:* Session G part 4 measured racquet-box negation using
+  COCO's generic "tennis racket" box and got **54.5% catch at 4.5% collateral** —
+  5.5 points under the pre-registered gate. A 5-keypoint racket pose gives the
+  racket's GEOMETRY (head vs handle) instead of a loose box, and the head is
+  precisely where the ball-sized, ball-coloured confuser lives. That is the direct
+  route to closing a 5.5-point gap, and it re-runs against the same 22 racquet /
+  44 person-attached locks and 1201 human clicks with the harness we already have.
+  Its BallTrack weights are also an EXTERNAL BALL BASELINE to score on our gold
+  set — the only one we have today is COCO sports-ball at 32.1% vs our 69.4%.
+  *Steal, but note the warning:* the paper's own headline finding is that
+  **naively concatenating racket-pose features DEGRADES performance**, and a
+  CrossAttention fusion is what unlocks them. Our instinct — hard-negate anything
+  inside the racket region — is the concatenation-shaped move. The signal probably
+  needs to CONDITION the detector, not filter its output.
+
+- **TinySet-9M / DEAL / P2SOD** (arXiv 2604.02773, Apr 2026) — a 9M-image
+  multi-domain small-object-detection dataset plus a benchmark specifically for
+  **label-efficient** methods on small objects. Headline: DEAL, a point-prompted
+  detector, beats fully supervised baselines by **31.4% relative at AP75** with a
+  single click AT INFERENCE time. Code and model are released (licence not stated
+  on the project page; domains and object pixel sizes not stated either).
+  *Why it matters here, and it is not the obvious reason:* the load-bearing result
+  for us is the NEGATIVE one — "weak visual cues further exacerbate the performance
+  degradation of label-efficient methods in small object detection". That is
+  independent, external confirmation of the standing conclusion in CLAUDE.md:
+  the 2-4 px far-court ball cannot be rescued by pseudo-labels or semi-supervised
+  shortcuts, because those degrade MOST exactly where the visual evidence is
+  weakest. It matches SESSION_E §E3j and our own Session G part 3 measurement. So
+  the far-court plan stays "collect real human labels", and we should NOT expect an
+  SSL/active-learning trick to substitute for them.
+  Note DEAL's click is an INFERENCE-time prompt, not a training-label saver — do
+  not read the 31.4% as an annotation-budget result.
+
 ### Court / keypoints
 - The de-facto open standard is a **heatmap CNN over 14 court keypoints**
   (yastrebksv/TennisCourtDetector) → homography from 4 corners. That is exactly
@@ -241,6 +284,10 @@ bigger backbones.
 - Spin/trajectory synthetic-to-real (table tennis): https://arxiv.org/html/2504.19863v1
 - Tennis player actions dataset (pose, stroke classes): https://pmc.ncbi.nlm.nih.gov/articles/PMC11282921/
 - Pose2Trajectory (pose→player trajectory): https://arxiv.org/pdf/2411.04501
+- RacketVision — racket pose + ball, 3 racket sports: https://arxiv.org/abs/2511.17045
+  (code + MIT + weights: https://github.com/OrcustD/RacketVision)
+- TinySet-9M / DEAL — small-object benchmark + label-efficient findings:
+  https://arxiv.org/abs/2604.02773 (project: https://zhuhaoraneis.github.io/TinySet-9M/)
 
 ---
 
