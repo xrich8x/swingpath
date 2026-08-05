@@ -63,18 +63,13 @@ import cv2
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
+sys.path.insert(0, str(REPO / "tools"))
 
-# Same six gold clips as eval_detector_gold.CLIPS. Only the video is needed here:
-# the criterion is calibration-free, which is the whole point — it applies to
-# every training clip, not just the three with a homography.
-CLIPS = {
-    "am_hard_utr": "data/am_hard_utr.mp4",
-    "gold_shell": "data/gold_shell.mp4",
-    "gold_clay": "data/gold_clay.mp4",
-    "gold_am": "data/gold_am.mp4",
-    "yt_rally2": "data/yt_rally2.mp4",
-    "yt_match40": "data/yt_match40.mp4",
-}
+import _goldset as gs  # noqa: E402  — the gold clip registry + shared eval scaffolding
+
+# Clips come from the registry. Only the video is needed here: the criterion is
+# calibration-free, which is the whole point — it applies to every training clip,
+# not just the three with a homography.
 
 # COCO-17 indices. PlayerPose.feet() uses 15/16 for ankles, same convention.
 KEYPOINT_SETS = {
@@ -89,57 +84,22 @@ KEYPOINT_SETS = {
 PERSON_CLASSES = ("racquet", "player", "held_ball")
 
 
-def gold_ball_frames(clip):
-    """{frame: (x, y)} for every frame a human clicked a real ball on."""
-    p = REPO / "data" / "gold" / f"{clip}.labels.json"
-    labels = json.loads(p.read_text(encoding="utf-8"))["labels"]
-    return {int(f): (float(v["x"]), float(v["y"]))
-            for f, v in labels.items()
-            if v.get("ball") is True and v.get("x") is not None}
-
-
-def collect_pose(clip, video, frames, device, quality, cache_path):
-    """Run pose on exactly the frames we need; cache so the sweep is free.
-
-    Mirrors inspect_false_locks.raw_locks' seek pattern (CAP_PROP_POS_FRAMES +
-    read) rather than decoding whole clips: the frames wanted are scattered over
-    tens of thousands, so seeking is the cheap direction.
-    """
-    if cache_path and Path(cache_path).is_file():
-        blob = json.loads(Path(cache_path).read_text(encoding="utf-8"))
-        if blob.get("clip") == clip and blob.get("quality") == quality:
-            return ({int(k): v for k, v in blob["poses"].items()},
-                    tuple(blob["frame_wh"]))
-
+def collect_pose(clip, frames, device, quality, cache_path):
+    """Run pose on exactly the frames we need; cache so the sweep is free."""
     from swingvision.pose import PoseEstimator
 
     est = PoseEstimator(device=device, quality=quality)
-    cap = cv2.VideoCapture(str(REPO / video))
-    if not cap.isOpened():
-        raise SystemExit(f"cannot open {video}")
-    frame_wh = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-    poses = {}
-    for n, f in enumerate(sorted(frames)):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, f)
-        ok, im = cap.read()
-        if not ok:
-            continue
+
+    def pose_of(im):
         # One record per detected person: keypoints + box height, which is the
         # per-person scale the body-relative mode needs.
-        poses[f] = [{"kpts": [[float(x), float(y), float(c)] for x, y, c in pp.keypoints],
-                     "box_h": float(pp.box[3] - pp.box[1])}
-                    for pp in est.estimate(im)]
-        if n % 100 == 0:
-            print(f"    {clip}: pose {n}/{len(frames)}", flush=True)
-    cap.release()
+        return [{"kpts": [[float(x), float(y), float(c)] for x, y, c in pp.keypoints],
+                 "box_h": float(pp.box[3] - pp.box[1])}
+                for pp in est.estimate(im)]
 
-    if cache_path:
-        Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
-        Path(cache_path).write_text(json.dumps(
-            {"clip": clip, "quality": quality, "frame_wh": list(frame_wh),
-             "poses": poses}), encoding="utf-8")
-    return poses, frame_wh
+    return gs.collect_over_frames(clip, frames, pose_of, cache_path=cache_path,
+                                  cache_key=f"pose:{quality}", label=f"{clip} pose",
+                                  progress_every=100)
 
 
 def nearest_keypoint(pt, persons, kset, kp_conf, mode):
@@ -197,20 +157,20 @@ def main() -> None:
             for m in ("px", "body")}
     per_clip = {}
 
-    for clip, video in CLIPS.items():
+    for clip, video in gs.videos().items():
         if not (REPO / video).is_file():
             print(f"  SKIP {clip}: {video} not found")
             continue
-        balls = gold_ball_frames(clip)
+        balls = gs.ball_frames(clip)
         clip_locks = [r for r in locks if r["clip"] == clip]
         want = set(balls) | {r["frame"] for r in clip_locks}
         # Cache key carries the quality preset: an `accurate` pass must not
         # overwrite the `fast` one, or the A/B between them stops being free.
         cache = REPO / "data" / "output" / f"g_pose_{clip}_{args.pose_quality}.json"
         print(f"  {clip}: {len(want)} frames ({len(balls)} ball, {len(clip_locks)} locks)")
-        poses, (fw, fh) = collect_pose(clip, video, want, args.device,
+        poses, (fw, fh) = collect_pose(clip, want, args.device,
                                        args.pose_quality, str(cache))
-        res_scale = fh / 720.0
+        res_scale = gs.res_scale(fh)
         n_pose = sum(1 for f in want if poses.get(f))
         per_clip[clip] = {"frames": len(want), "balls": len(balls),
                           "locks": len(clip_locks), "res_scale": round(res_scale, 3),
@@ -234,9 +194,7 @@ def main() -> None:
                         d /= res_scale
                     dist[mode][kname]["ball"].append(d)
 
-    def rate(vals, r):
-        return 100.0 * sum(1 for v in vals if v <= r) / max(len(vals), 1)
-
+    rate = gs.rate_at
     rows = []
     print("\n" + "=" * 78)
     print("CATCH = % of human-classified person-attached locks flagged (the win)")

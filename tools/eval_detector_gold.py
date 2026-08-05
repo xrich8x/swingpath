@@ -36,17 +36,14 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
+sys.path.insert(0, str(REPO / "tools"))
+import _goldset as gs  # noqa: E402  — single source for the gold clip table
 
 # clip -> (video, calibration or None). Only three gold clips have a calibration,
 # so the geometry-based far band exists only for those; the pixel band covers all.
-CLIPS = [
-    ("am_hard_utr", "data/am_hard_utr.mp4", "data/am_hard_utr_pts.json"),  # 1080p gold (primary)
-    ("gold_shell", "data/gold_shell.mp4", None),
-    ("gold_clay", "data/gold_clay.mp4", None),
-    ("gold_am", "data/gold_am.mp4", None),
-    ("yt_rally2", "data/yt_rally2.mp4", "data/yt_rally2_pts.json"),
-    ("yt_match40", "data/yt_match40.mp4", "data/yt_match40_pts.json"),
-]
+# All six gold clips, from the registry (was a literal here). Only three have a
+# calibration, so the geometric far band exists only for those.
+CLIPS = gs.name_video_calib()
 CORN = ("near_bl_doubles", "near_br_doubles", "far_bl_doubles", "far_br_doubles")
 
 

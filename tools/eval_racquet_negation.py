@@ -47,66 +47,28 @@ import cv2
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
+sys.path.insert(0, str(REPO / "tools"))
 
-CLIPS = {
-    "am_hard_utr": "data/am_hard_utr.mp4",
-    "gold_shell": "data/gold_shell.mp4",
-    "gold_clay": "data/gold_clay.mp4",
-    "gold_am": "data/gold_am.mp4",
-    "yt_rally2": "data/yt_rally2.mp4",
-    "yt_match40": "data/yt_match40.mp4",
-}
+import _goldset as gs  # noqa: E402  — the gold clip registry + shared eval scaffolding
 
 RACKET_CLS = 38        # COCO "tennis racket"
 BALL_CLS = 32          # COCO "sports ball"
 PERSON_CLASSES = ("racquet", "player", "held_ball")
 
 
-def gold_ball_frames(clip: str) -> dict:
-    p = REPO / "data" / "gold" / f"{clip}.labels.json"
-    labels = json.loads(p.read_text(encoding="utf-8"))["labels"]
-    return {int(f): (float(v["x"]), float(v["y"]))
-            for f, v in labels.items()
-            if v.get("ball") is True and v.get("x") is not None}
-
-
-def detect_frames(clip, video, frames, device, imgsz, conf, cache_path):
+def detect_frames(clip, frames, device, imgsz, conf, cache_path):
     """Stock YOLO detection on exactly the frames we need. Cached per clip+imgsz."""
-    if cache_path and Path(cache_path).is_file():
-        blob = json.loads(Path(cache_path).read_text(encoding="utf-8"))
-        if blob.get("clip") == clip and blob.get("imgsz") == imgsz:
-            return ({int(k): v for k, v in blob["dets"].items()},
-                    tuple(blob["frame_wh"]))
-
     from ultralytics import YOLO
     model = YOLO("yolo11m.pt")
-    cap = cv2.VideoCapture(str(REPO / video))
-    if not cap.isOpened():
-        raise SystemExit(f"cannot open {video}")
-    frame_wh = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-    dets = {}
-    for n, f in enumerate(sorted(frames)):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, f)
-        ok, im = cap.read()
-        if not ok:
-            continue
+
+    def detect(im):
         r = model.predict(im, imgsz=imgsz, conf=conf, device=device,
                           classes=[RACKET_CLS, BALL_CLS], verbose=False)[0]
-        out = []
-        for b in r.boxes:
-            out.append({"cls": int(b.cls.item()), "conf": float(b.conf.item()),
-                        "xyxy": [float(v) for v in b.xyxy[0].tolist()]})
-        dets[f] = out
-        if n % 200 == 0:
-            print(f"    {clip}: {n}/{len(frames)}", flush=True)
-    cap.release()
-    if cache_path:
-        Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
-        Path(cache_path).write_text(json.dumps(
-            {"clip": clip, "imgsz": imgsz, "conf": conf,
-             "frame_wh": list(frame_wh), "dets": dets}), encoding="utf-8")
-    return dets, frame_wh
+        return [{"cls": int(b.cls.item()), "conf": float(b.conf.item()),
+                 "xyxy": [float(v) for v in b.xyxy[0].tolist()]} for b in r.boxes]
+
+    return gs.collect_over_frames(clip, frames, detect, cache_path=cache_path,
+                                  cache_key=f"yolo11m:{imgsz}:{conf}", label=clip)
 
 
 def dist_to_boxes(pt, dets, cls, res_scale):
@@ -148,18 +110,18 @@ def main() -> None:
     ball_seen = ball_total = 0
     per_clip = {}
 
-    for clip, video in CLIPS.items():
+    for clip, video in gs.videos().items():
         if not (REPO / video).is_file():
             print(f"  SKIP {clip}")
             continue
-        balls = gold_ball_frames(clip)
+        balls = gs.ball_frames(clip)
         clip_locks = [r for r in locks if r["clip"] == clip]
         want = set(balls) | {r["frame"] for r in clip_locks}
         cache = REPO / "data" / "output" / f"h_yolodet_{clip}_{args.imgsz}.json"
         print(f"  {clip}: {len(want)} frames", flush=True)
-        dets, (fw, fh) = detect_frames(clip, video, want, args.device,
+        dets, (fw, fh) = detect_frames(clip, want, args.device,
                                        args.imgsz, args.conf, str(cache))
-        rs = fh / 720.0
+        rs = gs.res_scale(fh)
         n_rack = sum(1 for f in want if any(d["cls"] == RACKET_CLS for d in dets.get(f, [])))
         # criterion distances
         for r in clip_locks:
@@ -180,9 +142,7 @@ def main() -> None:
         print(f"    racket detected on {n_rack}/{len(want)} frames "
               f"({100.0*n_rack/max(len(want),1):.1f}%)", flush=True)
 
-    def rate(vals, m):
-        return 100.0 * sum(1 for v in vals if v <= m) / max(len(vals), 1)
-
+    rate = gs.rate_at
     rows = []
     print("\n" + "=" * 76)
     print("RACQUET-BOX NEGATION — same populations and gate as eval_pose_proximity")

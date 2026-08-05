@@ -36,19 +36,15 @@ import argparse, json, math, os, sys, time
 from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
+sys.path.insert(0, str(REPO / "tools"))
+import _goldset as gs  # noqa: E402  — single source for the gold clip table
 import cv2
 import numpy as np
 
 CORN = ("near_bl_doubles", "near_br_doubles", "far_bl_doubles", "far_br_doubles")
 # clip -> (video, court-pts json, gold labels json)
-CLIPS = {
-    "am_hard_utr": ("data/am_hard_utr.mp4", "data/am_hard_utr_pts.json",
-                    "data/gold/am_hard_utr.labels.json"),
-    "yt_rally2": ("data/yt_rally2.mp4", "data/yt_rally2_pts.json",
-                  "data/gold/yt_rally2.labels.json"),
-    "yt_match40": ("data/yt_match40.mp4", "data/yt_match40_pts.json",
-                   "data/gold/yt_match40.labels.json"),
-}
+# The three calibrated gold clips, from the registry (was a literal here).
+CLIPS = gs.calibrated_map()
 FAR_FRAC = 0.36
 
 

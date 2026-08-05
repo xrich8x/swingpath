@@ -26,6 +26,8 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
+sys.path.insert(0, str(REPO / "tools"))
+import _goldset as gs  # noqa: E402  — single source for the gold clip table
 
 from swingvision import ball as ball_mod, calibration, court, courtfit  # noqa: E402
 
@@ -33,11 +35,8 @@ CORN = ("near_bl_doubles", "near_br_doubles", "far_bl_doubles", "far_br_doubles"
 
 # Gold clips that HAVE a calibration. gold_shell/gold_clay/gold_am have none, so
 # they cannot be scored here at all — an H-dependent gate has nothing to test.
-CLIPS = [
-    ("am_hard_utr", "data/am_hard_utr.mp4", "data/am_hard_utr_pts.json"),
-    ("yt_rally2", "data/yt_rally2.mp4", "data/yt_rally2_pts.json"),
-    ("yt_match40", "data/yt_match40.mp4", "data/yt_match40_pts.json"),
-]
+# The three calibrated gold clips, from the registry (was a literal here).
+CLIPS = gs.calibrated_triples()
 
 
 def load_clip(pts_path, video):
