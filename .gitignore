@@ -43,6 +43,10 @@ data/output/*
 # digit for digit), so leaving them out meant the repo cited a result it did not
 # contain. Small, text, and they are the evidence.
 !data/output/*.txt
+# ...and written-up results. data/output/court_consensus_bar.md is cited BY NAME in
+# CLAUDE.md, and the repo has already shipped one commit citing evidence it did not
+# contain. Same rule: a result nobody can reproduce isn't one.
+!data/output/*.md
 # Same rule one level down for the Session E1 fps-controlled experiment: the
 # swept perception caches ARE the evidence for the "fps buys precision, not
 # recall" result (HANDOFF.md §13) and must stay reproducible. Images still ignored.
