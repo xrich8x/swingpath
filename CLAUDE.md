@@ -9,7 +9,10 @@ Project context for Claude Code. Read this before editing.
   and flat lists of what has and has not moved a number. This file's Status section is
   chronological; SCOREBOARD is the consolidated state of play. **Update it in the same
   commit as the work it describes** — a shipped win, a measured negative, a stack change,
-  or a process trap hit twice.
+  or a process trap hit twice. This is ENFORCED, not remembered:
+  `.claude/hooks/scoreboard-guard.sh` refuses any commit that touches code without also
+  modifying SCOREBOARD.md. Doc-, data- and config-only commits pass; put
+  `[no-scoreboard]` in the message for a change that genuinely moves no number.
 - **[README.md](README.md)** — what the project is + how to run it (quickstart, layout).
 - **[ML_PRACTICES.md](ML_PRACTICES.md)** — how to *conduct* ML work: honesty, evidence
   tags, ground-truth-before-metrics, reproducibility, the session-end checklist.

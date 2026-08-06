@@ -7,6 +7,13 @@ session. This file is the *consolidated* view: the stack we build on, the method
 hold ourselves to, and a flat list of what has and has not moved a number. If you
 want the story, read CLAUDE.md. If you want the state of play, read this.
 
+**This is enforced, not remembered.** `.claude/hooks/scoreboard-guard.sh` runs before
+every `git commit`: if the commit changes code (`backend/`, `tools/`, `frontend/src/`,
+`mobile/`, `ball_physics/`) and SCOREBOARD.md is not also modified, the commit is
+refused with a reason. Doc-only, data-only and config-only commits pass untouched. For
+a change that genuinely moves no number — a typo, a rename, a revert — put
+`[no-scoreboard]` in the commit message.
+
 **When to update:**
 - shipped something that moved a measured number → add a row to **What has worked**
 - measured something that did not work → add a row to **What has not worked**, with
