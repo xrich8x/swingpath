@@ -110,6 +110,8 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | Racquet-box negation (COCO class 38) | **54.5%** catch at 4.5% collateral — 5.5 pts under gate. Right object, loose localiser. |
 | Raising `acquire_bound_m` 4 → 10 m | Static analysis said free; end to end it bought +0.6 pt recall for +1.9 pt false-fire. |
 | Blur augmentation alone | Dead end on its own; only pays off combined with occlusion work. |
+| Lowering the court consensus bar 6/8 → 5/8 | **GATE FAILS.** Exactly one 5-vote clip exists and it is wrong by **68.7 px**, against 3.4–13.9 px for every clip at ≥6 votes. Nothing lands in the gap. The bar is empirically correct. |
+| Improving CourtNet for auto-calibration | Wrong target. CourtNet is **Tier 2**; `courtfit` consensus is Tier 1 and beats it on this footage — CourtNet returns nothing on three clips courtfit nails at 8/8, 7/8 and 6/8. |
 
 ---
 
@@ -121,7 +123,8 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | **9 solid ghost balls** | A detector trained not to fire on racquets. Next candidate: RacketVision 5-keypoint racket pose (MIT, weights released) — but its own finding warns that naive feature concatenation *degrades*, so it must condition the detector, not filter it. |
 | **Bounce detection** | No true ball height from one camera. Unevaluated candidates: audio impact (module exists, unwired), monocular 3D. |
 | **Speed coverage** | Downstream of ball recall. The −15% bias is average-vs-launch physics and must **never** be corrected away. |
-| **Court auto-detection** | Not accuracy — **refusal**. On the 8 held-out clips CourtNet detects on **20.2%** of frames (25/124), but where it fires it is good: kp_err **3.9–9.6 px**, within-8px 33–87%. It returns nothing at all on 5 of 8 clips. The next question is why the gates in `detect_court_learned` refuse (`min_points=6`, the 0.40 heatmap floor, the reproj gate, `verify_court`) — **not** keypoint accuracy, which is already single-digit px. |
+| **Court auto-detection** | **Closed as a model problem.** Tier 1 (`courtfit` consensus) auto-accepts **11 of 20** gold clips with a perfect precision record (3.4–13.9 px, zero wrong courts ever accepted); the 6/8 bar is verified correct. The remaining 9 clips refuse, and refusal costs ~30 s in the setup tool. CourtNet (Tier 2, 20.2% held-out detect) is the weaker path and is not worth improving. |
+| **8 court gold frames are mislabelled** | `am_indoor_hard1` frames 9204/10093/10982/11871/12760/13649/14538/15427 are marked `court: false` but plainly show a full usable court (3 of 3 inspected). Needs re-labelling in the Lab — a minute of human time. Until then that clip's `false%` is not a valid metric. |
 | **Manual-correction UI** | Nothing. Needs no ML. Highest-value unbuilt product feature. |
 | **Highlights / clip export** | Nothing. Self-contained, parallelisable. |
 

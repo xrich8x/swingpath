@@ -533,6 +533,36 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   court on **62.5%** of frames a human marked UNUSABLE — a confidently-wrong overlay.
   228 tests.
 
+- Session H part 2 (2026-08-06): COURT AUTO-DETECTION IS CLOSED AS A MODEL PROBLEM, and
+  the 6/8 bar is now verified rather than believed. Three results.
+  (1) CourtNet IS THE WRONG TARGET. `pipeline.calibrate_video` TIER 1 is
+  `courtfit.fit_video_frames` (line-fit consensus, "the measured best on amateur
+  footage"); `detect_court_learned` is only TIER 2, reached when Tier 1 already refused.
+  demo30's "2 of 8 frames, needs 6" was COURTFIT, not CourtNet — the feature row
+  conflated them. Measured head-to-head on the 8 held-out clips, courtfit auto-accepts
+  am_ntrp45_courtlevel 8/8, am_ntrp30 8/8, am_rec30 7/8 and am_grass1 6/8, while CourtNet
+  returns NOTHING on three of those four. CourtNet adds value on exactly one clip
+  (am_usta60) and is confidently wrong on another. Do not spend on MAE loss, the Hough
+  refine, or gate instrumentation for it.
+  (2) THE CONSENSUS BAR IS EMPIRICALLY CORRECT — measured, not asserted
+  (`tools/eval_court_consensus.py --all --k 8`, evidence in
+  data/output/court_consensus_bar.md). Pre-registered gate: lower 6 -> 5 only if ZERO
+  5-vote consensuses are wrong. There is exactly one 5-vote clip, am_ntrp50, and it is
+  wrong by **68.7 px**. GATE FAILS, bar stays at 6. THE SEPARATION IS THE FINDING: every
+  clip at >=6 votes lands 3.4-13.9 px; every clip at <=5 votes lands 25.5-111.0 px;
+  nothing is in the gap. Auto-calibration already succeeds on **11 of 20** gold clips
+  with a perfect precision record — no wrong court has ever been auto-accepted. The
+  failure mode is refusal, and refusal costs ~30 s in the setup tool.
+  (3) 8 COURT GOLD FRAMES ARE MISLABELLED, and this INVALIDATES a number I recommended
+  acting on. `am_indoor_hard1`'s 62.5% "confidently-wrong overlay" was the detector being
+  RIGHT and the labels being WRONG: frames 9204/10093/10982/11871/12760/13649/14538/15427
+  are marked `court: false, unusable: true` but plainly show a full usable court (3 of 3
+  inspected by eye; timestamps 3 s apart, consistent with a mis-click run). Contrast
+  am_usta60, whose 8 unusable frames are genuine talking-head/selfie shots — so the
+  labelling convention is right and this clip is an anomaly. NOT FIXED HERE ON PURPOSE:
+  never quietly edit human ground truth to suit a model. Re-label in the Lab; until then
+  that clip's false% is not a valid metric.
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers
