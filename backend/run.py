@@ -126,6 +126,48 @@ def _cmd_live(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_correct(args: argparse.Namespace) -> int:
+    """Apply a corrections file and re-derive score + stats.
+
+    Vision scoring is brittle by construction — a rally winner rests on a bounce a
+    single camera cannot always place. This is the documented answer: let the
+    person who watched the match overrule it, then recompute rather than patch.
+    """
+    import json
+
+    from swingvision import corrections as corr
+
+    with open(args.match, "r", encoding="utf-8") as f:
+        match = json.load(f)
+    with open(args.corrections, "r", encoding="utf-8") as f:
+        blob = json.load(f)
+    items = blob["corrections"] if isinstance(blob, dict) else blob
+
+    fixed, res = corr.apply_corrections(match, items, strict=args.strict)
+    d = corr.diff_summary(match, fixed)
+
+    out = args.out or os.path.splitext(args.match)[0] + ".corrected.json"
+    # Record what was applied INSIDE the output, so a corrected match.json is
+    # self-describing: anyone opening it can see it was edited, and by what.
+    fixed["corrections"] = res.applied
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(fixed, f, indent=1)
+
+    print(f"applied {len(res.applied)} correction(s); {len(res.skipped)} skipped")
+    for s in res.skipped:
+        print(f"  SKIPPED {s.get('target')} id={s.get('id')}: {s.get('reason')}")
+    for a in res.applied:
+        print(f"  {a['target']} id={a['id']}: {a.get('was')!r} -> {a['value']!r}")
+    if d["score_changed"]:
+        print(f"score: {d['final_before']}  ->  {d['final_after']}")
+    else:
+        print(f"score unchanged ({d['final_after']})")
+    if d["line_calls_before"] != d["line_calls_after"]:
+        print(f"line calls: {d['line_calls_before']} -> {d['line_calls_after']}")
+    print(f"wrote {out}")
+    return 0 if res.ok or not args.strict else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="run.py", description="SwingVision-clone CLI")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -201,6 +243,19 @@ def build_parser() -> argparse.ArgumentParser:
     live_p.add_argument("--device", default="cpu", help="cpu or cuda (cuda gives real-time)")
     live_p.add_argument("--doubles", action="store_true", help="call against the doubles court")
     live_p.set_defaults(func=_cmd_live)
+
+    corr = sub.add_parser("correct",
+                          help="apply human corrections to a match.json and re-derive "
+                               "the score and stats")
+    corr.add_argument("match", help="match.json to correct")
+    corr.add_argument("--corrections", required=True,
+                      help="corrections JSON (a list, or {\"corrections\": [...]}) — "
+                           "the Review tab in the dashboard exports this")
+    corr.add_argument("--out", help="output match.json (default: alongside, .corrected.json)")
+    corr.add_argument("--strict", action="store_true",
+                      help="fail on any correction that cannot be applied, instead of "
+                           "reporting it")
+    corr.set_defaults(func=_cmd_correct)
     return parser
 
 

@@ -1,0 +1,17 @@
+{
+ "tool": "dashboard Review tab",
+ "corrections": [
+  {
+   "target": "rally.winner",
+   "id": 0,
+   "value": "A",
+   "original": "B"
+  },
+  {
+   "target": "shot.call",
+   "id": 0,
+   "value": "out",
+   "original": "in"
+  }
+ ]
+}

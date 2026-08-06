@@ -6,9 +6,10 @@ import Statistics from "./components/Statistics.jsx";
 import Rallies from "./components/Rallies.jsx";
 import Broadcast from "./components/Broadcast.jsx";
 import CourtSetup from "./components/CourtSetup.jsx";
+import Review from "./components/Review.jsx";
 import { playerName } from "./lib/format.js";
 
-const TABS = ["Broadcast", "Court", "Statistics", "Rallies", "Court Setup"];
+const TABS = ["Broadcast", "Court", "Statistics", "Rallies", "Review", "Court Setup"];
 
 export default function App() {
   const [match, setMatch] = useState(sampleMatch);
@@ -160,6 +161,7 @@ export default function App() {
             onSelectRally={handleSelectRally}
           />
         )}
+        {tab === "Review" && <Review match={match} />}
         {tab === "Court Setup" && <CourtSetup match={match} />}
       </main>
 
