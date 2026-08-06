@@ -1,0 +1,51 @@
+{
+ "tool": "eval_racquet_head",
+ "measured_against": "human labels only: 22 racquet-class and 44 person-attached locks from data/gold/false_lock_classes.json for CATCH; 1201 human ball clicks for COLLATERAL. Head direction is APPROXIMATED from the COCO racket box plus the nearest wrist, not a real racket pose.",
+ "n_racquet": 22,
+ "n_person": 44,
+ "n_ball": 1201,
+ "rows": [
+  {
+   "cut": 0.0,
+   "catch_racquet_pct": 54.5,
+   "catch_person_pct": 34.1,
+   "collateral_pct": 4.5,
+   "passes_gate": false
+  },
+  {
+   "cut": 0.3,
+   "catch_racquet_pct": 50.0,
+   "catch_person_pct": 27.3,
+   "collateral_pct": 3.5,
+   "passes_gate": false
+  },
+  {
+   "cut": 0.4,
+   "catch_racquet_pct": 45.5,
+   "catch_person_pct": 25.0,
+   "collateral_pct": 2.8,
+   "passes_gate": false
+  },
+  {
+   "cut": 0.5,
+   "catch_racquet_pct": 36.4,
+   "catch_person_pct": 20.5,
+   "collateral_pct": 2.6,
+   "passes_gate": false
+  },
+  {
+   "cut": 0.6,
+   "catch_racquet_pct": 22.7,
+   "catch_person_pct": 13.6,
+   "collateral_pct": 2.2,
+   "passes_gate": false
+  },
+  {
+   "cut": 0.7,
+   "catch_racquet_pct": 22.7,
+   "catch_person_pct": 11.4,
+   "collateral_pct": 1.6,
+   "passes_gate": false
+  }
+ ]
+}
