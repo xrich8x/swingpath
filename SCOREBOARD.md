@@ -87,6 +87,7 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | **demo30 re-calibration** | **564.6 px → 0.5 px** fit residual — lowest in the repo | G part 2 |
 | **Calibration audit + `_audit` stamp** | degenerate calibrations now warn on load instead of failing silently | G part 2 |
 | **The gold benchmark itself** | turned every claim in this project from an opinion into a number | Session 2 |
+| **Synthetic ground truth** (`tools/synth_truth.py`) | first ABSOLUTE accuracy this project has had — every other number is agreement with a human. Line calls **95.9%** correct, bounce **0.75 m** median, and the −15..−20% speed rule confirmed as physics (drag = **−21.7%**) | 2026-08-06 |
 | **Court TEST/TRAIN split + leak guard** | court numbers became measurable at all — 17 of 20 gold clips had been in training | 2026-08-06 |
 | **Manual-correction UI** (Review tab + `run.py correct`) | closes the oldest known gap. Edits FACTS only; score is replayed through `scoring.TennisScore` and stats through `schema.compute_stats`, so there is no second implementation of the rules. Verified end to end: demo score 2-5 → 3-4, line calls 108/17 → 107/18, and re-applying the same file is a no-op | 2026-08-06 |
 
@@ -151,6 +152,12 @@ Process failures this project has hit **more than once**. Each cost real work.
    session and forced a retraction.
 5. **Measuring against a model instead of a human.** Every leaderboard this project
    built before the gold set was measuring its own reflection.
+5b. **Trusting the flat z=0 projection for an AIRBORNE ball.** Measured against
+   simulated truth: back-projecting the whole arc onto the court plane and
+   integrating path length reads **+72% median, p90 +25,000%** — a near-grazing ray
+   runs to infinity. Under 1 m of height it is +15% bias. This is precisely why
+   `gate_ball_to_court` and the physics arc fit exist, and why the `approx` speed
+   path is a floor rather than a measurement.
 6. **Letting the test set into the training set.** The ball side has enforced a one-way
    gold/train split since Session 2. The COURT side never did: **17 of the 20
    hand-labelled court gold clips were also in `data/court_dataset/`**, and

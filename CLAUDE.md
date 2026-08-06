@@ -563,6 +563,37 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   never quietly edit human ground truth to suit a model. Re-label in the Lab; until then
   that clip's false% is not a valid metric.
 
+- Session H part 3 (2026-08-06): SYNTHETIC GROUND TRUTH — the first ABSOLUTE accuracy
+  in this project. Every other number here is an AGREEMENT number (human clicks, or 7
+  HUD readings); the geometry and physics layers are closed-form, so truth can be
+  manufactured. `tools/synth_truth.py` simulates flights with a known launch velocity
+  through the real drag+gravity+Magnus model, projects them through a REAL clip's
+  calibration, adds our actual detector noise (2 px) and dropout (30%), and runs the
+  shipped measurement code on the result. 341 flights through yt_rally2_pts.
+  (1) LINE CALLS AND BOUNCE ARE VALIDATED ABSOLUTELY for the first time: the call
+  agrees with truth on **327/341 (95.9%)** and the bounce lands **0.75 m** (median,
+  p90 4.91 m) from where the ball really hit.
+  (2) THE -15..-20% SPEED RULE IS CONFIRMED, AND ITS REASONING REFINED. The error
+  budget: drag (launch -> true average 3D) **-21.7%**; ground projection (3D ->
+  ground, dropping the vertical) **only -0.9%**. So the under-read is almost entirely
+  DECELERATION, not the loss of the z component as the docs implied. The rule stands:
+  do not bias-correct it.
+  (3) NEW MEASURED LIMIT: the flat z=0 back-projection is UNUSABLE for an airborne
+  ball — integrating path length over the whole arc reads **+72% median, p90
+  +25,000%**, because a near-grazing ray meets the plane at infinity. Restricted to a
+  ball under 1 m it is +15% bias / 27.9% median |error|. This quantifies why
+  `gate_ball_to_court` and the physics arc fit exist and why `speed_source="approx"`
+  is a floor, not a measurement.
+  CAVEAT, stated in the tool: this exercises `analytics.shot_speed_kmh` on a raw
+  back-projection. It does NOT exercise `speedspin`'s physics fit, which is the
+  shipped preferred path — so (3) bounds the fallback, not the product.
+  TRAP HIT AND FIXED DURING THE BUILD: the physics package and swingvision use
+  DIFFERENT court frames (tennis_tracker X=length/Y=width-centred-mirrored vs
+  swingvision x=width/y=length). The first run compared a physics-frame bounce
+  against a court-frame estimate and reported a 30 m median error on a 23.77 m
+  court. `to_court_xy` is now asserted at startup to be the exact inverse of
+  `speedspin._to_framework_xy`.
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers
