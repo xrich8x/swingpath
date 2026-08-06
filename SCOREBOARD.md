@@ -88,6 +88,7 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | **Calibration audit + `_audit` stamp** | degenerate calibrations now warn on load instead of failing silently | G part 2 |
 | **The gold benchmark itself** | turned every claim in this project from an opinion into a number | Session 2 |
 | **Court TEST/TRAIN split + leak guard** | court numbers became measurable at all — 17 of 20 gold clips had been in training | 2026-08-06 |
+| **Manual-correction UI** (Review tab + `run.py correct`) | closes the oldest known gap. Edits FACTS only; score is replayed through `scoring.TennisScore` and stats through `schema.compute_stats`, so there is no second implementation of the rules. Verified end to end: demo score 2-5 → 3-4, line calls 108/17 → 107/18, and re-applying the same file is a no-op | 2026-08-06 |
 
 ---
 
@@ -126,7 +127,7 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | **Speed coverage** | Downstream of ball recall. The −15% bias is average-vs-launch physics and must **never** be corrected away. |
 | **Court auto-detection** | **Closed as a model problem.** Tier 1 (`courtfit` consensus) auto-accepts **11 of 20** gold clips with a perfect precision record (3.4–13.9 px, zero wrong courts ever accepted); the 6/8 bar is verified correct. The remaining 9 clips refuse, and refusal costs ~30 s in the setup tool. CourtNet (Tier 2, 20.2% held-out detect) is the weaker path and is not worth improving. |
 | **8 court gold frames are mislabelled** | `am_indoor_hard1` frames 9204/10093/10982/11871/12760/13649/14538/15427 are marked `court: false` but plainly show a full usable court (3 of 3 inspected). Needs re-labelling in the Lab — a minute of human time. Until then that clip's `false%` is not a valid metric. |
-| **Manual-correction UI** | Nothing. Needs no ML. Highest-value unbuilt product feature. |
+| **Highlights / clip export** | Nothing. Self-contained, needs no ML, planned as Session D. Now the highest-value unbuilt product feature. |
 | **Highlights / clip export** | Nothing. Self-contained, parallelisable. |
 
 ---
