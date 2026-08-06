@@ -5,6 +5,11 @@ Project context for Claude Code. Read this before editing.
 ## Project docs — read the right one for the task
 
 - **CLAUDE.md** (this file) — architecture, hard rules, current status. Read before editing.
+- **[SCOREBOARD.md](SCOREBOARD.md)** — the LIVING record: the stack, the working method,
+  and flat lists of what has and has not moved a number. This file's Status section is
+  chronological; SCOREBOARD is the consolidated state of play. **Update it in the same
+  commit as the work it describes** — a shipped win, a measured negative, a stack change,
+  or a process trap hit twice.
 - **[README.md](README.md)** — what the project is + how to run it (quickstart, layout).
 - **[ML_PRACTICES.md](ML_PRACTICES.md)** — how to *conduct* ML work: honesty, evidence
   tags, ground-truth-before-metrics, reproducibility, the session-end checklist.
