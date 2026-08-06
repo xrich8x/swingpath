@@ -87,6 +87,7 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | **demo30 re-calibration** | **564.6 px → 0.5 px** fit residual — lowest in the repo | G part 2 |
 | **Calibration audit + `_audit` stamp** | degenerate calibrations now warn on load instead of failing silently | G part 2 |
 | **The gold benchmark itself** | turned every claim in this project from an opinion into a number | Session 2 |
+| **Court TEST/TRAIN split + leak guard** | court numbers became measurable at all — 17 of 20 gold clips had been in training | 2026-08-06 |
 
 ---
 
@@ -120,6 +121,7 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | **9 solid ghost balls** | A detector trained not to fire on racquets. Next candidate: RacketVision 5-keypoint racket pose (MIT, weights released) — but its own finding warns that naive feature concatenation *degrades*, so it must condition the detector, not filter it. |
 | **Bounce detection** | No true ball height from one camera. Unevaluated candidates: audio impact (module exists, unwired), monocular 3D. |
 | **Speed coverage** | Downstream of ball recall. The −15% bias is average-vs-launch physics and must **never** be corrected away. |
+| **Court auto-detection** | Not accuracy — **refusal**. On the 8 held-out clips CourtNet detects on **20.2%** of frames (25/124), but where it fires it is good: kp_err **3.9–9.6 px**, within-8px 33–87%. It returns nothing at all on 5 of 8 clips. The next question is why the gates in `detect_court_learned` refuse (`min_points=6`, the 0.40 heatmap floor, the reproj gate, `verify_court`) — **not** keypoint accuracy, which is already single-digit px. |
 | **Manual-correction UI** | Nothing. Needs no ML. Highest-value unbuilt product feature. |
 | **Highlights / clip export** | Nothing. Self-contained, parallelisable. |
 
@@ -144,6 +146,14 @@ Process failures this project has hit **more than once**. Each cost real work.
    session and forced a retraction.
 5. **Measuring against a model instead of a human.** Every leaderboard this project
    built before the gold set was measuring its own reflection.
+6. **Letting the test set into the training set.** The ball side has enforced a one-way
+   gold/train split since Session 2. The COURT side never did: **17 of the 20
+   hand-labelled court gold clips were also in `data/court_dataset/`**, and
+   `train_courtnet.py` had no guard at all, so every figure in
+   `data/gold/court_scores.md` was the model scored on its own homework. Fixed
+   2026-08-06 with `data/gold/court_split.json` + `assert_no_court_gold_leak()`. The
+   lesson generalises: a discipline enforced on one model is not enforced on the
+   project. Check each new model for its own guard.
 6. **Fanning out to parallel agents.** The bottleneck here is one GPU and one gold set,
    not context. Two multi-agent research runs burned ~971k tokens and returned **zero**
    results; the same research done inline took two searches and four fetches.

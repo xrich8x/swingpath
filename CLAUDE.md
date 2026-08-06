@@ -498,6 +498,41 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   FLOOR, not a rival — but it is an independent confirmation that the in-house
   detector is worth roughly 2.2x a general-purpose one on this footage.
 
+- Session H (2026-08-06): THE COURT TEST SET WAS THE TRAINING SET, and fixing that
+  changed what the problem is. The feature list said the next court step was "CourtNet
+  retrain with MAE loss + per-keypoint local Hough refine (both in the playbook,
+  untried)". Reading the code, all three premises were wrong.
+  (1) The local Hough refine is NOT untried — `calibration._refine_keypoint` is
+  implemented and `detect_court_learned` already calls it on 11 of 14 keypoints.
+  (2) THE REAL BLOCKER: `data/court_dataset/` had 20 training dirs and `data/gold/`
+  has 20 hand-labelled court clips — **17 were the same clips** — and unlike the ball
+  trainer, `train_courtnet.py` had NO leak guard. Only 3 clips / 54 frames had never
+  been trained on. FIXED: `data/gold/court_split.json` declares 8 TEST / 15 TRAIN
+  one-way; `train_courtnet.assert_no_court_gold_leak()` REFUSES to start if a TEST clip
+  is in the training root (proved by pointing it at the unsplit dir); the 5 pulled clips
+  moved to `data/court_testset/`; 6 tests in tests/test_court_split.py pin it.
+  NOTE `tools/eval_court.py` ALREADY split held-out vs trained-on and refused to print a
+  pooled number — the awareness existed, the GUARD did not.
+  Also added `COURTNET_WEIGHTS` env override (mirrors `BALLNET_WEIGHTS`): without it,
+  `detect_court_learned` prefers `courtnet_ft.pt` BY FILENAME, so benchmarking any other
+  checkpoint silently scored the contaminated one instead.
+  (3) HONEST BASELINE, retrained on the clean split (same MSE recipe, only the training
+  set changed; `weights/courtnet_split.pt`, 15 epochs, 22m49s): **held-out 20.2% detect
+  (25 of 124 frames, 8 clips)** vs trained-on 23.6%. The leak was flattering almost
+  nothing — the model generalises about as badly as it memorises.
+  THE FINDING IS THE SHAPE, NOT THE NUMBER: the bottleneck is REFUSAL, not accuracy.
+  Where it fires it is good — am_ntrp30 100% detect / 3.9 px / 86.6% within-8px,
+  am_usta60 60% / 4.7 px / 74.1%, IoU 0.893 — and it returns NOTHING on 5 of 8 clips
+  (am_beginner, am_grass1, am_ntrp45_courtlevel, am_rec30, am_wingfield_clay). So MAE
+  loss and the Hough refine both aim at localisation, which is already single-digit px.
+  The next question is which gate in `detect_court_learned` refuses: `min_points=6`, the
+  0.40 heatmap floor, the reproj gate (`0.015*max_dim`), or `verify_court`.
+  DO NOT compare any of this to the old `data/gold/court_scores.md` (kp_err 212-281 px):
+  that table has no `split` column, predates the leak-aware eval, and may have been the
+  classical detector. It is not a valid before. Also open: am_indoor_hard1 returns a
+  court on **62.5%** of frames a human marked UNUSABLE — a confidently-wrong overlay.
+  228 tests.
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers

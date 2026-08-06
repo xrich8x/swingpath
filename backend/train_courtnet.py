@@ -48,18 +48,63 @@ def heatmaps(kps, w=IN_W, h=IN_H, sigma=SIGMA):
     return out
 
 
+SPLIT_MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "..", "data", "gold", "court_split.json")
+
+
+def court_test_clips(manifest=SPLIT_MANIFEST) -> list[str]:
+    """The clips declared TEST in data/gold/court_split.json.
+
+    Derived from the manifest rather than a --exclude flag: CLAUDE.md records that
+    the ball trainer's old `--exclude indoor_elev` default matched no directory at
+    all and "had been protecting nothing". A guard nobody has to remember to pass
+    is the only kind that holds.
+    """
+    with open(manifest, "r", encoding="utf-8") as f:
+        return sorted(json.load(f)["test"]["clips"])
+
+
+def assert_no_court_gold_leak(root, manifest=SPLIT_MANIFEST) -> list[str]:
+    """Refuse to train if a TEST clip is present in the training root.
+
+    This is why the guard exists: before it, 17 of the 20 hand-labelled court gold
+    clips were also in data/court_dataset/, so every figure in
+    data/gold/court_scores.md measured the model on its own training data. Refuse,
+    do not warn — a silent leak is exactly what produced that table.
+    """
+    test = set(court_test_clips(manifest))
+    present = {t for t in os.listdir(root)
+               if os.path.isfile(os.path.join(root, t, "labels.json"))}
+    leaks = sorted(test & present)
+    if leaks:
+        lines = "\n".join(f"    {t}" for t in leaks)
+        raise SystemExit(
+            "REFUSING TO TRAIN: these dirs are declared TEST in "
+            f"data/gold/court_split.json but are present in {root}:\n{lines}\n"
+            "Their hand-labelled court gold is the BENCHMARK. Training on them "
+            "would make every court number a measurement of the model on its own "
+            "training data — which is the situation this split was created to end. "
+            "Move the dirs out of the training root, or change the split "
+            "deliberately (it is one-way, and it invalidates prior checkpoints).")
+    missing = sorted(test - present)
+    return missing
+
+
 class CourtFrames(Dataset):
     def __init__(self, root, split="train", val_frac=0.2, augment=True,
-                 balance_to=60):
+                 balance_to=60, exclude=()):
         # Balance domains: each clip is repeated up to ~balance_to training frames
         # so a big single-calibration clip (indoor_elev, 222) can't drown the small
         # hand-labelled amateur clips (~15 each), and broadcast isn't forgotten.
         # Random-perspective augmentation turns the repeats into distinct samples.
         self.samples = []
         self.augment = augment and split == "train"
+        exclude = set(exclude)
         for tag in sorted(os.listdir(root)):
             lp = os.path.join(root, tag, "labels.json")
             if not os.path.isfile(lp):
+                continue
+            if tag in exclude:      # declared TEST — never a training sample
                 continue
             meta = json.load(open(lp))
             items = sorted(((int(k), v) for k, v in meta["labels"].items()))
@@ -147,8 +192,21 @@ def main():
                     help="train the decoder only (v1 recipe; too conservative alone)")
     args = ap.parse_args()
 
-    train_ds = CourtFrames(args.data, "train")
-    val_ds = CourtFrames(args.data, "val", augment=False)
+    # The split is enforced twice, on purpose. assert_no_court_gold_leak refuses to
+    # start if a TEST clip sits in the training root at all; the `exclude` below
+    # keeps it out of the sample list even if someone later loosens the first check.
+    test_clips = court_test_clips()
+    missing = assert_no_court_gold_leak(args.data)
+    print(f"court split: {len(test_clips)} TEST clips held out "
+          f"({len(missing)} of them are not in {args.data} at all)")
+    if missing:
+        print(f"  not present (nothing to exclude): {', '.join(missing)}")
+
+    train_ds = CourtFrames(args.data, "train", exclude=test_clips)
+    val_ds = CourtFrames(args.data, "val", augment=False, exclude=test_clips)
+    # NOTE: `val` here is the last 20% of FRAMES of each training clip, not a
+    # held-out clip. It is an early-stopping signal, not a benchmark — the
+    # benchmark is tools/eval_court.py over the TEST clips.
     print(f"train {len(train_ds)} / val {len(val_ds)} | device {args.device}")
     train_ld = DataLoader(train_ds, batch_size=args.batch, shuffle=True, num_workers=2,
                           pin_memory=(args.device == "cuda"))

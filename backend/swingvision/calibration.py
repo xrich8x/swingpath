@@ -1603,6 +1603,16 @@ def detect_court_learned(
         # downstream still self-rejects any bad fit, so this stays safe.
         ft = os.path.join(os.path.dirname(weights), "courtnet_ft.pt")
         chosen = ft if os.path.exists(ft) else weights
+        # Same env-hook pattern, and for the same reason, as OurBallDetector's
+        # BALLNET_WEIGHTS: point a BENCHMARK at a specific checkpoint without
+        # threading an argument through every construction site. This matters
+        # here because the preference above is by FILENAME — without the hook,
+        # evaluating any checkpoint other than courtnet_ft.pt silently scores
+        # courtnet_ft.pt instead, which is exactly how a contaminated model gets
+        # mistaken for a clean one.
+        env = os.environ.get("COURTNET_WEIGHTS")
+        if env:
+            chosen = env
         m.load_state_dict(torch.load(chosen, map_location=device))
         print(f"[calibration] court model: {os.path.basename(chosen)}")
         _COURT_MODEL = m.eval().to(device)

@@ -64,6 +64,9 @@ data/train_clips/
 data/amateur_clips/
 data/ball_dataset/
 data/court_dataset/
+# The COURT clips held out as TEST (data/gold/court_split.json). Same policy as
+# court_dataset: the frames are regenerable, the SPLIT MANIFEST is committed.
+data/court_testset/
 
 # Gold-label frame extracts (regenerable from the source video via
 # tools/select_gold_frames.py --extract-only; the manifest + labels JSON in
