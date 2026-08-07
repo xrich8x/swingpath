@@ -89,6 +89,7 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | **The gold benchmark itself** | turned every claim in this project from an opinion into a number | Session 2 |
 | **Synthetic ground truth** (`tools/synth_truth.py`) | first ABSOLUTE accuracy this project has had — every other number is agreement with a human. Line calls **95.9%** correct, bounce **0.75 m** median, and the −15..−20% speed rule confirmed as physics (drag = **−21.7%**) | 2026-08-06 |
 | **Court TEST/TRAIN split + leak guard** | court numbers became measurable at all — 17 of 20 gold clips had been in training | 2026-08-06 |
+| **Camera-height curve** (`tools/height_curve.py`) | turned the setup tool's *bound* into an *error*. Close-call accuracy by mount height, measured against known bounces: **54% at 1.0 m → 69% at 3 m → 81% at 8 m**, bounce error **3.81 m → 0.37 m**. A 1.0 m mount is **below the 56.2% majority-class floor** — its close calls carry no information. Now surfaced in every `setup_verdict` | 2026-08-07 |
 | **Manual-correction UI** (Review tab + `run.py correct`) | closes the oldest known gap. Edits FACTS only; score is replayed through `scoring.TennisScore` and stats through `schema.compute_stats`, so there is no second implementation of the rules. Verified end to end: demo score 2-5 → 3-4, line calls 108/17 → 107/18, and re-applying the same file is a no-op | 2026-08-06 |
 
 ---
@@ -128,8 +129,8 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | **Speed coverage** | Downstream of ball recall. The −15% bias is average-vs-launch physics and must **never** be corrected away. |
 | **Court auto-detection** | **Closed as a model problem.** Tier 1 (`courtfit` consensus) auto-accepts **11 of 20** gold clips with a perfect precision record (3.4–13.9 px, zero wrong courts ever accepted); the 6/8 bar is verified correct. The remaining 9 clips refuse, and refusal costs ~30 s in the setup tool. CourtNet (Tier 2, 20.2% held-out detect) is the weaker path and is not worth improving. |
 | **8 court gold frames are mislabelled** | `am_indoor_hard1` frames 9204/10093/10982/11871/12760/13649/14538/15427 are marked `court: false` but plainly show a full usable court (3 of 3 inspected). Needs re-labelling in the Lab — a minute of human time. Until then that clip's `false%` is not a valid metric. |
-| **Highlights / clip export** | Nothing. Self-contained, needs no ML, planned as Session D. Now the highest-value unbuilt product feature. |
-| **Highlights / clip export** | Nothing. Self-contained, parallelisable. |
+| **Highlights / clip export** | Nothing. Self-contained, needs no ML, parallelisable, planned as Session D. Now the highest-value unbuilt product feature. |
+| **The 30 fps / 30% dropout sampling cost** | Measured but unaddressed. Removing the handicap (240 fps, no dropout) buys **+11 pts** of close-call accuracy at 1 m and **+8 pts** at 12 m, and roughly halves bounce error at every height. Frame rate is a recording choice, not a model; whether to ask users for 60 fps is a product decision nobody has made. |
 
 ---
 
@@ -166,6 +167,15 @@ Process failures this project has hit **more than once**. Each cost real work.
    2026-08-06 with `data/gold/court_split.json` + `assert_no_court_gold_leak()`. The
    lesson generalises: a discipline enforced on one model is not enforced on the
    project. Check each new model for its own guard.
-6. **Fanning out to parallel agents.** The bottleneck here is one GPU and one gold set,
+7. **Fanning out to parallel agents.** The bottleneck here is one GPU and one gold set,
    not context. Two multi-agent research runs burned ~971k tokens and returned **zero**
    results; the same research done inline took two searches and four fetches.
+8. **Scoring on a population where the decision is easy.** Pooled line-call agreement
+   reads **87–99%** across camera heights from 1 m to 12 m — it cannot tell a worthless
+   mount from a good one, because most simulated bounces land nowhere near a line and
+   metres of error still call them correctly. Restricted to bounces within 0.5 m of a
+   line it reads **54% → 81%** over the same range. This is the same shape as
+   "per-frame false-fire is not the product" (Session F): *pick the population where
+   the answer is actually in doubt.* And **always state the majority-class floor** — on
+   that population, answering "in" every time scores 56.2%, so the 1 m camera's 54% is
+   not "slightly better than chance", it is worse than a constant.

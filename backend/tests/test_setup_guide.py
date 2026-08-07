@@ -162,3 +162,52 @@ def test_setup_gate_matches_the_analysis_gate():
     Hm, _ = _cam(3.0, _f(70))
     p_near = C.court_to_image(Hm, [(court.DOUBLES_WIDTH / 2, 0.0)])[0]
     assert C.court_scale_m_per_px(Hm, p_near) <= C.RELIABLE_SCALE_M_PER_PX
+
+
+# --- Measured line-call accuracy vs mount height (tools/height_curve.py) ------
+# `reliable_court_span` is a GEOMETRIC BOUND, not an error, so on its own it left
+# "mount it higher" half an opinion. These pin the measured half.
+
+def test_call_accuracy_clamps_outside_the_measured_range():
+    """Guidance must not extrapolate off the end of a measured table."""
+    tbl = C._CALL_ACCURACY_BY_HEIGHT
+    assert C.expected_call_accuracy(0.2) == tbl[0][1]
+    assert C.expected_call_accuracy(0.2) == C.expected_call_accuracy(tbl[0][0])
+    assert C.expected_call_accuracy(50.0) == tbl[-1][1]
+
+
+def test_call_accuracy_interpolates_between_measured_points():
+    lo, hi = C._CALL_ACCURACY_BY_HEIGHT[0], C._CALL_ACCURACY_BY_HEIGHT[1]
+    mid = C.expected_call_accuracy((lo[0] + hi[0]) / 2.0)
+    assert lo[1] < mid < hi[1]
+    assert mid == pytest.approx((lo[1] + hi[1]) / 2.0)
+
+
+def test_a_one_metre_mount_is_no_better_than_guessing():
+    """THE finding this table exists to record: on bounces near a line, a 1 m
+    camera scores at or below the majority-class floor, so its close calls carry
+    no information. If this ever stops being true, the table was re-measured and
+    the setup guidance must be re-read, not silently updated."""
+    assert C.expected_call_accuracy(1.0) <= C.CALL_MAJORITY_FLOOR_PCT
+
+
+def test_call_accuracy_rises_with_height_over_the_amateur_range():
+    got = [C.expected_call_accuracy(z) for z in (1.0, 1.5, 2.0, 3.0, 5.0)]
+    assert got == sorted(got) and got[-1] > got[0] + 15.0, got
+
+
+def test_setup_verdict_reports_close_call_accuracy_at_every_height():
+    for cz in (1.4, 2.5, 7.0):
+        Hm, corners = _cam(cz, _f(80))
+        v = courtfit.setup_verdict(_draw(Hm), corners, C, court)
+        assert v["angle"]["call_accuracy_pct"] == pytest.approx(
+            round(C.expected_call_accuracy(v["angle"]["height_m"]), 0), abs=2)
+        assert "Close calls" in v["angle"]["msg"]
+
+
+def test_setup_verdict_says_plainly_when_calls_are_worthless():
+    """A user at 1 m should be told the calls are worthless, not handed a
+    percentage that sounds like partial credit."""
+    Hm, corners = _cam(1.0, _f(100))
+    v = courtfit.setup_verdict(_draw(Hm), corners, C, court)
+    assert "no better than guessing" in v["angle"]["msg"], v["angle"]["msg"]

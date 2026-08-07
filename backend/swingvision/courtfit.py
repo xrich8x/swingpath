@@ -1023,6 +1023,17 @@ def setup_verdict(frame, named, calibration, court):
 
     reach = (f"reliable to ~{until:.0f} m of {court.LENGTH:.0f} m "
              f"({'past' if until >= net_y else 'short of'} the net at {net_y:.0f} m)")
+    # The reliable span is a GEOMETRIC BOUND (metres per pixel), not an error, so
+    # on its own it still leaves "mount it higher" half an opinion. This is the
+    # measured half: what share of close calls a mount at this height actually
+    # gets right, against synthetic flights with a known bounce.
+    call_pct = calibration.expected_call_accuracy(Cz)
+    floor = calibration.CALL_MAJORITY_FLOOR_PCT
+    angle["call_accuracy_pct"] = round(call_pct, 0)
+    angle["call_floor_pct"] = round(floor, 0)
+    call_note = (f" Close calls: ~{call_pct:.0f}% right at this height"
+                 + (" - no better than guessing." if call_pct <= floor + 1.0
+                    else "."))
     back_m = abs(float(cam[1])) if cam[1] < 0 else None   # metres behind the baseline
     angle["back_m"] = round(back_m, 1) if back_m is not None else None
     tips = _setup_tips(Cz, back_m, w)
@@ -1031,20 +1042,20 @@ def setup_verdict(frame, named, calibration, court):
     if until >= court.LENGTH * 0.85:
         angle.update(level="good",
                      msg=f"Strong setup ({Cz:.1f} m): ~{pct}% of the court is "
-                         f"measurable - {reach}.")
+                         f"measurable - {reach}.{call_note}")
     elif until >= net_y:
         angle.update(level="good",
                      msg=f"Good setup ({Cz:.1f} m): ~{pct}% measurable, {reach}. "
-                         "Both service boxes are covered.")
+                         f"Both service boxes are covered.{call_note}")
     elif Cz < CAM_H_LOW:
         angle.update(level="poor",
                      msg=f"Only ~{pct}% of the court is measurable from here "
                          f"({Cz:.1f} m up), {reach}; past that, calls and speeds are "
-                         f"marked uncertain.{fix}")
+                         f"marked uncertain.{call_note}{fix}")
     else:
         angle.update(level="warn",
                      msg=f"Usable ({Cz:.1f} m) but only ~{pct}% of the court is "
-                         f"measurable, {reach}.{fix}")
+                         f"measurable, {reach}.{call_note}{fix}")
     return {"view": view, "angle": angle}
 
 

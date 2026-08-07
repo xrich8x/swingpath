@@ -594,6 +594,46 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   court. `to_court_xy` is now asserted at startup to be the exact inverse of
   `speedspin._to_framework_xy`.
 
+- Session H part 4 (2026-08-07): WHAT CAMERA HEIGHT COSTS, in errors rather than in
+  bounds. `courtfit.setup_verdict`'s docstring claimed `reliable_court_span` was "the
+  number that turns 'mount it higher' from an opinion into a measurement" — but that
+  span is a GEOMETRIC BOUND (where one pixel exceeds `RELIABLE_SCALE_M_PER_PX`), not an
+  error, and no error had ever been measured. `tools/height_curve.py` drives
+  `synth_truth` over a ladder of camera heights: synthetic cameras on the centre line,
+  6 m back, 100 deg lens, 720p, with ONLY the height changing and the pitch re-solved at
+  each step to keep the court framed (the freedom a user actually has). Every generated
+  camera is round-tripped through the same PnP the measurement uses and the run ABORTS
+  if the recovered height disagrees by >2%. Evidence: data/output/height_curve.{md,json}.
+  (1) THE HEADLINE, and it is a floor result. On bounces within 0.5 m of a line — the
+  only population where a call is a call — accuracy runs **54.0% at 1.0 m, 60.1% at 1.5,
+  69.1% at 3.0, 79.9% at 6.0, ~81% at 8+**, and bounce error **3.81 m -> 0.37 m**. The
+  majority-class floor on that population is **56.2%**, so a 1.0 m mount is not "slightly
+  better than chance", it is WORSE THAN ANSWERING 'IN' EVERY TIME. `calibration.
+  expected_call_accuracy` + `CALL_MAJORITY_FLOOR_PCT` now carry the table, and every
+  `setup_verdict` says "Close calls: ~N% right at this height", adding "no better than
+  guessing" at or below the floor. Pinned by 6 tests in tests/test_setup_guide.py.
+  (2) POOLED AGREEMENT IS THE WRONG METRIC and would have hidden all of it: over ALL
+  bounces it reads 86.8% at 1 m and 98.7% at 12 m, because most simulated bounces land
+  nowhere near a line and metres of error still call them correctly. Same shape as
+  Session F's "per-frame false-fire is not the product". THE RULE: score on the
+  population where the answer is in doubt, and state the majority-class floor next to it.
+  (3) CONTROL RUN, because the obvious rival explanation is sampling: our bounce
+  estimate is the last TRACKED point, so at 30 fps with 30% dropout it can land a frame
+  or two early. Removing the handicap (240 fps, no dropout) moves 1.0 m from 54.0 ->
+  65.4% and 12 m from 79.4 -> 87.6%. So sampling is worth **~8-11 pts everywhere and
+  halves bounce error**, but the 1 m-vs-12 m SPREAD SURVIVES — the curve is the camera.
+  (`--control` reruns it.)
+  (4) THE REAL CALIBRATIONS TRACK THE SWEEP, which is what makes it usable as guidance:
+  demo30 (1.38 m) 58.7%, am_hard_utr (1.75 m) 59.8%, yt_rally2 (3.30 m) 72.2%,
+  yt_match40 (11.33 m) 83.8% — each within ~3 pts of the synthetic curve at its height,
+  despite differing lens, setback and resolution. Their lenses are solved by
+  `courtfit.cam_fit_quad`, NOT `focal_from_homography`, which refuses outside 25-110 deg
+  and silently drops exactly the three high-mount/broadcast files.
+  CAVEAT: the speed column exercises `analytics.shot_speed_kmh` on a raw
+  back-projection, so it bounds the `approx` FALLBACK, not `speedspin`'s physics fit.
+  `synth_truth.measure/summarize` were extracted for this and are byte-identical on the
+  committed yt_rally2 run. 243 tests.
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers
@@ -651,6 +691,11 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
 ## Gotchas
 
 - Speed is average ball speed (~15-20% under radar) — don't "fix" it to match TV.
+- A LOW MOUNT IS NOT A STYLE CHOICE, it is measured accuracy. On close calls a 1.0 m
+  camera scores 54.0% against a 56.2% majority-class floor — worse than a constant
+  answer — rising to ~81% by 8 m (Session H part 4; `calibration.expected_call_accuracy`,
+  evidence data/output/height_curve.md). Quote THAT to a user, not just the
+  `reliable_court_span` percentage, which is a geometric bound and reads far kinder.
 - Bounce detection is a single-camera heuristic (no true height) — improving it
   is a known open task, not a bug.
 - Calibration quality + a fixed camera dominate accuracy more than model choice.

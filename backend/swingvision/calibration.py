@@ -313,6 +313,49 @@ def reliable_court_span(H: np.ndarray, samples: int = 240) -> tuple[float, float
     return good / len(ys), until
 
 
+# Measured line-call accuracy vs camera height. Source: tools/height_curve.py,
+# evidence data/output/height_curve.md — synthetic flights with a KNOWN bounce,
+# projected through cameras that differ only in height, measured by the shipped
+# analytics.line_call. Restricted to bounces whose true position is within 0.5 m
+# of a line, because that is the only population where a call is a call: pooled
+# over all bounces the figure saturates at 87-99% and cannot tell a 1 m mount
+# from a 12 m one.
+#
+# THE FLOOR IS NOT 50%. Always answering "in" scores CALL_MAJORITY_FLOOR_PCT on
+# that population, so a setup at or below it is worth nothing — which is exactly
+# what a 1.0 m camera measures.
+#
+# These are guidance numbers, not a promise: they were measured at 6 m setback,
+# 100 deg lens, 720p, 30 fps with 30% detector dropout. Real clips at matching
+# heights land within ~3 points (height_curve.md section B). Flat within noise
+# above ~6 m; the small 8 -> 12 m dip is sampling, not signal.
+_CALL_ACCURACY_BY_HEIGHT = (
+    (1.00, 54.0), (1.25, 56.5), (1.50, 60.1), (1.75, 61.7), (2.00, 62.8),
+    (2.50, 67.5), (3.00, 69.1), (4.00, 72.7), (5.00, 77.1), (6.00, 79.9),
+    (8.00, 81.0), (12.00, 79.4),
+)
+CALL_MAJORITY_FLOOR_PCT = 56.2
+
+
+def expected_call_accuracy(camera_height_m: float) -> float:
+    """Measured share of NEAR-THE-LINE calls this mount height gets right (%).
+
+    Linear interpolation over `_CALL_ACCURACY_BY_HEIGHT`, clamped at both ends.
+    Compare against `CALL_MAJORITY_FLOOR_PCT` before quoting it: below that, the
+    setup is beaten by guessing.
+    """
+    tbl = _CALL_ACCURACY_BY_HEIGHT
+    z = float(camera_height_m)
+    if z <= tbl[0][0]:
+        return tbl[0][1]
+    if z >= tbl[-1][0]:
+        return tbl[-1][1]
+    for (z0, a0), (z1, a1) in zip(tbl, tbl[1:]):
+        if z0 <= z <= z1:
+            return a0 + (a1 - a0) * (z - z0) / (z1 - z0)
+    return tbl[-1][1]
+
+
 def reprojection_error(
     H: np.ndarray,
     court_points: Sequence[Sequence[float]],

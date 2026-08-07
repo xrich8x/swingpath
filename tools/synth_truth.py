@@ -58,6 +58,28 @@ CORNERS = ("near_bl_doubles", "near_br_doubles", "far_bl_doubles", "far_br_doubl
 MS_TO_KMH = 3.6
 
 
+def line_distance_m(xy):
+    """Distance from a court-frame bounce to the nearest edge of the IN region.
+
+    A line call is only informative near a line. Pooled agreement is NOT: with
+    any realistic launch distribution most bounces land well inside, so a metre
+    of positional error still calls them correctly and the percentage saturates
+    at ~100% for cameras that are visibly bad. Restricting to bounces within a
+    short distance of a line is what separates them.
+
+    The region is the singles court used by `analytics.is_in` for a groundstroke.
+    """
+    from swingvision import court
+    x0, x1 = court.X_LEFT_SINGLES, court.X_RIGHT_SINGLES
+    y0, y1 = court.Y_NEAR_BASELINE, court.Y_FAR_BASELINE
+    x, y = float(xy[0]), float(xy[1])
+    if x0 <= x <= x1 and y0 <= y <= y1:
+        return min(x - x0, x1 - x, y - y0, y1 - y)      # inside: to nearest edge
+    dx = max(x0 - x, 0.0, x - x1)
+    dy = max(y0 - y, 0.0, y - y1)
+    return math.hypot(dx, dy)
+
+
 def to_court_xy(fw_xy):
     """tennis_tracker (physics) frame -> swingvision court frame, in metres.
 
@@ -137,28 +159,15 @@ def truth_of(xyz, t):
             "dur_s": dur}
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--keypoints", default="../data/yt_rally2_pts.json")
-    ap.add_argument("--hfov", type=float, default=93.46)
-    ap.add_argument("--width", type=int, default=1280)
-    ap.add_argument("--height", type=int, default=720)
-    ap.add_argument("--n", type=int, default=400)
-    ap.add_argument("--fps", type=float, default=30.0,
-                    help="the SHIPPED effective rate; frame_step targets ~30")
-    ap.add_argument("--horizon-s", type=float, default=2.0)
-    ap.add_argument("--pixel-noise", type=float, default=2.0,
-                    help="detector centroid jitter, px @720p")
-    ap.add_argument("--dropout", type=float, default=0.30,
-                    help="fraction of frames the detector misses")
-    ap.add_argument("--min-len", type=int, default=5)
-    ap.add_argument("--low-z", type=float, default=1.0,
-                    help="ball height (m) under which the flat z=0 back-projection "
-                         "is a fair approximation; the gate keeps mostly these")
-    ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--json", dest="json_out")
-    args = ap.parse_args()
+def measure(kp, *, hfov=93.46, width=1280, height=720, n=400, fps=30.0,
+            horizon_s=2.0, pixel_noise=2.0, dropout=0.30, min_len=5,
+            low_z=1.0, seed=0) -> list:
+    """Simulate `n` flights through this calibration and MEASURE them our way.
 
+    Returns one row per usable flight, each carrying the exact truth alongside
+    our estimate. Split out of main() so a caller can sweep calibrations
+    (tools/height_curve.py) without shelling out and re-importing torch per run.
+    """
     from swingvision import analytics, calibration
     from swingvision.speedspin import _to_framework_xy
 
@@ -169,11 +178,9 @@ def main() -> None:
                    zip(to_court_xy(_to_framework_xy(probe)), probe)) < 1e-9, \
             "to_court_xy is not the inverse of speedspin._to_framework_xy"
 
-    kp = json.loads(Path(args.keypoints).read_text(encoding="utf-8"))
     H = calibration.homography_from_landmarks({c: kp[c] for c in CORNERS})
-
-    xyz, uv, t, v0, rng = simulate(kp, args.hfov, args.width, args.height,
-                                   args.n, args.fps, args.horizon_s, args.seed)
+    xyz, uv, t, v0, rng = simulate(kp, hfov, width, height, n, fps,
+                                   horizon_s, seed)
 
     rows = []
     for i in range(len(xyz)):
@@ -187,14 +194,14 @@ def main() -> None:
         # jittered and thinned exactly as our real one is.
         m = np.arange(0, j + 1)
         px = uv[i, m].astype(np.float64).copy()
-        keep = (np.isfinite(px).all(axis=1) & (px[:, 0] >= 0) & (px[:, 0] < args.width)
-                & (px[:, 1] >= 0) & (px[:, 1] < args.height))
+        keep = (np.isfinite(px).all(axis=1) & (px[:, 0] >= 0) & (px[:, 0] < width)
+                & (px[:, 1] >= 0) & (px[:, 1] < height))
         px, tm = px[keep], t[m][keep]
-        if len(px) < args.min_len:
+        if len(px) < min_len:
             continue
-        px += rng.normal(0, args.pixel_noise, px.shape)
-        alive = rng.random(len(px)) >= args.dropout
-        if alive.sum() < args.min_len:
+        px += rng.normal(0, pixel_noise, px.shape)
+        alive = rng.random(len(px)) >= dropout
+        if alive.sum() < min_len:
             continue
         px, tm = px[alive], tm[alive]
 
@@ -215,9 +222,9 @@ def main() -> None:
         # much of the error is the FLAT-PROJECTION ASSUMPTION rather than noise,
         # and shows where the assumption stops being usable.
         z_true = xyz[i, m][keep][alive][:, 2]
-        low = z_true <= args.low_z
+        low = z_true <= low_z
         est_low = 0.0
-        if low.sum() >= args.min_len:
+        if low.sum() >= min_len:
             est_low = analytics.shot_speed_kmh([track[k] for k in np.where(low)[0]])
 
         # Line call: our bounce estimate is the last projected point (the shipped
@@ -234,8 +241,100 @@ def main() -> None:
             "true_call": analytics.line_call(tr["bounce_xy"]),
             "est_call": analytics.line_call(est_bounce),
             "bounce_err_m": math.dist(tr["bounce_xy"], est_bounce),
+            "line_dist_m": line_distance_m(tr["bounce_xy"]),
             "n_pts": len(track),
         })
+    return rows
+
+
+def summarize(rows, near_m: float = 0.5) -> dict:
+    """The headline numbers, computed in ONE place so two callers cannot
+    quietly disagree about what "our error" means.
+
+    `near_m` is the band around a line inside which a call is actually a call —
+    see line_distance_m for why the pooled figure alone is misleading.
+    """
+    def pct(a, b):
+        return 100.0 * (np.asarray(a) - np.asarray(b)) / np.asarray(b)
+
+    launch = [r["launch_kmh"] for r in rows]
+    a3 = [r["avg3d_kmh"] for r in rows]
+    ag = [r["avg_ground_kmh"] for r in rows]
+    est = [r["est_kmh"] for r in rows]
+    be = [r["bounce_err_m"] for r in rows]
+    agree = sum(1 for r in rows if r["true_call"] == r["est_call"])
+    err = np.abs(pct(est, ag))
+    # The low-ball restriction is the only SPEED number worth comparing between
+    # setups: the unrestricted one is dominated by rays that graze the plane and
+    # run to infinity, so it measures the tail, not the camera.
+    lowr = [r for r in rows if r["est_low_kmh"] > 0]
+    low = {"n_low": len(lowr), "low_bias_pct": float("nan"),
+           "low_abs_err_median": float("nan"), "low_abs_err_p90": float("nan")}
+    if lowr:
+        el = [r["est_low_kmh"] for r in lowr]
+        gl = [r["avg_ground_kmh"] for r in lowr]
+        le = np.abs(pct(el, gl))
+        low = {"n_low": len(lowr),
+               "low_bias_pct": float(np.median(pct(el, gl))),
+               "low_abs_err_median": float(np.median(le)),
+               "low_abs_err_p90": float(np.percentile(le, 90))}
+    near = [r for r in rows if r.get("line_dist_m", 1e9) <= near_m]
+    near_agree = sum(1 for r in near if r["true_call"] == r["est_call"])
+    # A binary call's floor is NOT 50% — it is the majority class. Without this
+    # baseline, "50.5% agreement" could quietly be WORSE than answering "in"
+    # every time, and would still read like chance.
+    n_in = sum(1 for r in near if r["true_call"] == "in")
+    base = (100.0 * max(n_in, len(near) - n_in) / len(near)) if near else float("nan")
+    return {
+        **low,
+        "near_m": near_m,
+        "n_near": len(near),
+        "call_agree_near_pct":
+            (100.0 * near_agree / len(near)) if near else float("nan"),
+        "call_near_majority_pct": base,
+        "n": len(rows),
+        "drag_pct": float(np.median(pct(a3, launch))),
+        "ground_proj_pct": float(np.median(pct(ag, a3))),
+        "our_pct": float(np.median(pct(est, ag))),
+        "total_vs_launch_pct": float(np.median(pct(est, launch))),
+        "our_abs_err_median": float(np.median(err)),
+        "our_abs_err_p90": float(np.percentile(err, 90)),
+        "call_agree_pct": 100.0 * agree / len(rows),
+        "call_agree": agree,
+        "bounce_err_median_m": float(np.median(be)),
+        "bounce_err_p90_m": float(np.percentile(be, 90)),
+    }
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--keypoints", default="../data/yt_rally2_pts.json")
+    ap.add_argument("--hfov", type=float, default=93.46)
+    ap.add_argument("--width", type=int, default=1280)
+    ap.add_argument("--height", type=int, default=720)
+    ap.add_argument("--n", type=int, default=400)
+    ap.add_argument("--fps", type=float, default=30.0,
+                    help="the SHIPPED effective rate; frame_step targets ~30")
+    ap.add_argument("--horizon-s", type=float, default=2.0)
+    ap.add_argument("--pixel-noise", type=float, default=2.0,
+                    help="detector centroid jitter, px @720p")
+    ap.add_argument("--dropout", type=float, default=0.30,
+                    help="fraction of frames the detector misses")
+    ap.add_argument("--min-len", type=int, default=5)
+    ap.add_argument("--low-z", type=float, default=1.0,
+                    help="ball height (m) under which the flat z=0 back-projection "
+                         "is a fair approximation; the gate keeps mostly these")
+    ap.add_argument("--near-m", type=float, default=0.5, dest="near_m",
+                    help="band around a line inside which a call is a real call")
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--json", dest="json_out")
+    args = ap.parse_args()
+
+    kp = json.loads(Path(args.keypoints).read_text(encoding="utf-8"))
+    rows = measure(kp, hfov=args.hfov, width=args.width, height=args.height,
+                   n=args.n, fps=args.fps, horizon_s=args.horizon_s,
+                   pixel_noise=args.pixel_noise, dropout=args.dropout,
+                   min_len=args.min_len, low_z=args.low_z, seed=args.seed)
 
     if not rows:
         raise SystemExit("no usable flights — loosen --dropout or --min-len")
@@ -284,6 +383,9 @@ def main() -> None:
     agree = sum(1 for r in rows if r["true_call"] == r["est_call"])
     print(f"line call agrees with truth on {agree}/{len(rows)} "
           f"({100*agree/len(rows):.1f}%)")
+    s = summarize(rows, near_m=args.near_m)
+    print(f"  ...but on the {s['n_near']} bounces within {args.near_m:g} m of a line "
+          f"— the only ones where the call is a CALL — {s['call_agree_near_pct']:.1f}%")
     be = [r["bounce_err_m"] for r in rows]
     print(f"bounce position error: median {med(be):.2f} m, p90 "
           f"{float(np.percentile(be, 90)):.2f} m")
