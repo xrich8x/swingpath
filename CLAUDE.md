@@ -634,6 +634,46 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   `synth_truth.measure/summarize` were extracted for this and are byte-identical on the
   committed yt_rally2 run. 243 tests.
 
+- Session H part 5 (2026-08-07): FRAME RATE IS A REAL LEVER, and `frame_step="auto"`
+  is spending it. Evidence: data/output/fps_decision.md.
+  (1) CORRECTION to part 4's control: it varied frame rate AND detector dropout
+  together and the gap was quoted as the value of frame rate. Those are different
+  things — fps is a free recording/processing choice, dropout is a detector property.
+  Re-run as a full grid, one variable at a time. METHOD FIX REQUIRED FIRST: the
+  harness sampled truth at the fps under test, so a low-fps run got a less accurate
+  truth bounce and the comparison would have flattered high rates for free.
+  `synth_truth.simulate(truth_fps=...)` now computes truth once on a 240 Hz grid and
+  DECIMATES to each rate, so runs are strictly nested and perfectly paired (default
+  path unchanged, byte-identical on the committed yt_rally2 run).
+  (2) ISOLATED RESULT: 30 -> 60 fps is worth **+5.8 pts of close-call accuracy at
+  1.5 m, +3.2 at 3.0 m, +1.8 at 12.0 m**, and cuts bounce error 24-35%. It holds at
+  BOTH dropout levels, so it is not dropout in disguise. For scale, at 30 fps
+  eliminating detector dropout ENTIRELY buys +4.7 / +2.5 / +2.2 at the same heights —
+  so doubling the frame rate we already have is worth about as much as a perfect
+  detector. Returns flatten above 60-120; 15 fps sits near the majority-class floor.
+  (3) END TO END on yt_rally2 (native 60 fps, calibrated, gold-labelled, HUD): every
+  measurement number improves — physics-arc reproj median **148.2 -> 91.2 px** (best
+  arc 103 -> 24.5), HUD speed MAE **38.9% (n=6) -> 33.1% (n=7)**, HUD strokes we
+  produced nothing for 8 -> 6, trusted-speed shots 7 -> 8. Gold per-frame recall
+  72.5 -> 75.2%, far_geo 74.3 -> 72.6% (flat-ish, consistent with the standing
+  "fps buys precision, not recall" finding).
+  (4) THE COST IS ENTIRELY THE SMOOTHER, and that is the actionable part. Through the
+  detector and its gates 60 fps is BETTER on false-fire (15.4% vs 19.2%); the Kalman
+  stage then takes it to 30.8% vs 23.1%. `max_gap_s=0.4s` bridges twice as many frames
+  at 60 fps and has only ever been swept at 30 (Session F step 4). So full-rate
+  processing is NOT a safe one-line change until that sweep is done.
+  (5) TWO APPARENT REGRESSIONS THAT ARE NOT. `fixture` rejections 83 -> 0 is the
+  static-lock gate working as designed — it is ALREADY fps-scaled (Session E3c) and
+  at 60 fps correctly declines to call a slow-looking far ball a fixture. And ghost
+  `fires` 6 -> 8 with composition 5 solid/1 faded -> 4 solid/4 faded is the Session F
+  trap reproducing exactly: a 0.4 s bridge holds twice as many frames at 60 fps, so a
+  per-frame fire count is not comparable across rates for the faded half — SOLID
+  fires actually went DOWN (5 -> 4).
+  UNEXPLAINED, do not cite: `no-detection` misses went 10.1% -> 20.0% of processed
+  frames while the overall lock rate ROSE (83.8 -> 87.2%) and gold recall did not
+  drop. Most likely counter bookkeeping shifting as the fixture gate stops firing.
+  Not verified.
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers

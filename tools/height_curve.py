@@ -184,6 +184,63 @@ def control(args):
     return lines
 
 
+FPS_LADDER = (15.0, 30.0, 60.0, 120.0, 240.0)   # all divide TRUTH_FPS exactly
+TRUTH_FPS = 240.0
+FPS_HEIGHTS = (1.5, 3.0, 12.0)
+
+
+def fps_sweep(args):
+    """Separate FRAME RATE from DETECTOR DROPOUT. They were confounded.
+
+    The first control run varied both at once (30fps+30% dropout vs 240fps+no
+    dropout) and the gap was reported as the value of a higher frame rate. It is
+    not: those are different things to a user. Frame rate is a free recording and
+    processing choice — `frame_step="auto"` currently DISCARDS every other frame
+    of a 60 fps clip to match TrackNet's rate. Dropout is a detector property you
+    cannot switch off.
+
+    So: full grid, one variable at a time. Truth is computed once on a 240 Hz grid
+    and every frame rate is an exact decimation of it (see synth_truth.simulate's
+    truth_fps), so the runs are strictly nested — the 30 fps track is literally a
+    subset of the 60 fps one, over the identical flights and the identical
+    near-line population.
+    """
+    rows = []
+    for hm in FPS_HEIGHTS:
+        got = frame_the_court(hm, args.setback, args.hfov, args.width, args.height)
+        if got is None:
+            continue
+        kp, _ = got
+        for drop in (args.dropout, 0.0):
+            for fps in FPS_LADDER:
+                s = summarize(measure(kp, hfov=args.hfov, width=args.width,
+                                      height=args.height, n=args.n, fps=fps,
+                                      pixel_noise=args.pixel_noise, dropout=drop,
+                                      seed=args.seed, truth_fps=TRUTH_FPS))
+                rows.append({"height_m": hm, "fps": fps, "dropout": drop,
+                             "call_near_pct": s["call_agree_near_pct"],
+                             "n_near": s["n_near"],
+                             "bounce_med_m": s["bounce_err_median_m"],
+                             "n": s["n"]})
+    return rows
+
+
+def fps_table(rows, dropout):
+    """One block of the grid, held at a fixed dropout, as markdown."""
+    hs = sorted({r["height_m"] for r in rows})
+    out = ["| fps | " + " | ".join(f"{h:.1f} m call / bounce" for h in hs) + " |",
+           "|---" * (len(hs) + 1) + "|"]
+    for fps in FPS_LADDER:
+        cells = []
+        for h in hs:
+            r = next((r for r in rows if r["height_m"] == h and r["fps"] == fps
+                      and r["dropout"] == dropout), None)
+            cells.append("—" if r is None else
+                         f"{r['call_near_pct']:.1f}% / {r['bounce_med_m']:.2f} m")
+        out.append(f"| {fps:.0f} | " + " | ".join(cells) + " |")
+    return out
+
+
 def score(kp, *, hfov, w, h, n, seed, fps, dropout, noise720):
     """One setup, measured end to end. Returns a row or None."""
     from swingvision import calibration
@@ -234,6 +291,8 @@ def main() -> None:
     ap.add_argument("--skip-real", action="store_true")
     ap.add_argument("--control", action="store_true",
                     help="also run the frame-rate control (see control())")
+    ap.add_argument("--fps-sweep", action="store_true", dest="fps_sweep",
+                    help="separate frame rate from detector dropout (see fps_sweep())")
     ap.add_argument("--markdown")
     ap.add_argument("--json", dest="json_out")
     args = ap.parse_args()
@@ -333,6 +392,16 @@ def main() -> None:
         ctrl = control(args)
         for ln in ctrl:
             print(ln)
+
+    fps_rows = []
+    if args.fps_sweep:
+        print()
+        print("D. FRAME RATE vs DETECTOR DROPOUT — the two the control confounded")
+        fps_rows = fps_sweep(args)
+        for drop in (args.dropout, 0.0):
+            print(f"  detector dropout held at {drop:.0%}:")
+            for ln in fps_table(fps_rows, drop):
+                print("  " + ln)
 
     if args.markdown:
         out = Path(args.markdown)

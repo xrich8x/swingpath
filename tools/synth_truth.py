@@ -98,8 +98,20 @@ def to_court_xy(fw_xy):
     return (5.485 - float(fw_xy[1]), float(fw_xy[0]))
 
 
-def simulate(kp, hfov, w, h, n, fps, horizon_s, seed):
-    """Known-truth flights, projected through the clip's real camera."""
+def simulate(kp, hfov, w, h, n, fps, horizon_s, seed, truth_fps=None):
+    """Known-truth flights, projected through the clip's real camera.
+
+    `truth_fps` decouples the TRUTH grid from the MEASUREMENT grid, and it exists
+    for one experiment: comparing frame rates. With truth sampled at the same fps
+    being tested, `truth_of` interpolates the bounce between coarser samples at
+    low fps, so the truth itself would be least accurate exactly where the
+    measurement is — the comparison would flatter high frame rates for free.
+
+    Set it to a multiple of every fps under test (240 covers 15/30/60/120/240):
+    truth is then computed once on the fine grid and each fps is an exact
+    DECIMATION of it, so the runs are strictly nested and perfectly paired.
+    Returns the stride; it is 1 and the behaviour is unchanged when unset.
+    """
     import torch
     from tennis_tracker.bridge import camera_from_court_corners
     from tennis_tracker.physics.simulator_torch import (
@@ -115,7 +127,15 @@ def simulate(kp, hfov, w, h, n, fps, horizon_s, seed):
     tc = torch.tensor(cam.t, dtype=torch.float32, device=dev)
     rng = np.random.default_rng(seed)
 
-    query = torch.arange(0, horizon_s, 1.0 / fps, device=dev)
+    grid_fps, stride = float(fps), 1
+    if truth_fps:
+        stride = int(round(float(truth_fps) / float(fps)))
+        if stride < 1 or abs(truth_fps / stride - fps) > 1e-6:
+            raise ValueError(f"truth_fps {truth_fps} is not an integer multiple "
+                             f"of fps {fps} — decimation would not be exact")
+        grid_fps = float(truth_fps)
+
+    query = torch.arange(0, horizon_s, 1.0 / grid_fps, device=dev)
     v0, omega, p0 = draw_launch(rng, n)
     with torch.no_grad():
         pos, _, tg = simulate_batch(torch.tensor(p0, device=dev),
@@ -124,7 +144,7 @@ def simulate(kp, hfov, w, h, n, fps, horizon_s, seed):
                                     n_steps=int(horizon_s / 2.5e-3), dt=2.5e-3)
         q = sample_at(pos, tg, query)                 # (B,T,3) true 3D, metres
         uv = project_batch(q, K, R, tc).cpu().numpy()  # (B,T,2) true pixels
-    return q.cpu().numpy(), uv, query.cpu().numpy(), v0, rng
+    return q.cpu().numpy(), uv, query.cpu().numpy(), v0, rng, stride
 
 
 def truth_of(xyz, t):
@@ -161,7 +181,7 @@ def truth_of(xyz, t):
 
 def measure(kp, *, hfov=93.46, width=1280, height=720, n=400, fps=30.0,
             horizon_s=2.0, pixel_noise=2.0, dropout=0.30, min_len=5,
-            low_z=1.0, seed=0) -> list:
+            low_z=1.0, seed=0, truth_fps=None) -> list:
     """Simulate `n` flights through this calibration and MEASURE them our way.
 
     Returns one row per usable flight, each carrying the exact truth alongside
@@ -179,8 +199,8 @@ def measure(kp, *, hfov=93.46, width=1280, height=720, n=400, fps=30.0,
             "to_court_xy is not the inverse of speedspin._to_framework_xy"
 
     H = calibration.homography_from_landmarks({c: kp[c] for c in CORNERS})
-    xyz, uv, t, v0, rng = simulate(kp, hfov, width, height, n, fps,
-                                   horizon_s, seed)
+    xyz, uv, t, v0, rng, stride = simulate(kp, hfov, width, height, n, fps,
+                                           horizon_s, seed, truth_fps)
 
     rows = []
     for i in range(len(xyz)):
@@ -191,8 +211,9 @@ def measure(kp, *, hfov=93.46, width=1280, height=720, n=400, fps=30.0,
         j = tr["i_bounce"]
 
         # What the detector would hand downstream: the in-air, in-frame pixels,
-        # jittered and thinned exactly as our real one is.
-        m = np.arange(0, j + 1)
+        # jittered and thinned exactly as our real one is. `stride` decimates the
+        # fine truth grid to the frame rate under test (1 when truth_fps is off).
+        m = np.arange(0, j + 1, stride)
         px = uv[i, m].astype(np.float64).copy()
         keep = (np.isfinite(px).all(axis=1) & (px[:, 0] >= 0) & (px[:, 0] < width)
                 & (px[:, 1] >= 0) & (px[:, 1] < height))
