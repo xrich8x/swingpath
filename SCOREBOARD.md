@@ -115,6 +115,7 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | Tightening it to the racket **HEAD** | **The head is not the discriminator.** On the wrist→head axis, racquet locks sit at median **0.57** and real balls at **0.55** — indistinguishable. Every tightening costs more catch than collateral (cut 0.5 → catch 36.4%, collateral only 4.5→2.6%). The whole box is the best version of the idea; 54.5%@4.5% is its ceiling. |
 | Raising `acquire_bound_m` 4 → 10 m | Static analysis said free; end to end it bought +0.6 pt recall for +1.9 pt false-fire. |
 | Blur augmentation alone | Dead end on its own; only pays off combined with occlusion work. |
+| Retuning `max_gap_s` for 60 fps | **GATE FAILS on replication.** 0.60 looks like a clean knee on yt_rally2 (ghost flat at 8 from 0.20–0.60, recall +1.9) and passes the gate there — then on am_hard_utr it costs **+5.6 pts false-fire and +3 ghosts for +0.5 recall**, with no flat region at all. 0.4 stays, and full-rate 60 fps therefore needs **no** rate-dependent gap policy. |
 | Lowering the court consensus bar 6/8 → 5/8 | **GATE FAILS.** Exactly one 5-vote clip exists and it is wrong by **68.7 px**, against 3.4–13.9 px for every clip at ≥6 votes. Nothing lands in the gap. The bar is empirically correct. |
 | Improving CourtNet for auto-calibration | Wrong target. CourtNet is **Tier 2**; `courtfit` consensus is Tier 1 and beats it on this footage — CourtNet returns nothing on three clips courtfit nails at 8/8, 7/8 and 6/8. |
 
@@ -131,7 +132,7 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | **Court auto-detection** | **Closed as a model problem.** Tier 1 (`courtfit` consensus) auto-accepts **11 of 20** gold clips with a perfect precision record (3.4–13.9 px, zero wrong courts ever accepted); the 6/8 bar is verified correct. The remaining 9 clips refuse, and refusal costs ~30 s in the setup tool. CourtNet (Tier 2, 20.2% held-out detect) is the weaker path and is not worth improving. |
 | **8 court gold frames are mislabelled** | `am_indoor_hard1` frames 9204/10093/10982/11871/12760/13649/14538/15427 are marked `court: false` but plainly show a full usable court (3 of 3 inspected). Needs re-labelling in the Lab — a minute of human time. Until then that clip's `false%` is not a valid metric. |
 | **Highlights / clip export** | Nothing. Self-contained, needs no ML, parallelisable, planned as Session D. Now the highest-value unbuilt product feature. |
-| **Processing 60 fps clips at full rate** | **One sweep: `max_gap_s` at 60 fps.** The measurement case is made twice over (see below), but the smoother is where the whole false-fire cost sits and it has only ever been tuned at 30 fps. `tools/tune_smoother.py` exists and the smoother is last in the chain, so one perception pass scores every value. |
+| **Processing 60 fps clips at full rate** | **A product call, not more measurement.** The sweep is done: `max_gap_s = 0.4` is already correct at 60 fps on both native-60fps gold clips, so no re-tune is needed. What remains is a genuine trade nobody has decided — 60 fps clearly wins the MEASUREMENT (arc reproj 148 → 91 px, HUD speed MAE 38.9 → 33.1%) and is a wash-to-negative on DETECTION (yt_rally2 recall +2.7, far_geo −1.7, false-fire +7.7). It also doubles perception cost. |
 
 ---
 

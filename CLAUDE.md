@@ -674,6 +674,45 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   drop. Most likely counter bookkeeping shifting as the fixture gate stops firing.
   Not verified.
 
+- Session H part 6 (2026-08-07): `max_gap_s` AT 60 FPS IS A MEASURED NEGATIVE, and the
+  replication is the whole story. Part 5 named the smoother as the one blocker to
+  full-rate 60 fps processing (all the false-fire cost is there; `max_gap_s=0.4` had
+  only ever been swept at 30 fps). Swept on BOTH native-60fps calibrated gold clips.
+  Evidence: data/output/tune_smoother_60fps.md. Pre-registered gate: match/beat the
+  shipped 30 fps baseline on recall AND far_geo, and do not increase SOLID ghosts.
+  (1) ON yt_rally2 IT LOOKS LIKE A CLEAN WIN. Ghost is FLAT at 8 fires from
+  max_gap_s 0.20 through 0.60 while recall climbs 70.5 -> 77.1%, then breaks (0.80 ->
+  10 fires, 2.00 -> 22). 0.60 passes the gate outright: recall 77.1% (vs 72.5%),
+  far_geo 75.4% (vs 74.3%), solid ghosts 4 (vs 5).
+  (2) ON am_hard_utr IT COLLAPSES. No flat region at all — false-fire rises
+  monotonically, and 0.4 -> 0.6 costs **+5.6 pts false-fire and +3 ghost frames for
+  +0.5 pts recall**. GATE FAILS. **0.4 STAYS.**
+  (3) WHY THEY DISAGREE — the transferable part. yt_rally2 is a 3.31 m camera with
+  dense detections (recall 75%), so its gaps are short and widening the bridge past
+  0.4 s rarely finds a gap to fill. am_hard_utr is a **1.74 m** camera at 1080p with
+  recall 54.9%: sparse detections, long gaps, and every extra 0.1 s of bridge invents
+  more ball. THE OPTIMAL GAP POLICY SCALES WITH DETECTION DENSITY, and the low-camera
+  amateur clip — the footage this project targets — is the one that punishes a wide
+  bridge. Tuning on the easy clip would have shipped a setting actively worse where it
+  matters most. Never tune this on one clip.
+  (4) THE USEFUL CONSEQUENCE: the part-5 blocker is REMOVED, not resolved in its
+  favour. 0.4 is already right at 60 fps on both clips, so full-rate processing needs
+  no re-tune and NO rate-dependent gap policy. What remains is a product call: 60 fps
+  wins the MEASUREMENT decisively and is a wash-to-negative on DETECTION, at 2x
+  perception cost.
+  CORRECTION, withdrawn from part 5: the ghost increase 6 -> 8 at 60 fps was
+  explained there as the Session F frame-step trap ("a 0.4 s bridge holds twice the
+  frames"). WRONG — the scorer uses a FIXED set of human-labelled source frames (258
+  ball / 26 no-ball, all scoreable at both steps on yt_rally2), so fire counts ARE
+  comparable across rates. The increase is real: two more of 26 no-ball frames get a
+  drawn ball. Solid fires did fall 5 -> 4, so the extra two are interpolated.
+  ALSO MEASURED, and it explains the mechanism: pre-smoother recall is a WASH (68.2%
+  at 30 fps vs 67.8% at 60). Backing out interpolated hits, real detections kept are
+  168 vs 173 — the Kalman innovation gate rejects FEWER genuine locks at 60 fps
+  because smaller inter-frame motion is better predicted by the constant-acceleration
+  model. 60 fps does not find more ball; it keeps and reconstructs more of what it
+  found. Consistent with the standing "fps buys precision, not recall" result.
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers

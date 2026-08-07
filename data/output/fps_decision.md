@@ -93,10 +93,13 @@ Kalman stage then takes it to 30.8% vs 23.1% — it roughly doubles false-fire a
   STATIC_MIN_RUN_S * fps`, Session E3c). At 60 fps it correctly declines to
   classify a slow-looking far ball as a fixture — the exact failure that scaling
   was introduced to fix. Working as designed.
-- **Ghost `fires` 6 → 8, and their composition 5 solid/1 faded → 4 solid/4
-  faded.** A 0.4 s bridge contains twice as many frames at 60 fps, so a per-frame
-  fire count is not comparable across rates for the faded half. Solid fires went
-  *down* (5 → 4). This is the trap recorded in Session F, reproducing exactly.
+- ~~**Ghost `fires` 6 → 8** — a 0.4 s bridge contains twice as many frames at
+  60 fps, so the count is not comparable across rates.~~ **WITHDRAWN.** The scorer
+  uses a FIXED set of human-labelled source frames (258 ball / 26 no-ball, all
+  scoreable at both steps on this clip), so fire counts ARE directly comparable.
+  The 6 → 8 increase is real: two more of 26 no-ball frames get a drawn ball.
+  Solid fires did fall 5 → 4, so the extra two are interpolated — but they are
+  still drawn where a human said there was no ball. See tune_smoother_60fps.md.
 
 ### One number still unexplained
 
@@ -110,9 +113,16 @@ the fixture gate stops firing. **Not verified — do not cite it as a finding.**
 ## Verdict
 
 The measurement case for processing 60 fps clips at full rate is strong and
-consistent across two independent methods. It is **not yet a safe one-line
-change**: `max_gap_s` must be swept at 60 fps first, because the smoother is where
-the entire false-fire cost lives, and it has never been tuned at that rate.
+consistent across two independent methods.
+
+**The `max_gap_s` sweep is now done** (tune_smoother_60fps.md) and it came back a
+measured negative: 0.4 is already the right value at 60 fps on both native-60fps
+gold clips, so full-rate processing needs no re-tune and no rate-dependent gap
+policy. The remaining 60 fps false-fire cost is therefore not something the gap
+policy can remove.
+
+What is left is a product call, not more measurement: 60 fps wins the MEASUREMENT
+decisively and is a wash-to-negative on DETECTION, at 2x perception cost.
 
 Reproduce:
 
