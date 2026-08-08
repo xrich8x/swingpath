@@ -144,9 +144,17 @@ def assert_no_gold_leak(root, exclude):
 
 class BallWindows(Dataset):
     def __init__(self, root, split="train", val_frac=0.2, augment=True,
-                 exclude=(), use_hard_negs=True):
-        self.samples = []   # (clip_dir, frame_idx, x, y); x is None => negative
+                 exclude=(), use_hard_negs=True, hard_weight=1.0, conf_radius=12):
+        # (clip_dir, frame_idx, x, y, confusers); x is None => negative.
+        # `confusers` are LOCATIONS of confirmed false fires on a frame whose ball
+        # position we already know (mine_localised_negatives.py). They are not new
+        # labels: the BCE target is ALREADY zero there. What they buy is WEIGHT —
+        # the racquet head is otherwise one pixel among 147,400, scored the same as
+        # empty sky. hard_weight=1.0 makes the whole mechanism an exact no-op.
+        self.samples = []
         self.augment = augment and split == "train"
+        self.hard_weight = float(hard_weight)
+        self.conf_radius = int(conf_radius)
         for tag in sorted(os.listdir(root)):
             if tag in exclude:
                 continue
@@ -158,15 +166,22 @@ class BallWindows(Dataset):
                 meta = json.load(f)
             items = sorted(((int(k), v) for k, v in meta["labels"].items()))
             labeled = {int(k) for k in meta["labels"]}   # frames that HAVE a ball
+            # Confuser LOCATIONS for these frames, if mined. Keyed by frame index.
+            conf = {}
+            cp = os.path.join(d, "localised_negatives.json")
+            if self.hard_weight > 1.0 and os.path.isfile(cp):
+                with open(cp, "r", encoding="utf-8") as f:
+                    conf = {int(k): v for k, v in
+                            (json.load(f).get("localised_negatives") or {}).items()}
             n_val = max(1, int(len(items) * val_frac))
             keep = items[:-n_val] if split == "train" else items[-n_val:]
             for idx, (x, y) in keep:
-                self.samples.append((d, idx, float(x), float(y)))
+                self.samples.append((d, idx, float(x), float(y), conf.get(idx)))
             negs = sorted(meta.get("negatives", []))
             if negs:
                 n_val = max(1, int(len(negs) * val_frac))
                 nkeep = negs[:-n_val] if split == "train" else negs[-n_val:]
-                self.samples += [(d, idx, None, None) for idx in nkeep]
+                self.samples += [(d, idx, None, None, None) for idx in nkeep]
             # Hard negatives (mine_hard_negatives.py): frames where BallNet
             # STATIC-fired on a fixture (HUD/post/fence/crowd) — its documented
             # false-fire weakness. Guard: never use a frame that HAS a labeled
@@ -180,7 +195,7 @@ class BallWindows(Dataset):
                 if hard:
                     n_val = max(1, int(len(hard) * val_frac))
                     hkeep = hard[:-n_val] if split == "train" else hard[-n_val:]
-                    self.samples += [(d, idx, None, None) for idx in hkeep]
+                    self.samples += [(d, idx, None, None, None) for idx in hkeep]
 
     def counts(self):
         n_neg = sum(1 for s in self.samples if s[2] is None)
@@ -196,7 +211,8 @@ class BallWindows(Dataset):
         return img
 
     def __getitem__(self, k):
-        d, i, x, y = self.samples[k]
+        d, i, x, y, confusers = self.samples[k]
+        confusers = list(confusers or ())
         frames = [self._frame(d, i), self._frame(d, i - 1), self._frame(d, i - 2)]
         negative = x is None
         occluded = False
@@ -204,6 +220,7 @@ class BallWindows(Dataset):
         if self.augment:
             if random.random() < 0.5:     # horizontal flip
                 frames = [cv2.flip(f, 1) for f in frames]
+                confusers = [[IN_W - 1 - cx, cy] for cx, cy in confusers]
                 if not negative:
                     x = IN_W - 1 - x
             if random.random() < 0.5:     # brightness / contrast jitter
@@ -214,6 +231,9 @@ class BallWindows(Dataset):
                 tx, ty = random.randint(-24, 24), random.randint(-16, 16)
                 M = np.float32([[1, 0, tx], [0, 1, ty]])
                 frames = [cv2.warpAffine(f, M, (IN_W, IN_H)) for f in frames]
+                # The confusers must ride the SAME transform as the label, or the
+                # extra weight lands on background and teaches nothing.
+                confusers = [[cx + tx, cy + ty] for cx, cy in confusers]
                 if not negative:
                     x, y = x + tx, y + ty
                     x = min(max(x, 0), IN_W - 1)
@@ -243,9 +263,20 @@ class BallWindows(Dataset):
         # dtype pinned: augmentation clamps can make x/y ints, and a batch that
         # mixes Long and Float xy tensors fails to collate (torch.stack).
         w = NEG_WEIGHT if negative else (OCC_WEIGHT if occluded else 1.0)
+        # Per-pixel weight: 1.0 everywhere, raised in a disc at each confuser.
+        # All-ones when hard_weight == 1.0, which the loss treats as an exact no-op.
+        wmap = np.ones((1, IN_H, IN_W), dtype=np.float32)
+        if confusers and self.hard_weight > 1.0:
+            disc = np.zeros((IN_H, IN_W), dtype=np.float32)
+            for cx, cy in confusers:
+                cxi, cyi = int(round(cx)), int(round(cy))
+                if 0 <= cxi < IN_W and 0 <= cyi < IN_H:
+                    cv2.circle(disc, (cxi, cyi), self.conf_radius, 1.0, -1)
+            wmap = (1.0 + (self.hard_weight - 1.0) * disc)[None]
         return (torch.from_numpy(inp), torch.from_numpy(hm),
                 torch.tensor([x, y], dtype=torch.float32),
-                torch.tensor(w, dtype=torch.float32))
+                torch.tensor(w, dtype=torch.float32),
+                torch.from_numpy(wmap))
 
 
 def evaluate(model, loader, device, fire_thresh=0.5):
@@ -255,7 +286,7 @@ def evaluate(model, loader, device, fire_thresh=0.5):
     model.eval()
     errs, fires = [], []
     with torch.no_grad():
-        for inp, _, xy, _ in loader:
+        for inp, _, xy, _, _ in loader:
             out = torch.sigmoid(model(inp.to(device)))[:, 0]
             B, H, W = out.shape
             flat = out.reshape(B, -1)
@@ -301,6 +332,14 @@ def main():
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--out", default="weights/ballnet.pt")
+    ap.add_argument("--hard-weight", type=float, default=1.0, dest="hard_weight",
+                    help="per-pixel loss weight inside a mined confuser disc "
+                         "(mine_localised_negatives.py). 1.0 = OFF and exactly the "
+                         "shipped recipe. This is RE-WEIGHTING, not new labels: the "
+                         "BCE target is already zero there, but the racquet head is "
+                         "one pixel among 147,400 and scored like empty sky")
+    ap.add_argument("--conf-radius", type=int, default=12, dest="conf_radius",
+                    help="radius of that disc, in 512x288 px")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--exclude", nargs="*", default=[],
                     help="extra dataset dirs to skip. Gold clips are excluded "
@@ -312,7 +351,12 @@ def main():
     args = ap.parse_args()
 
     assert_no_gold_leak(args.data, args.exclude)
-    train_ds = BallWindows(args.data, "train", exclude=args.exclude)
+    # Confuser weighting applies to TRAINING only. Weighting the validation loss
+    # would change what "best checkpoint" means mid-experiment, and the whole point
+    # is to compare against the shipped recipe on an unchanged yardstick.
+    train_ds = BallWindows(args.data, "train", exclude=args.exclude,
+                           hard_weight=args.hard_weight,
+                           conf_radius=args.conf_radius)
     val_ds = BallWindows(args.data, "val", augment=False, exclude=args.exclude)
     tp, tn = train_ds.counts()
     vp, vn = val_ds.counts()
@@ -343,11 +387,16 @@ def main():
         t_ep = time.time()
         model.train()
         tot = 0.0
-        for inp, hm, _, w in train_ld:
+        for inp, hm, _, w, wmap in train_ld:
             inp, hm, w = inp.to(args.device), hm.to(args.device), w.to(args.device)
+            wmap = wmap.to(args.device)
             opt.zero_grad()
             per_px = crit(model(inp), hm)            # [B,1,H,W]
-            per_sample = per_px.mean(dim=(1, 2, 3))  # [B]
+            # WEIGHTED mean over pixels. With wmap all ones this is sum/count, i.e.
+            # exactly .mean() — so hard_weight=1.0 reproduces the shipped recipe
+            # arithmetically and the learning rate needs no retune.
+            per_sample = ((per_px * wmap).sum(dim=(1, 2, 3))
+                          / wmap.sum(dim=(1, 2, 3)))  # [B]
             loss = (per_sample * w).mean()
             loss.backward()
             opt.step()

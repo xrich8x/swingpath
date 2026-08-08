@@ -1,0 +1,94 @@
+{
+ "tool": "mine_localised_negatives",
+ "measured_against": "the pseudo-label in each dataset's labels.json: an argmax further than 20.0 px (512x288 space) from the known ball is a confirmed false fire at a known location.",
+ "weights": "ballnet_v21.pt",
+ "far_px": 20.0,
+ "total_labelled": 26293,
+ "total_confuser_frames": 3336,
+ "rows": [
+  {
+   "dataset": "amateur",
+   "labelled": 241,
+   "confuser_frames": 86,
+   "pct": 35.7
+  },
+  {
+   "dataset": "highangle",
+   "labelled": 100,
+   "confuser_frames": 31,
+   "pct": 31.0
+  },
+  {
+   "dataset": "yt_6jp23ghDY9Q",
+   "labelled": 1572,
+   "confuser_frames": 388,
+   "pct": 24.7
+  },
+  {
+   "dataset": "yt_8-BkpjFFIhQ",
+   "labelled": 2287,
+   "confuser_frames": 271,
+   "pct": 11.8
+  },
+  {
+   "dataset": "yt_RZ_wyJ9rI3Q",
+   "labelled": 1877,
+   "confuser_frames": 372,
+   "pct": 19.8
+  },
+  {
+   "dataset": "yt_TilAFMPc0yg",
+   "labelled": 2438,
+   "confuser_frames": 154,
+   "pct": 6.3
+  },
+  {
+   "dataset": "yt_VZWi6Vf-sX0",
+   "labelled": 2191,
+   "confuser_frames": 141,
+   "pct": 6.4
+  },
+  {
+   "dataset": "yt_WjHZrIYteDA",
+   "labelled": 2361,
+   "confuser_frames": 369,
+   "pct": 15.6
+  },
+  {
+   "dataset": "yt_am_dbl_classb",
+   "labelled": 2065,
+   "confuser_frames": 243,
+   "pct": 11.8
+  },
+  {
+   "dataset": "yt_col_hard_zheng",
+   "labelled": 2296,
+   "confuser_frames": 412,
+   "pct": 17.9
+  },
+  {
+   "dataset": "yt_ewqSn18xdsY",
+   "labelled": 2329,
+   "confuser_frames": 305,
+   "pct": 13.1
+  },
+  {
+   "dataset": "yt_nQan0M5JDM8",
+   "labelled": 2478,
+   "confuser_frames": 220,
+   "pct": 8.9
+  },
+  {
+   "dataset": "yt_rz4T0-VALNw",
+   "labelled": 1706,
+   "confuser_frames": 187,
+   "pct": 11.0
+  },
+  {
+   "dataset": "yt_tC0z7FYvMks",
+   "labelled": 2352,
+   "confuser_frames": 157,
+   "pct": 6.7
+  }
+ ]
+}
