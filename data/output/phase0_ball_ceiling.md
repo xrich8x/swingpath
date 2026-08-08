@@ -151,46 +151,66 @@ Scored on the SAME populations and the SAME pre-registered gate as the two prior
 miner failures (catch >= 60% of human-classified false locks at <= 5% collateral
 on human ball clicks), so the three are directly comparable:
 
-### First result — and it clears the catch bar that killed the other two
+### RESULT: gate fails, and the first estimate was wrong
 
-Computable with NO new compute: `g_falselocks_raw.json` (71 human-classified
-locks) and `f_falselocks_chain.json` (which survive the chain) are both committed,
-so "does suppression reject this lock?" is a set difference.
+**WITHDRAWN — the 77.3% first recorded here.** It was computed as a set difference
+between `g_falselocks_raw.json` and `f_falselocks_chain.json`. But "chain" in that
+file is the FULL chain — tracker gates, rectify, suppression AND the court gate —
+so it credited `suppress_false_locks` with every rejection the whole ladder makes.
+The tracker's own gates do most of that work. Attributing it to suppression was an
+over-attribution, and the corrected figure is less than half of it.
+
+Measured properly by `tools/eval_suppress_mining.py`: the two suppression tests run
+in ISOLATION (`suppress_false_locks(tests=...)`) over contiguous windows around each
+target frame, on all six clips at each clip's shipped frame step. Collateral counts
+only frames where the raw detector had ALREADY found the human's ball within 10 px —
+rejecting an already-wrong lock is not collateral, it is the point.
 
 | criterion | catch (person-attached) | collateral |
 |---|---|---|
 | pose proximity | 11.4% | 5% ceiling |
-| racquet box | 54.5% | 4.5% |
-| **suppress-rejection** | **77.3%** (34/44) | ~5.7%, DERIVED — see caveat |
+| racquet box | **54.5%** | 4.5% |
+| suppression — persistence only | 7.5% | 5.7% |
+| suppression — **min-segment only** | 32.5% | **2.4%** |
+| suppression — both (shipped) | 40.0% | 8.1% |
 
-By class: racquet **77.3%** (17/22), static scenery 70.4% (19/27), all locks
-74.6% (53/71). The first criterion to pass the 60% catch gate, and it does so on
-the population that beat both predecessors — the racquet, which is not on the
-skeleton and which a box only half-localises.
+Populations: 40 person-attached false locks, 803 correctly-located ball frames.
 
-**CAVEAT, and it is why this is not yet a verdict.** The catch figure is exact and
-spans all 6 gold clips. The collateral figure is NOT measured on that population —
-it is derived from the ladder's recall drop across the `suppress_false_locks`
-stage (yt_rally2 74.8 → 68.2 = 6.6 pts; am_hard_utr 60.0 → 55.6 = 4.4; pooled
-~5.7% weighted by frame count), which covers only the calibrated clips. Catch and
-collateral therefore sit on different populations and must not be quoted as a
-matched pair until collateral is re-measured on all six.
+**GATE FAILS on all three.** Catch tops out at 40.0% against a 60% bar.
 
-**AND THE ECONOMICS DIFFER FROM A RUNTIME FILTER.** A mined negative is baked into
-the weights, so collateral here teaches the detector to MISS a real ball —
-arguably worse than a filter deleting one detection, because it does not recover.
-5.7% is over the pre-registered 5% ceiling, marginally.
+Two things are still worth keeping:
 
-### The refinement to test next
+- **Persistence is nearly useless against person-attached confusers** — 7.5% catch
+  for 5.7% collateral, i.e. it costs more real balls than confusers it catches.
+  Expected in hindsight: persistence detects things that hold still, and these move.
+  It earns its place against fixtures and nowhere else.
+- **Min-segment has the lowest collateral of anything tested — 2.4%**, less than half
+  the ceiling, while catching 4x what persistence does. It is also the only criterion
+  reasoning about HOW a lock moves rather than where it is.
 
-`suppress_false_locks` runs two independent tests, and they should not be mined
-together:
-- **persistence** (a lock that holds still) — provably a fixture, and already
-  mined by `mine_hard_negatives.py`. Reaches only the static 38%.
-- **min-segment** (a 1-4 frame excursion that never forms a track) — this is the
-  test that must be catching the person-attached locks, since a swung racquet
-  flares briefly and never forms a ball-plausible trajectory.
+### The gate may be the wrong gate — but it does not get moved retroactively
 
-If min-segment alone carries most of the 77.3% catch at lower collateral, that is
-the mining criterion — and it is one the two failed attempts never tried, because
-both reasoned about WHERE the lock is rather than HOW IT MOVES.
+That 60%/5% gate was written for a runtime FILTER, where catch is what matters
+because an uncaught false fire reaches the screen. **Mining has different
+economics:** you do not need to catch every confuser, you need what you DO mine to
+be genuinely not-ball. The deciding quantity is the PURITY of the mined pool, and
+this experiment did not measure it — collateral is a rate over ball frames, not the
+composition of the rejected set.
+
+So min-segment may still be a viable miner while failing this gate. **That is a new
+question and it needs a NEW pre-registered gate**, not a reinterpretation of this
+one. Moving a gate after seeing the result is the specific failure the method
+section exists to prevent, and Session G part 4 stayed failed at 54.5 against 60 for
+exactly this reason.
+
+### Where that leaves automatic mining
+
+Three distinct criteria have now failed: position relative to a skeleton, position
+inside a racket box, and trajectory plausibility. They fail differently, which is
+itself informative — there is no cheap automatic signal that separates a swung
+racquet from a ball, because at 2-4 px on an arc it genuinely resembles one.
+
+The remaining route is **human confirmation of a pre-filtered pool**, and min-segment
+is the best pre-filter available (2.4% collateral). That is a much smaller ask than
+far-court labelling: the candidates are already identified, and the judgement is
+"ball or not" at a glance rather than locating a 2 px object.

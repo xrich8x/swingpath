@@ -1,0 +1,173 @@
+{
+ "tool": "eval_suppress_mining",
+ "measured_against": "human-classified false locks (data/output/g_falselocks_raw.json) for CATCH and human ball clicks the raw detector already found for COLLATERAL, over all six gold clips at each clip's shipped frame step.",
+ "gate": {
+  "catch_pct": 60.0,
+  "collateral_pct": 5.0
+ },
+ "window": 20,
+ "weights": "weights/ballnet_v21.pt",
+ "rows": [
+  {
+   "test": "persistence",
+   "catch_person_pct": 7.5,
+   "catch_racquet_pct": 4.8,
+   "collateral_pct": 5.7,
+   "catch_n": 40,
+   "collateral_n": 803,
+   "passes_gate": false
+  },
+  {
+   "test": "minseg",
+   "catch_person_pct": 32.5,
+   "catch_racquet_pct": 33.3,
+   "collateral_pct": 2.4,
+   "catch_n": 40,
+   "collateral_n": 803,
+   "passes_gate": false
+  },
+  {
+   "test": "both",
+   "catch_person_pct": 40.0,
+   "catch_racquet_pct": 38.1,
+   "collateral_pct": 8.1,
+   "catch_n": 40,
+   "collateral_n": 803,
+   "passes_gate": false
+  }
+ ],
+ "per_clip": [
+  {
+   "clip": "am_hard_utr",
+   "fps_eff": 29.97,
+   "persistence": {
+    "catch": 1,
+    "catch_n": 20,
+    "coll": 3,
+    "coll_n": 109
+   },
+   "minseg": {
+    "catch": 4,
+    "catch_n": 20,
+    "coll": 2,
+    "coll_n": 109
+   },
+   "both": {
+    "catch": 5,
+    "catch_n": 20,
+    "coll": 5,
+    "coll_n": 109
+   }
+  },
+  {
+   "clip": "gold_shell",
+   "fps_eff": 30.0,
+   "persistence": {
+    "catch": 2,
+    "catch_n": 17,
+    "coll": 10,
+    "coll_n": 142
+   },
+   "minseg": {
+    "catch": 4,
+    "catch_n": 17,
+    "coll": 2,
+    "coll_n": 142
+   },
+   "both": {
+    "catch": 6,
+    "catch_n": 17,
+    "coll": 12,
+    "coll_n": 142
+   }
+  },
+  {
+   "clip": "gold_clay",
+   "fps_eff": 29.97,
+   "persistence": {
+    "catch": 0,
+    "catch_n": 1,
+    "coll": 2,
+    "coll_n": 69
+   },
+   "minseg": {
+    "catch": 0,
+    "catch_n": 1,
+    "coll": 5,
+    "coll_n": 69
+   },
+   "both": {
+    "catch": 0,
+    "catch_n": 1,
+    "coll": 7,
+    "coll_n": 69
+   }
+  },
+  {
+   "clip": "gold_am",
+   "fps_eff": 30.0,
+   "persistence": {
+    "catch": 1,
+    "catch_n": 12,
+    "coll": 9,
+    "coll_n": 132
+   },
+   "minseg": {
+    "catch": 7,
+    "catch_n": 12,
+    "coll": 1,
+    "coll_n": 132
+   },
+   "both": {
+    "catch": 8,
+    "catch_n": 12,
+    "coll": 10,
+    "coll_n": 132
+   }
+  },
+  {
+   "clip": "yt_rally2",
+   "fps_eff": 30.0,
+   "persistence": {
+    "catch": 2,
+    "catch_n": 7,
+    "coll": 16,
+    "coll_n": 211
+   },
+   "minseg": {
+    "catch": 0,
+    "catch_n": 7,
+    "coll": 2,
+    "coll_n": 211
+   },
+   "both": {
+    "catch": 2,
+    "catch_n": 7,
+    "coll": 18,
+    "coll_n": 211
+   }
+  },
+  {
+   "clip": "yt_match40",
+   "fps_eff": 29.0,
+   "persistence": {
+    "catch": 0,
+    "catch_n": 10,
+    "coll": 6,
+    "coll_n": 140
+   },
+   "minseg": {
+    "catch": 3,
+    "catch_n": 10,
+    "coll": 7,
+    "coll_n": 140
+   },
+   "both": {
+    "catch": 3,
+    "catch_n": 10,
+    "coll": 13,
+    "coll_n": 140
+   }
+  }
+ ]
+}

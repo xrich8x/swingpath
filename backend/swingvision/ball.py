@@ -281,6 +281,7 @@ def suppress_false_locks(
     seg_dur_s: float = 0.10,
     seg_gap_s: float = 0.0,
     res_scale: float = 1.0,
+    tests: str = "both",
 ) -> list[Optional[list[float]]]:
     """Recall-safe, image-space removal of false ball locks (E5+).
 
@@ -316,6 +317,14 @@ def suppress_false_locks(
     18, so the wider radius reclassifies real far balls as fixtures. Far-court
     recall is the thing this whole gate ladder exists to protect, so the radius
     stays put.
+
+    `tests` selects which of the two runs — "both" (shipped), "persistence" or
+    "minseg". It exists because they answer different questions and are mined
+    differently: persistence proves a FIXTURE (already mined by
+    mine_hard_negatives.py, reaching only the static 38% of confusers), while
+    min-segment catches a brief flare that never forms a track — which is what a
+    swung racquet looks like, and which no position-based criterion found. Default
+    is unchanged and pinned by tests.
 
     Measured on the yt_rally2 gold labels: no-ball false-fire 61.5% -> 15.4% at a
     3.9-point recall cost (47.7% -> 43.8%). Survivors are in-court mislocks that
@@ -360,7 +369,7 @@ def suppress_false_locks(
 
     # persistence: wipe any run held within static_radius_px for static_run frames
     i = 0
-    while i < n:
+    while i < n and tests in ("both", "persistence"):
         if out[i] is None:
             i += 1
             continue
@@ -384,6 +393,8 @@ def suppress_false_locks(
     # both were deleted. A real ball is still a real ball when the detector
     # misses a frame; what makes it real is that it keeps MOVING plausibly.
     seg_gap = max(0, int(round(seg_gap_s * fps_eff)))
+    if tests == "persistence":
+        return out
     keep = [False] * n
     i = 0
     while i < n:
