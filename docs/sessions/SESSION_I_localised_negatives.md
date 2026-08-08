@@ -106,5 +106,68 @@ clips, or a larger backbone.
 - Do not re-propose whole-frame mining. Three criteria and two gates have failed;
   the format is the problem, not the criterion.
 
-## Results (fill in during the session)
-- _pending_
+## State on 2026-08-08 — plumbing SHIPPED, training PAUSED part-way
+
+**Everything except the retrain is done, tested and committed.** Pick this up by
+running the two commands under "To resume" — no setup, no decisions pending.
+
+Done:
+- `tools/mine_localised_negatives.py` + confuser files emitted in all 14 dataset
+  dirs. **Yield 3,336 / 26,293 labelled frames (12.7%)** — the go/no-go passed.
+  Highest on the amateur clips (35.7%, 31.0%) vs 6-20% broadcast.
+- `train_ballnet.py` per-pixel weight map, `--hard-weight` / `--conf-radius`,
+  default OFF and an exact arithmetic no-op. 7 tests in
+  `backend/tests/test_localised_negatives.py`; 268 total.
+- Verified: 2,521 of 26,161 training samples carry confusers with the flag on,
+  0 with it off.
+
+**Stopped at Arm A epoch 6 of 15** (user needed the machine). Arm B never started.
+`backend/weights/ballnet_i_base.pt` is a PARTIAL best-so-far from epoch 5 — it is
+NOT a baseline arm, do not score it, and the resume command overwrites it.
+
+**MEASURED COST, and it is worse than the single-epoch probe suggested.** The probe
+said 6m48s; the real run settled at **8m30s-10m45s per epoch** (disk-bound: three
+JPEG reads per sample). So budget:
+
+| budget | per arm | both arms |
+|---|---|---|
+| 15 epochs (the screen) | ~2h15m | **~4h30m** |
+| 40 epochs (default) | ~6h | ~12h |
+
+### To resume
+
+```
+cd backend
+.venv-train/Scripts/python.exe train_ballnet.py --epochs 15 --device cuda --out weights/ballnet_i_base.pt
+.venv-train/Scripts/python.exe train_ballnet.py --epochs 15 --device cuda --hard-weight 8.0 --out weights/ballnet_i_conf.pt
+```
+
+Then score BOTH arms against the pre-registered gate:
+
+```
+.venv-train/Scripts/python.exe ../tools/eval_model_filters.py --weights weights/ballnet_i_base.pt weights/ballnet_i_conf.pt --clip yt_rally2 --device cuda
+.venv-train/Scripts/python.exe ../tools/eval_model_filters.py --weights weights/ballnet_i_base.pt weights/ballnet_i_conf.pt --clip am_hard_utr --device cuda
+.venv-train/Scripts/python.exe ../tools/eval_detector_gold.py --weights weights/ballnet_i_base.pt weights/ballnet_i_conf.pt --device cuda
+```
+
+### Two things the next session must not do
+
+1. **Do not compare either arm against `ballnet_v21.pt`.** That checkpoint carries
+   no provenance beyond its weights, so its recipe cannot be verified and the
+   comparison would confound this change with whatever has drifted since. The
+   baseline arm exists precisely so the A/B has one variable.
+2. **Do not ship a 15-epoch checkpoint.** Both arms are undertrained by design.
+   A treatment win means "spend the ~12h on the 40-epoch pair", not "make this the
+   default detector".
+
+### The gate, unchanged and pre-registered
+
+- **solid ghosts must FALL** (pooled, calibrated clips). They have sat at 9 through
+  eight attempts; not moving them means this is the ninth failure.
+- pooled recall must not drop more than 2 pts — precision bought by going blind is
+  not a win, and that is the specific risk of negative-weighting.
+- far_geo must not drop more than 2 pts.
+
+If the ghosts do not move, **record it and stop pursuing false fire from the
+training side.** 9 would then be this detector's floor at this data scale, and what
+remains costs real money: many more labelled clips, or a larger backbone.
