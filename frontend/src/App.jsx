@@ -20,6 +20,10 @@ export default function App() {
   // Cache-buster for the annotated video: version by the FILE's headers, not the
   // match metadata — a re-render with identical stats still changes the overlay.
   const [videoVer, setVideoVer] = useState("");
+  // Per-rally clips are optional generated artifacts (run.py highlights), so the
+  // manifest is fetched the same way the annotated video is probed: if it isn't
+  // there, the Rallies tab is exactly the table it always was.
+  const [clips, setClips] = useState(null);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -29,6 +33,10 @@ export default function App() {
           `${r.headers.get("last-modified") ?? ""}-${r.headers.get("content-length") ?? ""}`
         )
       )
+      .catch(() => {});
+    fetch("/rallies/highlights.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => setClips(m && Array.isArray(m.clips) ? m : null))
       .catch(() => {});
   }, []);
 
@@ -159,6 +167,7 @@ export default function App() {
             match={match}
             selectedRallyId={selectedRallyId}
             onSelectRally={handleSelectRally}
+            clips={clips}
           />
         )}
         {tab === "Review" && <Review match={match} />}

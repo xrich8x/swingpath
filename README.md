@@ -53,6 +53,14 @@ python run.py analyze match.mp4 --keypoints my_court_pts.json --out ../data/outp
    degenerate and break the overlay + ball gating silently:
    `python ../tools/validate_new_clip.py --audit my_court_pts.json` (good is < 2.5 px).
 3. View — load that match.json in the dashboard (Load match, top right).
+4. Cut the rallies (optional) — every point becomes its own playable clip, plus a
+   top-3 reel, so the dead time between points disappears:
+python run.py highlights match.mp4 --match ../data/output/match.json --out-dir ../frontend/public/rallies --reel
+
+   Cutting is a stream copy, so it is I/O-bound rather than a re-encode. Clips get
+   2 s of lead-in because a rally starts at the first CONTACT — without it every
+   clip opens mid-swing. Drop them in frontend/public/rallies/ and the Rallies tab
+   grows a Play button per point.
 
 Camera placement matters more than the models (a fixed camera + good calibration
 dominate accuracy). Mount it behind a baseline, a little above the player, so both
@@ -74,9 +82,11 @@ backend/swingvision/
   events.py        hits, bounces, rallies, shot type
   analytics.py     shot speed + line calls (geometry)
   scoring.py       tennis scoring state machine (logic)
+  corrections.py   apply human corrections, then re-derive score + stats (logic)
+  highlights.py    rank rallies + cut per-rally clips and a reel (logic)
   pipeline.py      orchestrator + synthetic demo + calibrate_video
   schema.py        the match.json contract
-backend/run.py       CLI: demo | analyze
+backend/run.py       CLI: demo | analyze | check | live | correct | highlights
 backend/calibrate.py manual click-to-calibrate tool
 backend/tests/       geometry + scoring + detection tests
 frontend/src/        components, lib/court.js, data/sample_match.json
@@ -96,8 +106,9 @@ cd backend && python -m pytest tests/
 2. Ball tracking — the riskiest piece; de-risk early.
 3. Pose + hit detection — forehand/backhand classification.
 4. Analytics — speed, bounces, line calls (mostly done).
-5. Scoring + dashboard polish (done) + a manual-correction UI.
-6. (Stretch) real-time / mobile.
+5. Scoring + dashboard polish + a manual-correction UI (all done).
+6. Per-rally clips and a highlights reel (done).
+7. (Stretch) real-time / mobile.
 
 ## Honest limitations
 
@@ -106,8 +117,10 @@ cd backend && python -m pytest tests/
 - Speed is average ball speed and reads ~15-20% under a radar gun.
 - Bounce detection from a single camera has no true height, so it's a court-speed
   heuristic — a second camera or a learned bounce model improves it.
-- Scoring from vision alone is brittle (the real app gets points wrong too);
-  a manual-correction UI is a known gap.
+- Scoring from vision alone is brittle (the real app gets points wrong too) —
+  which is structural, not a bug to fix with a better detector. The answer is the
+  Review tab: overrule a winner, call or stroke, and the score and stats are
+  replayed from the corrected facts by the same code the pipeline uses.
 
 Accuracy is bounded by calibration quality and a fixed camera far more than by
 any single model choice.

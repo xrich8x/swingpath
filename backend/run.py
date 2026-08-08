@@ -168,6 +168,59 @@ def _cmd_correct(args: argparse.Namespace) -> int:
     return 0 if res.ok or not args.strict else 1
 
 
+def _cmd_highlights(args: argparse.Namespace) -> int:
+    """Cut a match into per-rally clips + an optional top-3 reel.
+
+    Dead time is most of a phone recording, and every rally boundary is already
+    in the match.json — so this is bookkeeping over data we have, not analysis.
+    """
+    import json
+
+    from swingvision import highlights as hl
+
+    with open(args.match, "r", encoding="utf-8") as f:
+        match = json.load(f)
+
+    out_dir = args.out_dir or os.path.join(
+        os.path.dirname(args.match) or ".", "rallies")
+    man = hl.cut_clips(args.video, match, out_dir, top_n=args.top,
+                       reel=args.reel, exact=args.exact)
+
+    made = [c for c in man["clips"] if c.get("ok")]
+    print(f"wrote {len(made)} clip(s) -> {out_dir}  ({man['mode']})")
+    for c in man["clips"]:
+        if c.get("skipped"):
+            print(f"  rally {c['rally_id']}: SKIPPED — {c['skipped']}")
+        elif not c.get("ok"):
+            print(f"  rally {c['rally_id']}: FAILED to cut")
+    for rid in man["top"]:
+        c = next(x for x in man["clips"] if x["rally_id"] == rid)
+        print(f"  #{c['rank']}  {c['file']}  {c['why']}")
+
+    # The property that matters, and it is now CHECKED rather than hoped for:
+    # every clip must fully contain its rally. Cutting on a keyframe makes both
+    # ends exact, so this compares real numbers, not a container offset that was
+    # always ~0 and made the test pass vacuously.
+    late = [c for c in made if c["start_s"] > c["rally_start_s"] + 1e-3]
+    short = [c for c in made if c["end_s"] < c["rally_end_s"] - 1e-3]
+    if late or short:
+        if late:
+            print(f"  WARNING: {len(late)} clip(s) open INSIDE the rally")
+        if short:
+            print(f"  WARNING: {len(short)} clip(s) end BEFORE the rally does")
+    elif made:
+        lead = sorted(c["lead_in_s"] for c in made)
+        print(f"  verified: all {len(made)} clips contain their whole rally "
+              f"(lead-in {lead[0]:.1f}-{lead[-1]:.1f}s, median "
+              f"{lead[len(lead)//2]:.1f}s)")
+
+    if man.get("reel"):
+        print(f"  reel -> {os.path.join(out_dir, man['reel'])}")
+    elif args.reel:
+        print("  reel: not made (needs at least 2 successful clips)")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="run.py", description="SwingVision-clone CLI")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -256,6 +309,23 @@ def build_parser() -> argparse.ArgumentParser:
                       help="fail on any correction that cannot be applied, instead of "
                            "reporting it")
     corr.set_defaults(func=_cmd_correct)
+
+    hi = sub.add_parser("highlights",
+                        help="cut per-rally clips (+ optional top-3 reel) from a "
+                             "video and its match.json")
+    hi.add_argument("video", help="the source video the match.json was made from")
+    hi.add_argument("--match", required=True, help="match.json for this video")
+    hi.add_argument("--out-dir", dest="out_dir",
+                    help="where to write clips (default: rallies/ next to the match)")
+    hi.add_argument("--top", type=int, default=3,
+                    help="how many rallies count as 'top' (default 3)")
+    hi.add_argument("--reel", action="store_true",
+                    help="also concat the top rallies into one highlights.mp4")
+    hi.add_argument("--exact", action="store_true",
+                    help="re-encode for a frame-accurate trim instead of stream "
+                         "copy. 5-10x slower; only needed when the exact start "
+                         "matters, since the default can only start EARLIER")
+    hi.set_defaults(func=_cmd_highlights)
     return parser
 
 

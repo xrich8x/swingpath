@@ -99,3 +99,14 @@ data/output/synth/*.npz
 # is benchmark and which is training data.
 data/runs/*.log
 data/incoming/
+
+# Per-rally highlight clips (run.py highlights) are generated artifacts, same
+# policy as data/output: the mp4s are ignored, the manifest is evidence.
+frontend/public/rallies/*
+!frontend/public/rallies/highlights.json
+
+# yt_match40 is a 6-min clip, so its perception cache is 11 MB — 3.5x the largest
+# cache otherwise tracked. Evidence caches ARE normally committed (CLAUDE.md), but
+# this clip is a highlights DEMO, not a tuning target: the 511 KB match.json is the
+# artifact anything downstream reads. Re-make it with `run.py analyze` if needed.
+data/output/yt_match40.perception.json

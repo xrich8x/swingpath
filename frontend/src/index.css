@@ -326,7 +326,9 @@ body {
   border-radius: var(--radius);
   overflow: hidden;
 }
-.rally-table-head, .rally-row {
+/* The row is a container (selectable cells + a play cell), so the column grid
+   lives on the header and on .rally-main — not on .rally-row itself. */
+.rally-table-head, .rally-main {
   display: grid;
   grid-template-columns: 48px 1.3fr 0.7fr 1fr 1fr 1.4fr;
   align-items: center;
@@ -341,20 +343,49 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
+  grid-template-columns: 48px 1.3fr 0.7fr 1fr 1fr 1.4fr 86px;
 }
 .rally-row {
-  width: 100%;
+  display: flex;
+  align-items: stretch;
   background: var(--bg-elev);
-  border: none;
   border-top: 1px solid var(--line);
+}
+.rally-main {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
   color: var(--text);
+  font: inherit;
   font-size: 13px;
   cursor: pointer;
   font-variant-numeric: tabular-nums;
 }
+.rally-play { display: flex; align-items: center; width: 86px; padding-right: 14px; }
 .rally-row:hover { background: var(--bg-elev2); }
 .rally-row-active { background: rgba(198, 255, 58, 0.08); box-shadow: inset 3px 0 0 var(--accent); }
 .rally-score { color: var(--muted); }
+
+/* Per-rally playback (run.py highlights). Absent clips leave the table as-is. */
+.rally-player { margin-bottom: 14px; }
+.rally-player-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 8px 2px 0; font-size: 13px;
+}
+.rally-player-bar button {
+  background: var(--bg-elev2); color: inherit; border: 1px solid var(--line);
+  border-radius: 6px; padding: 5px 12px; cursor: pointer; font: inherit;
+}
+.rally-player-bar button:hover { border-color: var(--accent-dim); }
+.rally-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.rally-top-label {
+  color: var(--muted); font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.rally-top-why { color: var(--muted); font-size: 11px; margin-left: 6px; }
+.chip-on .rally-top-why { color: #3d4a1f; }
+.rallies-hint { margin-top: 14px; }
 
 .pill {
   display: inline-block;
