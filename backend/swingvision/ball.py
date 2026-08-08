@@ -968,6 +968,19 @@ class OurBallDetector:
         # a cache built at one threshold is not a cache for another.
         env_thresh = os.environ.get("BALLNET_SCORE_THRESH")
         self.score_thresh = float(env_thresh) if env_thresh else score_thresh
+        # INPUT RESOLUTION, same env-hook pattern and the same reason again.
+        # BallNet is fully convolutional, so it runs at any size divisible by the
+        # encoder stride WITHOUT retraining — which makes "how much far-court
+        # recall does the downscale cost?" a measurable question rather than an
+        # argument. The far ball is ~3.9 px in a 720p frame (farcourt_probe, E2);
+        # at 512 wide it reaches the net at ~1.6 px, SMALLER than the 2.0 px the
+        # 640-wide TrackNet saw. NOTE the net was TRAINED at 512x288, so a larger
+        # input also makes the ball larger than anything it was fitted on — this
+        # can hurt, and that is exactly why it is measured rather than assumed.
+        env_in = os.environ.get("BALLNET_INPUT")   # e.g. "768x432"
+        if env_in:
+            w_s, _, h_s = env_in.lower().partition("x")
+            self.in_w, self.in_h = int(w_s), int(h_s)
         ckpt = torch.load(weights, map_location=device, weights_only=False)
         sd = ckpt["model_state_dict"]
         # A v4+ (motion-attention) checkpoint carries the motion-prompt params; build
