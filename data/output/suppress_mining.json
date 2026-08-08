@@ -12,28 +12,49 @@
    "test": "persistence",
    "catch_person_pct": 7.5,
    "catch_racquet_pct": 4.8,
-   "collateral_pct": 5.7,
+   "collateral_pct": 5.9,
    "catch_n": 40,
-   "collateral_n": 803,
-   "passes_gate": false
+   "collateral_n": 796,
+   "passes_gate": false,
+   "p_kill_ball": 5.2,
+   "p_kill_noball": 7.4,
+   "enrichment": 1.4,
+   "purity_at_50pct": 58.9,
+   "purity_at_train_rate": 15.7,
+   "fire_ball": 947,
+   "fire_noball": 81
   },
   {
    "test": "minseg",
    "catch_person_pct": 32.5,
    "catch_racquet_pct": 33.3,
-   "collateral_pct": 2.4,
+   "collateral_pct": 2.3,
    "catch_n": 40,
-   "collateral_n": 803,
-   "passes_gate": false
+   "collateral_n": 796,
+   "passes_gate": false,
+   "p_kill_ball": 5.0,
+   "p_kill_noball": 29.6,
+   "enrichment": 6.0,
+   "purity_at_50pct": 85.7,
+   "purity_at_train_rate": 43.7,
+   "fire_ball": 947,
+   "fire_noball": 81
   },
   {
    "test": "both",
    "catch_person_pct": 40.0,
    "catch_racquet_pct": 38.1,
-   "collateral_pct": 8.1,
+   "collateral_pct": 8.2,
    "catch_n": 40,
-   "collateral_n": 803,
-   "passes_gate": false
+   "collateral_n": 796,
+   "passes_gate": false,
+   "p_kill_ball": 10.1,
+   "p_kill_noball": 37.0,
+   "enrichment": 3.7,
+   "purity_at_50pct": 78.5,
+   "purity_at_train_rate": 32.2,
+   "fire_ball": 947,
+   "fire_noball": 81
   }
  ],
  "per_clip": [
@@ -87,20 +108,20 @@
    "persistence": {
     "catch": 0,
     "catch_n": 1,
-    "coll": 2,
-    "coll_n": 69
+    "coll": 3,
+    "coll_n": 62
    },
    "minseg": {
     "catch": 0,
     "catch_n": 1,
-    "coll": 5,
-    "coll_n": 69
+    "coll": 4,
+    "coll_n": 62
    },
    "both": {
     "catch": 0,
     "catch_n": 1,
     "coll": 7,
-    "coll_n": 69
+    "coll_n": 62
    }
   },
   {

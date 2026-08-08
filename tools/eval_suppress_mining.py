@@ -110,8 +110,14 @@ def main() -> None:
         by_clip.setdefault(L["clip"], []).append(L)
 
     det = OurBallDetector(args.weights, device=args.device)
+    # PURITY tallies. A hard negative is a WHOLE-FRAME all-zero target
+    # (train_ballnet.py), so a mined frame is contaminated if it contains a ball
+    # ANYWHERE — not merely if the lock was on it. Counted over every labelled
+    # frame the raw detector fired on, split by the frame's label.
     tally = {v: {"catch": 0, "catch_n": 0, "catch_r": 0, "catch_rn": 0,
-                 "coll": 0, "coll_n": 0} for v in VARIANTS}
+                 "coll": 0, "coll_n": 0,
+                 "kill_ball": 0, "fire_ball": 0,
+                 "kill_noball": 0, "fire_noball": 0} for v in VARIANTS}
     per_clip = []
 
     for clip in gs.GOLD:
@@ -119,8 +125,9 @@ def main() -> None:
         # run from backend/ and a relative path silently opens nothing.
         video = str(gs.GOLD[clip].video_path)
         balls = gs.ball_frames(clip)
+        noball = set(gs.noball_frames(clip))
         flocks = by_clip.get(clip, [])
-        targets = sorted(set(balls) | {L["frame"] for L in flocks})
+        targets = sorted(set(balls) | noball | {L["frame"] for L in flocks})
         if not targets:
             continue
 
@@ -173,6 +180,13 @@ def main() -> None:
                     if fr not in raw or raw[fr] is None:
                         continue
                     killed = survive.get(fr) is None
+                    # Purity bookkeeping, independent of the catch/collateral split.
+                    if fr in balls:
+                        tally[v]["fire_ball"] += 1
+                        tally[v]["kill_ball"] += int(killed)
+                    elif fr in noball:
+                        tally[v]["fire_noball"] += 1
+                        tally[v]["kill_noball"] += int(killed)
                     if fr in lock_frames:
                         clip_stat[v]["catch_n"] += 1
                         clip_stat[v]["catch"] += int(killed)
@@ -215,6 +229,37 @@ def main() -> None:
                      "catch_racquet_pct": round(cr, 1), "collateral_pct": round(co, 1),
                      "catch_n": t["catch_n"], "collateral_n": t["coll_n"],
                      "passes_gate": ok})
+    # MINED-POOL PURITY. A hard negative is a whole-frame zero target
+    # (train_ballnet.py), so a mined frame is contaminated if it contains a ball
+    # ANYWHERE — not merely if the lock was on it. Purity depends on the BASE
+    # RATE of ball-present frames, and the gold set's 1201:204 ratio is a
+    # sampling artefact, so the base-rate-INDEPENDENT enrichment is the number
+    # that transfers. The training clips measure 88.5% ball-present.
+    print()
+    print("MINED-POOL PURITY (whole-frame negatives)")
+    print(f"{'test':>12} {'P(kill|ball)':>13} {'P(kill|no-ball)':>16} "
+          f"{'enrich':>8} {'purity@50%':>11} {'purity@88.5%':>13}")
+    for v in VARIANTS:
+        t = tally[v]
+        pb = pct(t["kill_ball"], t["fire_ball"])
+        pn = pct(t["kill_noball"], t["fire_noball"])
+        enr = (pn / pb) if pb else float("inf")
+        def purity(rate_ball):
+            num = pn * (1.0 - rate_ball)
+            den = num + pb * rate_ball
+            return 100.0 * num / den if den else float("nan")
+        print(f"{v:>12} {pb:12.1f}% {pn:15.1f}% {enr:7.1f}x "
+              f"{purity(0.50):10.1f}% {purity(0.885):12.1f}%")
+        for r in rows:
+            if r["test"] == v:
+                r.update(p_kill_ball=round(pb, 1), p_kill_noball=round(pn, 1),
+                         enrichment=None if not pb else round(enr, 1),
+                         purity_at_50pct=round(purity(0.50), 1),
+                         purity_at_train_rate=round(purity(0.885), 1),
+                         fire_ball=t["fire_ball"], fire_noball=t["fire_noball"])
+    print("  Gate C: enrichment >= 10x AND purity >= 95% at the training clips'")
+    print("  measured 88.5% ball-present rate.")
+
     t = tally["both"]
     print(f"\npopulations: {t['catch_n']} person-attached false locks, "
           f"{t['coll_n']} correctly-located ball frames")

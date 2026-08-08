@@ -214,3 +214,63 @@ The remaining route is **human confirmation of a pre-filtered pool**, and min-se
 is the best pre-filter available (2.4% collateral). That is a much smaller ask than
 far-court labelling: the candidates are already identified, and the judgement is
 "ball or not" at a glance rather than locating a 2 px object.
+
+---
+
+## Gate C — mined-pool purity. Also fails, and it names the root cause.
+
+Hard negatives in `train_ballnet.py` are WHOLE-FRAME all-zero targets, so a mined
+frame is contaminated if it contains a ball anywhere. Purity therefore depends on
+the BASE RATE of ball-present frames — and the gold set's 1201:204 ratio is a
+sampling artefact, not a clip's composition. The base-rate-independent enrichment
+is the number that transfers.
+
+**Measured base rate of the actual training clips: 88.5% ball-present**
+(26,293 labelled ball frames vs 3,409 no-ball). These are extracted rally clips.
+
+| test | P(kill \| ball) | P(kill \| no-ball) | enrichment | purity @88.5% |
+|---|---|---|---|---|
+| persistence | 5.2% | 7.4% | 1.4x | 15.7% |
+| min-segment | 5.0% | 29.6% | **6.0x** | **43.7%** |
+| both | 10.1% | 37.0% | 3.7x | 32.2% |
+
+Gate C required enrichment >= 10x AND purity >= 95%. **Both fail.** At the real
+base rate a mined pool would be over half real-ball frames — training the detector
+to see nothing on frames that contain a ball.
+
+### The root cause, which is the same for every failure in this document
+
+Every route tried has died on the same structural fact:
+
+- **dead-time frames** are pure negatives but contain no confusers (already a
+  measured negative — "the wrong negatives")
+- **confuser-rich frames** are frames with tennis being played, which are 88.5%
+  the frames that also contain a ball
+
+**The whole-frame negative format forces a question about the FRAME when the
+useful question is about the LOCATION.** A frame holding both a ball and a
+racquet-fire is unusable as a whole-frame negative and perfectly usable as a
+localised one.
+
+### What is actually missing — and it is NOT new labels
+
+The loss is `BCEWithLogitsLoss(pos_weight=100)` on a Gaussian heatmap, so the
+target is ALREADY zero at the racquet: the model is already penalised for firing
+there. The reason that penalty does nothing is weighting:
+
+| | pixels | weight each |
+|---|---|---|
+| ball (Gaussian) | ~50 | 100x |
+| everything else | ~147,400 | 1x |
+
+The racquet head is one pixel among 147,400, weighted the same as empty sky. The
+signal exists and is drowned.
+
+So the proposal is **re-weighting, not new labels** — standard hard-example
+mining. Up-weight the loss at locations the detector actually false-fires on. It
+needs no human time, works on all 26,293 labelled frames rather than only the
+14,202 unlabelled ones, reaches person-attached confusers that the static-lock
+miner structurally cannot, and sidesteps the base-rate problem entirely because
+it never asks whether the frame contains a ball — only whether the ball is HERE.
+
+Written up as docs/sessions/SESSION_I_localised_negatives.md.
