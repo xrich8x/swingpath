@@ -20,6 +20,12 @@ backend/weights/*.pth.tar
 !backend/weights/ballnet_v3.pt
 !backend/weights/courtnet_ft.pt
 !backend/weights/courtnet_ft_v0_notready.pt
+# Session I's two 15-epoch A/B arms. NOT SHIPPABLE — undertrained by design, and
+# they score 14-15 solid ghosts against ballnet_v21's 9. Kept because they were
+# trained BEFORE `--seed` existed, so they can never be reproduced, and every
+# number in data/output/session_i_ab/results.md is measured on these exact files.
+!backend/weights/ballnet_i_base.pt
+!backend/weights/ballnet_i_conf.pt
 
 # Exported mobile models (regenerate with mobile/export_tracknet.py)
 mobile/models/*.onnx
@@ -57,6 +63,15 @@ data/output/fps/*.png
 # holds (46 MB of *.annotated.mp4). Videos stay ignored one level down too —
 # they are regenerable from the JSON caches with `run.py analyze --annotate`.
 data/output/fps/*.mp4
+# Session I's A/B evidence, same one-level-down rule as fps/ above. `data/output/*`
+# excludes the DIRECTORY, and git will not descend into an excluded directory, so the
+# `!data/output/*.json` negation never reaches files inside a subfolder of it.
+!data/output/session_i_ab/
+!data/output/session_i_ab/*.json
+!data/output/session_i_ab/*.md
+# Contact sheets stay out, same as fps/*.png: the classification is the evidence and
+# it lives in the JSON. Regenerate a sheet with inspect_false_locks --contact-sheet.
+data/output/session_i_ab/*.png
 # ...and the one evidence image from the 2026-07-05 regression investigation.
 !data/output/regression_diff.jpg
 data/*.mp4

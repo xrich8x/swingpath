@@ -201,6 +201,15 @@ class BallWindows(Dataset):
         n_neg = sum(1 for s in self.samples if s[2] is None)
         return len(self.samples) - n_neg, n_neg
 
+    def n_confuser_samples(self):
+        """How many samples actually carry a weighted confuser disc.
+
+        Goes in the checkpoint provenance: `--hard-weight 8` with zero confuser
+        samples is arithmetically the shipped recipe, and without this number a
+        no-op run is indistinguishable from a treatment run by its filename.
+        """
+        return sum(1 for s in self.samples if s[4])
+
     def __len__(self):
         return len(self.samples)
 
@@ -316,6 +325,35 @@ def hms(seconds: float) -> str:
     return f"{h}h{m:02d}m" if h else (f"{m}m{s:02d}s" if m else f"{s}s")
 
 
+def _git_commit() -> str:
+    """Best-effort commit hash for the checkpoint stamp; never fatal to a train run."""
+    import subprocess
+    try:
+        return subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                              cwd=os.path.dirname(os.path.abspath(__file__)),
+                              capture_output=True, text=True, timeout=10).stdout.strip()
+    except Exception:
+        return "unknown"
+
+
+def recipe_stamp(args, n_par: int, counts, n_confusers: int) -> dict:
+    """How this checkpoint was made, saved inside it.
+
+    ballnet_v21.pt carries nothing but its weights, so its recipe cannot be
+    verified and any A/B against it confounds the change under test with whatever
+    drifted since — Session I had to train its own baseline arm for exactly that
+    reason. `confuser_samples` is here because `--hard-weight 8` with zero of them
+    is arithmetically the shipped recipe, and a filename cannot tell you which
+    happened.
+    """
+    tp, tn, vp, vn = counts
+    return {"tool": "train_ballnet.py", "args": vars(args), "git": _git_commit(),
+            "torch": torch.__version__, "params_m": round(n_par / 1e6, 2),
+            "train_pos": tp, "train_neg": tn, "val_pos": vp, "val_neg": vn,
+            "confuser_samples": n_confusers,
+            "selection": "best (val hit@10 - false-fire), so NOT the last epoch"}
+
+
 def emit(**fields) -> None:
     """One machine-readable line per epoch, for tools/lab_server.py.
 
@@ -348,7 +386,21 @@ def main():
     ap.add_argument("--motion-attention", action="store_true", dest="motion_attention",
                     help="TrackNetV4-style learnable motion attention (frame-diff gate) "
                          "in BallNet — for the v4 model")
+    ap.add_argument("--seed", type=int, default=0,
+                    help="PAIRS AN A/B. Until this existed, two arms differed by "
+                         "initialisation, shuffle order and augmentation draws as well "
+                         "as by the flag under test, so a small effect could not be "
+                         "attributed to the flag. Vary it deliberately to measure the "
+                         "seed noise floor — that is the yardstick any effect must clear")
     args = ap.parse_args()
+
+    # Not bit-determinism: cuDNN picks conv algorithms nondeterministically and
+    # forcing otherwise costs real time. This pairs the things that dominate a short
+    # run — the init and the order the data arrives in.
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
 
     assert_no_gold_leak(args.data, args.exclude)
     # Confuser weighting applies to TRAINING only. Weighting the validation loss
@@ -363,6 +415,7 @@ def main():
     print(f"train {tp}+{tn}neg / val {vp}+{vn}neg | device {args.device} | "
           f"excluded {args.exclude}")
     train_ld = DataLoader(train_ds, batch_size=args.batch, shuffle=True, num_workers=2,
+                          generator=torch.Generator().manual_seed(args.seed),
                           pin_memory=(args.device == "cuda"))
     val_ld = DataLoader(val_ds, batch_size=args.batch, num_workers=2)
 
@@ -377,6 +430,9 @@ def main():
     # occlusion augmentation from a regression into a gain.
     crit = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(100.0, device=args.device),
                                 reduction="none")
+
+    prov = recipe_stamp(args, n_par, (tp, tn, vp, vn),
+                        train_ds.n_confuser_samples())
 
     best = -1.0
     t_start = time.time()
@@ -410,7 +466,12 @@ def main():
         if score > best:
             best = score
             os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
-            torch.save({"model_state_dict": model.state_dict()}, args.out)
+            torch.save({"model_state_dict": model.state_dict(),
+                        "provenance": dict(prov, epoch=ep, of_epochs=args.epochs,
+                                           val_median_px=None if med != med else round(med, 2),
+                                           val_hit10_pct=round(hit10 * 100, 2),
+                                           val_false_fire_pct=round(ff * 100, 2))},
+                       args.out)
             marker = "  <- saved"
         ep_s = time.time() - t_ep
         eta = ep_s * (args.epochs - ep)

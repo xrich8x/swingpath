@@ -713,6 +713,75 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   model. 60 fps does not find more ball; it keeps and reconstructs more of what it
   found. Consistent with the standing "fps buys precision, not recall" result.
 
+- Session I (2026-08-09): LOCALISED CONFUSER WEIGHTING — the product gate FAILS, the
+  DETECTOR improves on 6 of 6 clips, and neither claim is what it first looks like.
+  Whole-frame negative mining was closed in Phase 0 (the format asks about the FRAME
+  when the useful question is the LOCATION), so this weights the per-pixel loss 8x in
+  a 12 px disc at every mined confuser: on a frame whose ball position is known, a
+  detector argmax >20 px away is a confirmed false fire at a known spot. Yield 3,336
+  of 26,293 labelled frames (12.7%). It is RE-WEIGHTING, not new labels — the BCE
+  target is already zero there; the racquet head is one pixel among 147,400 scored
+  like empty sky. Two 15-epoch arms, `--hard-weight` 1.0 vs 8.0 (1h13m + 1h09m).
+  Evidence: data/output/session_i_ab/results.md.
+  (1) PRODUCT GATE FAILS. Pooled over the 3 calibrated clips (74 no-ball frames),
+  solid ghosts **14 -> 15**, recall 69.2 -> 69.0%. Ninth failure at the ghost ball.
+  (2) THE DETECTOR IMPROVED, and consistently: pooled over all 6 gold clips (204
+  no-ball, 1201 clicks) false fire **53.9 -> 42.2%** — down on **6 of 6 clips** by
+  7.3 to 23.0 pts — at HIGHER recall (79.9 -> 80.4%) and far_px (80.9 -> 82.5%).
+  110 -> 86 false fires, a 3.4 sigma shift; the operating point moved outward on both
+  axes rather than trading one for the other.
+  (3) BUT IT IS NOT ATTRIBUTABLE YET, and this is the load-bearing caveat.
+  `train_ballnet.py` had **NO SEED** — no manual_seed, no random.seed — so the two
+  arms differ by initialisation, batch order and augmentation draws as well as by the
+  flag. Six clips are six measurements of the SAME two models, so the 6/6 sign test
+  measures EVALUATION noise; the unit of randomisation for the treatment question is
+  the TRAINING RUN, and n=1. Do not record "localised weighting cuts detector false
+  fire by 11.7 pts" until a paired re-run says so. FIXED: `--seed` (default 0) seeds
+  python/numpy/torch and the train DataLoader's shuffle generator, and
+  `train_ballnet.recipe_stamp` writes args/seed/git/dataset counts/`confuser_samples`
+  into every checkpoint — closing the same gap that made `ballnet_v21.pt` unusable as
+  a control and forced this session to spend an hour training its own baseline.
+  (4) A DETECTOR PRECISION GAIN HAS NOW FAILED TO REACH THE PRODUCT THREE TIMES —
+  input resolution (Phase 0 gate B), `score_thresh` (Session F step 3), and this. The
+  mechanism is consistent: on yt_rally2 the detector's false fire nearly halved
+  (61.5 -> 38.5%) while the same clip's tracker-gates-only row went the WRONG way
+  (30.8 -> 38.5%). The chain's gates already remove the false fires a better detector
+  removes — the easy ones — so what survives to be drawn is a different, harder
+  population. Detector precision and chain precision are close to DECOUPLED. Stop
+  scoring ghost-ball work at the detector.
+  (5) THE GATE HAS NEVER BEEN REPORTED WITH ITS OWN RESOLUTION, across nine runs. It
+  is a count of ~14 out of **74** no-ball frames, where sampling alone moves the count
+  **+/-3.4**. Near-elimination is detectable (needs 62 frames); HALVING the ghost rate
+  needs **212**; a 30% cut needs **656**. So nine nulls license "nothing has come
+  close to eliminating the ghost ball", NOT "none of these did anything". The method
+  is fine — 204 no-ball frames over six clips resolved an 11.7-pt effect comfortably —
+  the CHAIN metric is just restricted to three calibrated clips. NEW
+  `tools/gate_verdict.py` pools the clips by summing numerators and denominators (a
+  mean of percentages over clips of 26/24/53 frames is not a rate), prints the
+  required-n beside the verdict, and warns when the clips disagree in sign.
+  (6) TWO MEASUREMENT FIXES. `eval_model_filters` now records WHICH frames fire
+  (`fire_frames_solid`), not just how many — a count of 9 that never moves reads
+  identically whether every variant fires on the same nine frames or nine different
+  ones, and those call for opposite next moves. And the session's own resume list had
+  omitted `yt_match40`, one of the three clips in a gate defined as pooled.
+  (7) THERE IS A UNIVERSAL HARD CORE, AND IT IS **FIVE FRAMES**, not nine.
+  9 of the 20 distinct solid-ghost frames fire on BOTH arms (45%). Scoring
+  `ballnet_v21` the same way — a fair question even though it cannot be a training
+  control, because this asks which FRAMES defeat it, not how it was made — its pooled
+  solid-ghost count comes back at **9**, reproducing the standing figure exactly and
+  independently checking the whole measurement chain. But it shares only **5 of the
+  arms' 9**: yt_rally2 18/762/1494, yt_match40 4773, am_hard_utr 13276. Those five
+  beat a 40-epoch detector and two 15-epoch ones with different initialisations.
+  SO THE COUNT IS STABLE AND THE COMPOSITION IS NOT — about half shared — which is
+  exactly why a count that never moves was never good evidence of an immovable set.
+  Do not describe the ghost floor as "nine specific frames"; it is five universal
+  ones plus a model-specific tail. Also visible: v21 has **1** solid ghost on
+  am_hard_utr against the arms' 5 and 6, so the 15-epoch arms are worst precisely on
+  the low-camera amateur footage this project targets.
+  NOTE the two arms are 15-epoch and NOT SHIPPABLE (v21 scores 9 solid ghosts; these
+  score 14-15). They are committed anyway because they predate `--seed` and can never
+  be reproduced, and every number above is measured on those exact files.
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers

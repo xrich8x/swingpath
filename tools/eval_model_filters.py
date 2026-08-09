@@ -176,6 +176,15 @@ def measure(tr, ball, noball, step, tag, far_px, far_geo, coasted=None):
             "far_px": round(100 * hp / max(tp, 1), 1),
             "far_geo": None if tg == 0 else round(100 * hg / tg, 1),
             "fires": len(fires), "n_scored": tot, "n_noball": n_nb,
+            # WHICH frames, not just how many. A count of 9 that never moves is
+            # ambiguous — it reads the same whether every variant fires on the same
+            # nine hard confusers or on nine different frames each time, and those
+            # call for opposite next moves (go look at them vs. get more labels).
+            # Only the identities can tell them apart, and they cost nothing to keep.
+            "fire_frames": sorted(fires),
+            "fire_frames_solid": (None if coasted is None else
+                                  sorted(f for f in fires
+                                         if not (at(f) < len(coasted) and coasted[at(f)]))),
             # None on the pre-smoother rows, matching interpolated_hits: there is
             # no coasted mask before smooth_forecast, so the split is undefined
             # rather than zero.

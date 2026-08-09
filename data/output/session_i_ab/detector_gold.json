@@ -1,0 +1,180 @@
+{
+ "tool": "eval_detector_gold",
+ "created": "2026-08-09 17:15:12",
+ "measured_against": "human gold clicks on 6 clips; hit = detector peak within 10 px of the click (1201 ball frames, 204 no-ball frames)",
+ "weights": [
+  "weights/ballnet_i_base.pt",
+  "weights/ballnet_i_conf.pt"
+ ],
+ "device": "cuda",
+ "rows": [
+  {
+   "weights": "ballnet_i_base.pt",
+   "clip": "am_hard_utr",
+   "recall": 65.1,
+   "far_px": 38.5,
+   "far_geo": 72.3,
+   "false_fire": 50.9,
+   "n_ball": 175,
+   "n_far": 13,
+   "n_geo": 141,
+   "n_noball": 53
+  },
+  {
+   "weights": "ballnet_i_base.pt",
+   "clip": "gold_shell",
+   "recall": 86.4,
+   "far_px": 93.4,
+   "far_geo": null,
+   "false_fire": 50.9,
+   "n_ball": 184,
+   "n_far": 122,
+   "n_geo": 0,
+   "n_noball": 55
+  },
+  {
+   "weights": "ballnet_i_base.pt",
+   "clip": "gold_clay",
+   "recall": 78.1,
+   "far_px": 70.4,
+   "far_geo": null,
+   "false_fire": 71.4,
+   "n_ball": 219,
+   "n_far": 98,
+   "n_geo": 0,
+   "n_noball": 14
+  },
+  {
+   "weights": "ballnet_i_base.pt",
+   "clip": "gold_am",
+   "recall": 78.5,
+   "far_px": 75.0,
+   "far_geo": null,
+   "false_fire": 43.8,
+   "n_ball": 181,
+   "n_far": 12,
+   "n_geo": 0,
+   "n_noball": 32
+  },
+  {
+   "weights": "ballnet_i_base.pt",
+   "clip": "yt_rally2",
+   "recall": 84.5,
+   "far_px": 80.8,
+   "far_geo": 83.2,
+   "false_fire": 61.5,
+   "n_ball": 258,
+   "n_far": 156,
+   "n_geo": 179,
+   "n_noball": 26
+  },
+  {
+   "weights": "ballnet_i_base.pt",
+   "clip": "yt_match40",
+   "recall": 84.2,
+   "far_px": 82.6,
+   "far_geo": 84.9,
+   "false_fire": 62.5,
+   "n_ball": 184,
+   "n_far": 86,
+   "n_geo": 139,
+   "n_noball": 24
+  },
+  {
+   "weights": "ballnet_i_base.pt",
+   "clip": "POOLED",
+   "recall": 79.9,
+   "far_px": 80.9,
+   "far_geo": 80.4,
+   "false_fire": 53.9,
+   "n_ball": 1201,
+   "n_far": 487,
+   "n_geo": 459,
+   "n_noball": 204
+  },
+  {
+   "weights": "ballnet_i_conf.pt",
+   "clip": "am_hard_utr",
+   "recall": 66.3,
+   "far_px": 38.5,
+   "far_geo": 73.0,
+   "false_fire": 43.4,
+   "n_ball": 175,
+   "n_far": 13,
+   "n_geo": 141,
+   "n_noball": 53
+  },
+  {
+   "weights": "ballnet_i_conf.pt",
+   "clip": "gold_shell",
+   "recall": 88.0,
+   "far_px": 94.3,
+   "far_geo": null,
+   "false_fire": 43.6,
+   "n_ball": 184,
+   "n_far": 122,
+   "n_geo": 0,
+   "n_noball": 55
+  },
+  {
+   "weights": "ballnet_i_conf.pt",
+   "clip": "gold_clay",
+   "recall": 78.5,
+   "far_px": 71.4,
+   "far_geo": null,
+   "false_fire": 57.1,
+   "n_ball": 219,
+   "n_far": 98,
+   "n_geo": 0,
+   "n_noball": 14
+  },
+  {
+   "weights": "ballnet_i_conf.pt",
+   "clip": "gold_am",
+   "recall": 75.7,
+   "far_px": 75.0,
+   "far_geo": null,
+   "false_fire": 31.2,
+   "n_ball": 181,
+   "n_far": 12,
+   "n_geo": 0,
+   "n_noball": 32
+  },
+  {
+   "weights": "ballnet_i_conf.pt",
+   "clip": "yt_rally2",
+   "recall": 86.0,
+   "far_px": 84.0,
+   "far_geo": 86.0,
+   "false_fire": 38.5,
+   "n_ball": 258,
+   "n_far": 156,
+   "n_geo": 179,
+   "n_noball": 26
+  },
+  {
+   "weights": "ballnet_i_conf.pt",
+   "clip": "yt_match40",
+   "recall": 85.3,
+   "far_px": 83.7,
+   "far_geo": 86.3,
+   "false_fire": 45.8,
+   "n_ball": 184,
+   "n_far": 86,
+   "n_geo": 139,
+   "n_noball": 24
+  },
+  {
+   "weights": "ballnet_i_conf.pt",
+   "clip": "POOLED",
+   "recall": 80.4,
+   "far_px": 82.5,
+   "far_geo": 82.1,
+   "false_fire": 42.2,
+   "n_ball": 1201,
+   "n_far": 487,
+   "n_geo": 459,
+   "n_noball": 204
+  }
+ ]
+}
