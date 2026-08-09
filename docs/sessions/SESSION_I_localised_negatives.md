@@ -154,12 +154,13 @@ floor is five universal frames plus a model-specific tail, not one immovable nin
 
 ### Next, in order
 
-1. **Look at the five.** Cheapest thing on this list by an order of magnitude, and
-   nothing else is well-aimed until it is done:
-   `py tools/inspect_false_locks.py --stage chain --clip yt_rally2 --clip yt_match40
-   --clip am_hard_utr --weights weights/ballnet_v21.pt --contact-sheet <out>.png`.
-   Every previous "what is the detector firing at" tally (Session F step 2) was over
-   *raw* detector locks; these five are what survives the whole chain to be drawn.
+1. ~~Look at the five.~~ **DONE — and it is the session's most useful result.**
+   All 19 chain false locks have `run_len = 1`: every survivor is kinematically
+   ball-like, which is precisely what `suppress_false_locks` is built to preserve.
+   The five are not one object type (3 static scenery, 2 person-attached), and two
+   may be mislabels. See §5 of the results doc. **Consequence: stop looking for a
+   downstream filter.** The only downstream lever left is requiring temporal support,
+   and its cost is the single-frame far-court balls the project is already short of.
 2. **Paired re-run, ~2h20m.** Both arms at `--seed 0`, so the flag is the only
    difference. Plus a third arm `--seed 1 --hard-weight 1.0` (~1h10m) for the noise
    floor — without it a paired difference still cannot be sized.

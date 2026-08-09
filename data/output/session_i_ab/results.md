@@ -177,6 +177,63 @@ into them.
 
 ---
 
+## 5. WHAT THE SURVIVORS ARE — and why nine sessions of filtering could not touch them
+
+`inspect_false_locks --stage chain` on v21, all three calibrated clips: **19 false
+locks on 74 no-ball frames**, 9 solid + 10 faded — reproducing the Session F figure.
+Crops: `hardcore*.png`, `universal5_zoom.png`.
+
+The five universal frames, seen at zoom:
+
+| clip:frame | reviewer class | what is actually there |
+|---|---|---|
+| yt_rally2:18 | fence | a fold/dark patch on the green curtain |
+| yt_rally2:762 | *never classified* | a fixture on the white wall above the curtain |
+| yt_rally2:1494 | racquet | a light blob at the head of a mid-swing player |
+| yt_match40:4773 | background | ball-coloured foliage in the hedge |
+| am_hard_utr:13276 | racquet | a light object against the dark windscreen, beside a player |
+
+**No single object type.** Three are static scenery, two are person-attached. That
+alone kills "detect the racquet and negate it" for *this* population — it reaches 2
+of 5.
+
+### THE MECHANISM, and it is one number
+
+**All 19 survivors have `run_len = 1`**, with roam 208-829 px. The tool's own legend:
+*"A real ball scores high roam and short run; a fixture the reverse."*
+
+So every confuser that survives to be drawn has **the kinematic signature of a real
+ball.** That is not a weakness in `suppress_false_locks` — it is the definition it
+was built on. The persistence test removes things that hold still; these do not hold
+still. The chain cannot remove them without also removing the single-frame real-ball
+sightings it exists to preserve, and those are exactly the far-court balls the
+project is already short of.
+
+This explains the whole history in one stroke:
+
+- **Nine downstream attempts failed** because every one of them — persistence,
+  min-segment, court envelope, live-ball, threshold, gap policy — tests for
+  *non-ball-like behaviour*, and these are ball-like by construction.
+- **Detector-side attempts also failed to reach the product** because this is the
+  *tail* of the detector's error distribution: one-off fires on ball-sized,
+  ball-coloured things. Cutting the bulk error rate (which localised weighting did,
+  by 11.7 pts) barely touches a tail of one-offs.
+- **The count is stable but the composition is not** because it is a *rate* of
+  single-frame errors, not a fixed set of defeated frames.
+
+### One thing NOT concluded here
+
+Two of the five (yt_rally2:1494, am_hard_utr:13276) show a light, ball-sized object
+beside a player mid-swing, and a human marked those frames "no ball". That could be
+a racquet head — which is what the reviewer called both — or it could be a ball at
+contact that the labeller judged not in play. **Not adjudicated, and deliberately
+not edited**: never quietly change human ground truth to suit a model. It belongs in
+the Lab as a re-label question, alongside the 8 known-bad `am_indoor_hard1` court
+frames. If some of the five are mislabels, part of this "floor" is not a model
+problem at all.
+
+---
+
 ## Also fixed this session
 
 - **`tools/gate_verdict.py`** — pools the calibrated clips by summing numerators and

@@ -778,6 +778,35 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   ones plus a model-specific tail. Also visible: v21 has **1** solid ghost on
   am_hard_utr against the arms' 5 and 6, so the 15-epoch arms are worst precisely on
   the low-camera amateur footage this project targets.
+  (8) WHY NINE SESSIONS OF FILTERING COULD NOT TOUCH THEM — one number, and it is the
+  most useful thing in this session. `inspect_false_locks --stage chain` on v21 over
+  the 3 calibrated clips returns 19 false locks on 74 no-ball frames (9 solid + 10
+  faded, reproducing Session F). **ALL 19 HAVE `run_len = 1`**, roam 208-829 px. The
+  tool's own legend reads "a real ball scores high roam and short run; a fixture the
+  reverse" — so every confuser that survives to be DRAWN carries the kinematic
+  signature of a real ball. That is not a weakness in `suppress_false_locks`, it is
+  the definition it was built on: the persistence test removes things that hold
+  still, and these do not hold still. The chain cannot remove them without also
+  removing single-frame real-ball sightings, which are exactly the far-court balls
+  the project is short of. It also explains why detector-side work does not reach the
+  product: this is the TAIL of the error distribution (one-off fires on ball-sized,
+  ball-coloured things), and cutting the bulk error rate by 11.7 pts barely moves a
+  tail of one-offs. And it explains the stable-count/unstable-composition pattern —
+  it is a RATE of single-frame errors, not a fixed set of defeated frames.
+  The five universal frames, seen at zoom (data/output/session_i_ab/universal5_zoom.png):
+  yt_rally2:18 a fold on the green curtain (class fence), yt_rally2:762 a wall fixture
+  above the curtain (NEVER CLASSIFIED - Session F classified raw locks, so some chain
+  survivors were never reviewed), yt_rally2:1494 a light blob at a mid-swing player's
+  racquet head, yt_match40:4773 ball-coloured foliage in a hedge, am_hard_utr:13276 a
+  light object against the dark windscreen beside a player. **NO SINGLE OBJECT TYPE**
+  — 3 static scenery, 2 person-attached — which kills "detect the racquet and negate
+  it" for this population outright: it reaches 2 of 5.
+  NOT ADJUDICATED, ON PURPOSE: two of the five (yt_rally2:1494, am_hard_utr:13276)
+  show a light, ball-sized object beside a player mid-swing on a frame a human marked
+  "no ball". That may be a racquet head, or a ball at contact the labeller judged not
+  in play. Never quietly change human ground truth to suit a model — this is a Lab
+  re-label question, alongside the 8 known-bad `am_indoor_hard1` court frames. If some
+  of the five are mislabels, part of this "floor" is not a model problem at all.
   NOTE the two arms are 15-epoch and NOT SHIPPABLE (v21 scores 9 solid ghosts; these
   score 14-15). They are committed anyway because they predate `--seed` and can never
   be reproduced, and every number above is measured on those exact files.
