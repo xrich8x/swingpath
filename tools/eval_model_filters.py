@@ -146,6 +146,28 @@ def measure(tr, ball, noball, step, tag, far_px, far_geo, coasted=None):
     hit = tot = 0
     hp = tp = hg = tg = 0
     ghost = 0
+    # How far off is an INTERPOLATED position, against the human click? `ghost`
+    # below only counts the interpolations that landed within 10 px, so on its own
+    # it cannot say whether a bridged position is trustworthy — the misses are
+    # invisible. The full error distribution is what decides whether a bracketed
+    # gap can serve as a TRAINING label instead of costing a human a click.
+    coast_err, coast_err_far = [], []
+    coast_by_gap = {}
+    # Length of the coasted run each bridged frame sits in. A 2-frame bridge and a
+    # 12-frame bridge are different propositions and pooling them hides that.
+    runlen = {}
+    if coasted is not None:
+        i = 0
+        while i < len(coasted):
+            if not coasted[i]:
+                i += 1
+                continue
+            j = i
+            while j < len(coasted) and coasted[j]:
+                j += 1
+            for k in range(i, j):
+                runlen[k] = j - i
+            i = j
     for f, v in ball.items():
         pf = at(f)
         if pf is None:
@@ -154,6 +176,14 @@ def measure(tr, ball, noball, step, tag, far_px, far_geo, coasted=None):
         p = tr[pf]
         ok = p is not None and math.dist(p, (v["x"], v["y"])) <= 10.0
         hit += ok
+        if coasted is not None and p is not None and pf < len(coasted) and coasted[pf]:
+            e = math.dist(p, (v["x"], v["y"]))
+            coast_err.append(e)
+            if f in far_px:
+                coast_err_far.append(e)
+            g = runlen.get(pf, 0)
+            b = "1-2" if g <= 2 else ("3-5" if g <= 5 else ("6-9" if g <= 9 else "10+"))
+            coast_by_gap.setdefault(b, []).append(e)
         if ok and coasted is not None and pf < len(coasted) and coasted[pf]:
             ghost += 1
         if f in far_px:
@@ -190,7 +220,26 @@ def measure(tr, ball, noball, step, tag, far_px, far_geo, coasted=None):
             # rather than zero.
             "fires_coasted": fires_coasted,
             "fires_real": None if coasted is None else len(fires) - fires_coasted,
-            "interpolated_hits": None if coasted is None else ghost}
+            "interpolated_hits": None if coasted is None else ghost,
+            # Accuracy of a bridged position vs the human click, in source px.
+            # 89% of the far-court frames the tracker misses sit in gaps short
+            # enough to bridge, so if these errors are small the gaps are free
+            # training labels; if they are large they are a human's job.
+            "coasted_err_px": _quantiles(coast_err),
+            "coasted_err_px_far": _quantiles(coast_err_far),
+            "coasted_err_px_by_gap": {k: _quantiles(v)
+                                      for k, v in sorted(coast_by_gap.items())}}
+
+
+def _quantiles(v):
+    if not v:
+        return None
+    s = sorted(v)
+    q = lambda f: s[min(len(s) - 1, int(f * len(s)))]  # noqa: E731
+    return {"n": len(s), "median": round(q(0.5), 1), "p75": round(q(0.75), 1),
+            "p90": round(q(0.90), 1), "max": round(s[-1], 1),
+            "within_5px_pct": round(100 * sum(e <= 5 for e in s) / len(s), 1),
+            "within_10px_pct": round(100 * sum(e <= 10 for e in s) / len(s), 1)}
 
 
 def main():

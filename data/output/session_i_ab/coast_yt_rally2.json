@@ -1,0 +1,218 @@
+{
+ "tool": "eval_model_filters",
+ "created": "2026-08-09 21:17:46",
+ "measured_against": "human gold clicks on yt_rally2; hit = within 10 px. 258 of 258 labelled ball frames scoreable at step=2; 26 no-ball frames",
+ "clip": "yt_rally2",
+ "weights": [
+  "backend/weights/ballnet_v21.pt"
+ ],
+ "device": "cuda",
+ "score_thresh": null,
+ "frame_step": 2,
+ "fps_eff": 30.0,
+ "resolution": "1280x720",
+ "scoreable": 258,
+ "n_ball_labelled": 258,
+ "n_noball": 26,
+ "measurable_depth_m": 8.7,
+ "rows": [
+  {
+   "weights": "ballnet_v21.pt",
+   "clip": "yt_rally2",
+   "stage": "tracker gates only",
+   "false_fire": 34.6,
+   "recall": 74.8,
+   "far_px": 71.2,
+   "far_geo": 74.3,
+   "fires": 9,
+   "n_scored": 258,
+   "n_noball": 26,
+   "fire_frames": [
+    6,
+    18,
+    24,
+    762,
+    1494,
+    1600,
+    2122,
+    2130,
+    2158
+   ],
+   "fire_frames_solid": null,
+   "fires_coasted": null,
+   "fires_real": null,
+   "interpolated_hits": null,
+   "coasted_err_px": null,
+   "coasted_err_px_far": null,
+   "coasted_err_px_by_gap": {}
+  },
+  {
+   "weights": "ballnet_v21.pt",
+   "clip": "yt_rally2",
+   "stage": "+ rectify",
+   "false_fire": 34.6,
+   "recall": 74.8,
+   "far_px": 71.2,
+   "far_geo": 74.3,
+   "fires": 9,
+   "n_scored": 258,
+   "n_noball": 26,
+   "fire_frames": [
+    6,
+    18,
+    24,
+    762,
+    1494,
+    1600,
+    2122,
+    2130,
+    2158
+   ],
+   "fire_frames_solid": null,
+   "fires_coasted": null,
+   "fires_real": null,
+   "interpolated_hits": null,
+   "coasted_err_px": null,
+   "coasted_err_px_far": null,
+   "coasted_err_px_by_gap": {}
+  },
+  {
+   "weights": "ballnet_v21.pt",
+   "clip": "yt_rally2",
+   "stage": "+ suppress_false_locks",
+   "false_fire": 19.2,
+   "recall": 68.2,
+   "far_px": 62.2,
+   "far_geo": 66.5,
+   "fires": 5,
+   "n_scored": 258,
+   "n_noball": 26,
+   "fire_frames": [
+    18,
+    762,
+    1494,
+    2130,
+    2158
+   ],
+   "fire_frames_solid": null,
+   "fires_coasted": null,
+   "fires_real": null,
+   "interpolated_hits": null,
+   "coasted_err_px": null,
+   "coasted_err_px_far": null,
+   "coasted_err_px_by_gap": {}
+  },
+  {
+   "weights": "ballnet_v21.pt",
+   "clip": "yt_rally2",
+   "stage": "+ court-region gate",
+   "false_fire": 19.2,
+   "recall": 68.2,
+   "far_px": 62.2,
+   "far_geo": 66.5,
+   "fires": 5,
+   "n_scored": 258,
+   "n_noball": 26,
+   "fire_frames": [
+    18,
+    762,
+    1494,
+    2130,
+    2158
+   ],
+   "fire_frames_solid": null,
+   "fires_coasted": null,
+   "fires_real": null,
+   "interpolated_hits": null,
+   "coasted_err_px": null,
+   "coasted_err_px_far": null,
+   "coasted_err_px_by_gap": {}
+  },
+  {
+   "weights": "ballnet_v21.pt",
+   "clip": "yt_rally2",
+   "stage": "+ kalman smooth (FULL)",
+   "false_fire": 23.1,
+   "recall": 72.5,
+   "far_px": 71.8,
+   "far_geo": 74.3,
+   "fires": 6,
+   "n_scored": 258,
+   "n_noball": 26,
+   "fire_frames": [
+    18,
+    762,
+    774,
+    1494,
+    2130,
+    2158
+   ],
+   "fire_frames_solid": [
+    18,
+    762,
+    1494,
+    2130,
+    2158
+   ],
+   "fires_coasted": 1,
+   "fires_real": 5,
+   "interpolated_hits": 19,
+   "coasted_err_px": {
+    "n": 32,
+    "median": 6.5,
+    "p75": 13.4,
+    "p90": 46.4,
+    "max": 79.8,
+    "within_5px_pct": 40.6,
+    "within_10px_pct": 59.4
+   },
+   "coasted_err_px_far": {
+    "n": 25,
+    "median": 6.3,
+    "p75": 11.9,
+    "p90": 36.8,
+    "max": 79.8,
+    "within_5px_pct": 40.0,
+    "within_10px_pct": 60.0
+   },
+   "coasted_err_px_by_gap": {
+    "1-2": {
+     "n": 5,
+     "median": 5.3,
+     "p75": 46.4,
+     "p90": 79.8,
+     "max": 79.8,
+     "within_5px_pct": 40.0,
+     "within_10px_pct": 60.0
+    },
+    "10+": {
+     "n": 2,
+     "median": 36.8,
+     "p75": 36.8,
+     "p90": 36.8,
+     "max": 36.8,
+     "within_5px_pct": 0.0,
+     "within_10px_pct": 50.0
+    },
+    "3-5": {
+     "n": 5,
+     "median": 13.4,
+     "p75": 28.0,
+     "p90": 60.6,
+     "max": 60.6,
+     "within_5px_pct": 40.0,
+     "within_10px_pct": 40.0
+    },
+    "6-9": {
+     "n": 20,
+     "median": 6.3,
+     "p75": 10.7,
+     "p90": 21.5,
+     "max": 66.4,
+     "within_5px_pct": 45.0,
+     "within_10px_pct": 65.0
+    }
+   }
+  }
+ ]
+}
