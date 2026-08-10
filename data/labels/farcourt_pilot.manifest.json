@@ -1,0 +1,264 @@
+{
+ "clip": "farcourt_pilot",
+ "video": null,
+ "source": "data/ball_dataset extracted frames; the source videos for these clips no longer exist, so 512x288 is all there is",
+ "width": 512,
+ "height": 288,
+ "fps": null,
+ "video_frames": 30,
+ "created": "2026-08-10 13:49:23",
+ "params": {
+  "tool": "select_farcourt_labels.py",
+  "gaps": 10,
+  "max_gap": 10,
+  "far_frac": 0.36,
+  "with_anchors": true,
+  "selection": "midpoint of each bracketed far-court gap, round-robin over clips"
+ },
+ "bucket_counts": {
+  "anchor": 20,
+  "farcourt_gap": 10
+ },
+ "frames": [
+  {
+   "frame": 0,
+   "bucket": "anchor",
+   "src_dataset": "amateur",
+   "src_frame": 80,
+   "prior_x": 122.8,
+   "prior_y": 116.4
+  },
+  {
+   "frame": 1,
+   "bucket": "farcourt_gap",
+   "src_dataset": "amateur",
+   "src_frame": 82,
+   "prior_x": 182.2,
+   "prior_y": 102.2
+  },
+  {
+   "frame": 2,
+   "bucket": "anchor",
+   "src_dataset": "amateur",
+   "src_frame": 84,
+   "prior_x": 241.7,
+   "prior_y": 87.9
+  },
+  {
+   "frame": 3,
+   "bucket": "anchor",
+   "src_dataset": "highangle",
+   "src_frame": 28,
+   "prior_x": 278.4,
+   "prior_y": 67.2
+  },
+  {
+   "frame": 4,
+   "bucket": "farcourt_gap",
+   "src_dataset": "highangle",
+   "src_frame": 29,
+   "prior_x": 281.7,
+   "prior_y": 71.1
+  },
+  {
+   "frame": 5,
+   "bucket": "anchor",
+   "src_dataset": "highangle",
+   "src_frame": 30,
+   "prior_x": 285.1,
+   "prior_y": 74.9
+  },
+  {
+   "frame": 6,
+   "bucket": "anchor",
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 247,
+   "prior_x": 293.3,
+   "prior_y": 46.0
+  },
+  {
+   "frame": 7,
+   "bucket": "farcourt_gap",
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 249,
+   "prior_x": 314.6,
+   "prior_y": 89.4
+  },
+  {
+   "frame": 8,
+   "bucket": "anchor",
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 251,
+   "prior_x": 336.0,
+   "prior_y": 132.8
+  },
+  {
+   "frame": 9,
+   "bucket": "anchor",
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 672,
+   "prior_x": 305.1,
+   "prior_y": 79.8
+  },
+  {
+   "frame": 10,
+   "bucket": "farcourt_gap",
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 674,
+   "prior_x": 312.4,
+   "prior_y": 98.6
+  },
+  {
+   "frame": 11,
+   "bucket": "anchor",
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 676,
+   "prior_x": 319.6,
+   "prior_y": 117.5
+  },
+  {
+   "frame": 12,
+   "bucket": "anchor",
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 4,
+   "prior_x": 318.0,
+   "prior_y": 66.0
+  },
+  {
+   "frame": 13,
+   "bucket": "farcourt_gap",
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 5,
+   "prior_x": 318.4,
+   "prior_y": 65.6
+  },
+  {
+   "frame": 14,
+   "bucket": "anchor",
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 7,
+   "prior_x": 319.4,
+   "prior_y": 64.8
+  },
+  {
+   "frame": 15,
+   "bucket": "anchor",
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 6,
+   "prior_x": 254.6,
+   "prior_y": 110.8
+  },
+  {
+   "frame": 16,
+   "bucket": "farcourt_gap",
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 7,
+   "prior_x": 255.1,
+   "prior_y": 98.8
+  },
+  {
+   "frame": 17,
+   "bucket": "anchor",
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 8,
+   "prior_x": 255.6,
+   "prior_y": 86.8
+  },
+  {
+   "frame": 18,
+   "bucket": "anchor",
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 42,
+   "prior_x": 214.0,
+   "prior_y": 104.4
+  },
+  {
+   "frame": 19,
+   "bucket": "farcourt_gap",
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 43,
+   "prior_x": 214.4,
+   "prior_y": 103.4
+  },
+  {
+   "frame": 20,
+   "bucket": "anchor",
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 44,
+   "prior_x": 214.9,
+   "prior_y": 102.5
+  },
+  {
+   "frame": 21,
+   "bucket": "anchor",
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 9,
+   "prior_x": 255.4,
+   "prior_y": 85.9
+  },
+  {
+   "frame": 22,
+   "bucket": "farcourt_gap",
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 10,
+   "prior_x": 146.2,
+   "prior_y": 44.7
+  },
+  {
+   "frame": 23,
+   "bucket": "anchor",
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 11,
+   "prior_x": 37.0,
+   "prior_y": 3.5
+  },
+  {
+   "frame": 24,
+   "bucket": "anchor",
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 17,
+   "prior_x": 152.3,
+   "prior_y": 81.9
+  },
+  {
+   "frame": 25,
+   "bucket": "farcourt_gap",
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 19,
+   "prior_x": 185.2,
+   "prior_y": 86.0
+  },
+  {
+   "frame": 26,
+   "bucket": "anchor",
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 21,
+   "prior_x": 218.0,
+   "prior_y": 90.0
+  },
+  {
+   "frame": 27,
+   "bucket": "anchor",
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 5,
+   "prior_x": 272.2,
+   "prior_y": 60.8
+  },
+  {
+   "frame": 28,
+   "bucket": "farcourt_gap",
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 7,
+   "prior_x": 273.0,
+   "prior_y": 58.5
+  },
+  {
+   "frame": 29,
+   "bucket": "anchor",
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 9,
+   "prior_x": 273.9,
+   "prior_y": 56.2
+  }
+ ]
+}
