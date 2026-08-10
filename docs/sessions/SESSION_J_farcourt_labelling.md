@@ -220,17 +220,29 @@ everything above.
 
 ## Steps 4-6 — NOT run
 
-`data/labels/farcourt_pilot2` is built and waiting in the Lab: the **same 12
-gaps**, masked, so it is a controlled test of the mask alone. 36 frames.
+`data/labels/farcourt_pilot2` is built and waiting in the Lab: **30 gaps, 90
+frames**, ~5 minutes. It does two jobs at once, which pull against each other:
+
+- **12 REPEATS** of the original pilot gaps (`--repeat-from`), so the mask is the
+  only thing that changed and the comparison is controlled;
+- **18 FRESH** gaps, because the repeats carry the labeller's memory of the first
+  pass and cannot be used to estimate a rate.
+
+Repeats are interleaved (queue positions 0, 3, 5, 8, ...), not stacked at the
+front, so drift over the session cannot land on one group. Which is which is
+recorded in the manifest and never shown in the UI.
 
 **Pre-registered prediction:** masking fixes frames 0/1/2/7/8 and nothing else,
 because the other 11 bad clicks are anchor failures, not HUD failures. If the
 re-run shows that, the anchor control is validated on independent data.
 
-Step 5 additionally needs a planning number the brief did not have: at the
-pilot's confirmation rate the anchor control discards **~58% of queued gaps**, so
-a 300-gap target needs roughly **700 gaps queued**. That changes what "30 minutes
-of clicking" buys and is worth deciding with the per-clip weighting question.
+**Step 5 needs a planning number the brief did not have.** The anchor control
+discards every gap whose anchors were false locks — on the pilot **7 of 12
+(confirmation rate 42%)**, i.e. ~2.4 queued gaps per usable label, so a 300-label
+target needs ~700 gaps queued rather than 300. That estimate rests on n=12; the
+18 fresh gaps in the re-run are there to give it a second, independent reading
+before an hour of clicking is committed to it. Clip mix is decided: **even
+round-robin**, the selector's existing behaviour.
 
 ## Out of scope
 

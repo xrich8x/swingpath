@@ -104,6 +104,57 @@ def test_step_one_clips_advance_one_for_one():
     assert sel.source_frame(7, WS, STARTS, 1) == 1220
 
 
+# --- repeating an earlier queue ----------------------------------------------
+# A re-run has two jobs that pull against each other: REPEAT the old gaps, so the
+# one thing that changed is the only difference, and include FRESH ones, so a rate
+# can be measured without the labeller's memory of the first pass in it.
+
+def _man(gaps):
+    rows = []
+    for gi, (clip, a, m, b) in enumerate(gaps):
+        for f, bucket in ((a, "anchor"), (m, "farcourt_gap"), (b, "anchor")):
+            rows.append({"frame": len(rows), "gap": gi, "bucket": bucket,
+                         "src_dataset": clip, "src_frame": f})
+    return {"frames": rows}
+
+
+def test_the_gaps_of_an_earlier_queue_are_recovered_from_its_manifest(tmp_path):
+    p = tmp_path / "q.manifest.json"
+    p.write_text(json.dumps(_man([("c1", 10, 12, 14), ("c2", 5, 7, 9)])),
+                 encoding="utf-8")
+    assert sel.gaps_in_manifest(p) == {("c1", 10, 12, 14), ("c2", 5, 7, 9)}
+
+
+def test_a_manifest_without_gap_ids_is_still_recoverable(tmp_path):
+    """The first pilot's manifest predates the field and is exactly the queue a
+    re-run needs to repeat."""
+    man = _man([("c1", 10, 12, 14), ("c2", 5, 7, 9)])
+    for r in man["frames"]:
+        del r["gap"]
+    p = tmp_path / "q.manifest.json"
+    p.write_text(json.dumps(man), encoding="utf-8")
+    assert sel.gaps_in_manifest(p) == {("c1", 10, 12, 14), ("c2", 5, 7, 9)}
+
+
+def test_a_candidate_is_matched_to_a_manifest_gap_by_its_frames():
+    cand = ("/some/path/to/c1", 10, (1, 2), 12, (3, 4), 14, (5, 6))
+    assert sel.key_of(cand) == ("c1", 10, 12, 14)
+
+
+def test_repeats_are_spread_through_the_queue_not_stacked_at_the_front():
+    """Repeats first would mean they are all labelled first and the fresh gaps
+    last, so any drift over a session lands entirely on one of the two groups."""
+    got = sel._interleave(["r"] * 3, ["f"] * 9)
+    assert got.count("r") == 3 and got.count("f") == 9
+    pos = [i for i, x in enumerate(got) if x == "r"]
+    assert max(pos) - min(pos) >= 6, f"repeats bunched together: {got}"
+
+
+def test_interleaving_with_nothing_to_interleave_is_a_no_op():
+    assert sel._interleave([], ["f", "f"]) == ["f", "f"]
+    assert sel._interleave(["r"], []) == ["r"]
+
+
 def test_the_frame_just_before_a_seam_belongs_to_the_earlier_window():
     """Off by one here would jump ~1600 source frames to another moment."""
     assert sel.source_frame(1199, WS, STARTS, 2) == 1213 + 1199 * 2

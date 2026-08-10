@@ -106,6 +106,10 @@ def adjudicate(manifest: dict, labels: dict, *, anchor_px: float = ANCHOR_PX,
         verdicts.append({"gap": gid, "clip": rs[0]["src_dataset"],
                          "anchors_clicked": checked, "anchors_confirmed": confirmed,
                          "accepted": ok or not enforce,
+                         # a repeat of an earlier queue carries the labeller's
+                         # memory of that pass, so it cannot be pooled with the
+                         # fresh gaps when estimating a confirmation RATE
+                         "repeat": bool(rs[0].get("repeat")),
                          "midpoints": [m["frame"] for m in mids]})
         if ok or not enforce:
             accepted += rs
@@ -284,8 +288,17 @@ def main() -> None:
     for v in verdicts:
         mark = "keep" if v["accepted"] else "DROP"
         print(f"  {mark}  gap {v['gap']:>3} {v['clip']:<20} "
+              f"{'repeat' if v['repeat'] else 'fresh ':<7} "
               f"anchors clicked {v['anchors_clicked']}, "
               f"confirmed {len(v['anchors_confirmed'])}")
+    # Sizing the next queue needs the rate on gaps the labeller had NOT already
+    # seen; pooling the two would put their memory of the first pass into it.
+    for tag, want in (("fresh", False), ("repeat", True)):
+        sub = [v for v in verdicts if v["repeat"] is want]
+        if sub:
+            k = sum(1 for v in sub if v["anchors_confirmed"])
+            print(f"  anchor-confirmation rate, {tag:<6} {k}/{len(sub)} "
+                  f"= {100 * k / len(sub):.0f}%")
 
     by_clip = split_by_clip(accepted, labels)
     if not by_clip:

@@ -170,6 +170,68 @@ def source_frame(idx: int, ws, starts, step) -> int:
     return starts[w] + (idx - ws[w]) * step
 
 
+def key_of(c):
+    """(clip dir name, anchor, midpoint, anchor) — identifies a gap across queues."""
+    return (os.path.basename(c[0]), c[1], c[3], c[5])
+
+
+def gaps_in_manifest(path):
+    """The set of gaps an earlier queue held, so a new one can REPEAT them.
+
+    A repeat block is a controlled A/B — same gaps, one thing changed — and a
+    fresh block measures a rate without the labeller's memory of the first pass
+    in it. A queue that is only repeats can do the first and not the second.
+    """
+    man = json.loads(Path(path).read_text(encoding="utf-8"))
+    by = {}
+    for gid, r in zip(_manifest_gap_ids(man["frames"]), man["frames"]):
+        by.setdefault(gid, []).append(r)
+    out = set()
+    for rs in by.values():
+        rs = sorted(rs, key=lambda r: r["frame"])
+        mids = [r for r in rs if r["bucket"] != "anchor"]
+        anch = [r for r in rs if r["bucket"] == "anchor"]
+        if len(mids) == 1 and len(anch) == 2:
+            out.add((rs[0]["src_dataset"], anch[0]["src_frame"],
+                     mids[0]["src_frame"], anch[1]["src_frame"]))
+    return out
+
+
+def _manifest_gap_ids(rows):
+    if any("gap" in r for r in rows):
+        return [r["gap"] for r in rows]
+    out, gid, after_mid = [], 0, False
+    for r in rows:
+        is_mid = r["bucket"] != "anchor"
+        if is_mid and after_mid:
+            gid, after_mid = gid + 1, False
+        out.append(gid)
+        if is_mid:
+            after_mid = True
+        elif after_mid:
+            gid, after_mid = gid + 1, False
+    return out
+
+
+def _interleave(a, b):
+    """Spread `a` evenly through `b` rather than putting it in a block at the
+    front. Deterministic — no RNG, so the queue is reproducible.
+
+    Repeated gaps at the head of the queue would be labelled first, fresh ones
+    last, so any drift in how the labeller works over a session lands entirely
+    on one of the two groups being compared.
+    """
+    if not a or not b:
+        return list(a) + list(b)
+    out, ai, step = [], 0, len(b) / len(a)
+    for i, x in enumerate(b):
+        while ai < len(a) and ai * step <= i:
+            out.append(a[ai])
+            ai += 1
+        out.append(x)
+    return out + list(a[ai:])
+
+
 def round_robin(cands, n):
     """Take from each clip in turn so no clip dominates the queue."""
     by = {}
@@ -212,6 +274,12 @@ def main() -> None:
                     help="also queue directories with no source video, at 512x288. "
                          "OFF by default: mixing a 1.6 px ball in with 720p frames "
                          "makes 'could you see it?' unanswerable")
+    ap.add_argument("--repeat-from", default="",
+                    help="a previous *.manifest.json whose gaps this queue should "
+                         "REPEAT first, before topping up with fresh ones. The "
+                         "repeats are a controlled A/B; the fresh ones measure a "
+                         "rate the labeller's memory of the first pass cannot "
+                         "reach. --gaps counts BOTH")
     ap.add_argument("--hud-masks", default=str(REPO / "data/hud_masks.json"),
                     help="burned-in graphics to paint out (tools/mask_hud.py). "
                          "Pass '' to label unmasked footage — the first pilot did "
@@ -249,7 +317,14 @@ def main() -> None:
         if dropped:
             print(f"  skipped (no source video, would be 512x288): {dropped} "
                   f"-> {len(cands)} gaps from {len(keep)} clips")
-    picked = round_robin(cands, args.gaps)
+    repeat_keys = gaps_in_manifest(args.repeat_from) if args.repeat_from else set()
+    repeats = [c for c in cands if key_of(c) in repeat_keys]
+    fresh = [c for c in cands if key_of(c) not in repeat_keys]
+    if repeat_keys:
+        print(f"  repeating {len(repeats)} of {len(repeat_keys)} gap(s) from "
+              f"{os.path.basename(args.repeat_from)}")
+    topup = round_robin(fresh, max(0, args.gaps - len(repeats)))
+    picked = _interleave(repeats, topup)
     if not picked:
         raise SystemExit("no candidates")
 
@@ -317,6 +392,10 @@ def main() -> None:
                          "gap": gap_id,
                          # provenance so a click can be traced back — these are
                          # renumbered, not source indices
+                         # whether this gap is a REPEAT of an earlier queue.
+                         # Recorded, never shown: telling the labeller would put
+                         # their memory of the first pass into the measurement.
+                         "repeat": key_of((d, a, pa, m, pm, b, pb)) in repeat_keys,
                          "src_dataset": os.path.basename(d), "src_frame": src,
                          "width": img.shape[1], "height": img.shape[0], **srcinfo,
                          # what the tracker/interpolation thinks, in THIS frame's
