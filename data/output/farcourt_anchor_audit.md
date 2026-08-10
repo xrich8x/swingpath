@@ -189,7 +189,40 @@ So the **fresh-gap confirmation rate of 78% must not be used to size the next
 queue** — it inherits the same hole, and its true value is somewhere between that
 and the 42% of pass 1.
 
-## 7. What this changes about Session J's plan
+## 7. THE CALIBRATION ROUND — a clean 55%, and the labelling rule worked
+
+`farcourt_cal1`: 50 gaps / 147 frames, no repeats, the 30 already-labelled gaps
+excluded, even round-robin. Labelled under the new "it has to move" rule.
+
+**Confirmation rate 27/49 = 55%**, which lands between pass 1's 42% and pass 2's
+78% exactly as predicted when 78% was rejected as inflated.
+
+**The rule changed behaviour, measurably:**
+
+| round | labels | no-ball | unsure |
+|---|---|---|---|
+| pilot | 36 | 11.1% | 8.3% |
+| pilot2 (masked) | 90 | 5.6% | 8.9% |
+| **cal1 (new rule)** | **147** | **17.0%** | **17.7%** |
+
+Refusals roughly tripled from pass 2. On **14 gaps the labeller clicked nothing
+at all** — looked, and said so.
+
+**And the motion diagnostic now reads healthy:**
+
+| | n | median human click motion |
+|---|---|---|
+| accepted gaps | 27 | **21.3 px** |
+| rejected gaps | 22 | **0.0 px** |
+
+Pass 2's bad gaps were accepted at 1-8 px. The residual: **6 of 27 accepted gaps
+still move under 10 px**, so the shared-confuser failure is reduced, not
+eliminated — call it ~22% of accepted gaps still worth a second look.
+
+**Planning number, now clean: 1.85 queued gaps per usable label** (was estimated
+at 2.4). A 300-label target needs ~555 gaps / ~1,670 frames.
+
+## 8. What this changes about Session J's plan
 
 - Blocker 1 (mask the HUD) is real and is done, but it is worth **5 of 36
   labels**, not most of them. See `farcourt_hud_mask.md`.
