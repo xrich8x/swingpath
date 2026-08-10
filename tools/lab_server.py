@@ -1093,36 +1093,45 @@ LAB_PAGE = r"""<!DOCTYPE html>
 <section id="start" class="on">
   <div class="card">
     <h2>Teach the model your footage</h2>
-    <div class="hint">Six steps, top to bottom. Each one lights up when the one
-      before it is done, so you never have to remember the order. Everything here
-      is also available on the other tabs with more knobs &mdash; this is the same
-      thing with the decisions already made.</div>
+    <p>The ball detector was trained on other people&rsquo;s videos. This is how you
+      show it yours, so it gets better at <i>your</i> court, camera and lighting.</p>
+    <div class="hint"><b>What it costs you:</b> about 30 minutes of clicking, then
+      a few hours of waiting while the computer trains. The waiting is unattended
+      &mdash; start it and close the laptop.</div>
+    <div class="hint"><b>How to use this page:</b> go top to bottom. Only one step
+      is ever active; the rest are greyed out until it&rsquo;s their turn, so there
+      is no order to remember. If you leave and come back, the page works out where
+      you got to. Anything slow runs in the background and shows up on the
+      <b>Jobs</b> tab &mdash; watch it there, or ignore it and come back later.</div>
   </div>
 
   <div class="card stp" id="stp1">
     <h2><span class="n">1</span> Add your video <span class="badge"></span></h2>
-    <div class="hint">Drop files into <code>data/incoming/</code> and they show up
-      in this list.</div>
+    <p>Put the file where the Lab can see it and tell it what the video is for.</p>
+    <div class="hint">Copy your recordings into the <code>data/incoming/</code>
+      folder and they appear in the dropdowns below. Takes a few seconds.</div>
 
     <div class="sub">
-      <b>Recorded more than you need? Trim it first.</b>
-      <div class="hint">Optional, but everything after this is faster and cheaper
-        on a short clip &mdash; and your labelling time gets spent on tennis
-        instead of on people walking between points. Times can be
-        <code>90</code>, <code>1:30</code> or <code>1:02:03</code>.</div>
+      <b>First &mdash; recorded more than you need?</b>
+      <div class="hint">Skip this if your clip is already just the tennis.
+        Otherwise cut it down: a one-hour recording with ten minutes of play in it
+        makes everything afterwards six times slower, and most of your clicking
+        would land on people walking between points.</div>
       <div class="row">
-        <label class="f">Video <select id="w-trimsrc"></select></label>
-        <label class="f">From <input id="w-from" size="8" placeholder="2:00"></label>
-        <label class="f">To <input id="w-to" size="8" placeholder="12:30"></label>
-        <label class="f">Save as <input id="w-trimname" size="14" placeholder="my_match"></label>
+        <label class="f">Which video <select id="w-trimsrc"></select></label>
+        <label class="f">Start at <input id="w-from" size="8" placeholder="2:00"></label>
+        <label class="f">Stop at <input id="w-to" size="8" placeholder="12:30"></label>
+        <label class="f">Call it <input id="w-trimname" size="14" placeholder="my_match"></label>
         <button id="w-trim">Trim it</button>
       </div>
-      <div class="hint">Leaves the original alone and writes a new file next to it,
-        which then appears in the list below. Re-encodes so both ends land where you
-        asked &mdash; a ten-minute cut takes about a minute.</div>
+      <div class="hint">Type times however you like &mdash; <code>90</code> means
+        90 seconds, <code>1:30</code> means one and a half minutes,
+        <code>1:02:03</code> means an hour in. Your original file is never touched;
+        this saves a new one next to it, which then shows up in the dropdown below.
+        Roughly a minute of work per ten minutes you keep.</div>
     </div>
 
-    <div class="sub"><b>Then add it</b></div>
+    <div class="sub"><b>Then &mdash; add it</b></div>
     <div class="row">
       <label class="f">Video <select id="w-video"></select></label>
       <label class="f">Short name <input id="w-id" size="16" placeholder="my_match"></label>
@@ -1133,70 +1142,105 @@ LAB_PAGE = r"""<!DOCTYPE html>
         </select></label>
       <button class="go" id="w-add">Add it</button>
     </div>
-    <div class="warnbox"><b>This choice cannot be undone.</b> Exam footage is how
-      you find out whether the model actually got better. If it ever gets trained
-      on, every score it produces afterwards is meaningless. If you are unsure,
-      pick <b>Teaching</b> &mdash; you can always add a different video as the exam.</div>
+    <div class="warnbox"><b>Read this one before you click.</b> You are sorting the
+      video into one of two piles, and <b>it cannot be moved later</b>.<br>
+      &bull; <b>Teaching</b> &mdash; the model studies this footage.<br>
+      &bull; <b>Exam</b> &mdash; the model never sees it while learning, so its score
+      on it is honest. This is the only way to know if you actually improved anything.<br>
+      A video used for teaching can never be a fair exam afterwards, because the model
+      has already memorised the answers. <b>Unsure? Choose Teaching</b> &mdash; you can
+      always set a different video aside as the exam.</div>
+    <div class="hint">When you click Add, the Lab checks the resolution and the court
+      geometry. That takes a few seconds and appears on the Jobs tab.</div>
   </div>
 
   <div class="card stp" id="stp2">
-    <h2><span class="n">2</span> Pick the frames you will look at <span class="badge"></span></h2>
-    <div class="hint">You cannot label an hour of video. This picks a spread of
-      frames worth your time.</div>
+    <h2><span class="n">2</span> Choose which frames you&rsquo;ll be shown <span class="badge"></span></h2>
+    <p>Nobody can click through 30,000 frames. This picks a spread worth your time
+      and gets them ready to look at.</p>
     <div class="row">
-      <label class="f">Clip <select id="w-clip"></select></label>
-      <label class="f">How many <input id="w-count" type="number" value="200" min="5" max="2000" size="6"></label>
-      <label class="f">Only these times <span class="muted">(optional)</span>
+      <label class="f">Which clip <select id="w-clip"></select></label>
+      <label class="f">How many frames <input id="w-count" type="number" value="200" min="5" max="2000" size="6"></label>
+      <label class="f">Only from these times <span class="muted">(optional)</span>
         <input id="w-seg" size="22" placeholder="2:00-2:20, 7:30-7:50"></label>
-      <button class="go" id="w-cut">Pick frames</button>
+      <button class="go" id="w-cut">Get them ready</button>
     </div>
-    <div class="hint"><b>Long recording?</b> Put two or three rally time ranges in
-      the box. Otherwise most of your clicks get spent on people walking between
-      points.</div>
+    <div class="hint"><b>How many?</b> 200 is a good first go &mdash; roughly 20
+      minutes of clicking. Fewer than about 100 is too few to teach the model much.</div>
+    <div class="hint"><b>The times box</b> is a second chance to focus, if you did
+      not trim in step 1. Give it two or three ranges where rallies happen and it
+      only picks frames from inside them.</div>
+    <div class="hint">Takes under a minute. When it finishes, step 3 unlocks.</div>
   </div>
 
   <div class="card stp" id="stp3">
-    <h2><span class="n">3</span> Click the ball <span class="badge"></span></h2>
-    <div class="hint">A magnifier follows your mouse; <kbd>+</kbd> and <kbd>&minus;</kbd>
-      zoom it. If there is no ball in play, say so &mdash; those frames are worth
-      as much as the others. If you genuinely cannot tell, mark it unsure rather
-      than guessing.</div>
-    <div class="warnbox">Some footage has a <b>burned-in scoreboard with a little
-      tennis-ball icon</b> in a corner. It is not the ball. Ignore anything that
-      does not move between frames.</div>
+    <h2><span class="n">3</span> Click the ball, frame by frame <span class="badge"></span></h2>
+    <p>This is the only part that needs you, and it is the part that makes the
+      difference. You are showing the model what it got wrong.</p>
+    <div class="hint"><b>How it works:</b> a magnifying glass follows your mouse
+      &mdash; press <kbd>+</kbd> and <kbd>&minus;</kbd> to zoom it in and out. Click
+      the centre of the ball. Use <kbd>&larr;</kbd> and <kbd>&rarr;</kbd> to move
+      between frames. Every click saves instantly, so you can stop whenever you like
+      and pick up later &mdash; nothing is lost by closing the tab.</div>
+    <div class="hint"><b>Three buttons, and the boring ones matter:</b> if there is
+      no ball in play, say <b>no ball</b> &mdash; those frames are how the model
+      learns not to invent one during a changeover, and they are worth as much as
+      the ones with a ball in. If you truly cannot tell, mark it <b>unsure</b>. Never
+      guess: one confident wrong click teaches the model something false.</div>
+    <div class="warnbox"><b>Watch out for fake balls.</b> Some footage has a
+      burned-in scoreboard with a little tennis-ball icon in the corner &mdash; it
+      looks more like a ball than the real ball does. The real one moves between
+      frames; a graphic sits perfectly still. If something never moves, it is not
+      the ball.</div>
     <div class="row"><button class="go" id="w-label">Open the labeller &rarr;</button>
       <span id="w-label-note" class="muted"></span></div>
+    <div class="hint">Come back to this tab when you are done clicking.</div>
   </div>
 
   <div class="card stp" id="stp4">
-    <h2><span class="n">4</span> Turn your clicks into training data <span class="badge"></span></h2>
-    <div class="hint">One button. Cuts your labelled frames into the format the
-      model reads.</div>
+    <h2><span class="n">4</span> Package up your clicks <span class="badge"></span></h2>
+    <p>Converts what you clicked into the format the model reads. Nothing to decide
+      &mdash; press the button.</p>
     <div class="row"><button class="go" id="w-build">Build it</button></div>
+    <div class="hint">A minute or two. If you go back and click more frames later,
+      press this again to fold them in.</div>
   </div>
 
   <div class="card stp" id="stp5">
     <h2><span class="n">5</span> Train <span class="badge"></span></h2>
-    <div class="hint">This is the slow part &mdash; hours, not minutes. It runs in
-      the background and you can close this page; watch it on the Jobs tab.</div>
+    <p>The computer studies your clicks and produces an improved detector.</p>
     <div class="row">
-      <label class="f">How long
+      <label class="f">How thorough
         <select id="w-epochs">
-          <option value="15">Quick look (~2 h) &mdash; is this idea working?</option>
-          <option value="40" selected>Proper run (~6 h) &mdash; a model you could ship</option>
+          <option value="15">Quick look &mdash; about 2 hours</option>
+          <option value="40" selected>Proper run &mdash; about 6 hours</option>
         </select></label>
       <button class="go" id="w-train">Start training</button>
     </div>
+    <div class="hint"><b>Which one?</b> Pick the quick look if you just want to know
+      whether new footage helped at all. Pick the proper run for a detector you
+      actually intend to use &mdash; a quick look is deliberately undertrained and
+      will score worse than what you already have.</div>
+    <div class="hint"><b>You do not need to sit here.</b> It runs in the background;
+      close the page or shut the lid. Progress is on the Jobs tab, and it keeps
+      going even if you never look. Only one training run happens at a time.</div>
   </div>
 
   <div class="card stp" id="stp6">
-    <h2><span class="n">6</span> Find out if it got better <span class="badge"></span></h2>
-    <div class="hint">Scores the new model against your <b>exam</b> clips only.
-      A model is never allowed to mark its own homework.</div>
+    <h2><span class="n">6</span> Did it actually get better? <span class="badge"></span></h2>
+    <p>Marks the new detector against your <b>exam</b> footage &mdash; the videos it
+      was never allowed to learn from.</p>
     <div class="row">
-      <label class="f">Model <select id="w-weights"></select></label>
+      <label class="f">Which model <select id="w-weights"></select></label>
       <button class="go" id="w-score">Score it</button>
     </div>
+    <div class="hint">Results land on the <b>Score</b> tab. The number that matters
+      is how often it finds the ball where <i>you</i> clicked it, compared with the
+      detector you were using before.</div>
+    <div class="hint"><b>A worse score is a real answer, not a failure.</b> Most
+      ideas do not work, and finding that out cheaply is the point of having an exam
+      at all. Nothing is overwritten &mdash; the old detector stays exactly as it was
+      until you choose otherwise.</div>
   </div>
 </section>
 
