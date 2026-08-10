@@ -654,6 +654,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"ok": True, "labeled": n})
 
         handlers = {
+            "/api/lab/trim": self._post_trim,
             "/api/lab/intake": self._post_intake,
             "/api/lab/frames": self._post_frames,
             "/api/lab/calibrate": self._post_calibrate,
@@ -673,6 +674,39 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"error": f"{type(exc).__name__}: {exc}"}, 500)
 
     # -- POST handlers ----------------------------------------------------
+
+    def _post_trim(self, body: dict) -> dict:
+        """Cut a long recording down before anything else touches it.
+
+        Deliberately does NOT register the result: trimming and declaring
+        gold-vs-train are separate decisions, and the second one is irreversible.
+        The trimmed file lands beside the source, so it appears in the video list
+        for the next step.
+        """
+        video_rel = (body.get("video") or "").strip()
+        start, end = (body.get("start") or "0").strip(), (body.get("end") or "").strip()
+        if not video_rel or not end:
+            return {"error": "video and end time are required"}
+        src = (REPO / video_rel).resolve()
+        if not src.is_file():
+            return {"error": f"no such video: {video_rel}"}
+        if PY_CPU is None:
+            return {"error": "backend/.venv not found - it provides ffmpeg"}
+
+        name = (body.get("name") or "").strip()
+        dst = src.with_name((name or (src.stem + "_trim")) + ".mp4")
+        if dst.resolve() == src:
+            return {"error": "the trimmed name matches the source video"}
+        if dst.exists():
+            return {"error": f"{dst.name} already exists - pick another name"}
+
+        cmd = [str(PY_CPU), str(REPO / "tools" / "trim_clip.py"), str(src),
+               "--start", start, "--end", end, "--out", str(dst)]
+        if body.get("fast"):
+            cmd.append("--fast")
+        job = self.jobs.submit("trim", cmd, REPO, meta={"out": dst.name},
+                               label=f"trim {src.name} -> {dst.name}")
+        return {"ok": True, "job": job.id, "out": str(dst.relative_to(REPO))}
 
     def _post_intake(self, body: dict) -> dict:
         video_rel = (body.get("video") or "").strip()
@@ -984,6 +1018,7 @@ LAB_PAGE = r"""<!DOCTYPE html>
   .stp.done .n { background: #2e7d5b; color: #eafff5; }
   .stp.todo { opacity: .45; }
   .stp.todo button, .stp.todo input, .stp.todo select { pointer-events: none; }
+  .sub { margin: 14px 0 4px; padding-top: 12px; border-top: 1px solid #232a35; }
   .badge { float: right; font-size: 12px; font-weight: 600; padding: 3px 10px;
     border-radius: 11px; background: #2a3140; color: #9aa4b2; }
   .stp.done .badge { background: #17392b; color: #7fe0b0; }
@@ -1068,6 +1103,26 @@ LAB_PAGE = r"""<!DOCTYPE html>
     <h2><span class="n">1</span> Add your video <span class="badge"></span></h2>
     <div class="hint">Drop files into <code>data/incoming/</code> and they show up
       in this list.</div>
+
+    <div class="sub">
+      <b>Recorded more than you need? Trim it first.</b>
+      <div class="hint">Optional, but everything after this is faster and cheaper
+        on a short clip &mdash; and your labelling time gets spent on tennis
+        instead of on people walking between points. Times can be
+        <code>90</code>, <code>1:30</code> or <code>1:02:03</code>.</div>
+      <div class="row">
+        <label class="f">Video <select id="w-trimsrc"></select></label>
+        <label class="f">From <input id="w-from" size="8" placeholder="2:00"></label>
+        <label class="f">To <input id="w-to" size="8" placeholder="12:30"></label>
+        <label class="f">Save as <input id="w-trimname" size="14" placeholder="my_match"></label>
+        <button id="w-trim">Trim it</button>
+      </div>
+      <div class="hint">Leaves the original alone and writes a new file next to it,
+        which then appears in the list below. Re-encodes so both ends land where you
+        asked &mdash; a ten-minute cut takes about a minute.</div>
+    </div>
+
+    <div class="sub"><b>Then add it</b></div>
     <div class="row">
       <label class="f">Video <select id="w-video"></select></label>
       <label class="f">Short name <input id="w-id" size="16" placeholder="my_match"></label>
@@ -1414,6 +1469,10 @@ function fillWizard() {
   };
   opts($("#w-video"), (VIDEOS || []).filter(v => !v.registered),
        v => v.video.split("/").pop() + "  (" + v.size_mb + " MB)", v => v.video);
+  // trimming works on ANY video, including one already registered — you may want
+  // a shorter version of a clip you have already added
+  opts($("#w-trimsrc"), VIDEOS || [],
+       v => v.video.split("/").pop() + "  (" + v.size_mb + " MB)", v => v.video);
   opts($("#w-clip"), OV.registry || [],
        r => r.id + "  (" + (r.role === "gold" ? "exam" : "teaching") + ")", r => r.id);
   opts($("#w-weights"), OV.weights || [], w => w.name || w, w => w.name || w);
@@ -1425,6 +1484,15 @@ function fillWizard() {
 
 function wizWire() {
   const go = (btn, fn) => { const b = $(btn); if (b) b.onclick = fn; };
+  go("#w-trim", async () => {
+    const to = $("#w-to").value.trim();
+    if (!to) return alert("Say where to stop — the 'To' box.");
+    const r = await post("/api/lab/trim", { video: $("#w-trimsrc").value,
+      start: $("#w-from").value.trim() || "0", end: to,
+      name: $("#w-trimname").value.trim() });
+    if (r.error) return alert(r.error);
+    watch(r.job);
+  });
   go("#w-add", async () => {
     const r = await post("/api/lab/intake", { video: $("#w-video").value,
       id: $("#w-id").value.trim(), role: $("#w-role").value });
