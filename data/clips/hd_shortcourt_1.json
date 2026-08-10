@@ -1,0 +1,15 @@
+{
+ "id": "hd_shortcourt_1",
+ "role": "gold",
+ "video": "data/incoming/7 UTR vs 8 UTR [UHf0LeMU2pg].mp4",
+ "created": "2026-08-10 22:34:40",
+ "updated": "2026-08-10 22:36:54",
+ "pts_file": "data/hd_shortcourt_1_pts.json",
+ "width": 1920,
+ "height": 1080,
+ "fps": 60.0,
+ "video_frames": 7499,
+ "video_sha1": "309c623a6f14dceeb8c09650062a3b56d7620f1f",
+ "duration_s": 125.0,
+ "size_mb": 27.8
+}

@@ -1,0 +1,21 @@
+{
+ "id": "20260810-223440-228022",
+ "kind": "intake",
+ "label": "validate hd_shortcourt_1",
+ "argv": [
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\backend\\.venv\\Scripts\\python.exe",
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\tools\\validate_new_clip.py",
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\incoming\\7 UTR vs 8 UTR [UHf0LeMU2pg].mp4"
+ ],
+ "cwd": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision",
+ "meta": {
+  "clip": "hd_shortcourt_1"
+ },
+ "status": "done",
+ "rc": 0,
+ "error": null,
+ "created": "2026-08-10 22:34:40",
+ "started": "2026-08-10 22:34:40",
+ "ended": "2026-08-10 22:34:40",
+ "elapsed_s": 0.2
+}

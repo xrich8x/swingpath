@@ -1,0 +1,38 @@
+{
+ "id": "20260810-223521-ae94d2",
+ "kind": "frames",
+ "label": "ball frames: hd_shortcourt_1 -> data/gold",
+ "argv": [
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\backend\\.venv\\Scripts\\python.exe",
+  "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\tools\\select_gold_frames.py",
+  "--video",
+  "data/incoming/7 UTR vs 8 UTR [UHf0LeMU2pg].mp4",
+  "--clip",
+  "hd_shortcourt_1",
+  "--target",
+  "200",
+  "--match",
+  "",
+  "--caches",
+  "--out",
+  "data/gold",
+  "--keypoints",
+  "",
+  "--segments",
+  "0:00-1:00"
+ ],
+ "cwd": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision",
+ "meta": {
+  "clip": "hd_shortcourt_1",
+  "kind": "ball",
+  "pool": "gold",
+  "out": "data/gold"
+ },
+ "status": "done",
+ "rc": 0,
+ "error": null,
+ "created": "2026-08-10 22:35:21",
+ "started": "2026-08-10 22:35:21",
+ "ended": "2026-08-10 22:35:31",
+ "elapsed_s": 9.8
+}
