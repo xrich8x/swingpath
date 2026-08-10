@@ -41,11 +41,20 @@ smallest ball in the pool (TilAFMPc0yg, 3.7 px) was found on 88% of frames; the
 sharpest clip (ewqSn18xdsY) has the highest unsure rate. Do not delete footage
 on this table.
 
-The one finding that IS actionable: at a fixed 512-wide network input, a 1080p
-clip delivers a SMALLER ball to the detector than a 720p one. The two 1080p
-clips here have the largest source balls (11.7, 11.8 px) and among the smallest
-at the input (3.11, 3.14 px), because 1920 -> 512 discards more than 1280 -> 512.
-Recording at higher resolution currently makes this worse, not better.
+A CONFOUND TO AVOID IN THIS TABLE, because it was walked into once
+------------------------------------------------------------------
+`ball_px_at_net` reads lower on the two 1080p clips (3.11, 3.14) than on some
+720p ones (3.69, 4.10), which looks like "higher resolution delivers a smaller
+ball". It is not. The ball subtends a fixed FRACTION of the frame, so a source
+of any width scaled to 512 yields the same pixels: 11.7 px at 1920 wide and
+7.8 px at 1280 wide are the same ball. What the column actually ranks is how
+tightly each camera FRAMED the court — 11.7/1920 = 0.61% of frame width against
+9.2/1280 = 0.72%.
+
+So resolution is NEUTRAL at the network input, matching the standing measurement
+that recording at 1080p or 4K "currently buys nothing" (data/output/
+phase0_ball_ceiling.md). Framing is not neutral: filling the frame with the
+court is worth real ball pixels, and it is free.
 
     py tools/clip_quality.py --dir data/train_clips
     py tools/clip_quality.py --at-human-clicks
