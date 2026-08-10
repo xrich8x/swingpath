@@ -244,6 +244,41 @@ target needs ~700 gaps queued rather than 300. That estimate rests on n=12; the
 before an hour of clicking is committed to it. Clip mix is decided: **even
 round-robin**, the selector's existing behaviour.
 
+## Step 4 — RUN. The mask works; the anchor control has a hole.
+
+90 of 90 labelled. Full read-out in
+[farcourt_anchor_audit.md](../../data/output/farcourt_anchor_audit.md) §6.
+
+**The prediction was half right.** `yt_6jp23ghDY9Q` went from clicking inside the
+scoreboard to clicking **1 px from the tracker's own anchor** once the panel was
+painted out — the mask did exactly its job. `yt_8-BkpjFFIhQ`, which has no mask,
+went from three clicks on empty cloud to three *unsure*: the labeller got more
+careful unprompted. And on the five clips where a ball genuinely exists, the two
+passes reproduce to **0-7 px**.
+
+**What was not predicted, and matters more:** the confirmation rate on the same
+twelve gaps went 42% -> 75%, and inspection says at least two of the four flips
+are the human clicking a static wall mark or a window — on `yt_VZWi6Vf-sX0`, the
+*same* wall mark the tracker locked onto, agreeing to 2-5 px. Across each gap the
+human's clicks moved 1-8 px while the tracker's prior moved 60-583 px.
+
+**The anchor control measures agreement with the tracker, not correctness.** A
+labeller who cannot find the ball tends to click the most ball-like thing in the
+frame, which is what the detector locked onto for the same reasons. This is
+"never let a model grade its own homework" with a human substituted in.
+
+The fix is a rule that has to arrive *before* the click, not a filter after it —
+**a ball in play is somewhere different on every frame** — so it is now the lead
+line on the labelling page and on the Lab's Label tab, along with per-tab
+orientation for all five tabs. Deliberately NOT turned into a threshold: the
+separation looks clean (1-8 px vs 17-116 px) but was found after looking at these
+twelve gaps, so it is pre-registered for the next queue instead of fitted to this
+one.
+
+**Consequence for step 5:** the fresh-gap rate of 78% cannot size the next queue —
+it inherits the same hole. The true rate is somewhere between it and pass 1's
+42%. Sizing waits for one round labelled under the new rule.
+
 ## Out of scope
 
 Ghost-ball work (nine failures; the survivors all have `run_len = 1` and are

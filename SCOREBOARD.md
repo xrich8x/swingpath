@@ -223,7 +223,18 @@ Process failures this project has hit **more than once**. Each cost real work.
    from the right one is worth 21. **When a per-clip split explains a result, check the
    per-FRAME pixels before naming the variable** — clips differ in many ways at once, and
    n=12 clips is one observation of each.
-12. **Reusing a verification method across a change of scale.** The round-trip check for
+12. **Scoring a HUMAN against a model, which is self-grading wearing a disguise.** The
+   far-court queue accepts a labelled gap when the human's click on an anchor agrees
+   with the tracker's position there. On the masked re-run that agreement rate went
+   **42% → 75% on the same twelve gaps** — and inspection showed at least two of the
+   flips were the human clicking a static wall mark or a window, on one clip the *same*
+   mark the tracker had locked onto, agreeing to 2–5 px. A labeller who cannot find the
+   ball clicks the most ball-like thing in the frame, which is what the detector locked
+   onto for the same reasons, so agreement rises while truth does not. The tell was
+   motion: human clicks moved **1–8 px** across a gap where the tracker's own prior moved
+   **60–583 px**. Rule 1 of ML_PRACTICES applies to human graders too — *what independent
+   ground truth is this measured against?*
+13. **Reusing a verification method across a change of scale.** The round-trip check for
    "is this built sample the frame the human labelled?" reached for the dHash that
    verified the window mapping in Session I. That question was ±1600 frames and a
    different scene; this one is ±1 frame on a 60 fps static court, where **every

@@ -132,7 +132,64 @@ short segment by construction, so anchor `b` is dropped on 8 of 12 gaps as an
 artefact of *being* an anchor. It is the wrong instrument for this question, not
 a badly tuned one.
 
-## 6. What this changes about Session J's plan
+## 6. THE RE-RUN — the mask works, and the anchor control has a hole
+
+`farcourt_pilot2`, 30 gaps / 90 frames: the same 12 gaps masked (a controlled
+A/B) interleaved with 18 fresh ones. 77 ball / 8 unsure / 5 no-ball.
+
+**The pre-registered prediction was half right.** It said masking would fix
+frames 0/1/2/7/8 and nothing else.
+
+- `yt_6jp23ghDY9Q` (the clearest HUD case): pass 1 clicked inside the scoreboard
+  at (218, 83); pass 2, with the panel painted out, clicked **(733, 114)** —
+  1 px from the tracker's own anchor. The mask did exactly what it was built to do.
+- `yt_8-BkpjFFIhQ` — which has NO mask — went from three clicks on empty cloud to
+  **unsure, unsure, unsure**. The labeller got more careful on their own.
+- The five clips where a real ball existed reproduced to **0-7 px** across the two
+  passes. That is the useful reliability number: where there is a ball, this
+  labeller is repeatable to a few pixels.
+
+**But the confirmation rate went 42% -> 75% on the SAME twelve gaps, and that is
+not a real improvement.** Four repeat gaps flipped from reject to accept.
+Inspecting them (`farcourt_pilot2` frames, 6x):
+
+| gap | what the human clicked in pass 2 | verdict |
+|---|---|---|
+| `yt_6jp23ghDY9Q` | a pale blob in blue sky, plausibly a lobbed ball at its apex | probably real |
+| `yt_TilAFMPc0yg` | a spot on a building window with nothing visible on it | **not a ball** |
+| `yt_VZWi6Vf-sX0` | a small light mark on a graffiti wall — the SAME mark the tracker locked onto, agreeing to 2-5 px | **not a ball** |
+| `yt_WjHZrIYteDA` | a pale round object resting on the net | a ball, but **not in play** |
+
+The tell is motion. Across each gap's three frames the human's clicks moved
+**1-8 px** while the tracker's own anchor-to-anchor prior moved **60-583 px**.
+Those are two different objects, and on `yt_VZWi6Vf-sX0` they are the same static
+object: the human and the detector found the same wall mark, and the control
+scored that as confirmation.
+
+**THE LESSON, and it is the project's oldest one in a new costume:** the anchor
+control measures AGREEMENT WITH THE TRACKER, not correctness. A labeller who
+cannot find the ball and clicks the most ball-like thing in the frame will tend
+to land on exactly what the detector locked onto — because it is the most
+ball-like thing for the same reasons. Agreement then rises while truth does not.
+Scoring a human against a model has the same failure mode as scoring a model
+against itself.
+
+The fix is not a new filter. The diagnostic is already in the human's own three
+clicks — **a ball in play is somewhere different on every frame** — and it needs
+to reach the labeller BEFORE the click, not a script afterwards. It is now the
+lead rule on the labelling page and on the Lab's Label tab.
+
+NOT converted into a hard threshold on purpose. The separation looks clean
+(bad gaps 1-8 px of human click motion, good gaps 17-116 px) but it was found
+AFTER looking at these twelve, and a cutoff fitted to twelve observations is not
+a control, it is a memory of them. The next session's queue tests it as a
+pre-registered rule.
+
+So the **fresh-gap confirmation rate of 78% must not be used to size the next
+queue** — it inherits the same hole, and its true value is somewhere between that
+and the 42% of pass 1.
+
+## 7. What this changes about Session J's plan
 
 - Blocker 1 (mask the HUD) is real and is done, but it is worth **5 of 36
   labels**, not most of them. See `farcourt_hud_mask.md`.

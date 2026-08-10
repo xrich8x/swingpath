@@ -1070,6 +1070,16 @@ LAB_PAGE = r"""<!DOCTYPE html>
   .dot.done { background: #4caf7d; } .dot.failed { background: #d45; }
   .dot.cancelled { background: #776a33; }
   .hint { font-size: 12px; color: #8b93a1; margin-top: 6px; }
+  /* Per-tab orientation. Every tab used to open straight into controls, so you
+     had to already know what the tab was for to use it. */
+  .lead { background: #191d24; border-left: 3px solid #4a5568; border-radius: 4px;
+          padding: 12px 14px; margin-bottom: 14px; font-size: 13px;
+          line-height: 1.55; color: #c3cad6; }
+  .lead b { color: #e6ecf5; }
+  .lead .oneline { display: block; font-size: 14px; color: #e6ecf5;
+                   font-weight: 600; margin-bottom: 6px; }
+  .lead ol { margin: 8px 0 0; padding-left: 20px; }
+  .lead li { margin: 3px 0; }
   a { color: #8fd6ff; }
 </style>
 </head>
@@ -1245,6 +1255,21 @@ LAB_PAGE = r"""<!DOCTYPE html>
 </section>
 
 <section id="clips">
+  <div class="lead">
+    <span class="oneline">Where footage enters. Nothing else works until a clip is
+      registered here.</span>
+    Registering a video records its resolution, audits its calibration, and — the
+    part that matters — fixes whether it is <b>exam</b> or <b>revision</b>.
+    <ol>
+      <li>Drop files into <code>data/incoming/</code>; they appear in the Video list.</li>
+      <li>Give it a short id you will recognise later (<code>am_indoor2</code>).</li>
+      <li>Pick the role. <b>This is the one decision you cannot undo.</b></li>
+    </ol>
+    <b>Which role?</b> Choose <b>gold</b> for a clip you want to <i>measure</i> on —
+    a few, varied, kept back. Choose <b>train</b> for everything else. When in
+    doubt pick train: you can always register more gold later, but a clip that has
+    been trained on can never become a believable test again.
+  </div>
   <div class="card">
     <h2>Add a clip</h2>
     <div class="row">
@@ -1274,6 +1299,29 @@ LAB_PAGE = r"""<!DOCTYPE html>
 </section>
 
 <section id="label">
+  <div class="lead">
+    <span class="oneline">Where you tell the model what a ball looks like. The four
+      cards below run in order, top to bottom.</span>
+    <ol>
+      <li><b>Cut frames</b> — pull a set of stills out of a clip.</li>
+      <li><b>Focus</b> (optional) — narrow to the hard cases before you start.</li>
+      <li><b>Open the labeller</b> — the actual clicking.</li>
+      <li><b>Build training data</b> — package the clicks so training can use them.</li>
+    </ol>
+    <b>The one rule that decides whether your clicks are worth anything: it has to
+    move.</b> Arrow left and right before you commit. A real ball in play is in a
+    different place on every frame. A pale dot sitting in the <i>same</i> place on
+    three consecutive frames is a wall mark, a light, a bag, or a ball lying on the
+    net — and clicking it is worse than clicking nothing, because that is precisely
+    what the detector already gets wrong. Measured here: on a 30-gap session, four
+    gaps were "confirmed" by clicks on a static object the detector had also locked
+    onto, agreeing to 1&ndash;5&nbsp;px while the ball was elsewhere.
+    <br><br>
+    <b>Not finding it is a real answer.</b> <kbd>N</kbd> (no ball) and
+    <kbd>S</kbd> (unsure) are worth more than a guess. Nobody is scoring you on how
+    many balls you found, and a clicked-anyway frame teaches the model that empty
+    sky is a ball.
+  </div>
   <div class="card">
     <h2>Cut frames to label</h2>
     <div class="row">
@@ -1340,6 +1388,25 @@ LAB_PAGE = r"""<!DOCTYPE html>
 </section>
 
 <section id="train">
+  <div class="lead">
+    <span class="oneline">Where a new detector gets built from the labels you have.
+      One job at a time — there is one GPU.</span>
+    Tick the datasets to train on, choose how long, give the output a new name.
+    <ol>
+      <li><b>Epochs</b> — 15 for "did this footage help at all?" (about an hour),
+        40 for a detector you would actually ship (three to four hours). More than
+        40 has never helped here.</li>
+      <li><b>Save as</b> — always a NEW filename. Weights are cheap; overwriting a
+        model that worked is not.</li>
+      <li>You do not have to sit here. It runs in the background and logs to
+        <b>Jobs</b>.</li>
+    </ol>
+    <b>A run is only interpretable if one thing changed.</b> If you want to know
+    whether a dataset helped, keep the epochs and the seed identical to the run you
+    are comparing against — otherwise the difference could be the random start
+    rather than your labels. That has already cost this project a result it could
+    not attribute.
+  </div>
   <div class="card">
     <h2>Training data</h2>
     <table id="t-data"><tbody></tbody></table>
@@ -1370,6 +1437,26 @@ LAB_PAGE = r"""<!DOCTYPE html>
 </section>
 
 <section id="score">
+  <div class="lead">
+    <span class="oneline">Where you find out whether it actually got better. Every
+      number here is measured against frames a human clicked, never against the
+      model's own output.</span>
+    <ol>
+      <li><b>ball detector, raw</b> — the model alone. Moves the most, matters the
+        least: the pipeline's filters absorb much of what a better detector fixes.</li>
+      <li><b>ball through the shipped chain</b> — what the app would actually draw.
+        <b>This is the one to judge on.</b></li>
+      <li><b>court</b> — classical vs learned keypoint detection.</li>
+    </ol>
+    <b>Read two numbers, never one.</b> <i>Recall</i> is how often it finds the ball;
+    <i>false-fire</i> is how often it draws one that is not there. Either can be made
+    to look excellent by wrecking the other, so a run that improves one and says
+    nothing about the second has told you nothing.
+    <br><br>
+    <b>A worse score is a result, not a failure.</b> Most things tried here have not
+    worked, and knowing that cost far less than shipping them would have. Write the
+    number down and move on.
+  </div>
   <div class="card">
     <h2>Score against human labels</h2>
     <div class="row">
@@ -1395,6 +1482,18 @@ LAB_PAGE = r"""<!DOCTYPE html>
 </section>
 
 <section id="jobs">
+  <div class="lead">
+    <span class="oneline">Everything slow that the Lab has started, with its live
+      output. Nothing to configure here — it is where you watch and where you look
+      when something did not happen.</span>
+    Jobs run <b>one at a time</b>: two training runs would fight over the one GPU,
+    halve each other and make every timing a lie. A queued job is waiting, not stuck.
+    <br><br>
+    Click a job to read its log. Each one also writes
+    <code>data/runs/&lt;id&gt;.log</code> as it goes, so a crash still leaves the
+    evidence behind — if something fails, the answer is in there rather than lost.
+    Closing this page does not stop anything.
+  </div>
   <div class="card">
     <h2>Jobs</h2>
     <div id="j-list"></div>

@@ -866,11 +866,30 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   margin so a frozen scene declares itself unresolvable (col_hard_zheng does, at 0.0149)
   rather than quietly passing. Pinned by a test that corrupts a sample and requires the
   gate to catch it.
-  Steps 4-6 of the brief are NOT run: `data/labels/farcourt_pilot2` (the same 12 gaps,
-  masked) is waiting in the Lab as a controlled test, and scaling to 300-400 gaps needs
-  the user's per-clip weighting decision. **Pre-registered prediction for the re-run:**
-  masking fixes frames 0/1/2/7/8 and NOTHING else, because the other 11 bad clicks are
-  anchor failures. 321 tests (32 new).
+  (7) STEP 4 RUN — the mask works, and the anchor control has a HOLE. `farcourt_pilot2`,
+  30 gaps (the same 12 masked, interleaved with 18 fresh), 90/90 labelled. The
+  pre-registered prediction was HALF RIGHT: yt_6jp23ghDY9Q went from clicking inside the
+  scoreboard to clicking **1 px from the tracker's own anchor** once the panel was painted
+  out, yt_8-BkpjFFIhQ (no mask) went from three clicks on empty cloud to three `unsure`
+  unprompted, and on the five clips where a ball exists the two passes reproduce to
+  **0-7 px**. NOT predicted: the confirmation rate on the SAME twelve gaps went 42% ->
+  75%, and at least two of the four flips are the human clicking a static wall mark or a
+  window — on yt_VZWi6Vf-sX0 the **same** mark the tracker locked onto, agreeing to 2-5 px.
+  Across each gap the human's clicks moved **1-8 px** while the tracker's prior moved
+  **60-583 px**: two different objects. **THE ANCHOR CONTROL MEASURES AGREEMENT WITH THE
+  TRACKER, NOT CORRECTNESS** — a labeller who cannot find the ball clicks the most
+  ball-like thing in the frame, which is what the detector locked onto for the same
+  reasons. That is "never let a model grade its own homework" with a human substituted in
+  (SCOREBOARD trap 12). The fix has to arrive BEFORE the click, not as a filter after it:
+  **a ball in play is somewhere different on every frame** is now the lead rule on the
+  labelling page and the Lab's Label tab, with per-tab orientation added to all five tabs
+  (rendered and checked in a browser, no console errors). DELIBERATELY NOT turned into a
+  threshold — the separation looks clean (1-8 px vs 17-116 px) but was found after looking
+  at these twelve gaps, so it is pre-registered for the next queue rather than fitted to
+  this one. CONSEQUENCE: the fresh-gap rate of 78% CANNOT size the next queue; it inherits
+  the same hole and the true value sits between it and pass 1's 42%.
+  Steps 5-6 are NOT run: sizing waits for one round labelled under the new rule. Clip mix
+  is decided — even round-robin. 326 tests (37 new).
 
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 

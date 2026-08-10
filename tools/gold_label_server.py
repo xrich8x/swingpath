@@ -237,6 +237,12 @@ PAGE = r"""<!DOCTYPE html>
   #status .uns { color: #e6d38a; }
   footer { text-align: center; color: #8b93a1; padding: 8px 16px 20px;
            font-size: 13px; }
+  /* The rule that decides whether a click is worth anything. It lives on the
+     labelling page, not in a doc, because that is where the judgement is made. */
+  .rule { max-width: 760px; margin: 10px auto 0; text-align: left;
+          background: #191d24; border-left: 3px solid #4a5568; border-radius: 4px;
+          padding: 10px 12px; line-height: 1.55; color: #c3cad6; }
+  .rule b { color: #e6ecf5; }
   kbd { background: #262c37; border: 1px solid #39404d; border-radius: 4px;
         padding: 0 5px; font-family: inherit; }
   #done { display: none; text-align: center; font-size: 17px; color: #7fd6a4;
@@ -268,6 +274,13 @@ PAGE = r"""<!DOCTYPE html>
   Truly can't decide &rarr; <kbd>S</kbd>.
   <kbd>&larr;</kbd><kbd>&rarr;</kbd> move &middot; <kbd>U</kbd> clear this frame &middot;
   <kbd>+</kbd>/<kbd>&minus;</kbd> magnifier zoom
+  <div class="rule"><b>It has to move.</b> Arrow left and right before you commit.
+    A ball in play is somewhere different on every frame; a pale dot in the
+    <i>same</i> place on three frames is a wall mark, a light, a bag, or a ball
+    lying on the net. Clicking one of those is worse than clicking nothing — it is
+    exactly the mistake the detector already makes, and your click would teach it
+    that the mistake is right. <b><kbd>N</kbd> and <kbd>S</kbd> beat a guess.</b>
+    Nothing counts how many balls you found.</div>
 </footer>
 <script>
 "use strict";
