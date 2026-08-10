@@ -93,8 +93,8 @@ data/court_testset/
 data/gold/frames/
 # Same split for the TRAIN pool: the human CLICKS are the irreplaceable part and
 # are committed; the frame copies are not, because select_farcourt_labels.py
-# regenerates them from data/ball_dataset. Note that dataset is itself untracked
-# and its source videos are gone — see the backup note in SCOREBOARD.
+# re-extracts them from the source videos in data/train_clips/ (which are
+# themselves untracked — see the backup note in SCOREBOARD).
 data/labels/frames/
 
 # Throwaway probe scripts from a working session (a real tool belongs in tools/)

@@ -76,3 +76,35 @@ def test_round_robin_spreads_across_clips_rather_than_draining_the_biggest(tmp_p
 def test_round_robin_returns_everything_when_asked_for_more_than_exists(tmp_path):
     few = [("a", i, None, i, None, i, None) for i in range(2)]
     assert len(sel.round_robin(few, 50)) == 2
+
+
+# --- dataset index -> source video frame -------------------------------------
+# Labelling happens on the SOURCE video (720p/1080p), not the 512x288 network
+# input where a far ball is ~1.6 px. Getting this arithmetic wrong would put the
+# labeller on a frame from a different moment and silently poison the labels, so
+# it is verified against the pixels in the tool and pinned here.
+
+WS = [0, 1200, 2400]           # processed index of each window seam
+STARTS = [1213, 2846, 4479]    # source frame each window began at
+
+
+def test_first_frame_of_each_window_maps_to_that_window_start():
+    for w, s in zip(WS, STARTS):
+        assert sel.source_frame(w, WS, STARTS, 2) == s
+
+
+def test_within_a_window_the_source_advances_by_the_frame_step():
+    """relabel_train_clips grabs step-1 frames then reads, so processed frame k
+    is source start + k*step — a 60 fps clip sampled at 30."""
+    assert sel.source_frame(5, WS, STARTS, 2) == 1213 + 10
+    assert sel.source_frame(1205, WS, STARTS, 2) == 2846 + 10
+
+
+def test_step_one_clips_advance_one_for_one():
+    assert sel.source_frame(7, WS, STARTS, 1) == 1220
+
+
+def test_the_frame_just_before_a_seam_belongs_to_the_earlier_window():
+    """Off by one here would jump ~1600 source frames to another moment."""
+    assert sel.source_frame(1199, WS, STARTS, 2) == 1213 + 1199 * 2
+    assert sel.source_frame(1200, WS, STARTS, 2) == 2846

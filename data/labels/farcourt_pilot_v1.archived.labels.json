@@ -1,0 +1,52 @@
+{
+ "clip": "farcourt_pilot_v1",
+ "archived_from": "data/labels/farcourt_pilot.labels.json",
+ "why": "Human clicks against the FIRST pilot manifest, which showed 512x288 network-input JPEGs. That manifest was rebuilt in place at source resolution, so these frame numbers no longer mean what they meant. Kept because they are human ground truth and were the evidence that the frames were too small to label.",
+ "coord_space": "512x288 (the frame as shown)",
+ "created": "2026-08-10 14:47:20",
+ "labels": {
+  "0": {
+   "ball": false,
+   "t": "2026-08-10 14:47:20",
+   "refers_to": {
+    "src_dataset": "amateur",
+    "src_frame": 80,
+    "bucket": "anchor",
+    "prior": [
+     122.8,
+     116.4
+    ]
+   }
+  },
+  "1": {
+   "ball": true,
+   "x": 284.9,
+   "y": 82.6,
+   "t": "2026-08-10 14:47:22",
+   "refers_to": {
+    "src_dataset": "amateur",
+    "src_frame": 82,
+    "bucket": "farcourt_gap",
+    "prior": [
+     182.2,
+     102.2
+    ]
+   }
+  },
+  "2": {
+   "ball": true,
+   "x": 301.8,
+   "y": 107.4,
+   "t": "2026-08-10 14:47:26",
+   "refers_to": {
+    "src_dataset": "amateur",
+    "src_frame": 84,
+    "bucket": "anchor",
+    "prior": [
+     241.7,
+     87.9
+    ]
+   }
+  }
+ }
+}

@@ -32,15 +32,31 @@ gap. They cost clicks but earn them three times over:
   * A CHECK ON THE PSEUDO-LABELS — the anchors ARE tracker output, so a human
     disagreeing with one is a mislabelled training positive.
 
+LABEL AT SOURCE RESOLUTION, NOT AT 512x288
+------------------------------------------
+`data/ball_dataset/` holds 512x288 JPEGs — the network's input size — and a far
+ball is ~1.6 px there, which is not clickable. The SOURCE videos survive in
+`data/train_clips/` at 720p and 1080p, so this extracts from those instead: 2.5x
+to 3.75x more linear resolution on the thing the labeller has to find.
+
+Recovering the source frame is exact and pinned by a test. `relabel_train_clips`
+builds each directory from `n_windows` windows of `window_len` processed frames,
+sampling every `step`-th source frame, and records the processed index of each
+seam in `window_starts`. The source starts are recomputed with the same
+`np.linspace(0.15*total, 0.85*total - span, n)` and verified against the pixels:
+
+    dataset index i, in window w  ->  source frame  starts[w] + (i - window_starts[w]) * step
+
+Two directories (`amateur`, `highangle`) came from a different pipeline with no
+recorded video; they fall back to the 512x288 JPEG and are flagged in the manifest.
+
 THE PREMISE THIS PILOT TESTS, WHICH IS NOT YET ESTABLISHED
 -----------------------------------------------------------
-The source videos for all 14 training clips are GONE; only 512x288 extracted JPEGs
-survive. A far ball is ~1.6 px at that width. Spot checks show the interpolated
-point often landing on background the same colour as the ball (white ball on white
-signage, dark ball on dark wall) — plausibly why the detector missed it, and
-plausibly why a human will too. **Run a small --gaps first and see whether the ball
-is visibly there before committing hours.** If it is not, this data cannot be
-labelled at all and the fix is new footage, not more clicking.
+Spot checks show the interpolated point often landing on background the same
+colour as the ball (white ball on white signage, dark ball on dark wall) —
+plausibly why the detector missed it, and plausibly why a human will too. **Run a
+small --gaps first and see whether the ball is visibly there before committing
+hours.** If it is not even at source resolution, the fix is new footage.
 
     py tools/select_farcourt_labels.py --gaps 10          # ~30 frames, a pilot
     py tools/lab_server.py                                # label them, Label tab
@@ -99,6 +115,40 @@ def candidates(data_root: Path, max_gap: int = MAX_GAP):
     return out
 
 
+def source_map(dataset_dir: Path, clips_root: Path):
+    """(video_path, window_starts, source_starts, step, (W, H)) or None.
+
+    Exact inverse of relabel_train_clips' window sampler. Verified against the
+    pixels rather than trusted: see tests/test_farcourt_selection.py.
+    """
+    import cv2
+    import numpy as np
+
+    d = json.loads((dataset_dir / "labels.json").read_text(encoding="utf-8"))
+    pv = d.get("provenance") or {}
+    name, ws = pv.get("video"), d.get("window_starts") or []
+    if not name or not ws:
+        return None                       # a different pipeline; no video recorded
+    vid = clips_root / name
+    if not vid.is_file():
+        return None
+    step = int(pv.get("frame_step") or 1)
+    window_len = ws[1] - ws[0] if len(ws) > 1 else d.get("n_frames", 0)
+    cap = cv2.VideoCapture(str(vid))
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    wh = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    cap.release()
+    span = window_len * step
+    starts = np.linspace(0.15 * total, max(0.15 * total, 0.85 * total - span),
+                         len(ws)).astype(int).tolist()
+    return str(vid), ws, starts, step, wh
+
+
+def source_frame(idx: int, ws, starts, step) -> int:
+    w = bisect.bisect_right(ws, idx) - 1
+    return starts[w] + (idx - ws[w]) * step
+
+
 def round_robin(cands, n):
     """Take from each clip in turn so no clip dominates the queue."""
     by = {}
@@ -120,6 +170,10 @@ def round_robin(cands, n):
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--data", default=str(REPO / "data/ball_dataset"))
+    ap.add_argument("--clips", default=str(REPO / "data/train_clips"),
+                    help="where the SOURCE videos live. Labelling a 1.6 px ball on "
+                         "the 512x288 network-input JPEG is not possible; these are "
+                         "720p/1080p")
     ap.add_argument("--out", default=str(REPO / "data/labels"))
     ap.add_argument("--clip", default="farcourt_pilot",
                     help="name of the queue; becomes <clip>.manifest.json")
@@ -129,6 +183,14 @@ def main() -> None:
     ap.add_argument("--with-anchors", dest="anchors", action="store_true", default=True)
     ap.add_argument("--no-anchors", dest="anchors", action="store_false")
     ap.add_argument("--max-gap", type=int, default=MAX_GAP)
+    ap.add_argument("--force", action="store_true",
+                    help="overwrite a queue that already has human labels against "
+                         "it. Renumbers frames, so the labels stop meaning what "
+                         "they meant — archive them first")
+    ap.add_argument("--allow-native", action="store_true",
+                    help="also queue directories with no source video, at 512x288. "
+                         "OFF by default: mixing a 1.6 px ball in with 720p frames "
+                         "makes 'could you see it?' unanswerable")
     args = ap.parse_args()
 
     out = Path(args.out)
@@ -138,35 +200,89 @@ def main() -> None:
     from train_ballnet import assert_no_gold_leak
     assert_no_gold_leak(args.data, exclude=())
 
+    # Rebuilding a manifest in place RENUMBERS its frames, so any clicks already
+    # made against it silently come to mean a different frame. This happened once
+    # and cost three human labels; they were recoverable only because the old
+    # frame list was still in the session. Never again without an explicit --force.
+    existing = out / f"{args.clip}.labels.json"
+    if existing.is_file() and not args.force:
+        n = len(json.loads(existing.read_text(encoding="utf-8")).get("labels") or {})
+        raise SystemExit(
+            f"{existing} already holds {n} human label(s) keyed to the CURRENT frame "
+            f"numbering of {args.clip}. Rebuilding renumbers them and the labels "
+            f"would silently point at different frames.\n"
+            f"  Use --clip <another name> for a new queue, or --force to overwrite "
+            f"after archiving those labels yourself.")
+
     cands = candidates(Path(args.data), args.max_gap)
     print(f"{len(cands)} bracketed far-court gaps in {args.data}")
+    if not args.allow_native:
+        keep = {d for d in {c[0] for c in cands}
+                if source_map(Path(d), Path(args.clips)) is not None}
+        dropped = sorted({os.path.basename(c[0]) for c in cands if c[0] not in keep})
+        cands = [c for c in cands if c[0] in keep]
+        if dropped:
+            print(f"  skipped (no source video, would be 512x288): {dropped} "
+                  f"-> {len(cands)} gaps from {len(keep)} clips")
     picked = round_robin(cands, args.gaps)
     if not picked:
         raise SystemExit("no candidates")
 
+    import cv2
     frames_dir = out / "frames" / args.clip
     frames_dir.mkdir(parents=True, exist_ok=True)
-    rows, idx = [], 0
+    maps, caps = {}, {}
+    rows, idx, native = [], 0, 0
+    # Every frame must land at the SAME size or the labeller's canvas resizes
+    # between frames and the click scaling differs per frame. Take the largest
+    # source we are queueing and letterbox nothing — just record per-frame size.
     for d, a, pa, m, pm, b, pb in picked:
+        if d not in maps:
+            maps[d] = source_map(Path(d), Path(args.clips))
         trio = [(a, pa, "anchor"), (m, pm, "farcourt_gap"), (b, pb, "anchor")]
         for src, (px, py), bucket in (trio if args.anchors else trio[1:2]):
-            s = Path(d) / f"{src:05d}.jpg"
-            if not s.is_file():
-                continue
-            shutil.copyfile(s, frames_dir / f"f{idx:05d}.jpg")
+            sm = maps[d]
+            img = None
+            if sm is not None:
+                vid, ws, starts, step, (W, H) = sm
+                sf = source_frame(src, ws, starts, step)
+                cap = caps.get(vid) or cv2.VideoCapture(vid)
+                caps[vid] = cap
+                cap.set(cv2.CAP_PROP_POS_FRAMES, sf)
+                ok, fr = cap.read()
+                if ok:
+                    img = fr
+                    sx, sy = W / IN_W, H / IN_H       # 512x288 prior -> source px
+                    px, py, srcinfo = px * sx, py * sy, {"video": os.path.basename(vid),
+                                                         "video_frame": sf}
+            if img is None:                            # no video recorded for this dir
+                img = cv2.imread(str(Path(d) / f"{src:05d}.jpg"))
+                srcinfo = {"video": None, "video_frame": None}
+                native += 1
+                if img is None:
+                    continue
+            cv2.imwrite(str(frames_dir / f"f{idx:05d}.jpg"), img,
+                        [cv2.IMWRITE_JPEG_QUALITY, 95])
             rows.append({"frame": idx, "bucket": bucket,
-                         # provenance so a click can be traced back to the frame
-                         # it came from — these are renumbered, not source indices
+                         # provenance so a click can be traced back — these are
+                         # renumbered, not source indices
                          "src_dataset": os.path.basename(d), "src_frame": src,
-                         # what the tracker/interpolation thinks; the UI does not
-                         # show it, so it cannot bias the click
+                         "width": img.shape[1], "height": img.shape[0], **srcinfo,
+                         # what the tracker/interpolation thinks, in THIS frame's
+                         # pixels. The UI never shows it, so it cannot bias a click.
                          "prior_x": round(px, 1), "prior_y": round(py, 1)})
             idx += 1
+    for c in caps.values():
+        c.release()
 
+    sizes = sorted({(r["width"], r["height"]) for r in rows})
     man = {"clip": args.clip, "video": None,
-           "source": "data/ball_dataset extracted frames; the source videos for "
-                     "these clips no longer exist, so 512x288 is all there is",
-           "width": IN_W, "height": IN_H, "fps": None, "video_frames": idx,
+           "source": "source videos in data/train_clips at native resolution; "
+                     f"{native} frames fell back to the 512x288 dataset JPEG "
+                     "(no video recorded for that directory)",
+           "frame_sizes": [f"{w}x{h}" for w, h in sizes],
+           "width": sizes[-1][0], "height": sizes[-1][1],
+           "fps": None, "video_frames": idx,
            "created": time.strftime("%Y-%m-%d %H:%M:%S"),
            "params": {"tool": "select_farcourt_labels.py", "gaps": len(picked),
                       "max_gap": args.max_gap, "far_frac": FAR_FRAC,

@@ -286,8 +286,17 @@ function imgFor(f, cb) {
   im.addEventListener("load", () => cb(im));
 }
 
+// Scale UP to fill the window, not just down to fit it. This capped at 1x, which
+// was invisible while every clip was 1280x720 and crippling the moment one was
+// not: the far-court training frames are 512x288 (their source videos are gone),
+// so they rendered at a fifth of the screen and the ball was unfindable for a
+// reason that had nothing to do with the ball. Upscaling adds no information, but
+// the loupe magnifies from the NATURAL pixels either way, and clicks are stored in
+// natural coordinates (see the naturalWidth/r.width conversion below), so display
+// scale cannot affect label accuracy. Capped at 4x so a small frame does not turn
+// into a wall of blur. The court labeller in this same file always did this.
 function fitScale(im) {
-  const w = Math.min(im.naturalWidth, window.innerWidth - 40);
+  const w = Math.min(im.naturalWidth * 4, window.innerWidth - 40);
   return w / im.naturalWidth;
 }
 
