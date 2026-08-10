@@ -83,6 +83,37 @@ CAVEAT on n: 73 interpolated positions is a small sample, set by how often a hum
 click and a bridged frame coincide. It is ample for "63% is not good enough for a
 label" and too small for a precise figure. Do not quote the per-bin percentages.
 
+## 2b. PILOT RESULT — the frames are labelable, but a HUD ball icon poisons them
+
+12 gaps / 36 frames, one per clip, at source resolution (`data/labels/
+farcourt_pilot.*`). The labeller found a ball on **10 of 12 gap frames** and 19 of
+24 anchors, so the frames ARE readable at 720p/1080p — the earlier 512x288 attempt
+failed on resolution, not on the ball being absent.
+
+**But split by clip, the result is two different results.** On the four clips with
+a burned-in scoreboard graphic, every click landed on the little **tennis-ball icon
+inside the scoreboard** (top-left, 200-300 px), 400-650 px from the real ball. On
+the clips without one, the human landed **0.6-7.2 px** from the tracker:
+
+| clip | HUD? | human vs tracker |
+|---|---|---|
+| yt_6jp23ghDY9Q, yt_8-BkpjFFIhQ, yt_RZ_wyJ9rI3Q, yt_WjHZrIYteDA | yes | 112-645 px |
+| yt_am_dbl_classb, yt_col_hard_zheng, yt_nQan0M5JDM8, yt_tC0z7FYvMks | no | **0.6-7.2 px** |
+
+Two consequences.
+
+1. **These pilot labels must NOT be built into a dataset.** Roughly a third of them
+   place a ball on a scoreboard graphic, which is precisely the confuser the
+   detector already fires on. They are kept as evidence, not as training data.
+2. **The queue must mask or crop burned-in graphics before a human sees it.** This
+   is the same HUD-confuser family the project has known about since the demo30
+   investigation; it had simply never been on the *labelling* side before. Until
+   that exists, a labelling session on HUD footage produces negative value.
+
+The clean-clip agreement is the genuinely good news: where nothing impersonates the
+ball, a human and the tracker agree to within a few pixels, so the anchors are
+sound and the exercise is worth repeating once masking is in.
+
 ## 3. What follows
 
 1. **Human far-court labels are genuinely required.** That was an assumption in

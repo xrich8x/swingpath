@@ -973,6 +973,21 @@ LAB_PAGE = r"""<!DOCTYPE html>
   .tab { padding: 9px 18px; cursor: pointer; border: none; background: none;
          color: #8b93a1; font: inherit; border-bottom: 2px solid transparent; }
   .tab.on { color: #dfe4ea; border-bottom-color: #8fd6ff; font-weight: 600; }
+  /* The guided flow. A step you cannot do yet is dimmed rather than hidden, so
+     the whole path stays visible and nothing appears out of nowhere. */
+  .stp { position: relative; }
+  .stp .n { display: inline-flex; width: 26px; height: 26px; border-radius: 50%;
+    align-items: center; justify-content: center; margin-right: 9px;
+    background: #2a3140; color: #9aa4b2; font-size: 14px; font-weight: 700; }
+  .stp.now { border-color: #8fd6ff; box-shadow: 0 0 0 1px #8fd6ff33; }
+  .stp.now .n { background: #8fd6ff; color: #10141b; }
+  .stp.done .n { background: #2e7d5b; color: #eafff5; }
+  .stp.todo { opacity: .45; }
+  .stp.todo button, .stp.todo input, .stp.todo select { pointer-events: none; }
+  .badge { float: right; font-size: 12px; font-weight: 600; padding: 3px 10px;
+    border-radius: 11px; background: #2a3140; color: #9aa4b2; }
+  .stp.done .badge { background: #17392b; color: #7fe0b0; }
+  .stp.now .badge { background: #10314a; color: #8fd6ff; }
   main { padding: 20px; max-width: 1180px; }
   section { display: none; } section.on { display: block; }
   .card { background: #1a1e25; border: 1px solid #39404d; border-radius: 8px;
@@ -1031,7 +1046,8 @@ LAB_PAGE = r"""<!DOCTYPE html>
   <span id="devnote" class="muted"></span>
 </header>
 <div class="tabs">
-  <button class="tab on" data-t="clips">Clips</button>
+  <button class="tab on" data-t="start">Start here</button>
+  <button class="tab" data-t="clips">Clips</button>
   <button class="tab" data-t="label">Label</button>
   <button class="tab" data-t="train">Train</button>
   <button class="tab" data-t="score">Score</button>
@@ -1039,7 +1055,97 @@ LAB_PAGE = r"""<!DOCTYPE html>
 </div>
 <main>
 
-<section id="clips" class="on">
+<section id="start" class="on">
+  <div class="card">
+    <h2>Teach the model your footage</h2>
+    <div class="hint">Six steps, top to bottom. Each one lights up when the one
+      before it is done, so you never have to remember the order. Everything here
+      is also available on the other tabs with more knobs &mdash; this is the same
+      thing with the decisions already made.</div>
+  </div>
+
+  <div class="card stp" id="stp1">
+    <h2><span class="n">1</span> Add your video <span class="badge"></span></h2>
+    <div class="hint">Drop files into <code>data/incoming/</code> and they show up
+      in this list.</div>
+    <div class="row">
+      <label class="f">Video <select id="w-video"></select></label>
+      <label class="f">Short name <input id="w-id" size="16" placeholder="my_match"></label>
+      <label class="f">What is it for?
+        <select id="w-role">
+          <option value="train">Teaching &mdash; the model learns from it</option>
+          <option value="gold">Exam &mdash; the model is scored on it, never learns from it</option>
+        </select></label>
+      <button class="go" id="w-add">Add it</button>
+    </div>
+    <div class="warnbox"><b>This choice cannot be undone.</b> Exam footage is how
+      you find out whether the model actually got better. If it ever gets trained
+      on, every score it produces afterwards is meaningless. If you are unsure,
+      pick <b>Teaching</b> &mdash; you can always add a different video as the exam.</div>
+  </div>
+
+  <div class="card stp" id="stp2">
+    <h2><span class="n">2</span> Pick the frames you will look at <span class="badge"></span></h2>
+    <div class="hint">You cannot label an hour of video. This picks a spread of
+      frames worth your time.</div>
+    <div class="row">
+      <label class="f">Clip <select id="w-clip"></select></label>
+      <label class="f">How many <input id="w-count" type="number" value="200" min="5" max="2000" size="6"></label>
+      <label class="f">Only these times <span class="muted">(optional)</span>
+        <input id="w-seg" size="22" placeholder="2:00-2:20, 7:30-7:50"></label>
+      <button class="go" id="w-cut">Pick frames</button>
+    </div>
+    <div class="hint"><b>Long recording?</b> Put two or three rally time ranges in
+      the box. Otherwise most of your clicks get spent on people walking between
+      points.</div>
+  </div>
+
+  <div class="card stp" id="stp3">
+    <h2><span class="n">3</span> Click the ball <span class="badge"></span></h2>
+    <div class="hint">A magnifier follows your mouse; <kbd>+</kbd> and <kbd>&minus;</kbd>
+      zoom it. If there is no ball in play, say so &mdash; those frames are worth
+      as much as the others. If you genuinely cannot tell, mark it unsure rather
+      than guessing.</div>
+    <div class="warnbox">Some footage has a <b>burned-in scoreboard with a little
+      tennis-ball icon</b> in a corner. It is not the ball. Ignore anything that
+      does not move between frames.</div>
+    <div class="row"><button class="go" id="w-label">Open the labeller &rarr;</button>
+      <span id="w-label-note" class="muted"></span></div>
+  </div>
+
+  <div class="card stp" id="stp4">
+    <h2><span class="n">4</span> Turn your clicks into training data <span class="badge"></span></h2>
+    <div class="hint">One button. Cuts your labelled frames into the format the
+      model reads.</div>
+    <div class="row"><button class="go" id="w-build">Build it</button></div>
+  </div>
+
+  <div class="card stp" id="stp5">
+    <h2><span class="n">5</span> Train <span class="badge"></span></h2>
+    <div class="hint">This is the slow part &mdash; hours, not minutes. It runs in
+      the background and you can close this page; watch it on the Jobs tab.</div>
+    <div class="row">
+      <label class="f">How long
+        <select id="w-epochs">
+          <option value="15">Quick look (~2 h) &mdash; is this idea working?</option>
+          <option value="40" selected>Proper run (~6 h) &mdash; a model you could ship</option>
+        </select></label>
+      <button class="go" id="w-train">Start training</button>
+    </div>
+  </div>
+
+  <div class="card stp" id="stp6">
+    <h2><span class="n">6</span> Find out if it got better <span class="badge"></span></h2>
+    <div class="hint">Scores the new model against your <b>exam</b> clips only.
+      A model is never allowed to mark its own homework.</div>
+    <div class="row">
+      <label class="f">Model <select id="w-weights"></select></label>
+      <button class="go" id="w-score">Score it</button>
+    </div>
+  </div>
+</section>
+
+<section id="clips">
   <div class="card">
     <h2>Add a clip</h2>
     <div class="row">
@@ -1206,7 +1312,7 @@ LAB_PAGE = r"""<!DOCTYPE html>
 const $ = (s) => document.querySelector(s);
 const el = (t, c, txt) => { const e = document.createElement(t);
   if (c) e.className = c; if (txt !== undefined) e.textContent = txt; return e; };
-let OV = null, watching = null, offset = 0, logTimer = null;
+let OV = null, watching = null, offset = 0, logTimer = null, RESULTS = [], VIDEOS = [];
 
 async function get(u) { const r = await fetch(u); return r.json(); }
 async function post(u, b) {
@@ -1224,6 +1330,137 @@ document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
 
 function fmt(n, d) { return n === null || n === undefined ? "–" : Number(n).toFixed(d === undefined ? 1 : d); }
 
+// ---- the guided flow -------------------------------------------------------
+// Everything here is DERIVED from the overview, never stored. The wizard has no
+// state of its own to fall out of sync with the tabs: pick a clip on the Clips
+// tab and this reflects it, and vice versa.
+function wizClip() {
+  const s = $("#w-clip");
+  return s && s.value ? s.value : null;
+}
+function wizStatus() {
+  const clip = wizClip();
+  const reg = (OV.registry || []).find(r => r.id === clip) || null;
+  const pool = reg && reg.role === "gold" ? (OV.gold_ball || []) : (OV.train_ball || []);
+  const lab = pool.find(c => c.clip === clip) || null;
+  const ds = (OV.datasets || []).find(d => (d.name || d.dataset) === clip) || null;
+  return {
+    clip, reg, role: reg ? reg.role : null,
+    frames: lab ? (lab.total || 0) : 0,
+    labelled: lab ? (lab.labelled || 0) : 0,
+    dataset: ds,
+    weights: (OV.weights || []).length,
+    results: (RESULTS || []).length,
+  };
+}
+function renderWizard() {
+  const st = wizStatus();
+  // A step is DONE on evidence, not on "you clicked the button" — reopening the
+  // page mid-flow has to land you in the right place.
+  const done = [
+    (OV.registry || []).length > 0,
+    st.frames > 0,
+    st.labelled > 0,
+    !!st.dataset,
+    st.weights > 0,
+    st.results > 0,
+  ];
+  const note = [
+    (OV.registry || []).length + " clip(s) added",
+    st.frames ? st.frames + " frames ready" : "no frames yet",
+    st.labelled ? st.labelled + " of " + st.frames + " clicked" : "not started",
+    st.dataset ? "built" : "not built",
+    st.weights ? st.weights + " model(s)" : "none trained",
+    st.results ? st.results + " result(s)" : "not scored",
+  ];
+  // The current step is the first not-done one; everything after it is locked.
+  let cur = done.findIndex(d => !d);
+  if (cur < 0) cur = done.length - 1;
+  // A later step cannot read as done while an earlier one is not. Steps 5 and 6
+  // count models and results across the WHOLE lab, which may predate this flow
+  // entirely — without this the page cheerfully says "train: done" to someone who
+  // has not yet added a video.
+  for (let i = cur + 1; i < done.length; i++) done[i] = false;
+  for (let i = 0; i < 6; i++) {
+    const c = $("#stp" + (i + 1));
+    if (!c) continue;
+    c.classList.remove("done", "now", "todo");
+    c.classList.add(done[i] ? "done" : (i === cur ? "now" : "todo"));
+    const b = c.querySelector(".badge");
+    b.textContent = done[i] ? "done · " + note[i]
+                            : (i === cur ? "do this now" : "waiting");
+  }
+  const ln = $("#w-label-note");
+  if (ln) ln.textContent = !st.clip ? "add a clip first"
+    : st.reg ? (st.role === "gold" ? "exam pool" : "teaching pool") + " · " + st.clip
+             : st.clip;
+}
+
+function fillWizard() {
+  // unregistered videos -> step 1; registered clips -> step 2; models -> step 6
+  const keep = s => s && s.value;
+  const opts = (sel, items, label, value) => {
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = "";
+    items.forEach(it => { const o = el("option", null, label(it));
+                          o.value = value(it); sel.appendChild(o); });
+    if (!items.length) {
+      // an empty VALUE, so wizClip() reports "nothing selected" rather than
+      // handing the placeholder text to the API as a clip id
+      const o = el("option", null, "— none —"); o.value = ""; sel.appendChild(o);
+    }
+    if (prev && items.some(it => value(it) === prev)) sel.value = prev;
+  };
+  opts($("#w-video"), (VIDEOS || []).filter(v => !v.registered),
+       v => v.video.split("/").pop() + "  (" + v.size_mb + " MB)", v => v.video);
+  opts($("#w-clip"), OV.registry || [],
+       r => r.id + "  (" + (r.role === "gold" ? "exam" : "teaching") + ")", r => r.id);
+  opts($("#w-weights"), OV.weights || [], w => w.name || w, w => w.name || w);
+  const vs = $("#w-video"), id = $("#w-id");
+  if (vs && id) vs.onchange = () => { if (!keep(id))
+    id.value = vs.value.split("/").pop().replace(/\\.mp4$/, ""); };
+  const c = $("#w-clip"); if (c) c.onchange = renderWizard;
+}
+
+function wizWire() {
+  const go = (btn, fn) => { const b = $(btn); if (b) b.onclick = fn; };
+  go("#w-add", async () => {
+    const r = await post("/api/lab/intake", { video: $("#w-video").value,
+      id: $("#w-id").value.trim(), role: $("#w-role").value });
+    if (r.error) return alert(r.error);
+    watch(r.job); await refresh();
+  });
+  go("#w-cut", async () => {
+    const r = await post("/api/lab/frames", { id: wizClip(), kind: "ball",
+      count: +$("#w-count").value, segments: $("#w-seg").value });
+    if (r.error) return alert(r.error);
+    watch(r.job);
+  });
+  go("#w-label", () => {
+    const st = wizStatus();
+    // the pool is decided by the clip's role, never by the user picking a button
+    location.href = st.role === "gold" ? "/label" : "/train/label";
+  });
+  go("#w-build", async () => {
+    const r = await post("/api/lab/human_dataset", { id: wizClip() });
+    if (r.error) return alert(r.error);
+    watch(r.job);
+  });
+  go("#w-train", async () => {
+    const r = await post("/api/lab/train", { model: "ballnet",
+      epochs: +$("#w-epochs").value, out: (OV.suggest || {}).ballnet, exclude: [] });
+    if (r.error) return alert(r.error);
+    watch(r.job);
+  });
+  go("#w-score", async () => {
+    const r = await post("/api/lab/eval", { kind: "ball",
+      weights: $("#w-weights").value, clip: null });
+    if (r.error) return alert(r.error);
+    watch(r.job);
+  });
+}
+
 async function refresh() {
   OV = await get("/api/lab/overview");
   const ip = OV.interpreters;
@@ -1233,7 +1470,7 @@ async function refresh() {
   $("#devnote").className = (ip.train && ip.cpu) ? "muted" : "bad";
 
   // videos
-  const vs = await get("/api/lab/videos");
+  const vs = VIDEOS = await get("/api/lab/videos");
   const sel = $("#v-video"); sel.innerHTML = "";
   vs.filter(v => !v.registered).forEach(v => {
     const o = el("option", null, v.video + "  (" + v.size_mb + " MB)");
@@ -1369,6 +1606,8 @@ async function refresh() {
   if (!$("#t-out").value) suggestName();
   $("#t-model").onchange = suggestName;
   renderSession();
+  fillWizard();
+  renderWizard();
 }
 
 function suggestName() {
@@ -1523,6 +1762,7 @@ async function refreshJobs() {
 
 async function loadResults() {
   const rows = await get("/api/lab/results");
+  RESULTS = rows;                       // step 6 of the guided flow reads this
   const box = $("#e-results"); box.innerHTML = "";
   if (!rows.length) { box.appendChild(el("p", "muted", "No runs yet.")); return; }
   rows.forEach(r => {
@@ -1553,7 +1793,9 @@ async function loadResults() {
   });
 }
 
-refresh().then(() => { refreshJobs(); loadResults(); });
+wizWire();
+// loadResults populates RESULTS, which step 6 reads — re-render once it lands.
+refresh().then(() => { refreshJobs(); loadResults().then(renderWizard); });
 setInterval(refreshJobs, 5000);
 </script>
 </body>
