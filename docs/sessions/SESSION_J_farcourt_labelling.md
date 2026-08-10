@@ -142,6 +142,96 @@ not rise" therefore means "nothing catastrophic happened", not "nothing happened
 | `backend/tests/` | mask coverage; round-trip pixel identity; the contamination refusal |
 | `SCOREBOARD.md`, this file | record it |
 
+---
+
+# Results (2026-08-10) — steps 1-3 done, and blocker 1 was mis-diagnosed
+
+Full evidence: [farcourt_anchor_audit.md](../../data/output/farcourt_anchor_audit.md),
+[farcourt_hud_mask.md](../../data/output/farcourt_hud_mask.md),
+[farcourt_pilot_clicks.jpg](../../data/output/farcourt_pilot_clicks.jpg),
+[hud_mask_verify.jpg](../../data/output/hud_mask_verify.jpg).
+
+## The correction, first
+
+**Blocker 1 as written is wrong, and it matters because it set the session's
+priorities.** Re-adjudicating all 36 pilot clicks at 5x against the frames:
+
+| claim in the brief | measured |
+|---|---|
+| "on the four pilot clips carrying a scoreboard, **every** click landed on the scoreboard's tennis-ball icon" | **5 of 36** clicks are inside a burned-in graphic, and they landed on score digits and panel body, not a ball icon |
+| the four clips named as HUD-carrying | **two of them carry no overlay at all** (`yt_8-BkpjFFIhQ`, `yt_WjHZrIYteDA`) — and were 503-569 px and 112-406 px out anyway |
+
+What 11 of 29 ball clicks actually landed on is empty sky, foliage, flat court or
+a floodlight. **The dominant failure is that the two ANCHORS bracketing those
+gaps were themselves false locks** — a wall speaker, a treetop, a parked car.
+The queue selects a gap when the tracker is confident on both sides, and about
+half the time that is two false positives.
+
+| | gaps | midpoints on a real ball |
+|---|---|---|
+| >= 1 anchor confirmed by the human | 5 | **5 of 5** |
+| neither confirmed | 7 | **0 of 7** |
+
+Ruled out first: the queue does show the frame it claims — 0 of 36 mismatch.
+
+## Step 1 — HUD masking. DONE, gate passed on the second attempt.
+
+`tools/mask_hud.py`. **MEASURED NEGATIVE: no temporal statistic finds a graphic
+on this footage** (std / median-agreement / correlation-with-exposure all fail in
+both directions; numbers in the evidence file). With geometry added the rule is
+safe but incomplete — it finds the SwingVision watermark on every clip that has
+one and none of the six score panels. Twelve fixed clips, so the rest are
+hand-authored (`"src": "manual"`, survive a re-detect) and two auto proposals
+that lay on the court are recorded `"src": "rejected"`.
+
+Gate: **19 boxes x 4 REAL frames**, not the median plate. First run FAILED on 3
+boxes the plate had hidden — including `RZ_wyJ9rI3Q`'s yellow ball icon sitting
+below its box, and two panels that widen when player names get longer. Second
+run passes.
+
+## Step 2 — route into training data. DONE.
+
+`tools/farcourt_labels_to_dataset.py` splits the 12-video queue back into
+per-clip label files and calls the audited single-video converter once each, so
+its gold-leak refusal runs per clip. It also **enforces the anchor control**,
+which is the evidence-driven addition: a midpoint is accepted only if the human
+confirmed an anchor beside it. On the pilot that keeps 5 of 5 usable midpoints
+and drops 7 of 7 unusable ones (n=12 gaps).
+
+Two selection-time alternatives were tried first and both FAILED, which is why
+the control is label-time: local roam does not separate confirmed from
+unconfirmed anchors (14.0-220.2 vs 13.2-238.8 px), and `suppress_false_locks`
+keeps only 1 of the 5 confirmed gaps.
+
+**The round-trip gate needed a different instrument than the brief specified.**
+dHash verified Session I's *window* mapping (±1600 frames, different scene); the
+risk here is ±1 frame on a 60 fps static court, where every candidate reads 14
+bits and JPEG plus the 1080p→512×288 resize contribute 6-8 of their own — the
+test would have passed identically whether the mapping was right or wrong. Now
+an argmin of mean-abs-diff over ±3 frames, reporting its margin so a frozen
+scene declares itself unresolvable instead of quietly passing. A test corrupts a
+built sample and requires the gate to catch it.
+
+## Step 3 — quarantine. DONE.
+
+`farcourt_pilot.manifest.json` carries `contaminated`; **both** converters refuse
+it without `--force`. The labels are not deleted — they are the evidence for
+everything above.
+
+## Steps 4-6 — NOT run
+
+`data/labels/farcourt_pilot2` is built and waiting in the Lab: the **same 12
+gaps**, masked, so it is a controlled test of the mask alone. 36 frames.
+
+**Pre-registered prediction:** masking fixes frames 0/1/2/7/8 and nothing else,
+because the other 11 bad clicks are anchor failures, not HUD failures. If the
+re-run shows that, the anchor control is validated on independent data.
+
+Step 5 additionally needs a planning number the brief did not have: at the
+pilot's confirmation rate the anchor control discards **~58% of queued gaps**, so
+a 300-gap target needs roughly **700 gaps queued**. That changes what "30 minutes
+of clicking" buys and is worth deciding with the per-clip weighting question.
+
 ## Out of scope
 
 Ghost-ball work (nine failures; the survivors all have `run_len = 1` and are

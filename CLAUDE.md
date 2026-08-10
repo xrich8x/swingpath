@@ -811,6 +811,67 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   score 14-15). They are committed anyway because they predate `--seed` and can never
   be reproduced, and every number above is measured on those exact files.
 
+- Session J (2026-08-10): THE FAR-COURT QUEUE'S BLOCKER WAS NOT THE HUD, and finding
+  that out cost nothing but re-reading the pixels. The brief scoped this session around
+  "burned-in graphics poison the labels", from farcourt_label_yield.md §2b: *on the four
+  pilot clips carrying a scoreboard, every click landed on the scoreboard's tennis-ball
+  icon*. Re-adjudicating all 36 clicks at 5x zoom against the frames
+  (data/output/farcourt_pilot_clicks.jpg, farcourt_anchor_audit.md):
+  (0) RULED OUT FIRST: the queue does show the frame it claims. All 36 queue JPEGs
+  re-decoded from data/train_clips at their recorded `video_frame` — **0 of 36 mismatch**
+  (dHash 0-2 bits of 64). The window arithmetic is correct.
+  (1) **RETRACTED.** Only **5 of 36** clicks are inside a burned-in graphic (frames
+  0/1/2 on yt_6jp23ghDY9Q, 7/8 on yt_RZ_wyJ9rI3Q), and they landed on score digits and
+  panel body, not on a ball icon. **Two of the four clips that table blames — yt_8-BkpjFFIhQ
+  and yt_WjHZrIYteDA — carry no burned-in graphic at all**, and were 503-569 px and
+  112-406 px out anyway. The clip-level split was CORRELATIONAL.
+  (2) THE REAL BLOCKER. 11 of 29 ball clicks are on **empty sky, foliage, flat court or a
+  floodlight**, because the two ANCHORS bracketing those gaps were themselves false locks
+  — a wall speaker, a treetop, a parked car, a spectator. The queue selects a gap when the
+  tracker is confident on both sides; about half the time that is two false positives, and
+  the human is then asked to find a ball between a hedge and a wall. Scored by the human's
+  own verdict on the anchors (click within 10 px of what the tracker claimed there):
+  **>=1 anchor confirmed -> 5 of 5 midpoints on a real ball; neither confirmed -> 0 of 7.**
+  The queue was built to collect exactly this control and nothing had ever read it. Note
+  yt_rz4T0-VALNw, where the human clicked a REAL ball 39-47 px from the prior — the tracker
+  was wrong and the human right, which "agrees with the tracker" would have scored a miss.
+  (3) SHIPPED: `tools/farcourt_labels_to_dataset.py` (splits the 12-video queue back into
+  per-clip label files and calls the audited single-video `labels_to_dataset` once each,
+  so its gold-leak refusal runs per clip) ENFORCES the anchor control; `tools/mask_hud.py`
+  + `select_farcourt_labels --hud-masks` paint the graphics out and record the boxes in
+  the manifest; the pilot's manifest is marked `contaminated` and BOTH converters refuse it
+  without `--force`. A gap whose prior sits behind a mask is dropped, not queued.
+  (4) TWO MEASURED NEGATIVES on selection-time screening, which is why the anchor control
+  is label-time: local roam does NOT separate confirmed anchors from false ones (14.0-220.2
+  vs 13.2-238.8 px, fully overlapping — a far ball's per-frame excursion is small), and
+  `ball.suppress_false_locks` requiring both anchors to survive keeps **1 of 5** confirmed
+  gaps (the min-segment test needs consecutive locks, and the frame after a gap starts a
+  new short segment by construction, so anchor `b` dies on 8 of 12 gaps for being an anchor).
+  (5) A THIRD MEASURED NEGATIVE: no temporal statistic finds a burned-in graphic on this
+  footage. std, median-agreement and correlation-with-global-exposure all fail in BOTH
+  directions — nothing below 6/255 on 3 of 12 clips, 45-57% of the frame below it on the
+  locked-off ones (a variance mask paints the COURT). With geometry added the rule is safe
+  but incomplete: it finds the SwingVision watermark (a literal yellow tennis ball) on every
+  clip that has one and NONE of the six score panels. Twelve fixed clips, so the rest are
+  hand-authored, carry `"src": "manual"`, survive a re-detect, and two auto proposals that
+  lay on the court are recorded as `"src": "rejected"` so a re-run cannot resurrect them.
+  MASK GATE PASSED on **19 boxes x 4 REAL frames** — but only on the second attempt: the
+  first failed on 3 boxes the median plate had hidden, including RZ_wyJ9rI3Q's yellow ball
+  icon sitting *below* its box, and two panels that widen when player names get longer.
+  (6) THE ROUND-TRIP GATE NEEDED A DIFFERENT INSTRUMENT. dHash — which verified the window
+  mapping in Session I — cannot see an off-by-one here: at 60 fps on a static court every
+  candidate frame reads **14 bits**, JPEG + the 1080p->512x288 resize contributing 6-8 of
+  their own, so the check would have passed identically whether the mapping was right or
+  wrong. Replaced with an argmin of mean-abs-diff over +/-3 frames, which reports its
+  margin so a frozen scene declares itself unresolvable (col_hard_zheng does, at 0.0149)
+  rather than quietly passing. Pinned by a test that corrupts a sample and requires the
+  gate to catch it.
+  Steps 4-6 of the brief are NOT run: `data/labels/farcourt_pilot2` (the same 12 gaps,
+  masked) is waiting in the Lab as a controlled test, and scaling to 300-400 gaps needs
+  the user's per-clip weighting decision. **Pre-registered prediction for the re-run:**
+  masking fixes frames 0/1/2/7/8 and NOTHING else, because the other 11 bad clicks are
+  anchor failures. 321 tests (32 new).
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers

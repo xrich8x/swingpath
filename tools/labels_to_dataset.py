@@ -53,6 +53,39 @@ IN_W, IN_H = 512, 288      # BallNet's input size; must match train_ballnet.py
 GOLD_DIR = REPO / "data" / "gold"
 
 
+def refuse_if_contaminated(manifest_path: Path, *, force: bool = False) -> None:
+    """Stop if a queue's manifest declares its labels unusable.
+
+    Human labels are never deleted — they are ground truth, and the pilot's
+    HUD clicks are the evidence for the masking work. But "there is a paragraph
+    about this in an evidence file" is not a safeguard: nothing stops a future
+    build consuming them, and a label placed on a scoreboard teaches the
+    detector that a scoreboard is a ball. So the manifest carries the verdict
+    and the converters refuse it mechanically.
+    """
+    p = Path(manifest_path)
+    if not p.is_file():
+        return
+    try:
+        why = json.loads(p.read_text(encoding="utf-8")).get("contaminated")
+    except (json.JSONDecodeError, OSError):
+        return
+    if why and not force:
+        raise SystemExit(
+            f"REFUSING: {p.name} is marked contaminated.\n  {why}\n"
+            "These labels are kept as evidence, not as training data. Re-label "
+            "the queue (tools/select_farcourt_labels.py applies the HUD mask now) "
+            "or pass --force if you have read the evidence and mean it.")
+
+
+def _sibling_manifest(labels_path: Path) -> Path:
+    """data/labels/<clip>.labels.json -> data/labels/<clip>.manifest.json"""
+    name = labels_path.name
+    stem = name[:-len(".labels.json")] if name.endswith(".labels.json") \
+        else labels_path.stem
+    return labels_path.with_name(f"{stem}.manifest.json")
+
+
 def gold_videos() -> set[str]:
     """Source videos of every hand-labelled BALL gold clip, lower-cased.
 
@@ -167,6 +200,9 @@ def main() -> None:
     ap.add_argument("--out", default="data/ball_dataset")
     ap.add_argument("--allow-gold", action="store_true",
                     help=argparse.SUPPRESS)   # escape hatch; deliberately hidden
+    ap.add_argument("--force", action="store_true",
+                    help="build even from a queue whose manifest is marked "
+                         "contaminated")
     args = ap.parse_args()
 
     video = (REPO / args.video).resolve() if not Path(args.video).is_absolute() \
@@ -178,6 +214,8 @@ def main() -> None:
         raise SystemExit(f"no such video: {video}")
     if not labels.is_file():
         raise SystemExit(f"no such labels file: {labels}")
+
+    refuse_if_contaminated(_sibling_manifest(labels), force=args.force)
 
     # Refuse the benchmark, twice over: by where the labels live, and by whether
     # the video backs a gold manifest. Either one alone could be worked around

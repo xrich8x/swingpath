@@ -1,0 +1,315 @@
+{
+ "tool": "mask_hud.py",
+ "created": "2026-08-10 18:42:24",
+ "params": {
+  "samples": 80,
+  "tol": 3.0,
+  "agree_min": 0.6,
+  "border_frac": 0.04,
+  "max_area_frac": 0.06,
+  "min_area_frac": 0.0004,
+  "fill": [
+   60,
+   60,
+   60
+  ]
+ },
+ "clips": {
+  "6jp23ghDY9Q.mp4": {
+   "video": "6jp23ghDY9Q.mp4",
+   "src_wh": [
+    1280,
+    720
+   ],
+   "boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ],
+   "masked_frac": 0.0608
+  },
+  "8-BkpjFFIhQ.mp4": {
+   "video": "8-BkpjFFIhQ.mp4",
+   "src_wh": [
+    1280,
+    720
+   ],
+   "boxes": [],
+   "masked_frac": 0.0
+  },
+  "am_dbl_classb.mp4": {
+   "video": "am_dbl_classb.mp4",
+   "src_wh": [
+    1920,
+    1080
+   ],
+   "boxes": [],
+   "masked_frac": 0.0
+  },
+  "col_hard_zheng.mp4": {
+   "video": "col_hard_zheng.mp4",
+   "src_wh": [
+    1920,
+    1080
+   ],
+   "boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 0,
+     "y": 830,
+     "w": 338,
+     "h": 6,
+     "src": "rejected",
+     "what": "thin strip on the court surface"
+    },
+    {
+     "x": 1480,
+     "y": 985,
+     "w": 440,
+     "h": 95,
+     "src": "rejected",
+     "what": "NewYCPhoto watermark: plain text over the court, not ball-shaped"
+    }
+   ],
+   "masked_frac": 0.0564
+  },
+  "ewqSn18xdsY.mp4": {
+   "video": "ewqSn18xdsY.mp4",
+   "src_wh": [
+    1280,
+    720
+   ],
+   "boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    },
+    {
+     "x": 0,
+     "y": 411,
+     "w": 227,
+     "h": 53,
+     "src": "rejected",
+     "what": "court/hedge boundary, not a graphic"
+    }
+   ],
+   "masked_frac": 0.0451
+  },
+  "nQan0M5JDM8.mp4": {
+   "video": "nQan0M5JDM8.mp4",
+   "src_wh": [
+    1280,
+    720
+   ],
+   "boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ],
+   "masked_frac": 0.0563
+  },
+  "rz4T0-VALNw.mp4": {
+   "video": "rz4T0-VALNw.mp4",
+   "src_wh": [
+    1280,
+    720
+   ],
+   "boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ],
+   "masked_frac": 0.0677
+  },
+  "RZ_wyJ9rI3Q.mp4": {
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "src_wh": [
+    1280,
+    720
+   ],
+   "boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ],
+   "masked_frac": 0.1599
+  },
+  "tC0z7FYvMks.mp4": {
+   "video": "tC0z7FYvMks.mp4",
+   "src_wh": [
+    1280,
+    720
+   ],
+   "boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 228,
+     "h": 46,
+     "src": "manual",
+     "what": "subscribe banner"
+    },
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 328,
+     "src": "manual",
+     "what": "mini-court radar + readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00286
+    }
+   ],
+   "masked_frac": 0.1297
+  },
+  "TilAFMPc0yg.mp4": {
+   "video": "TilAFMPc0yg.mp4",
+   "src_wh": [
+    1280,
+    720
+   ],
+   "boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ],
+   "masked_frac": 0.1899
+  },
+  "VZWi6Vf-sX0.mp4": {
+   "video": "VZWi6Vf-sX0.mp4",
+   "src_wh": [
+    1280,
+    720
+   ],
+   "boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ],
+   "masked_frac": 0.1186
+  },
+  "WjHZrIYteDA.mp4": {
+   "video": "WjHZrIYteDA.mp4",
+   "src_wh": [
+    1280,
+    720
+   ],
+   "boxes": [],
+   "masked_frac": 0.0
+  }
+ }
+}

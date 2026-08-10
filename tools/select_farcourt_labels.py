@@ -50,6 +50,20 @@ seam in `window_starts`. The source starts are recomputed with the same
 Two directories (`amateur`, `highangle`) came from a different pipeline with no
 recorded video; they fall back to the 512x288 JPEG and are flagged in the manifest.
 
+BURNED-IN GRAPHICS ARE PAINTED OUT BEFORE THE HUMAN SEES THE FRAME
+------------------------------------------------------------------
+The first pilot put 5 of its 36 clicks inside a scoreboard graphic
+(data/output/farcourt_anchor_audit.md). A label on a scoreboard teaches the
+detector that a scoreboard is a ball, which is a confuser it already fires on,
+so those clicks are worth less than none. `--hud-masks` (on by default when
+data/hud_masks.json exists) paints every declared graphic flat before writing
+the frame, and records the boxes in the manifest so any click can be audited
+against the mask that was in force when it was made.
+
+A gap whose prior lands INSIDE a mask is dropped rather than queued: the ball
+there is behind a graphic in the source video too, so there is nothing for a
+human to find and the click would land on grey.
+
 THE PREMISE THIS PILOT TESTS, WHICH IS NOT YET ESTABLISHED
 -----------------------------------------------------------
 Spot checks show the interpolated point often landing on background the same
@@ -57,6 +71,13 @@ colour as the ball (white ball on white signage, dark ball on dark wall) —
 plausibly why the detector missed it, and plausibly why a human will too. **Run a
 small --gaps first and see whether the ball is visibly there before committing
 hours.** If it is not even at source resolution, the fix is new footage.
+
+The first pilot answered that question NO on 7 of 12 gaps, and the reason was
+not resolution: the two ANCHORS bracketing those gaps were themselves false
+locks on a wall, a tree or a spectator, so there was no ball anywhere near the
+interpolated point. The anchors are the control this queue was built to provide
+and `farcourt_labels_to_dataset.py` now enforces it — a midpoint is only
+accepted as training data if the human confirmed an anchor beside it.
 
     py tools/select_farcourt_labels.py --gaps 10          # ~30 frames, a pilot
     py tools/lab_server.py                                # label them, Label tab
@@ -191,6 +212,10 @@ def main() -> None:
                     help="also queue directories with no source video, at 512x288. "
                          "OFF by default: mixing a 1.6 px ball in with 720p frames "
                          "makes 'could you see it?' unanswerable")
+    ap.add_argument("--hud-masks", default=str(REPO / "data/hud_masks.json"),
+                    help="burned-in graphics to paint out (tools/mask_hud.py). "
+                         "Pass '' to label unmasked footage — the first pilot did "
+                         "and put 5 of 36 clicks inside a scoreboard")
     args = ap.parse_args()
 
     out = Path(args.out)
@@ -229,20 +254,31 @@ def main() -> None:
         raise SystemExit("no candidates")
 
     import cv2
+    import mask_hud
+
+    masks = mask_hud.load_masks(args.hud_masks) if args.hud_masks else {}
+    if args.hud_masks and not masks:
+        print(f"  NOTE: no HUD masks at {args.hud_masks} — every burned-in "
+              f"graphic will be shown to the labeller as if it were footage")
+
     frames_dir = out / "frames" / args.clip
     frames_dir.mkdir(parents=True, exist_ok=True)
     maps, caps = {}, {}
-    rows, idx, native = [], 0, 0
+    rows, idx, native, behind_mask = [], 0, 0, 0
     # Every frame must land at the SAME size or the labeller's canvas resizes
     # between frames and the click scaling differs per frame. Take the largest
     # source we are queueing and letterbox nothing — just record per-frame size.
-    for d, a, pa, m, pm, b, pb in picked:
+    for gap_id, (d, a, pa, m, pm, b, pb) in enumerate(picked):
         if d not in maps:
             maps[d] = source_map(Path(d), Path(args.clips))
         trio = [(a, pa, "anchor"), (m, pm, "farcourt_gap"), (b, pb, "anchor")]
+        # Build the whole trio before writing anything: whether to queue a gap is
+        # a decision about the GAP, and an anchor without its midpoint (or the
+        # reverse) is not a usable unit of work.
+        staged = []
         for src, (px, py), bucket in (trio if args.anchors else trio[1:2]):
             sm = maps[d]
-            img = None
+            img, boxes = None, []
             if sm is not None:
                 vid, ws, starts, step, (W, H) = sm
                 sf = source_frame(src, ws, starts, step)
@@ -255,25 +291,46 @@ def main() -> None:
                     sx, sy = W / IN_W, H / IN_H       # 512x288 prior -> source px
                     px, py, srcinfo = px * sx, py * sy, {"video": os.path.basename(vid),
                                                          "video_frame": sf}
+                    boxes = masks.get(os.path.basename(vid), [])
             if img is None:                            # no video recorded for this dir
                 img = cv2.imread(str(Path(d) / f"{src:05d}.jpg"))
                 srcinfo = {"video": None, "video_frame": None}
                 native += 1
                 if img is None:
                     continue
-            cv2.imwrite(str(frames_dir / f"f{idx:05d}.jpg"), img,
+            staged.append((img, boxes, src, px, py, bucket, srcinfo))
+
+        # The ball is behind the graphic in the source video too, so there is
+        # nothing here for a human to find and the click would land on flat grey.
+        if any(mask_hud.covers(bx, px, py) for _i, bx, _s, px, py, _b, _si in staged):
+            behind_mask += 1
+            continue
+
+        for img, boxes, src, px, py, bucket, srcinfo in staged:
+            cv2.imwrite(str(frames_dir / f"f{idx:05d}.jpg"), mask_hud.apply_mask(img, boxes),
                         [cv2.IMWRITE_JPEG_QUALITY, 95])
             rows.append({"frame": idx, "bucket": bucket,
+                         # which gap this frame belongs to. The anchors are the
+                         # control for their own midpoint, so the converter has
+                         # to be able to find them; grouping by "consecutive
+                         # threes" breaks the moment a frame fails to decode.
+                         "gap": gap_id,
                          # provenance so a click can be traced back — these are
                          # renumbered, not source indices
                          "src_dataset": os.path.basename(d), "src_frame": src,
                          "width": img.shape[1], "height": img.shape[0], **srcinfo,
                          # what the tracker/interpolation thinks, in THIS frame's
                          # pixels. The UI never shows it, so it cannot bias a click.
-                         "prior_x": round(px, 1), "prior_y": round(py, 1)})
+                         "prior_x": round(px, 1), "prior_y": round(py, 1),
+                         # what was painted out on THIS frame, so a click can be
+                         # audited against the mask that was in force when made
+                         "hud_boxes": boxes})
             idx += 1
     for c in caps.values():
         c.release()
+    if behind_mask:
+        print(f"  dropped {behind_mask} gap(s): a prior sits behind a burned-in "
+              f"graphic, so there is no ball there to find")
 
     sizes = sorted({(r["width"], r["height"]) for r in rows})
     man = {"clip": args.clip, "video": None,
@@ -284,11 +341,19 @@ def main() -> None:
            "width": sizes[-1][0], "height": sizes[-1][1],
            "fps": None, "video_frames": idx,
            "created": time.strftime("%Y-%m-%d %H:%M:%S"),
-           "params": {"tool": "select_farcourt_labels.py", "gaps": len(picked),
+           "params": {"tool": "select_farcourt_labels.py",
+                      "gaps": len(picked) - behind_mask,
                       "max_gap": args.max_gap, "far_frac": FAR_FRAC,
                       "with_anchors": args.anchors,
                       "selection": "midpoint of each bracketed far-court gap, "
-                                   "round-robin over clips"},
+                                   "round-robin over clips",
+                      "hud_masks": args.hud_masks or None,
+                      "gaps_dropped_behind_mask": behind_mask},
+           # The mask is part of what the labeller saw, so it belongs in the
+           # manifest and not only in a separate file that can drift from it.
+           "hud_masks": {v: masks[v] for v in
+                         sorted({r["video"] for r in rows if r.get("video")})
+                         if masks.get(v)},
            "bucket_counts": {b: sum(1 for r in rows if r["bucket"] == b)
                              for b in {r["bucket"] for r in rows}},
            "frames": rows}

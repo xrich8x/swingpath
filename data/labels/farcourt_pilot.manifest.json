@@ -1,4 +1,5 @@
 {
+ "contaminated": "5 of 36 clicks landed inside a burned-in scoreboard and 11 more on empty sky, flat court or foliage because BOTH anchors bracketing the gap were false locks. Kept as evidence for the HUD mask and the anchor control; never as training data. See data/output/farcourt_anchor_audit.md and farcourt_label_yield.md.",
  "clip": "farcourt_pilot",
  "video": null,
  "source": "source videos in data/train_clips at native resolution; 0 frames fell back to the 512x288 dataset JPEG (no video recorded for that directory)",
