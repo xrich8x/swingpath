@@ -155,6 +155,27 @@ def test_interleaving_with_nothing_to_interleave_is_a_no_op():
     assert sel._interleave(["r"], []) == ["r"]
 
 
+def _cand(clip, a, m, b):
+    return (f"/data/ball_dataset/{clip}", a, None, m, None, b, None)
+
+
+def test_an_already_labelled_gap_is_kept_out_of_a_fresh_queue():
+    """A gap labelled once teaches nothing a second time, and it carries the
+    labeller's memory of that pass, so it cannot be part of a clean rate."""
+    cands = [_cand("c1", 1, 2, 3), _cand("c2", 4, 5, 6)]
+    reps, fresh, n = sel.split_pools(cands, set(), {("c1", 1, 2, 3)})
+    assert n == 1 and reps == [] and [sel.key_of(c) for c in fresh] == [("c2", 4, 5, 6)]
+
+
+def test_an_explicit_repeat_wins_over_an_exclude():
+    """One session can legitimately repeat one queue and skip another, and the
+    same gap can appear in both lists. If exclude won, the controlled half of the
+    queue would silently empty and the A/B would quietly become a fresh run."""
+    cands = [_cand("c1", 1, 2, 3)]
+    reps, fresh, n = sel.split_pools(cands, {("c1", 1, 2, 3)}, {("c1", 1, 2, 3)})
+    assert n == 0 and len(reps) == 1 and fresh == []
+
+
 def test_the_frame_just_before_a_seam_belongs_to_the_earlier_window():
     """Off by one here would jump ~1600 source frames to another moment."""
     assert sel.source_frame(1199, WS, STARTS, 2) == 1213 + 1199 * 2

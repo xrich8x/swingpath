@@ -114,6 +114,48 @@ def test_turning_the_control_off_keeps_everything_but_still_records_the_verdict(
     assert verdicts[0]["anchors_confirmed"] == [], "the measurement must survive"
 
 
+# --- the click-motion diagnostic ------------------------------------------------
+# Reported, never enforced. The threshold that separates the cases was found AFTER
+# looking at twelve gaps, so it is pre-registered for the next queue rather than
+# fitted to that one — but the numbers themselves have to be right.
+
+def test_click_motion_reports_a_static_click_against_a_moving_tracker():
+    """The failure it exists to surface: the human clicks a wall mark while the
+    tracker's own anchors are 240 px apart. Two different objects."""
+    rows = [_row(0, "anchor", (100.0, 50.0)), _row(1, "farcourt_gap", (200.0, 150.0)),
+            _row(2, "anchor", (300.0, 250.0))]
+    labels = {"0": _click(700, 100), "1": _click(703, 100), "2": _click(706, 100)}
+    human, tracker = f2d.click_motion(rows, labels)
+    assert human == 6.0
+    assert round(tracker) == 283
+
+
+def test_click_motion_measures_the_humans_path_not_their_endpoints():
+    """A ball that comes down and goes back up covers distance the endpoints hide."""
+    rows = [_row(0, "anchor", (0.0, 0.0)), _row(1, "farcourt_gap", (0.0, 0.0)),
+            _row(2, "anchor", (0.0, 0.0))]
+    labels = {"0": _click(0, 0), "1": _click(0, 40), "2": _click(0, 0)}
+    assert f2d.click_motion(rows, labels)[0] == 80.0
+
+
+def test_unsure_and_no_ball_frames_drop_out_of_the_path():
+    rows = [_row(0, "anchor", (0.0, 0.0)), _row(1, "farcourt_gap", (0.0, 0.0)),
+            _row(2, "anchor", (0.0, 0.0))]
+    labels = {"0": _click(0, 0), "1": {"ball": None, "unsure": True},
+              "2": _click(0, 10)}
+    assert f2d.click_motion(rows, labels)[0] == 10.0
+
+
+def test_the_diagnostic_never_changes_a_verdict():
+    """If it ever gated, a cutoff fitted to twelve gaps would be filtering real
+    far-court balls — the exact data this whole queue exists to collect."""
+    man = {"frames": _trio(0)}
+    labels = {"0": _click(100, 50), "1": _click(100, 50), "2": _click(100, 50)}
+    accepted, verdicts = f2d.adjudicate(man, labels)
+    assert verdicts[0]["click_motion_px"] == 0.0
+    assert verdicts[0]["accepted"] is True and len(accepted) == 3
+
+
 # --- splitting one queue back into many clips ----------------------------------
 
 def test_labels_are_split_by_source_video_and_rekeyed_to_source_frames():

@@ -279,6 +279,19 @@ one.
 it inherits the same hole. The true rate is somewhere between it and pass 1's
 42%. Sizing waits for one round labelled under the new rule.
 
+### Step 4b — a calibration round, waiting in the Lab
+
+`farcourt_cal1`: **50 gaps / 147 frames**, no repeats, the 30 already-labelled
+gaps excluded outright (`--exclude-from`), even round-robin over all 12 clips.
+Two jobs: it measures the confirmation rate cleanly under the new labelling rule
+(n=50 pins it to about ±7 pts, enough to choose between a ~350 and a ~700 gap
+queue), and its accepted gaps are real training labels either way.
+
+`click_motion` now reports, per gap, how far the human's clicks travelled against
+how far the tracker's own anchors did — the diagnostic that exposed the hole. It
+is **reported, never enforced**, and a test pins that: a cutoff fitted to twelve
+gaps would be filtering exactly the far-court balls this queue exists to collect.
+
 ## Out of scope
 
 Ghost-ball work (nine failures; the survivors all have `run_len = 1` and are

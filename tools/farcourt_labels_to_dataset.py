@@ -55,6 +55,39 @@ def _dist(a, b):
     return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
 
 
+def click_motion(rs, labels):
+    """(human click path length, tracker anchor-to-anchor displacement) in px.
+
+    REPORTED, NOT ENFORCED — and the distinction is the point.
+
+    The anchor control asks whether the human AGREES with the tracker, and the
+    masked re-run showed that is not the same as being right: on 2 of 12 repeat
+    gaps the human clicked a static wall mark or a window, one of them the very
+    mark the tracker had locked onto, agreeing to 2-5 px. A labeller who cannot
+    find the ball clicks the most ball-like thing in the frame, which is what the
+    detector locked onto for the same reasons.
+
+    A ball in play is somewhere different on every frame, so these two numbers
+    separate the cases: on that session the bad gaps had the human moving 1-8 px
+    while the tracker's own prior moved 60-583 px. It is not a filter because the
+    apparent threshold was found AFTER looking at those twelve gaps, and a cutoff
+    fitted to twelve observations is a memory of them rather than a control. The
+    labelling page now carries the rule instead; this measures whether it worked.
+    """
+    pts = []
+    for r in sorted(rs, key=lambda r: r["frame"]):
+        v = labels.get(str(r["frame"])) or {}
+        if v.get("x") is not None and not v.get("unsure"):
+            pts.append((v["x"], v["y"]))
+    human = sum(_dist(a, b) for a, b in zip(pts, pts[1:]))
+    anchors = sorted((r for r in rs if r["bucket"] == "anchor"),
+                     key=lambda r: r["frame"])
+    tracker = _dist((anchors[0]["prior_x"], anchors[0]["prior_y"]),
+                    (anchors[-1]["prior_x"], anchors[-1]["prior_y"])) \
+        if len(anchors) >= 2 else None
+    return (round(human, 1), None if tracker is None else round(tracker, 1))
+
+
 def gap_ids(rows):
     """Which gap each queued frame belongs to.
 
@@ -102,6 +135,7 @@ def adjudicate(manifest: dict, labels: dict, *, anchor_px: float = ANCHOR_PX,
             tol = anchor_px * (a.get("height", 720) / 720.0)
             if _dist((v["x"], v["y"]), (a["prior_x"], a["prior_y"])) <= tol:
                 confirmed.append(a["frame"])
+        moved, tmoved = click_motion(rs, labels)
         ok = bool(confirmed) or not anchors      # no anchors queued -> nothing to check
         verdicts.append({"gap": gid, "clip": rs[0]["src_dataset"],
                          "anchors_clicked": checked, "anchors_confirmed": confirmed,
@@ -110,6 +144,7 @@ def adjudicate(manifest: dict, labels: dict, *, anchor_px: float = ANCHOR_PX,
                          # memory of that pass, so it cannot be pooled with the
                          # fresh gaps when estimating a confirmation RATE
                          "repeat": bool(rs[0].get("repeat")),
+                         "click_motion_px": moved, "tracker_motion_px": tmoved,
                          "midpoints": [m["frame"] for m in mids]})
         if ok or not enforce:
             accepted += rs
@@ -287,10 +322,12 @@ def main() -> None:
           f"{'' if args.anchor_control else ' (control OFF, nothing dropped)'}")
     for v in verdicts:
         mark = "keep" if v["accepted"] else "DROP"
+        tm = "" if v["tracker_motion_px"] is None else f"{v['tracker_motion_px']:>6.0f}"
         print(f"  {mark}  gap {v['gap']:>3} {v['clip']:<20} "
               f"{'repeat' if v['repeat'] else 'fresh ':<7} "
               f"anchors clicked {v['anchors_clicked']}, "
-              f"confirmed {len(v['anchors_confirmed'])}")
+              f"confirmed {len(v['anchors_confirmed'])}   "
+              f"moved: you {v['click_motion_px']:>6.0f} px / tracker {tm} px")
     # Sizing the next queue needs the rate on gaps the labeller had NOT already
     # seen; pooling the two would put their memory of the first pass into it.
     for tag, want in (("fresh", False), ("repeat", True)):

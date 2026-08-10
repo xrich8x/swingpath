@@ -213,6 +213,20 @@ def _manifest_gap_ids(rows):
     return out
 
 
+def split_pools(cands, repeat_keys, exclude_keys):
+    """(repeats, fresh) after removing already-labelled gaps.
+
+    An explicit --repeat-from wins over an --exclude-from, because a session can
+    legitimately name the same manifest in both (repeat this queue, skip that
+    one) and the controlled half of the queue must not silently empty.
+    """
+    exclude_keys = set(exclude_keys) - set(repeat_keys)
+    kept = [c for c in cands if key_of(c) not in exclude_keys]
+    return ([c for c in kept if key_of(c) in repeat_keys],
+            [c for c in kept if key_of(c) not in repeat_keys],
+            len(cands) - len(kept))
+
+
 def _interleave(a, b):
     """Spread `a` evenly through `b` rather than putting it in a block at the
     front. Deterministic — no RNG, so the queue is reproducible.
@@ -280,6 +294,11 @@ def main() -> None:
                          "repeats are a controlled A/B; the fresh ones measure a "
                          "rate the labeller's memory of the first pass cannot "
                          "reach. --gaps counts BOTH")
+    ap.add_argument("--exclude-from", nargs="*", default=[],
+                    help="manifests whose gaps this queue must NOT contain. A gap "
+                         "already labelled teaches nothing a second time, and it "
+                         "carries the labeller's memory of the first pass, so it "
+                         "cannot be part of a clean rate")
     ap.add_argument("--hud-masks", default=str(REPO / "data/hud_masks.json"),
                     help="burned-in graphics to paint out (tools/mask_hud.py). "
                          "Pass '' to label unmasked footage — the first pilot did "
@@ -318,8 +337,12 @@ def main() -> None:
             print(f"  skipped (no source video, would be 512x288): {dropped} "
                   f"-> {len(cands)} gaps from {len(keep)} clips")
     repeat_keys = gaps_in_manifest(args.repeat_from) if args.repeat_from else set()
-    repeats = [c for c in cands if key_of(c) in repeat_keys]
-    fresh = [c for c in cands if key_of(c) not in repeat_keys]
+    seen = set().union(*(gaps_in_manifest(p) for p in args.exclude_from)) \
+        if args.exclude_from else set()
+    repeats, fresh, n_excluded = split_pools(cands, repeat_keys, seen)
+    if n_excluded:
+        print(f"  excluding {n_excluded} already-labelled gap(s) -> "
+              f"{len(repeats) + len(fresh)} left")
     if repeat_keys:
         print(f"  repeating {len(repeats)} of {len(repeat_keys)} gap(s) from "
               f"{os.path.basename(args.repeat_from)}")

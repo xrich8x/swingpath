@@ -1,0 +1,4426 @@
+{
+ "clip": "farcourt_cal1",
+ "video": null,
+ "source": "source videos in data/train_clips at native resolution; 0 frames fell back to the 512x288 dataset JPEG (no video recorded for that directory)",
+ "frame_sizes": [
+  "1280x720",
+  "1920x1080"
+ ],
+ "width": 1920,
+ "height": 1080,
+ "fps": null,
+ "video_frames": 147,
+ "created": "2026-08-10 21:50:58",
+ "params": {
+  "tool": "select_farcourt_labels.py",
+  "gaps": 49,
+  "max_gap": 10,
+  "far_frac": 0.36,
+  "with_anchors": true,
+  "selection": "midpoint of each bracketed far-court gap, round-robin over clips",
+  "hud_masks": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\hud_masks.json",
+  "gaps_dropped_behind_mask": 1
+ },
+ "hud_masks": {
+  "6jp23ghDY9Q.mp4": [
+   {
+    "x": 0,
+    "y": 0,
+    "w": 400,
+    "h": 140,
+    "src": "manual",
+    "what": "score panel"
+   }
+  ],
+  "RZ_wyJ9rI3Q.mp4": [
+   {
+    "x": 0,
+    "y": 0,
+    "w": 400,
+    "h": 130,
+    "src": "manual",
+    "what": "score panel"
+   },
+   {
+    "x": 1085,
+    "y": 0,
+    "w": 195,
+    "h": 132,
+    "src": "manual",
+    "what": "mini-court radar"
+   },
+   {
+    "x": 1073,
+    "y": 248,
+    "w": 207,
+    "h": 66,
+    "src": "manual",
+    "what": "stroke + speed readout"
+   },
+   {
+    "x": 880,
+    "y": 580,
+    "w": 400,
+    "h": 140,
+    "src": "manual",
+    "what": "swingvision watermark + ball"
+   }
+  ],
+  "TilAFMPc0yg.mp4": [
+   {
+    "x": 0,
+    "y": 0,
+    "w": 470,
+    "h": 155,
+    "src": "manual",
+    "what": "score panel"
+   },
+   {
+    "x": 1083,
+    "y": 0,
+    "w": 197,
+    "h": 232,
+    "src": "manual",
+    "what": "mini-court radar"
+   },
+   {
+    "x": 1073,
+    "y": 242,
+    "w": 207,
+    "h": 74,
+    "src": "manual",
+    "what": "stroke + speed readout"
+   },
+   {
+    "x": 943,
+    "y": 598,
+    "w": 337,
+    "h": 122,
+    "src": "manual",
+    "what": "swingvision watermark + ball",
+    "area_frac": 0.00697
+   }
+  ],
+  "VZWi6Vf-sX0.mp4": [
+   {
+    "x": 1073,
+    "y": 0,
+    "w": 207,
+    "h": 232,
+    "src": "manual",
+    "what": "mini-court radar"
+   },
+   {
+    "x": 1073,
+    "y": 238,
+    "w": 207,
+    "h": 78,
+    "src": "manual",
+    "what": "stroke + speed readout"
+   },
+   {
+    "x": 943,
+    "y": 586,
+    "w": 337,
+    "h": 134,
+    "src": "manual",
+    "what": "swingvision watermark + ball"
+   }
+  ],
+  "col_hard_zheng.mp4": [
+   {
+    "x": 0,
+    "y": 0,
+    "w": 600,
+    "h": 195,
+    "src": "manual",
+    "what": "score panel"
+   }
+  ],
+  "ewqSn18xdsY.mp4": [
+   {
+    "x": 960,
+    "y": 590,
+    "w": 320,
+    "h": 130,
+    "src": "manual",
+    "what": "swingvision watermark + ball",
+    "area_frac": 0.00741
+   }
+  ],
+  "nQan0M5JDM8.mp4": [
+   {
+    "x": 0,
+    "y": 28,
+    "w": 415,
+    "h": 125,
+    "src": "manual",
+    "what": "score panel"
+   }
+  ],
+  "rz4T0-VALNw.mp4": [
+   {
+    "x": 0,
+    "y": 0,
+    "w": 430,
+    "h": 145,
+    "src": "manual",
+    "what": "score panel"
+   }
+  ],
+  "tC0z7FYvMks.mp4": [
+   {
+    "x": 0,
+    "y": 0,
+    "w": 228,
+    "h": 46,
+    "src": "manual",
+    "what": "subscribe banner"
+   },
+   {
+    "x": 1073,
+    "y": 0,
+    "w": 207,
+    "h": 328,
+    "src": "manual",
+    "what": "mini-court radar + readout"
+   },
+   {
+    "x": 943,
+    "y": 598,
+    "w": 337,
+    "h": 122,
+    "src": "manual",
+    "what": "swingvision watermark + ball",
+    "area_frac": 0.00286
+   }
+  ]
+ },
+ "bucket_counts": {
+  "farcourt_gap": 49,
+  "anchor": 98
+ },
+ "frames": [
+  {
+   "frame": 0,
+   "bucket": "anchor",
+   "gap": 0,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 291,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7414,
+   "prior_x": 697.5,
+   "prior_y": 252.5,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 1,
+   "bucket": "farcourt_gap",
+   "gap": 0,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 294,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7420,
+   "prior_x": 688.2,
+   "prior_y": 197.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 2,
+   "bucket": "anchor",
+   "gap": 0,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 298,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7428,
+   "prior_x": 675.8,
+   "prior_y": 123.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 3,
+   "bucket": "anchor",
+   "gap": 1,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 803,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 2892,
+   "prior_x": 149.1,
+   "prior_y": 256.3,
+   "hud_boxes": []
+  },
+  {
+   "frame": 4,
+   "bucket": "farcourt_gap",
+   "gap": 1,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 804,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 2893,
+   "prior_x": 148.3,
+   "prior_y": 256.9,
+   "hud_boxes": []
+  },
+  {
+   "frame": 5,
+   "bucket": "anchor",
+   "gap": 1,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 806,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 2895,
+   "prior_x": 146.8,
+   "prior_y": 258.2,
+   "hud_boxes": []
+  },
+  {
+   "frame": 6,
+   "bucket": "anchor",
+   "gap": 2,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 21,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1255,
+   "prior_x": 906.4,
+   "prior_y": 199.9,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 7,
+   "bucket": "farcourt_gap",
+   "gap": 2,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 23,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1259,
+   "prior_x": 877.3,
+   "prior_y": 200.1,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 8,
+   "bucket": "anchor",
+   "gap": 2,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 25,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1263,
+   "prior_x": 848.2,
+   "prior_y": 200.3,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 9,
+   "bucket": "anchor",
+   "gap": 3,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 84,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2235,
+   "prior_x": 645.1,
+   "prior_y": 247.5,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 10,
+   "bucket": "farcourt_gap",
+   "gap": 3,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 86,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2239,
+   "prior_x": 651.3,
+   "prior_y": 248.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 11,
+   "bucket": "anchor",
+   "gap": 3,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 89,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2245,
+   "prior_x": 660.6,
+   "prior_y": 250.4,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 12,
+   "bucket": "anchor",
+   "gap": 4,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 75,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9240,
+   "prior_x": 483.8,
+   "prior_y": 217.5,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 13,
+   "bucket": "farcourt_gap",
+   "gap": 4,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 76,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9242,
+   "prior_x": 481.7,
+   "prior_y": 217.3,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 14,
+   "bucket": "anchor",
+   "gap": 4,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 78,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9246,
+   "prior_x": 477.5,
+   "prior_y": 216.9,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 15,
+   "bucket": "anchor",
+   "gap": 5,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 107,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 8497,
+   "prior_x": 549.0,
+   "prior_y": 87.0,
+   "hud_boxes": []
+  },
+  {
+   "frame": 16,
+   "bucket": "farcourt_gap",
+   "gap": 5,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 108,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 8499,
+   "prior_x": 544.5,
+   "prior_y": 92.5,
+   "hud_boxes": []
+  },
+  {
+   "frame": 17,
+   "bucket": "anchor",
+   "gap": 5,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 109,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 8501,
+   "prior_x": 540.1,
+   "prior_y": 98.1,
+   "hud_boxes": []
+  },
+  {
+   "frame": 18,
+   "bucket": "anchor",
+   "gap": 6,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 23,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1391,
+   "prior_x": 783.2,
+   "prior_y": 340.8,
+   "hud_boxes": []
+  },
+  {
+   "frame": 19,
+   "bucket": "farcourt_gap",
+   "gap": 6,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 25,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1393,
+   "prior_x": 704.4,
+   "prior_y": 324.9,
+   "hud_boxes": []
+  },
+  {
+   "frame": 20,
+   "bucket": "anchor",
+   "gap": 6,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 27,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1395,
+   "prior_x": 625.5,
+   "prior_y": 309.0,
+   "hud_boxes": []
+  },
+  {
+   "frame": 21,
+   "bucket": "anchor",
+   "gap": 7,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 80,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4511,
+   "prior_x": 994.2,
+   "prior_y": 379.8,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 22,
+   "bucket": "farcourt_gap",
+   "gap": 7,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 81,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4513,
+   "prior_x": 998.3,
+   "prior_y": 379.9,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 23,
+   "bucket": "anchor",
+   "gap": 7,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 82,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4515,
+   "prior_x": 1002.4,
+   "prior_y": 380.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 24,
+   "bucket": "anchor",
+   "gap": 8,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 796,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3470,
+   "prior_x": 580.1,
+   "prior_y": 372.8,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 25,
+   "bucket": "farcourt_gap",
+   "gap": 8,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 798,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3474,
+   "prior_x": 540.8,
+   "prior_y": 257.8,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 26,
+   "bucket": "anchor",
+   "gap": 8,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 801,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3480,
+   "prior_x": 481.8,
+   "prior_y": 85.3,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 27,
+   "bucket": "anchor",
+   "gap": 9,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 70,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 4583,
+   "prior_x": 848.5,
+   "prior_y": 116.9,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 28,
+   "bucket": "farcourt_gap",
+   "gap": 9,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 73,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 4589,
+   "prior_x": 837.6,
+   "prior_y": 109.1,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 29,
+   "bucket": "anchor",
+   "gap": 9,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 76,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 4595,
+   "prior_x": 826.7,
+   "prior_y": 101.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 30,
+   "bucket": "anchor",
+   "gap": 10,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 323,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 9286,
+   "prior_x": 537.2,
+   "prior_y": 128.6,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 31,
+   "bucket": "farcourt_gap",
+   "gap": 10,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 324,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 9288,
+   "prior_x": 531.6,
+   "prior_y": 107.3,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 32,
+   "bucket": "anchor",
+   "gap": 10,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 325,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 9290,
+   "prior_x": 526.0,
+   "prior_y": 86.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 33,
+   "bucket": "anchor",
+   "gap": 11,
+   "repeat": false,
+   "src_dataset": "yt_tC0z7FYvMks",
+   "src_frame": 3355,
+   "width": 1280,
+   "height": 720,
+   "video": "tC0z7FYvMks.mp4",
+   "video_frame": 35261,
+   "prior_x": 830.7,
+   "prior_y": 103.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 228,
+     "h": 46,
+     "src": "manual",
+     "what": "subscribe banner"
+    },
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 328,
+     "src": "manual",
+     "what": "mini-court radar + readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00286
+    }
+   ]
+  },
+  {
+   "frame": 34,
+   "bucket": "farcourt_gap",
+   "gap": 11,
+   "repeat": false,
+   "src_dataset": "yt_tC0z7FYvMks",
+   "src_frame": 3356,
+   "width": 1280,
+   "height": 720,
+   "video": "tC0z7FYvMks.mp4",
+   "video_frame": 35263,
+   "prior_x": 818.3,
+   "prior_y": 120.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 228,
+     "h": 46,
+     "src": "manual",
+     "what": "subscribe banner"
+    },
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 328,
+     "src": "manual",
+     "what": "mini-court radar + readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00286
+    }
+   ]
+  },
+  {
+   "frame": 35,
+   "bucket": "anchor",
+   "gap": 11,
+   "repeat": false,
+   "src_dataset": "yt_tC0z7FYvMks",
+   "src_frame": 3357,
+   "width": 1280,
+   "height": 720,
+   "video": "tC0z7FYvMks.mp4",
+   "video_frame": 35265,
+   "prior_x": 805.8,
+   "prior_y": 136.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 228,
+     "h": 46,
+     "src": "manual",
+     "what": "subscribe banner"
+    },
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 328,
+     "src": "manual",
+     "what": "mini-court radar + readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00286
+    }
+   ]
+  },
+  {
+   "frame": 36,
+   "bucket": "anchor",
+   "gap": 12,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 313,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7458,
+   "prior_x": 1061.0,
+   "prior_y": 294.4,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 37,
+   "bucket": "farcourt_gap",
+   "gap": 12,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 315,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7462,
+   "prior_x": 1141.9,
+   "prior_y": 258.8,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 38,
+   "bucket": "anchor",
+   "gap": 12,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 318,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7468,
+   "prior_x": 1263.2,
+   "prior_y": 205.3,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 39,
+   "bucket": "anchor",
+   "gap": 13,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 806,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 2895,
+   "prior_x": 146.8,
+   "prior_y": 258.2,
+   "hud_boxes": []
+  },
+  {
+   "frame": 40,
+   "bucket": "farcourt_gap",
+   "gap": 13,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 807,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 2896,
+   "prior_x": 112.7,
+   "prior_y": 254.0,
+   "hud_boxes": []
+  },
+  {
+   "frame": 41,
+   "bucket": "anchor",
+   "gap": 13,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 808,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 2897,
+   "prior_x": 78.6,
+   "prior_y": 249.8,
+   "hud_boxes": []
+  },
+  {
+   "frame": 42,
+   "bucket": "anchor",
+   "gap": 14,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 86,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1385,
+   "prior_x": 640.0,
+   "prior_y": 220.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 43,
+   "bucket": "farcourt_gap",
+   "gap": 14,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 87,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1387,
+   "prior_x": 578.5,
+   "prior_y": 245.5,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 44,
+   "bucket": "anchor",
+   "gap": 14,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 88,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1389,
+   "prior_x": 517.0,
+   "prior_y": 271.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 45,
+   "bucket": "anchor",
+   "gap": 15,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 125,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2317,
+   "prior_x": 659.0,
+   "prior_y": 251.6,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 46,
+   "bucket": "farcourt_gap",
+   "gap": 15,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 126,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2319,
+   "prior_x": 646.1,
+   "prior_y": 248.6,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 47,
+   "bucket": "anchor",
+   "gap": 15,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 127,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2321,
+   "prior_x": 633.2,
+   "prior_y": 245.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 48,
+   "bucket": "anchor",
+   "gap": 16,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 81,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9252,
+   "prior_x": 470.9,
+   "prior_y": 218.7,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 49,
+   "bucket": "farcourt_gap",
+   "gap": 16,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 83,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9256,
+   "prior_x": 467.2,
+   "prior_y": 223.1,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 50,
+   "bucket": "anchor",
+   "gap": 16,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 86,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9262,
+   "prior_x": 461.6,
+   "prior_y": 229.6,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 51,
+   "bucket": "anchor",
+   "gap": 17,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 295,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 8873,
+   "prior_x": 583.2,
+   "prior_y": 10.9,
+   "hud_boxes": []
+  },
+  {
+   "frame": 52,
+   "bucket": "farcourt_gap",
+   "gap": 17,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 297,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 8877,
+   "prior_x": 588.3,
+   "prior_y": 17.6,
+   "hud_boxes": []
+  },
+  {
+   "frame": 53,
+   "bucket": "anchor",
+   "gap": 17,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 299,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 8881,
+   "prior_x": 593.5,
+   "prior_y": 24.2,
+   "hud_boxes": []
+  },
+  {
+   "frame": 54,
+   "bucket": "anchor",
+   "gap": 18,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 76,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1444,
+   "prior_x": 728.0,
+   "prior_y": 270.1,
+   "hud_boxes": []
+  },
+  {
+   "frame": 55,
+   "bucket": "farcourt_gap",
+   "gap": 18,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 77,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1445,
+   "prior_x": 729.4,
+   "prior_y": 270.7,
+   "hud_boxes": []
+  },
+  {
+   "frame": 56,
+   "bucket": "anchor",
+   "gap": 18,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 79,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1447,
+   "prior_x": 732.2,
+   "prior_y": 271.8,
+   "hud_boxes": []
+  },
+  {
+   "frame": 57,
+   "bucket": "anchor",
+   "gap": 19,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 155,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4661,
+   "prior_x": 66.3,
+   "prior_y": 311.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 58,
+   "bucket": "farcourt_gap",
+   "gap": 19,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 156,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4663,
+   "prior_x": 67.1,
+   "prior_y": 308.4,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 59,
+   "bucket": "anchor",
+   "gap": 19,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 157,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4665,
+   "prior_x": 68.0,
+   "prior_y": 305.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 60,
+   "bucket": "anchor",
+   "gap": 20,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 810,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3498,
+   "prior_x": 482.5,
+   "prior_y": 86.3,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 61,
+   "bucket": "farcourt_gap",
+   "gap": 20,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 813,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3504,
+   "prior_x": 532.8,
+   "prior_y": 209.6,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 62,
+   "bucket": "anchor",
+   "gap": 20,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 816,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3510,
+   "prior_x": 583.1,
+   "prior_y": 332.9,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 63,
+   "bucket": "anchor",
+   "gap": 21,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 77,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 4597,
+   "prior_x": 823.3,
+   "prior_y": 104.1,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 64,
+   "bucket": "farcourt_gap",
+   "gap": 21,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 78,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 4599,
+   "prior_x": 816.2,
+   "prior_y": 114.8,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 65,
+   "bucket": "anchor",
+   "gap": 21,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 80,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 4603,
+   "prior_x": 802.0,
+   "prior_y": 136.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 66,
+   "bucket": "anchor",
+   "gap": 22,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 325,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 9290,
+   "prior_x": 526.0,
+   "prior_y": 86.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 67,
+   "bucket": "farcourt_gap",
+   "gap": 22,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 329,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 9298,
+   "prior_x": 498.1,
+   "prior_y": 175.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 68,
+   "bucket": "anchor",
+   "gap": 22,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 334,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 9308,
+   "prior_x": 463.2,
+   "prior_y": 287.9,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 69,
+   "bucket": "anchor",
+   "gap": 23,
+   "repeat": false,
+   "src_dataset": "yt_tC0z7FYvMks",
+   "src_frame": 3357,
+   "width": 1280,
+   "height": 720,
+   "video": "tC0z7FYvMks.mp4",
+   "video_frame": 35265,
+   "prior_x": 805.8,
+   "prior_y": 136.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 228,
+     "h": 46,
+     "src": "manual",
+     "what": "subscribe banner"
+    },
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 328,
+     "src": "manual",
+     "what": "mini-court radar + readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00286
+    }
+   ]
+  },
+  {
+   "frame": 70,
+   "bucket": "farcourt_gap",
+   "gap": 23,
+   "repeat": false,
+   "src_dataset": "yt_tC0z7FYvMks",
+   "src_frame": 3360,
+   "width": 1280,
+   "height": 720,
+   "video": "tC0z7FYvMks.mp4",
+   "video_frame": 35271,
+   "prior_x": 807.3,
+   "prior_y": 110.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 228,
+     "h": 46,
+     "src": "manual",
+     "what": "subscribe banner"
+    },
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 328,
+     "src": "manual",
+     "what": "mini-court radar + readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00286
+    }
+   ]
+  },
+  {
+   "frame": 71,
+   "bucket": "anchor",
+   "gap": 23,
+   "repeat": false,
+   "src_dataset": "yt_tC0z7FYvMks",
+   "src_frame": 3363,
+   "width": 1280,
+   "height": 720,
+   "video": "tC0z7FYvMks.mp4",
+   "video_frame": 35277,
+   "prior_x": 808.8,
+   "prior_y": 83.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 228,
+     "h": 46,
+     "src": "manual",
+     "what": "subscribe banner"
+    },
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 328,
+     "src": "manual",
+     "what": "mini-court radar + readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00286
+    }
+   ]
+  },
+  {
+   "frame": 72,
+   "bucket": "anchor",
+   "gap": 24,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 487,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7806,
+   "prior_x": 454.7,
+   "prior_y": 298.9,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 73,
+   "bucket": "farcourt_gap",
+   "gap": 24,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 490,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7812,
+   "prior_x": 448.0,
+   "prior_y": 218.8,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 74,
+   "bucket": "anchor",
+   "gap": 24,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 493,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7818,
+   "prior_x": 441.2,
+   "prior_y": 138.8,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 75,
+   "bucket": "anchor",
+   "gap": 25,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 906,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 2995,
+   "prior_x": 580.6,
+   "prior_y": 250.3,
+   "hud_boxes": []
+  },
+  {
+   "frame": 76,
+   "bucket": "farcourt_gap",
+   "gap": 25,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 907,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 2996,
+   "prior_x": 575.5,
+   "prior_y": 244.3,
+   "hud_boxes": []
+  },
+  {
+   "frame": 77,
+   "bucket": "anchor",
+   "gap": 25,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 909,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 2998,
+   "prior_x": 565.5,
+   "prior_y": 232.2,
+   "hud_boxes": []
+  },
+  {
+   "frame": 78,
+   "bucket": "anchor",
+   "gap": 26,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 183,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1579,
+   "prior_x": 902.1,
+   "prior_y": 243.6,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 79,
+   "bucket": "farcourt_gap",
+   "gap": 26,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 184,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1581,
+   "prior_x": 842.2,
+   "prior_y": 245.6,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 80,
+   "bucket": "anchor",
+   "gap": 26,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 185,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1583,
+   "prior_x": 782.4,
+   "prior_y": 247.6,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 81,
+   "bucket": "anchor",
+   "gap": 27,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 357,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2781,
+   "prior_x": 538.3,
+   "prior_y": 260.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 82,
+   "bucket": "farcourt_gap",
+   "gap": 27,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 358,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2783,
+   "prior_x": 545.3,
+   "prior_y": 257.5,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 83,
+   "bucket": "anchor",
+   "gap": 27,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 360,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2787,
+   "prior_x": 559.2,
+   "prior_y": 251.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 84,
+   "bucket": "anchor",
+   "gap": 28,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 150,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9390,
+   "prior_x": 809.7,
+   "prior_y": 213.1,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 85,
+   "bucket": "farcourt_gap",
+   "gap": 28,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 151,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9392,
+   "prior_x": 823.8,
+   "prior_y": 223.8,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 86,
+   "bucket": "anchor",
+   "gap": 28,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 153,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9396,
+   "prior_x": 852.0,
+   "prior_y": 245.4,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 87,
+   "bucket": "anchor",
+   "gap": 29,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 313,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 8909,
+   "prior_x": 619.4,
+   "prior_y": 39.9,
+   "hud_boxes": []
+  },
+  {
+   "frame": 88,
+   "bucket": "farcourt_gap",
+   "gap": 29,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 314,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 8911,
+   "prior_x": 621.3,
+   "prior_y": 41.2,
+   "hud_boxes": []
+  },
+  {
+   "frame": 89,
+   "bucket": "anchor",
+   "gap": 29,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 315,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 8913,
+   "prior_x": 623.3,
+   "prior_y": 42.5,
+   "hud_boxes": []
+  },
+  {
+   "frame": 90,
+   "bucket": "anchor",
+   "gap": 30,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 91,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1459,
+   "prior_x": 731.2,
+   "prior_y": 283.9,
+   "hud_boxes": []
+  },
+  {
+   "frame": 91,
+   "bucket": "farcourt_gap",
+   "gap": 30,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 92,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1460,
+   "prior_x": 732.5,
+   "prior_y": 283.9,
+   "hud_boxes": []
+  },
+  {
+   "frame": 92,
+   "bucket": "anchor",
+   "gap": 30,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 93,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1461,
+   "prior_x": 733.8,
+   "prior_y": 283.8,
+   "hud_boxes": []
+  },
+  {
+   "frame": 93,
+   "bucket": "anchor",
+   "gap": 31,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 201,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4753,
+   "prior_x": 79.8,
+   "prior_y": 274.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 94,
+   "bucket": "farcourt_gap",
+   "gap": 31,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 202,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4755,
+   "prior_x": 83.6,
+   "prior_y": 278.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 95,
+   "bucket": "anchor",
+   "gap": 31,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 204,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4759,
+   "prior_x": 91.2,
+   "prior_y": 286.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 96,
+   "bucket": "anchor",
+   "gap": 32,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 910,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3698,
+   "prior_x": 627.6,
+   "prior_y": 370.8,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 97,
+   "bucket": "farcourt_gap",
+   "gap": 32,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 912,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3702,
+   "prior_x": 554.4,
+   "prior_y": 229.1,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 98,
+   "bucket": "anchor",
+   "gap": 32,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 914,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3706,
+   "prior_x": 481.3,
+   "prior_y": 87.5,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 99,
+   "bucket": "anchor",
+   "gap": 33,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 624,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 5691,
+   "prior_x": 433.9,
+   "prior_y": 253.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 100,
+   "bucket": "farcourt_gap",
+   "gap": 33,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 625,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 5693,
+   "prior_x": 443.6,
+   "prior_y": 248.5,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 101,
+   "bucket": "anchor",
+   "gap": 33,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 627,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 5697,
+   "prior_x": 463.0,
+   "prior_y": 239.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 102,
+   "bucket": "anchor",
+   "gap": 34,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 723,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 10086,
+   "prior_x": 715.0,
+   "prior_y": 97.1,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 103,
+   "bucket": "farcourt_gap",
+   "gap": 34,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 725,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 10090,
+   "prior_x": 713.4,
+   "prior_y": 114.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 104,
+   "bucket": "anchor",
+   "gap": 34,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 728,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 10096,
+   "prior_x": 711.0,
+   "prior_y": 141.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 105,
+   "bucket": "anchor",
+   "gap": 35,
+   "repeat": false,
+   "src_dataset": "yt_tC0z7FYvMks",
+   "src_frame": 3443,
+   "width": 1280,
+   "height": 720,
+   "video": "tC0z7FYvMks.mp4",
+   "video_frame": 35437,
+   "prior_x": 825.4,
+   "prior_y": 106.9,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 228,
+     "h": 46,
+     "src": "manual",
+     "what": "subscribe banner"
+    },
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 328,
+     "src": "manual",
+     "what": "mini-court radar + readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00286
+    }
+   ]
+  },
+  {
+   "frame": 106,
+   "bucket": "farcourt_gap",
+   "gap": 35,
+   "repeat": false,
+   "src_dataset": "yt_tC0z7FYvMks",
+   "src_frame": 3445,
+   "width": 1280,
+   "height": 720,
+   "video": "tC0z7FYvMks.mp4",
+   "video_frame": 35441,
+   "prior_x": 830.6,
+   "prior_y": 108.9,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 228,
+     "h": 46,
+     "src": "manual",
+     "what": "subscribe banner"
+    },
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 328,
+     "src": "manual",
+     "what": "mini-court radar + readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00286
+    }
+   ]
+  },
+  {
+   "frame": 107,
+   "bucket": "anchor",
+   "gap": 35,
+   "repeat": false,
+   "src_dataset": "yt_tC0z7FYvMks",
+   "src_frame": 3448,
+   "width": 1280,
+   "height": 720,
+   "video": "tC0z7FYvMks.mp4",
+   "video_frame": 35447,
+   "prior_x": 838.5,
+   "prior_y": 112.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 228,
+     "h": 46,
+     "src": "manual",
+     "what": "subscribe banner"
+    },
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 328,
+     "src": "manual",
+     "what": "mini-court radar + readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00286
+    }
+   ]
+  },
+  {
+   "frame": 108,
+   "bucket": "anchor",
+   "gap": 36,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 520,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7872,
+   "prior_x": 280.0,
+   "prior_y": 291.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 109,
+   "bucket": "farcourt_gap",
+   "gap": 36,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 521,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7874,
+   "prior_x": 332.1,
+   "prior_y": 253.8,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 110,
+   "bucket": "anchor",
+   "gap": 36,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 523,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7878,
+   "prior_x": 436.3,
+   "prior_y": 178.8,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 111,
+   "bucket": "anchor",
+   "gap": 37,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 1827,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 6990,
+   "prior_x": 752.5,
+   "prior_y": 252.5,
+   "hud_boxes": []
+  },
+  {
+   "frame": 112,
+   "bucket": "farcourt_gap",
+   "gap": 37,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 1830,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 6993,
+   "prior_x": 732.9,
+   "prior_y": 254.1,
+   "hud_boxes": []
+  },
+  {
+   "frame": 113,
+   "bucket": "anchor",
+   "gap": 37,
+   "repeat": false,
+   "src_dataset": "yt_8-BkpjFFIhQ",
+   "src_frame": 1834,
+   "width": 1280,
+   "height": 720,
+   "video": "8-BkpjFFIhQ.mp4",
+   "video_frame": 6997,
+   "prior_x": 706.7,
+   "prior_y": 256.2,
+   "hud_boxes": []
+  },
+  {
+   "frame": 114,
+   "bucket": "anchor",
+   "gap": 38,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 209,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1631,
+   "prior_x": 811.0,
+   "prior_y": 243.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 115,
+   "bucket": "farcourt_gap",
+   "gap": 38,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 210,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1633,
+   "prior_x": 811.3,
+   "prior_y": 244.4,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 116,
+   "bucket": "anchor",
+   "gap": 38,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 211,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1635,
+   "prior_x": 811.7,
+   "prior_y": 245.8,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 117,
+   "bucket": "anchor",
+   "gap": 39,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 360,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2787,
+   "prior_x": 559.2,
+   "prior_y": 251.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 118,
+   "bucket": "farcourt_gap",
+   "gap": 39,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 361,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2789,
+   "prior_x": 500.6,
+   "prior_y": 256.6,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 119,
+   "bucket": "anchor",
+   "gap": 39,
+   "repeat": false,
+   "src_dataset": "yt_TilAFMPc0yg",
+   "src_frame": 362,
+   "width": 1280,
+   "height": 720,
+   "video": "TilAFMPc0yg.mp4",
+   "video_frame": 2791,
+   "prior_x": 442.0,
+   "prior_y": 262.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 470,
+     "h": 155,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1083,
+     "y": 0,
+     "w": 197,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 242,
+     "w": 207,
+     "h": 74,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 598,
+     "w": 337,
+     "h": 122,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00697
+    }
+   ]
+  },
+  {
+   "frame": 120,
+   "bucket": "anchor",
+   "gap": 40,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 292,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9674,
+   "prior_x": 612.5,
+   "prior_y": 252.5,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 121,
+   "bucket": "farcourt_gap",
+   "gap": 40,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 294,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9678,
+   "prior_x": 607.5,
+   "prior_y": 255.5,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 122,
+   "bucket": "anchor",
+   "gap": 40,
+   "repeat": false,
+   "src_dataset": "yt_VZWi6Vf-sX0",
+   "src_frame": 297,
+   "width": 1280,
+   "height": 720,
+   "video": "VZWi6Vf-sX0.mp4",
+   "video_frame": 9684,
+   "prior_x": 600.0,
+   "prior_y": 260.0,
+   "hud_boxes": [
+    {
+     "x": 1073,
+     "y": 0,
+     "w": 207,
+     "h": 232,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 238,
+     "w": 207,
+     "h": 78,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 943,
+     "y": 586,
+     "w": 337,
+     "h": 134,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 123,
+   "bucket": "anchor",
+   "gap": 41,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 371,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 9025,
+   "prior_x": 685.5,
+   "prior_y": 239.7,
+   "hud_boxes": []
+  },
+  {
+   "frame": 124,
+   "bucket": "farcourt_gap",
+   "gap": 41,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 373,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 9029,
+   "prior_x": 689.3,
+   "prior_y": 245.0,
+   "hud_boxes": []
+  },
+  {
+   "frame": 125,
+   "bucket": "anchor",
+   "gap": 41,
+   "repeat": false,
+   "src_dataset": "yt_WjHZrIYteDA",
+   "src_frame": 376,
+   "width": 1280,
+   "height": 720,
+   "video": "WjHZrIYteDA.mp4",
+   "video_frame": 9035,
+   "prior_x": 695.0,
+   "prior_y": 253.0,
+   "hud_boxes": []
+  },
+  {
+   "frame": 126,
+   "bucket": "anchor",
+   "gap": 42,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 106,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1474,
+   "prior_x": 736.3,
+   "prior_y": 293.4,
+   "hud_boxes": []
+  },
+  {
+   "frame": 127,
+   "bucket": "farcourt_gap",
+   "gap": 42,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 107,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1475,
+   "prior_x": 736.4,
+   "prior_y": 295.1,
+   "hud_boxes": []
+  },
+  {
+   "frame": 128,
+   "bucket": "anchor",
+   "gap": 42,
+   "repeat": false,
+   "src_dataset": "yt_am_dbl_classb",
+   "src_frame": 109,
+   "width": 1920,
+   "height": 1080,
+   "video": "am_dbl_classb.mp4",
+   "video_frame": 1477,
+   "prior_x": 736.5,
+   "prior_y": 298.5,
+   "hud_boxes": []
+  },
+  {
+   "frame": 129,
+   "bucket": "anchor",
+   "gap": 43,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 213,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4777,
+   "prior_x": 124.5,
+   "prior_y": 352.5,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 130,
+   "bucket": "farcourt_gap",
+   "gap": 43,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 216,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4783,
+   "prior_x": 131.8,
+   "prior_y": 355.4,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 131,
+   "bucket": "anchor",
+   "gap": 43,
+   "repeat": false,
+   "src_dataset": "yt_col_hard_zheng",
+   "src_frame": 219,
+   "width": 1920,
+   "height": 1080,
+   "video": "col_hard_zheng.mp4",
+   "video_frame": 4789,
+   "prior_x": 139.1,
+   "prior_y": 358.4,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 195,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 132,
+   "bucket": "anchor",
+   "gap": 44,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 914,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3706,
+   "prior_x": 481.3,
+   "prior_y": 87.5,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 133,
+   "bucket": "farcourt_gap",
+   "gap": 44,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 917,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3712,
+   "prior_x": 418.5,
+   "prior_y": 206.0,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 134,
+   "bucket": "anchor",
+   "gap": 44,
+   "repeat": false,
+   "src_dataset": "yt_ewqSn18xdsY",
+   "src_frame": 921,
+   "width": 1280,
+   "height": 720,
+   "video": "ewqSn18xdsY.mp4",
+   "video_frame": 3720,
+   "prior_x": 334.8,
+   "prior_y": 364.1,
+   "hud_boxes": [
+    {
+     "x": 960,
+     "y": 590,
+     "w": 320,
+     "h": 130,
+     "src": "manual",
+     "what": "swingvision watermark + ball",
+     "area_frac": 0.00741
+    }
+   ]
+  },
+  {
+   "frame": 135,
+   "bucket": "anchor",
+   "gap": 45,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 1210,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 13632,
+   "prior_x": 241.7,
+   "prior_y": 217.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 136,
+   "bucket": "farcourt_gap",
+   "gap": 45,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 1212,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 13636,
+   "prior_x": 332.1,
+   "prior_y": 217.5,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 137,
+   "bucket": "anchor",
+   "gap": 45,
+   "repeat": false,
+   "src_dataset": "yt_nQan0M5JDM8",
+   "src_frame": 1215,
+   "width": 1280,
+   "height": 720,
+   "video": "nQan0M5JDM8.mp4",
+   "video_frame": 13642,
+   "prior_x": 467.8,
+   "prior_y": 217.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 28,
+     "w": 415,
+     "h": 125,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 138,
+   "bucket": "anchor",
+   "gap": 46,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 1040,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 10720,
+   "prior_x": 529.6,
+   "prior_y": 128.9,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 139,
+   "bucket": "farcourt_gap",
+   "gap": 46,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 1041,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 10722,
+   "prior_x": 499.8,
+   "prior_y": 185.7,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 140,
+   "bucket": "anchor",
+   "gap": 46,
+   "repeat": false,
+   "src_dataset": "yt_rz4T0-VALNw",
+   "src_frame": 1043,
+   "width": 1280,
+   "height": 720,
+   "video": "rz4T0-VALNw.mp4",
+   "video_frame": 10726,
+   "prior_x": 440.3,
+   "prior_y": 299.3,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 430,
+     "h": 145,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 141,
+   "bucket": "anchor",
+   "gap": 48,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 526,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7884,
+   "prior_x": 592.7,
+   "prior_y": 212.9,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 142,
+   "bucket": "farcourt_gap",
+   "gap": 48,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 528,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7888,
+   "prior_x": 629.2,
+   "prior_y": 229.3,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 143,
+   "bucket": "anchor",
+   "gap": 48,
+   "repeat": false,
+   "src_dataset": "yt_6jp23ghDY9Q",
+   "src_frame": 531,
+   "width": 1280,
+   "height": 720,
+   "video": "6jp23ghDY9Q.mp4",
+   "video_frame": 7894,
+   "prior_x": 684.0,
+   "prior_y": 254.0,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "score panel"
+    }
+   ]
+  },
+  {
+   "frame": 144,
+   "bucket": "anchor",
+   "gap": 49,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 223,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1659,
+   "prior_x": 822.5,
+   "prior_y": 232.5,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 145,
+   "bucket": "farcourt_gap",
+   "gap": 49,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 224,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1661,
+   "prior_x": 836.3,
+   "prior_y": 224.2,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  },
+  {
+   "frame": 146,
+   "bucket": "anchor",
+   "gap": 49,
+   "repeat": false,
+   "src_dataset": "yt_RZ_wyJ9rI3Q",
+   "src_frame": 226,
+   "width": 1280,
+   "height": 720,
+   "video": "RZ_wyJ9rI3Q.mp4",
+   "video_frame": 1665,
+   "prior_x": 863.8,
+   "prior_y": 207.5,
+   "hud_boxes": [
+    {
+     "x": 0,
+     "y": 0,
+     "w": 400,
+     "h": 130,
+     "src": "manual",
+     "what": "score panel"
+    },
+    {
+     "x": 1085,
+     "y": 0,
+     "w": 195,
+     "h": 132,
+     "src": "manual",
+     "what": "mini-court radar"
+    },
+    {
+     "x": 1073,
+     "y": 248,
+     "w": 207,
+     "h": 66,
+     "src": "manual",
+     "what": "stroke + speed readout"
+    },
+    {
+     "x": 880,
+     "y": 580,
+     "w": 400,
+     "h": 140,
+     "src": "manual",
+     "what": "swingvision watermark + ball"
+    }
+   ]
+  }
+ ]
+}
