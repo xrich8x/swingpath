@@ -161,8 +161,25 @@ def build_plate(video: Path, out_png: Path, *, start_frac=0.30, span_s=60.0, n=8
     if len(ims) < 20:
         return False
     out_png.parent.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite(str(out_png), np.median(np.stack(ims), 0).astype(np.uint8))
-    return True
+
+    plate = np.median(np.stack(ims), 0).astype(np.uint8)
+    # A median plate is only clean if the CAMERA held still. On a clip that
+    # drifts or zooms, medianing 60 s of it smears the court into a ghost and
+    # you are asked to snap an overlay onto a blur — which is exactly what it
+    # did to the three HoHxFSX_gLk segments. Sharpness says which case this is:
+    # compare the plate against a real frame from the same span.
+    def sharp(im):
+        return float(cv2.Laplacian(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY),
+                                   cv2.CV_32F).var())
+
+    raw = ims[len(ims) // 2]
+    if sharp(plate) < 0.5 * sharp(raw):
+        # Keep the raw frame. A player standing on a line is a smaller problem
+        # than no legible line anywhere, and the snap can be nudged by hand.
+        cv2.imwrite(str(out_png), raw)
+        return "raw"
+    cv2.imwrite(str(out_png), plate)
+    return "plate"
 
 
 def wait_until_free(port: int, timeout_s: float = 20.0) -> bool:
@@ -308,8 +325,10 @@ def main() -> None:
         for i, (n, v) in enumerate(missing, 1):
             t0 = time.time()
             ok = build_plate(v, plate_path(n))
-            print(f"  [{i}/{len(missing)}] {n:<18} "
-                  f"{'ready' if ok else 'FAILED'} ({time.time() - t0:.0f}s)")
+            how = {"plate": "clean plate", "raw": "single frame "
+                   "(camera moves, a median would smear it)"}.get(ok, "FAILED")
+            print(f"  [{i}/{len(missing)}] {n:<18} {how} "
+                  f"({time.time() - t0:.0f}s)")
     todo = [(n, v, p) for n, v, p in todo if plate_path(n).is_file()]
     if not todo:
         raise SystemExit("no clip could be prepared")
