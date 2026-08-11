@@ -12,8 +12,13 @@ done, and an uncalibrated clip cannot contribute a speed, a line call, or a
 far-court gate.
 
 So this serves the queue: for each clip that has no calibration yet, it starts
-the setup tool on a fixed port, opens the browser, waits for the file to appear,
-then moves on. You Snap, Save, and it advances by itself.
+the setup tool on a fixed port, waits for the file to appear, then moves on.
+You Snap, Save, and it advances by itself.
+
+ONE TAB, NOT ONE PER CLIP. Everything is served on the same port, so the tab
+already points at the right URL and a RELOAD picks up the next clip. The
+browser is opened for the first clip only — a first version opened it every
+time and left ten windows behind on a ten-clip queue.
 
     py tools/calibrate_queue.py --refused        # everything the audit refused
     py tools/calibrate_queue.py --clips data/train_clips/foo.mp4
@@ -78,8 +83,14 @@ def wait_until_listening(port: int, proc, timeout_s: float = 240.0) -> bool:
     return False
 
 
-def serve(video: Path, out: Path, port: int, timeout_s: float):
-    """Run the setup tool until `out` appears. Returns True if it was saved."""
+def serve(video: Path, out: Path, port: int, timeout_s: float,
+          open_browser: bool = True):
+    """Run the setup tool until `out` appears. Returns True if it was saved.
+
+    `open_browser` is False for every clip after the first. The queue serves
+    them all on ONE port, so the tab is already pointing at the right URL and a
+    reload picks up the next clip; opening it per clip left ten tabs behind.
+    """
     before = out.stat().st_mtime if out.is_file() else None
     proc = subprocess.Popen(
         [str(PY), str(REPO / "tools/court_setup_server.py"),
@@ -91,8 +102,12 @@ def serve(video: Path, out: Path, port: int, timeout_s: float):
         if not wait_until_listening(port, proc):
             print("    could not start the setup tool for this clip — skipping")
             return False
-        webbrowser.open(url)
-        print(f"    {url}  — auto-seed, Snap, Save. Ctrl+C here to skip.")
+        if open_browser:
+            webbrowser.open(url)
+            print(f"    {url}  — auto-seed, Snap, Save. Ctrl+C here to skip.")
+        else:
+            print("    ready — RELOAD the browser tab. "
+                  "Snap, Save. Ctrl+C here to skip.")
         deadline = time.time() + timeout_s
         while time.time() < deadline:
             if proc.poll() is not None:
@@ -137,6 +152,10 @@ def main() -> None:
                     help="seconds to wait for a save before moving on")
     ap.add_argument("--redo", dest="skip_existing", action="store_false",
                     default=True, help="re-calibrate clips that already have a file")
+    ap.add_argument("--no-browser", dest="browser", action="store_false",
+                    default=True,
+                    help="never open a tab. For checking the queue without "
+                         "leaving a browser window per clip behind")
     args = ap.parse_args()
 
     names = [Path(c).stem for c in args.clips]
@@ -163,10 +182,13 @@ def main() -> None:
     print(f"\n{len(todo)} clip(s) to calibrate, ~30 s each. "
           f"Close the browser tab and it moves on when you Save.\n")
 
-    done, skipped = [], []
+    done, skipped, opened = [], [], False
     for i, (n, vid, pts) in enumerate(todo, 1):
         print(f"[{i}/{len(todo)}] {n}")
-        if serve(vid, pts, args.port, args.timeout):
+        want_tab = args.browser and not opened
+        if want_tab:
+            opened = True
+        if serve(vid, pts, args.port, args.timeout, open_browser=want_tab):
             print(f"    saved {pts.name} — {audit(pts)}")
             done.append(n)
         else:
