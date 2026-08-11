@@ -15,6 +15,20 @@ So this serves the queue: for each clip that has no calibration yet, it starts
 the setup tool on a fixed port, waits for the file to appear, then moves on.
 You Snap, Save, and it advances by itself.
 
+ALL THE WAITING HAPPENS ONCE, UP FRONT
+--------------------------------------
+The setup tool builds a temporal clean plate (per-pixel median over a 60 s
+window, so the players vanish and no one is standing on a line you need to
+snap to) BEFORE it serves anything. Doing that per clip put a dead tab between
+every pair of clips, which is the difference between a click job and a chore.
+
+Two changes fix it. The plates are built ONCE, before any browsing starts, so
+the only wait is a single unattended pass. And they are built with one
+sequential ffmpeg decode instead of 80 random seeks: MEASURED **125.6 s -> 20.0 s**
+on the worst clip, because these files are stream copies whose sparse keyframe
+index makes `cap.set(POS_FRAMES)` extremely expensive. Serving from a pre-built
+plate then takes **4.5 s** instead of 20-125.
+
 ONE TAB, NOT ONE PER CLIP. Everything is served on the same port, so the tab
 already points at the right URL and a RELOAD picks up the next clip. The
 browser is opened for the first clip only — a first version opened it every
@@ -41,6 +55,30 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 PY = REPO / "backend" / ".venv" / "Scripts" / "python.exe"
 PORT = 8790
+
+
+def reexec_under_venv() -> None:
+    """Re-launch under backend/.venv if this interpreter lacks OpenCV.
+
+    This started as a stdlib-only launcher, so `py tools/calibrate_queue.py` was
+    the documented command — and then building clean plates here made it need
+    cv2/numpy, which the bare `py` launcher does not have. Rather than change the
+    documented command (and have the old one fail with a ModuleNotFoundError
+    halfway through a queue, after the user has already waited), detect it and
+    hand off.
+    """
+    try:
+        import cv2  # noqa: F401
+        return
+    except ImportError:
+        pass
+    if not PY.is_file() or Path(sys.executable).resolve() == PY.resolve():
+        raise SystemExit(
+            "this needs OpenCV and backend/.venv was not found — run:\n"
+            f"  backend\\.venv\\Scripts\\python.exe {Path(__file__).name} ...")
+    print(f"[queue] re-running under {PY.parent.parent.name} (needs OpenCV)")
+    raise SystemExit(subprocess.run(
+        [str(PY), str(Path(__file__).resolve()), *sys.argv[1:]]).returncode)
 
 
 def refused_clips(audit_path: Path):
@@ -77,11 +115,54 @@ def wait_until_listening(port: int, proc, timeout_s: float = 240.0) -> bool:
             if s.connect_ex(("127.0.0.1", port)) == 0:
                 return True
         if not told and time.time() > deadline - timeout_s + 4:
-            print("    building the clean plate (players removed) — "
-                  "15-25 s. Do NOT reload until it says ready.")
+            print("    starting...")
             told = True
         time.sleep(1.0)
     return False
+
+
+PLATES = REPO / "data" / "runs" / "plates"
+
+
+def plate_path(clip: str) -> Path:
+    return PLATES / f"{clip}.png"
+
+
+def build_plate(video: Path, out_png: Path, *, start_frac=0.30, span_s=60.0, n=80):
+    """Temporal-median clean plate, via ONE sequential ffmpeg decode.
+
+    The equivalent in court_setup_server seeks to 80 spread positions with
+    cap.set(POS_FRAMES). On a stream-copied file the keyframe index is sparse,
+    so each seek decodes a long way and the whole thing took 125.6 s on one of
+    these clips. Decoding a single 60 s span and letting ffmpeg drop frames to
+    the target rate produces the same 80 frames in 20.0 s.
+    """
+    import subprocess
+    import tempfile
+
+    import cv2
+    import imageio_ffmpeg
+    import numpy as np
+
+    cap = cv2.VideoCapture(str(video))
+    total, fps = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), cap.get(cv2.CAP_PROP_FPS) or 60
+    cap.release()
+    dur = total / max(fps, 1)
+    span = min(span_s, max(5.0, dur * 0.5))
+    start = max(0.0, min(dur * start_frac, dur - span))
+    with tempfile.TemporaryDirectory() as td:
+        subprocess.run(
+            [imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-ss", f"{start:.2f}",
+             "-i", str(video), "-t", f"{span:.2f}", "-vf", f"fps={n / span:.3f}",
+             "-q:v", "2", str(Path(td) / "p%04d.png")],
+            check=True, capture_output=True)
+        ims = [cv2.imread(str(q)) for q in sorted(Path(td).glob("p*.png"))]
+    ims = [i for i in ims if i is not None]
+    if len(ims) < 20:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(out_png), np.median(np.stack(ims), 0).astype(np.uint8))
+    return True
 
 
 def wait_until_free(port: int, timeout_s: float = 20.0) -> bool:
@@ -116,7 +197,7 @@ def serve(video: Path, out: Path, port: int, timeout_s: float,
     fh = log.open("w", encoding="utf-8", errors="replace")
     proc = subprocess.Popen(
         [str(PY), str(REPO / "tools/court_setup_server.py"),
-         "--video", str(video), "--out", str(out),
+         "--frame", str(video), "--out", str(out),
          "--port", str(port), "--no-browser"],
         stdout=fh, stderr=subprocess.STDOUT)
     url = f"http://127.0.0.1:{port}/"
@@ -177,6 +258,7 @@ def audit(pts: Path) -> str:
 
 
 def main() -> None:
+    reexec_under_venv()
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--clips", nargs="*", default=[])
     ap.add_argument("--refused", action="store_true",
@@ -216,8 +298,23 @@ def main() -> None:
     if not todo:
         print("\nnothing left to calibrate.")
         return
-    print(f"\n{len(todo)} clip(s) to calibrate, ~30 s each. "
-          f"Close the browser tab and it moves on when you Save.\n")
+    # Build every clean plate BEFORE any browsing starts. One unattended pass,
+    # and then the tab never waits again — which is the whole point: doing this
+    # per clip put a dead browser between every pair of clips.
+    missing = [(n, v) for n, v, _ in todo if not plate_path(n).is_file()]
+    if missing:
+        print(f"\npreparing {len(missing)} clip(s) — about 20 s each, once only. "
+              f"Nothing for you to do until this finishes.")
+        for i, (n, v) in enumerate(missing, 1):
+            t0 = time.time()
+            ok = build_plate(v, plate_path(n))
+            print(f"  [{i}/{len(missing)}] {n:<18} "
+                  f"{'ready' if ok else 'FAILED'} ({time.time() - t0:.0f}s)")
+    todo = [(n, v, p) for n, v, p in todo if plate_path(n).is_file()]
+    if not todo:
+        raise SystemExit("no clip could be prepared")
+    print(f"\n{len(todo)} clip(s) to calibrate, a few seconds each from here. "
+          f"Snap, Save, and it advances by itself.\n")
 
     done, skipped, opened = [], [], False
     for i, (n, vid, pts) in enumerate(todo, 1):
@@ -225,7 +322,8 @@ def main() -> None:
         want_tab = args.browser and not opened
         if want_tab:
             opened = True
-        if serve(vid, pts, args.port, args.timeout, open_browser=want_tab):
+        if serve(plate_path(n), pts, args.port, args.timeout,
+                 open_browser=want_tab):
             print(f"    saved {pts.name} — {audit(pts)}")
             done.append(n)
         else:
