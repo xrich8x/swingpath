@@ -102,12 +102,66 @@ sys.path.insert(0, str(REPO / "backend"))
 IN_W, IN_H = 512, 288
 FAR_FRAC = 0.36          # the project's resolution-comparable far_px band
 MAX_GAP = 10             # 89% of far-court misses; beyond this there is no anchor
+NET_Y_M = 11.885         # the real far/near boundary, in court metres
 
 
-def candidates(data_root: Path, max_gap: int = MAX_GAP):
+def far_test(dataset_dir: Path, clips_root: Path):
+    """A predicate saying whether a 512x288 point is in the FAR COURT.
+
+    Geometric when the clip has a calibration, frame-row otherwise.
+
+    WHY THIS MATTERS, MEASURED: `FAR_FRAC` calls the top 36% of the FRAME "far
+    court". That is a proxy for the far half of the COURT, and it only holds for
+    the framing it was written against. On the clips added in this session it is
+    wrong by 5-26x — `tc8CGFxyRE8` puts **3.2% of its labels in the top 36% of
+    the frame and 84.0% past the net**, `e8T34KoJzOw_s2` 5.0% vs 46.1%. A camera
+    that frames the court well puts the far baseline LOWER in the frame, so the
+    proxy quietly declares a whole clip to have almost no far court and the queue
+    skips it.
+
+    Past the net (court-y > 11.885 m) is the real question, and it is answerable
+    now that every new clip carries a homography — it was not before.
+    """
+    import numpy as np      # noqa: F401  (imported for the cv2/H path below)
+
+    row_rule = (lambda x, y: y < FAR_FRAC * IN_H, "frame-row")
+    kp = REPO / "data" / f"{dataset_dir.name.removeprefix('yt_')}_pts.json"
+    try:
+        sm = source_map(dataset_dir, clips_root)
+    except (OSError, ValueError, KeyError):
+        # A malformed or half-written dataset dir must not take the queue down,
+        # and must not silently become "everything is far court" either. Choosing
+        # the policy is not the place to fail; fall back to the proxy.
+        return row_rule
+    if not kp.is_file() or sm is None:
+        return row_rule
+    import cv2  # noqa: F401
+    from swingvision import calibration, court
+
+    _v, _ws, _st, _step, (W, H) = sm
+    pts = {k: v for k, v in json.loads(kp.read_text(encoding="utf-8")).items()
+           if not k.startswith("_")}
+    names = ("near_bl_doubles", "near_br_doubles", "far_bl_doubles", "far_br_doubles")
+    if not all(n in pts for n in names):
+        return row_rule
+    Hm = calibration.compute_homography([court.LANDMARKS[n] for n in names],
+                                        [pts[n] for n in names])
+    sx, sy = W / IN_W, H / IN_H
+
+    def geo(x, y):
+        cx, cy = calibration.image_to_court(Hm, [(x * sx, y * sy)])[0]
+        return cy > NET_Y_M
+
+    return geo, "court-metres"
+
+
+def candidates(data_root: Path, max_gap: int = MAX_GAP, clips_root: Path = None):
     """One (dir, a, pa, mid, p_interp, b, pb) per bracketed far-court gap."""
     out = []
     for lp in sorted(glob.glob(str(data_root / "*" / "labels.json"))):
+        is_far, _how = (far_test(Path(lp).parent, clips_root)
+                        if clips_root else
+                        (lambda x, y: y < FAR_FRAC * IN_H, "frame-row"))
         d = json.loads(Path(lp).read_text(encoding="utf-8"))
         L = d.get("labels") or {}
         neg = set(d.get("negatives") or [])
@@ -129,7 +183,8 @@ def candidates(data_root: Path, max_gap: int = MAX_GAP):
                 continue
             t = (m - a) / (b - a)
             yi = ya + (yb - ya) * t
-            if yi >= FAR_FRAC * IN_H:
+            xi = xa + (xb - xa) * t
+            if not is_far(xi, yi):
                 continue
             out.append((os.path.dirname(lp), a, (xa, ya), m,
                         (xa + (xb - xa) * t, yi), b, (xb, yb)))
@@ -326,7 +381,7 @@ def main() -> None:
             f"  Use --clip <another name> for a new queue, or --force to overwrite "
             f"after archiving those labels yourself.")
 
-    cands = candidates(Path(args.data), args.max_gap)
+    cands = candidates(Path(args.data), args.max_gap, Path(args.clips))
     print(f"{len(cands)} bracketed far-court gaps in {args.data}")
     if not args.allow_native:
         keep = {d for d in {c[0] for c in cands}

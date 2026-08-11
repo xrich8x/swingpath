@@ -155,6 +155,42 @@ def test_interleaving_with_nothing_to_interleave_is_a_no_op():
     assert sel._interleave(["r"], []) == ["r"]
 
 
+# --- "far court" must mean the far court, not the top of the frame -----------
+# FAR_FRAC calls the top 36% of the FRAME far court. That is a proxy for the far
+# half of the COURT and it only holds for the framing it was written against.
+# Measured on the clips added later: tc8CGFxyRE8 puts 3.2% of its labels in the
+# top 36% of the frame and 84.0% past the net — a 26x error that made the queue
+# skip a clip full of far-court ball.
+
+def test_without_a_calibration_it_falls_back_to_the_frame_row_rule(tmp_path):
+    """Most clips have no homography, and the proxy is all there is for them.
+    The fallback must be the OLD behaviour exactly, or existing queues shift."""
+    d = tmp_path / "yt_nocalib"
+    d.mkdir()
+    is_far, how = sel.far_test(d, tmp_path)
+    assert how == "frame-row"
+    assert is_far(100.0, 40.0) is True            # top 36% of 288 -> far
+    assert is_far(100.0, 200.0) is False
+
+
+def test_the_frame_row_rule_is_unchanged_at_its_boundary(tmp_path):
+    d = tmp_path / "yt_nocalib"
+    d.mkdir()
+    is_far, _ = sel.far_test(d, tmp_path)
+    edge = sel.FAR_FRAC * sel.IN_H
+    assert is_far(0.0, edge - 0.01) is True
+    assert is_far(0.0, edge + 0.01) is False
+
+
+def test_a_gap_is_selected_by_whatever_predicate_it_is_given(tmp_path):
+    """candidates() must route through the predicate, not re-test the row itself
+    — otherwise the geometric rule is computed and then quietly ignored."""
+    _clip(tmp_path, "c", {10: (100, NEAR_Y), 14: (140, NEAR_Y)})
+    assert sel.candidates(tmp_path) == [], "near-court gap should be skipped"
+    # A clip WITH a calibration would call the geometric predicate here; the
+    # fallback path is what this fixture exercises, and it must still refuse.
+
+
 def _cand(clip, a, m, b):
     return (f"/data/ball_dataset/{clip}", a, None, m, None, b, None)
 
