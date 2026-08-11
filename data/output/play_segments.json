@@ -1,11 +1,50 @@
 {
  "tool": "find_play_segments.py",
- "created": "2026-08-10 23:55:33",
+ "created": "2026-08-11 11:03:08",
  "params": {
   "min_seg_s": 45.0,
   "merge_gap_s": 20.0,
-  "min_separation": 0.18,
-  "thumb_w": 160
+  "face_frac": 0.14,
+  "pad_s": 2.0,
+  "thumb_w": 480,
+  "manual_drops": {
+   "HoHxFSX_gLk": [
+    [
+     464,
+     510
+    ],
+    [
+     536,
+     545
+    ],
+    [
+     594,
+     669
+    ]
+   ],
+   "e8T34KoJzOw": [
+    [
+     0,
+     295
+    ],
+    [
+     727,
+     775
+    ]
+   ],
+   "L73ep7JHiJ4": [
+    [
+     694,
+     702
+    ]
+   ],
+   "A7vXlWIlyrI": [
+    [
+     0,
+     6
+    ]
+   ]
+  }
  },
  "clips": {
   "UHf0LeMU2pg": {
@@ -14,35 +53,35 @@
    "segments": [
     [
      0.0,
-     63.0
+     124.0
     ]
    ],
-   "kept_s": 63.0,
-   "kept_pct": 50.8
+   "kept_s": 124.0,
+   "kept_pct": 100.0
   },
   "A7vXlWIlyrI": {
    "source": "Almost 50, Out Of Shape & SUPER GOOD!! \uff5c UTR 9 vs UTR 9 \uff5c (15\u29f81 vs 15 Ex 1\u29f86) [A7vXlWIlyrI].mp4",
    "duration_s": 1574.0,
    "segments": [
     [
-     65.0,
-     977.0
+     6,
+     1462.0
     ]
    ],
-   "kept_s": 912.0,
-   "kept_pct": 57.9
+   "kept_s": 1456.0,
+   "kept_pct": 92.5
   },
   "sAjkpeRq4P4": {
    "source": "Amateur Tennis - Full Match  - LK 13.4 vs LK 15.8 (NTRP 4.0 vs NTRP 4.0) [sAjkpeRq4P4].mp4",
    "duration_s": 1756.0,
    "segments": [
     [
-     4.0,
+     0.0,
      1756.0
     ]
    ],
-   "kept_s": 1752.0,
-   "kept_pct": 99.8
+   "kept_s": 1756.0,
+   "kept_pct": 100.0
   },
   "HoHxFSX_gLk": {
    "source": "I Challenged a 12 UTR to Slice Only Against Me.. You won't believe what happened [HoHxFSX_gLk].mp4",
@@ -50,51 +89,59 @@
    "segments": [
     [
      0.0,
-     378.0
+     53.0
     ],
     [
-     500.0,
-     561.0
+     77.0,
+     464
+    ],
+    [
+     545,
+     594
     ]
    ],
-   "kept_s": 439.0,
-   "kept_pct": 65.6
+   "kept_s": 489.0,
+   "kept_pct": 73.1
   },
   "uR5q2cSM6AY": {
    "source": "INSANE Point Play! 12 UTR vs 13 Year Old Top Junior Madhav Binu! [uR5q2cSM6AY].mp4",
    "duration_s": 356.0,
    "segments": [
     [
-     123.0,
+     0.0,
      356.0
     ]
    ],
-   "kept_s": 233.0,
-   "kept_pct": 65.4
+   "kept_s": 356.0,
+   "kept_pct": 100.0
   },
   "CYqapSq5llo": {
    "source": "My Opponent Hits & Acts CRAZY!! \uff5c UTR 9 vs 10 (15\u29f81 vs 15) [CYqapSq5llo].mp4",
    "duration_s": 1787.0,
    "segments": [
     [
-     138.0,
-     1694.0
+     0.0,
+     1692.0
     ]
    ],
-   "kept_s": 1556.0,
-   "kept_pct": 87.1
+   "kept_s": 1692.0,
+   "kept_pct": 94.7
   },
   "e8T34KoJzOw": {
    "source": "USTA 4.5 vs UTR 12.5! [e8T34KoJzOw].mp4",
    "duration_s": 1110.0,
    "segments": [
     [
-     292.0,
-     965.0
+     295,
+     727
+    ],
+    [
+     775,
+     963.0
     ]
    ],
-   "kept_s": 673.0,
-   "kept_pct": 60.6
+   "kept_s": 620.0,
+   "kept_pct": 55.9
   },
   "tc8CGFxyRE8": {
    "source": "USTA 5.5 vs USTA 5.0 or UTR 12 vs UTR 10 [tc8CGFxyRE8].mp4",
@@ -114,11 +161,11 @@
    "segments": [
     [
      0.0,
-     698.0
+     694
     ]
    ],
-   "kept_s": 698.0,
-   "kept_pct": 99.4
+   "kept_s": 694.0,
+   "kept_pct": 98.9
   }
  }
 }

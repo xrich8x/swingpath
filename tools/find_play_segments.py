@@ -42,6 +42,13 @@ The face test is positive evidence, so its failure mode is the safe one: an
 undetected face keeps footage that should have been cut, which costs a little
 perception time, while the similarity versions DELETED rallies.
 
+It does miss: a frontal cascade does not fire on a face in profile, so a bench
+chat filmed side-on survives. `--drops` takes a JSON of hand-specified ranges
+per clip, subtracted from whatever the detector found — the same "tool proposes,
+human disposes" split used for the HUD masks, and for the same reason: on a
+fixed pool of clips a person with a contact sheet is more reliable than a third
+threshold, and the record of what was cut stays auditable either way.
+
     py tools/find_play_segments.py --dir data/incoming
     py tools/find_play_segments.py --dir data/incoming --write --out data/train_clips
 
@@ -150,6 +157,26 @@ def segments(thumbs, *, min_seg_s=MIN_SEG_S, merge_gap_s=MERGE_GAP_S,
     return [tuple(s) for s in merged if s[1] - s[0] >= min_seg_s], ff.tolist()
 
 
+def subtract(segs, drops, *, min_seg_s=MIN_SEG_S):
+    """Remove hand-specified ranges from the detected segments."""
+    out = []
+    for a, b in segs:
+        pieces = [(a, b)]
+        for da, db in drops:
+            nxt = []
+            for pa, pb in pieces:
+                if db <= pa or da >= pb:
+                    nxt.append((pa, pb))
+                    continue
+                if da > pa:
+                    nxt.append((pa, da))
+                if db < pb:
+                    nxt.append((db, pb))
+            pieces = nxt
+        out += pieces
+    return [s for s in out if s[1] - s[0] >= min_seg_s]
+
+
 def hms(s: float) -> str:
     return f"{int(s) // 60}:{int(s) % 60:02d}"
 
@@ -166,8 +193,16 @@ def main() -> None:
                          "costs nothing when the pipeline samples from the middle")
     ap.add_argument("--min-seg", type=float, default=MIN_SEG_S)
     ap.add_argument("--face-frac", type=float, default=FACE_FRAC)
+    ap.add_argument("--drops", default=str(REPO / "data/play_drops.json"),
+                    help="JSON {clip id: [[start_s, end_s], ...]} of ranges to cut that the face test misses - a profile view defeats a frontal cascade")
     ap.add_argument("--json", default=str(REPO / "data/output/play_segments.json"))
     args = ap.parse_args()
+
+    dp = Path(args.drops)
+    drops = json.loads(dp.read_text(encoding="utf-8")) if dp.is_file() else {}
+    drops = {k: v for k, v in drops.items() if not k.startswith("_")}
+    if drops:
+        print(f"hand-specified drops for {sorted(drops)}")
 
     vids = [p for p in sorted(Path(args.dir).iterdir())
             if p.suffix.lower() in (".mp4", ".mov", ".mkv", ".avi", ".webm")]
@@ -177,6 +212,8 @@ def main() -> None:
         th = thumbnails(v)
         segs, _d = segments(th, min_seg_s=args.min_seg,
                             face_frac=args.face_frac)
+        if drops.get(yid):
+            segs = subtract(segs, drops[yid], min_seg_s=args.min_seg)
         total = sum(b - a for a, b in segs)
         dur = th[-1][0] if th else 0.0
         report[yid] = {"source": v.name, "duration_s": round(dur, 1),
@@ -191,7 +228,8 @@ def main() -> None:
     Path(args.json).write_text(json.dumps(
         {"tool": "find_play_segments.py", "created": time.strftime("%Y-%m-%d %H:%M:%S"),
          "params": {"min_seg_s": args.min_seg, "merge_gap_s": MERGE_GAP_S,
-                    "face_frac": args.face_frac, "pad_s": PAD_S, "thumb_w": THUMB_W},
+                    "face_frac": args.face_frac, "pad_s": PAD_S, "thumb_w": THUMB_W,
+                    "manual_drops": drops},
          "clips": report}, indent=1), encoding="utf-8")
     print(f"\nwrote {args.json}")
 

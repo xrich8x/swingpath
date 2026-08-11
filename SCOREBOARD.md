@@ -223,6 +223,17 @@ Process failures this project has hit **more than once**. Each cost real work.
    from the right one is worth 21. **When a per-clip split explains a result, check the
    per-FRAME pixels before naming the variable** — clips differ in many ways at once, and
    n=12 clips is one observation of each.
+14. **Judging a filter by what it KEPT.** Three versions of the play-segment finder
+   were written for the nine new match uploads. Each reported a plausible kept-percentage
+   and each was wrong in a way the percentage could not show: version 1 discarded real
+   tennis on 6 of 9 clips, version 2 on 5 of 9 — including **ten minutes of rallies from
+   one clip while reporting 58% kept**. Both were caught the same way, by rendering the
+   frames they THREW AWAY rather than the ones they kept. The root cause was shared:
+   "looks unlike the average frame" is not "is not tennis", and over half an hour outdoors
+   shadows crawl and exposure drifts. The fix was to detect the thing being REMOVED (a
+   face filling the frame) so the failure mode flips to keeping too much. Even that has
+   blind spots the count cannot reveal — a face in profile, and a sponsor read that cuts
+   to close-ups of a book with no face in it at all. **Always inspect the rejects.**
 12. **Scoring a HUMAN against a model, which is self-grading wearing a disguise.** The
    far-court queue accepts a labelled gap when the human's click on an anchor agrees
    with the tracker's position there. On the masked re-run that agreement rate went

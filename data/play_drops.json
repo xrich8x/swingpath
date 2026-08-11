@@ -1,0 +1,39 @@
+{
+ "_why": "Ranges the frontal-face test cannot see, read off contact sheets of the CUT files. Two blind spots it has: a face in profile (a bench chat filmed side-on), and an interruption with no face in it at all (a sponsor read that cuts to close-ups of a book). Times are seconds into the SOURCE file in data/incoming. Boundaries are padded a few seconds because --fast stream copy snaps the start back to the nearest keyframe.",
+ "HoHxFSX_gLk": [
+  [
+   456,
+   510
+  ],
+  [
+   536,
+   545
+  ],
+  [
+   594,
+   669
+  ]
+ ],
+ "e8T34KoJzOw": [
+  [
+   0,
+   295
+  ],
+  [
+   727,
+   775
+  ]
+ ],
+ "L73ep7JHiJ4": [
+  [
+   694,
+   702
+  ]
+ ],
+ "A7vXlWIlyrI": [
+  [
+   0,
+   6
+  ]
+ ]
+}
