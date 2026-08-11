@@ -240,6 +240,16 @@ def main() -> None:
     import trim_clip
     outdir = Path(args.out)
     outdir.mkdir(parents=True, exist_ok=True)
+    # Record which recording each cut came from. train_ballnet's gold guard
+    # matches on FILENAME, so a trim renames the footage and defeats it — a
+    # gold clip and a training set built from a cut of it reported no leak.
+    lineage = {}
+    lin_p = outdir / "lineage.json"
+    if lin_p.is_file():
+        try:
+            lineage = json.loads(lin_p.read_text(encoding="utf-8")).get("clips", {})
+        except ValueError:
+            pass
     for yid, r in report.items():
         src = Path(args.dir) / r["source"]
         for k, (a, b) in enumerate(r["segments"], 1):
@@ -247,7 +257,16 @@ def main() -> None:
             dst = outdir / name
             print(f"  cutting {name}  {hms(a)}-{hms(b)}")
             trim_clip.trim(src, dst, a, b, fast=args.fast)
-    print("\nDone. Register them in the Lab's Clips tab.")
+            lineage[name] = r["source"]
+    lin_p.write_text(json.dumps(
+        {"_why": "Which longer recording each trimmed clip was cut from. The gold "
+                 "guard matches on FILENAME, so without this a trim of a gold clip "
+                 "reads as a different video and leaks into training. Found live: "
+                 "gold clip hd_shortcourt_1 is '7 UTR vs 8 UTR [UHf0LeMU2pg].mp4' "
+                 "and a training set had been built from 'UHf0LeMU2pg.mp4'.",
+         "clips": lineage}, indent=1), encoding="utf-8")
+    print(f"\nwrote {lin_p} — {len(lineage)} clip(s) traced to their source")
+    print("Done. Register them in the Lab's Clips tab.")
 
 
 if __name__ == "__main__":

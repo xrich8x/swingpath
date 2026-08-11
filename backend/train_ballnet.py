@@ -101,6 +101,24 @@ def gold_source_videos(root):
         vid = m.get("video")
         if vid:
             out[os.path.basename(vid).lower()] = m.get("clip", os.path.basename(p))
+
+    # FOLLOW THE TRIM. A clip cut out of a longer recording gets a new filename,
+    # and this guard matches on filename — so trimming silently defeated it. Found
+    # live: gold clip `hd_shortcourt_1` is "7 UTR vs 8 UTR [UHf0LeMU2pg].mp4" and a
+    # training set had been built from "UHf0LeMU2pg.mp4", the same footage cut
+    # shorter. The guard reported no leak because the names differ.
+    # data/train_clips/lineage.json records {trimmed name: source name}; any trim of
+    # a gold source is gold too.
+    lin = os.path.join(os.path.dirname(os.path.abspath(root)), "train_clips",
+                       "lineage.json")
+    try:
+        with open(lin, "r", encoding="utf-8") as f:
+            for cut, src in json.load(f).get("clips", {}).items():
+                owner = out.get(os.path.basename(src).lower())
+                if owner:
+                    out[os.path.basename(cut).lower()] = owner
+    except (OSError, ValueError):
+        pass
     return out
 
 

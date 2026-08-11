@@ -225,6 +225,18 @@ Process failures this project has hit **more than once**. Each cost real work.
    from the right one is worth 21. **When a per-clip split explains a result, check the
    per-FRAME pixels before naming the variable** — clips differ in many ways at once, and
    n=12 clips is one observation of each.
+17. **Trimming a clip renames it, and the gold guard matches on the NAME.** Caught
+   live, not hypothetically: gold clip `hd_shortcourt_1` is `7 UTR vs 8 UTR
+   [UHf0LeMU2pg].mp4`, a training set had been built from `UHf0LeMU2pg.mp4` — the same
+   match, cut shorter — and `assert_no_gold_leak` reported **no leak**, because the
+   filenames differ. Every one of the 12 clips trimmed that day carried the same hole,
+   so the exam set was one training run away from being inside the revision. The guard
+   was correct for the world it was written in, where `data/` held whole recordings
+   under their own names; cutting clips created a lineage the identity check could not
+   see. Fixed by recording {cut: source} in `data/train_clips/lineage.json` at cut time
+   and expanding gold through it. **A provenance check keyed on a name breaks the moment
+   the pipeline gains a step that renames things** — and the new step will not know it
+   is supposed to tell the old check.
 16. **A default that is silently wrong for a whole new pool.** `validate_new_clip`
    looked for a clip's video at `data/<tag>.mp4` only, and fell back to "assume 1280x720"
    when it missed. The new training footage lives in `data/train_clips/` and is all

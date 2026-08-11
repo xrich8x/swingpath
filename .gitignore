@@ -81,6 +81,11 @@ data/*.mov
 # from YouTube ids in HANDOFF.md §4, datasets rebuild via the labeler scripts)
 data/train_clips/
 data/amateur_clips/
+# Videos promoted to the exam set. Same policy as the training clips: large,
+# and the repo tracks the LABELS and the calibration, never the media. Note
+# data/*.mp4 above does NOT cover a subdirectory, which is how 1.4 GB of
+# video nearly went in with a gold promotion.
+data/gold_clips/
 data/ball_dataset/
 data/court_dataset/
 # The COURT clips held out as TEST (data/gold/court_split.json). Same policy as
