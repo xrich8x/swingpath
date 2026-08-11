@@ -223,6 +223,18 @@ Process failures this project has hit **more than once**. Each cost real work.
    from the right one is worth 21. **When a per-clip split explains a result, check the
    per-FRAME pixels before naming the variable** — clips differ in many ways at once, and
    n=12 clips is one observation of each.
+16. **A default that is silently wrong for a whole new pool.** `validate_new_clip`
+   looked for a clip's video at `data/<tag>.mp4` only, and fell back to "assume 1280x720"
+   when it missed. The new training footage lives in `data/train_clips/` and is all
+   1080p, so every calibration the user hand-placed audited at the wrong resolution and
+   came back **DEGENERATE, fit residual 15.9-56.3 px** — nine of them, i.e. the entire
+   session's manual work. At the true 1920x1080 the same files read **0.3-6.5 px, six
+   PASS and three LOW-CAMERA**. Corners are pixel coordinates, so every geometric check
+   is resolution-dependent; the fallback was reasonable when `data/` held every clip and
+   became a lie the moment a subdirectory appeared. It now searches the directories clips
+   actually live in. **A fallback that cannot tell "not found" from "found and fine" will
+   eventually indict good work** — and the tell was that ALL of them failed, which is
+   almost never what a real quality problem looks like.
 15. **Re-implementing the thing you are trying to predict.** `audit_new_clips.py` was
    written to tell a user which new clips will auto-calibrate. Its first version drove
    `auto_fit_frame`/`consensus` by hand instead of calling `pipeline._sample_calib_frames`

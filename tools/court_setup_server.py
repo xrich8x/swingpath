@@ -213,6 +213,14 @@ PAGE = r"""<!doctype html><html><head><meta charset="utf-8">
   canvas.grabbing{cursor:grabbing}
   kbd{background:var(--panel);border:1px solid var(--line);border-bottom-width:2px;
     border-radius:5px;padding:0 5px;font:12px ui-monospace,Menlo,Consolas,monospace}
+  /* Clip strip: every court in the queue, always visible, one click apart. */
+  #clips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;
+    border-bottom:1px solid var(--line);background:#111823}
+  #clips button{padding:6px 11px;border-radius:8px;font-size:13px;font-weight:600}
+  #clips button.on{background:var(--accent);color:#182200;border-color:var(--accent)}
+  #clips button.done{border-color:var(--ok);color:var(--ok)}
+  #clips button.done.on{background:var(--ok);color:#04220f;border-color:var(--ok)}
+  #clips .lbl{color:var(--muted);font-size:12.5px;align-self:center;margin-right:4px}
   .hint{color:var(--muted);font-size:12.5px;padding:0 16px 10px}
   /* Setup checks: view (framing) + angle (camera height) */
   #checks{display:flex;flex-wrap:wrap;gap:10px;padding:2px 16px 10px}
@@ -241,6 +249,7 @@ PAGE = r"""<!doctype html><html><head><meta charset="utf-8">
   <span class="sp"></span>
   <button id="save" class="ok">Save calibration</button>
 </header>
+<div id="clips" style="display:none"></div>
 <div id="status">Drag the <b>middle</b> of the court to move it, a <b>corner</b> to reshape. Then <b>Snap to lines</b>.</div>
 <div id="checks">
   <div class="chk idle" id="chk-view"><div class="ico">•</div><div>
@@ -386,7 +395,15 @@ $("save").onclick=async()=>{const r=await api("/api/save",{corners:corDict(),loc
     setStatus('<span class="g">Saved</span> to <b>'+r.path+'</b>'+
       (r.exact?' (exact corners - your points, untouched)':
        (r.moved>3?' (shape locked to a real camera view, adjusted '+r.moved.toFixed(0)+'px)':''))+
-      ' - use it with <kbd>run.py analyze --keypoints</kbd>.');}
+      ' - use it with <kbd>run.py analyze --keypoints</kbd>.');
+    // Tick this clip in the strip, then step to the next unsaved one so a queue
+    // of ten is Snap-Save-Snap-Save rather than Snap-Save-find-the-next-button.
+    await refreshClips();
+    const next=CLIPS.findIndex((c,i)=>!c.done&&i>IDX);
+    const any=next>=0?next:CLIPS.findIndex(c=>!c.done);
+    if(any>=0)loadClip(any);
+    else setStatus('<span class="g">All '+CLIPS.length+
+      ' courts saved.</span> You can close this tab.');}
   else setStatus('Save failed.');};
 
 // --- LIVE mode: keep the picture and the verdict current while you aim ---
@@ -417,6 +434,49 @@ function startLive(){
   tick(); liveTimer=setInterval(tick,700);
 }
 img.onload=()=>{if(!W)return;render();};
+
+// ---- clip strip -------------------------------------------------------------
+// Every court in the queue is one click away and stays on screen. Loading a clip
+// swaps the frame in place: no restart, no new port, no reload.
+let CLIPS=[], IDX=0;
+function paintClips(){
+  const box=$("clips");
+  if(!CLIPS.length){box.style.display="none";return;}
+  box.style.display="flex";
+  const nDone=CLIPS.filter(c=>c.done).length;
+  box.innerHTML='<span class="lbl">'+nDone+' of '+CLIPS.length+' saved</span>';
+  CLIPS.forEach((c,i)=>{
+    const b=document.createElement("button");
+    b.textContent=(c.done?"✓ ":"")+c.name;
+    b.className=(c.done?"done":"")+(i===IDX?" on":"");
+    b.onclick=()=>loadClip(i);
+    box.appendChild(b);
+  });
+}
+function refreshClips(){
+  return fetch("/api/clips").then(r=>r.json())
+    .then(d=>{CLIPS=d.clips||[];IDX=d.idx||0;paintClips();});
+}
+function loadClip(i){
+  setStatus("Loading <b>"+(CLIPS[i]||{}).name+"</b>…");
+  return fetch("/api/select",{method:"POST",body:String(i)}).then(r=>r.json())
+    .then(d=>{
+      if(!d.ok){setStatus('<span class="w">Could not open that clip.</span>');return;}
+      IDX=d.idx;
+      return fetch("/api/meta").then(r=>r.json()).then(m=>{
+        W=m.w;H=m.h;
+        img.onload=()=>{fit();
+          if(m.seed){setDict(m.seed);
+            setStatus('<b>'+d.clip+'</b> — auto-seeded. Drag to fit, then <b>Snap</b>.');}
+          else{defaultCourt();
+            setStatus('<b>'+d.clip+'</b> — drag the court onto the lines, then <b>Snap</b>.');}
+          render(); img.onload=()=>render(); refreshChecks();};
+        img.src="/frame.jpg?t="+Date.now();   // per-clip frame; never reuse the cache
+        paintClips();
+      });
+    });
+}
+
 fetch("/api/meta").then(r=>r.json()).then(m=>{W=m.w;H=m.h;LIVE=!!m.live;
   img.onload=()=>{fit();
     if(m.seed){setDict(m.seed);setStatus('Auto-seeded a court - <b>drag</b> to fit, then <b>Snap</b>.');}
@@ -426,8 +486,55 @@ fetch("/api/meta").then(r=>r.json()).then(m=>{W=m.w;H=m.h;LIVE=!!m.live;
     img.onload=()=>render();          // later frames just repaint
     if(LIVE)startLive(); else refreshChecks();};
   img.src="/frame.jpg";});
+refreshClips();
 window.addEventListener("resize",()=>{if(W){fit();render();}});
 </script></body></html>"""
+
+
+def gallery_list(state):
+    """[{name, done}] for the clip strip. `done` is read from disk every time so
+    a save made in this session, or one made last week, look identical."""
+    out = []
+    for c in state.get("gallery") or []:
+        p = Path(c["out"])
+        out.append({"name": c["name"], "done": p.is_file(),
+                    "size": p.stat().st_size if p.is_file() else 0})
+    return out
+
+
+def select_clip(state, idx: int):
+    """Point the editor at gallery[idx]: its frame, its output path, its seed."""
+    import cv2
+
+    g = state.get("gallery") or []
+    if not (0 <= idx < len(g)):
+        return False
+    c = g[idx]
+    frame = cv2.imread(str(c["image"]))
+    if frame is None:
+        return False
+    state["frame"] = frame
+    state["out"] = str(c["out"])
+    state["clip_name"] = c["name"]
+    state["idx"] = idx
+    state["static_mask"] = None
+    # Bump the frame counter so the distance-to-line map, which is cached per
+    # frame, is rebuilt for the new clip instead of snapping to the old one's.
+    state["seq"] = state.get("seq", 0) + 1
+    # If this clip was calibrated before, reopen it where it was left rather
+    # than re-detecting over the top of a human's placement.
+    prev = Path(c["out"])
+    if prev.is_file():
+        try:
+            d = json.loads(prev.read_text(encoding="utf-8"))
+            pts = {k: v for k, v in d.items() if not k.startswith("_")}
+            if all(k in pts for k in DBL):
+                state["seed"] = {k: [float(pts[k][0]), float(pts[k][1])] for k in DBL}
+                return True
+        except (json.JSONDecodeError, OSError, TypeError, ValueError, KeyError):
+            pass
+    state["seed"] = auto_fit(frame)
+    return True
 
 
 def build_handler(state):
@@ -439,11 +546,20 @@ def build_handler(state):
     # LIVE mode (--camera): the frame is whatever the camera is seeing right now,
     # so nothing can be precomputed. STATIC mode: one frame/plate, computed once.
     live = state.get("live", False)
-    h, w = state["frame"].shape[:2]
 
     def cur():
         """The frame to work on: the newest camera frame, or the static plate."""
         return state["frame"]
+
+    def dims():
+        """(w, h) of the CURRENT frame.
+
+        Read per call, not captured once: in gallery mode the frame changes when
+        another clip is picked, and clips differ in size. A stale w/h here would
+        silently shift every corner the shape-lock solves.
+        """
+        fh, fw = state["frame"].shape[:2]
+        return fw, fh
 
     # Snap's polish samples this distance-to-line map. Build it from the plate's
     # ridge mask with any MTI-flagged moving pixels removed, so a lingering player
@@ -484,7 +600,8 @@ def build_handler(state):
         3deg of camera roll). This mirrors courtfit.shape_lock and
         pipeline.calibrate_video; only the auto-detect CANDIDATE search keeps roll
         frozen (see courtfit.cam_fit_quad) - a different regime, don't confuse them."""
-        locked, moved, _fit = ad.lock_quad(named, calibration, court, w, h,
+        w_, h_ = dims()
+        locked, moved, _fit = ad.lock_quad(named, calibration, court, w_, h_,
                                            dt=dt_map() if use_dt else None,
                                            allow_roll=True)
         return locked, moved
@@ -508,8 +625,13 @@ def build_handler(state):
                 ok, buf = cv2.imencode(".jpg", cur())
                 self._send(200, buf.tobytes(), "image/jpeg")
             elif self.path == "/api/meta":
-                self._send(200, {"w": w, "h": h, "seed": state.get("seed"),
-                                 "live": bool(live)})
+                w_, h_ = dims()
+                self._send(200, {"w": w_, "h": h_, "seed": state.get("seed"),
+                                 "live": bool(live),
+                                 "clip": state.get("clip_name")})
+            elif self.path == "/api/clips":
+                self._send(200, {"clips": gallery_list(state),
+                                 "idx": state.get("idx", 0)})
             elif self.path.startswith("/api/live"):
                 # Live framing guide: the newest auto-detected court + verdict,
                 # produced by the background worker (never blocks the browser).
@@ -525,6 +647,16 @@ def build_handler(state):
             return json.loads(self.rfile.read(n) or b"{}")
 
         def do_POST(self):
+            if self.path == "/api/select":
+                n = int(self.rfile.read(
+                    int(self.headers.get("Content-Length", 0)) or 0)
+                    .decode() or 0) if self.headers.get("Content-Length") else 0
+                ok = select_clip(state, n)
+                _dt_cache.clear()
+                self._send(200 if ok else 400,
+                           {"ok": ok, "idx": state.get("idx", 0),
+                            "clip": state.get("clip_name")})
+                return
             if self.path == "/api/meta":
                 self._send(200, {"w": w, "h": h, "seed": state.get("seed")})
             elif self.path == "/api/autodetect":
@@ -641,6 +773,14 @@ def main():
     ap.add_argument("--camera", type=int, metavar="INDEX", nargs="?", const=0,
                     help="LIVE mode: check framing against a real camera "
                          "(--camera or --camera 1 for a second device)")
+    ap.add_argument("--gallery", metavar="DIR",
+                    help="GALLERY MODE: every image in DIR becomes a clip in one "
+                         "page, switchable with a click. Save writes "
+                         "<out-dir>/<name>_pts.json and steps to the next unsaved "
+                         "one. This is the mode for a queue of courts — one "
+                         "server, one tab, no restarts")
+    ap.add_argument("--out-dir", default="data",
+                    help="where gallery saves land")
     ap.add_argument("--port", type=int, default=8770)
     ap.add_argument("--no-browser", action="store_true")
     args = ap.parse_args()
@@ -663,6 +803,33 @@ def main():
             ThreadingHTTPServer(("127.0.0.1", args.port), Handler).serve_forever()
         finally:
             state["stop"] = True
+        return
+
+    if args.gallery:
+        gdir, odir = Path(args.gallery), Path(args.out_dir)
+        imgs = sorted(p for p in gdir.iterdir()
+                      if p.suffix.lower() in (".png", ".jpg", ".jpeg"))
+        if not imgs:
+            raise SystemExit(f"no images in {gdir}")
+        state = {"gallery": [{"name": p.stem, "image": str(p),
+                              "out": str(odir / f"{p.stem}_pts.json")}
+                             for p in imgs],
+                 "seq": 0}
+        # Open on the first UNSAVED clip, so resuming a queue lands where it
+        # left off instead of on one that is already done.
+        start = next((i for i, c in enumerate(state["gallery"])
+                      if not Path(c["out"]).is_file()), 0)
+        if not select_clip(state, start):
+            raise SystemExit(f"could not read {imgs[start]}")
+        n_done = sum(1 for c in state["gallery"] if Path(c["out"]).is_file())
+        url = f"http://127.0.0.1:{args.port}/"
+        print(f"Court Setup — GALLERY of {len(imgs)} clip(s), {n_done} already "
+              f"saved.\n  {url}\n  Click a clip to load it. Snap, Save, and it "
+              f"steps to the next unsaved one. Ctrl+C to stop.")
+        Handler = build_handler(state)
+        if not args.no_browser:
+            threading.Timer(0.6, webbrowser.open, [url]).start()
+        ThreadingHTTPServer(("127.0.0.1", args.port), Handler).serve_forever()
         return
 
     frame = load_frame(args)

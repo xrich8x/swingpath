@@ -19,16 +19,14 @@
  "_audit": {
   "tool": "validate_new_clip.py --stamp",
   "date": "2026-08-11",
-  "verdict": "DEGENERATE",
-  "fit_residual_px": 56.3,
-  "camera_height_m": 2.97,
+  "verdict": "PASS",
+  "fit_residual_px": 6.5,
+  "camera_height_m": 3.36,
   "img_wh": [
-   1280,
-   720
+   1920,
+   1080
   ],
-  "img_wh_source": "assumed",
-  "reasons": [
-   "corners are not a physical camera view (fit residual 56 px)"
-  ]
+  "img_wh_source": "clip",
+  "reasons": []
  }
 }

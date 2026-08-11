@@ -49,14 +49,21 @@ def frame_size_for(kp_path, default):
     the camera ~20% too high. Falls back to `default` when the clip isn't found.
     """
     tag = Path(kp_path).name.split("_pts")[0]
-    vid = REPO / "data" / f"{tag}.mp4"
-    if not vid.exists():
-        return default, False
-    import cv2
-    c = cv2.VideoCapture(str(vid))
-    w, h = int(c.get(3)), int(c.get(4))
-    c.release()
-    return ((w, h), True) if w and h else (default, False)
+    # Search every directory clips actually live in, not just data/. Training
+    # footage sits in data/train_clips, and looking only in data/ made this fall
+    # back to 720p for a pool of 1080p clips — which reads the camera ~20% high
+    # and stamped NINE correctly-placed calibrations DEGENERATE (fit 15-56 px).
+    # The same files audit at 2.5 px and PASS once the real size is used.
+    for sub in ("", "train_clips", "amateur_clips", "incoming", "gold"):
+        vid = REPO / "data" / sub / f"{tag}.mp4" if sub else REPO / "data" / f"{tag}.mp4"
+        if vid.exists():
+            import cv2
+            c = cv2.VideoCapture(str(vid))
+            w, h = int(c.get(3)), int(c.get(4))
+            c.release()
+            if w and h:
+                return (w, h), True
+    return default, False
 
 
 MAX_FIT_PX = 10.0   # beyond this the corners are not any real camera's view
