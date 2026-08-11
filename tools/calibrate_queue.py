@@ -59,10 +59,11 @@ def wait_until_listening(port: int, proc, timeout_s: float = 240.0) -> bool:
     """Block until the setup tool is actually accepting connections.
 
     NOT a fixed sleep. The tool builds a temporal clean plate before it serves
-    anything — decoding ~80 frames spread across the clip — which takes 30-45 s
-    on a half-hour 1080p file and longer on the biggest. A first version slept
-    3 s and opened the browser into a dead port, which presents as "the server
-    isn't connecting" rather than "it is still starting". Poll the socket.
+    anything — decoding ~80 frames from a 60 s window — which is MEASURED at
+    15.3 s on a 13-minute clip and 22.2 s on a 29-minute one. A first version
+    slept 3 s and opened the browser into a dead port, which presents as "the
+    server isn't connecting" rather than "it is still starting". Poll the
+    socket, and say what is being waited for.
     """
     import socket
 
@@ -77,9 +78,23 @@ def wait_until_listening(port: int, proc, timeout_s: float = 240.0) -> bool:
                 return True
         if not told and time.time() > deadline - timeout_s + 4:
             print("    building the clean plate (players removed) — "
-                  "30-60 s on a long clip...")
+                  "15-25 s. Do NOT reload until it says ready.")
             told = True
         time.sleep(1.0)
+    return False
+
+
+def wait_until_free(port: int, timeout_s: float = 20.0) -> bool:
+    """Block until nothing is bound to `port` any more."""
+    import socket
+
+    deadline = time.time() + timeout_s
+    while time.time() < deadline:
+        with socket.socket() as s:
+            s.settimeout(0.5)
+            if s.connect_ex(("127.0.0.1", port)) != 0:
+                return True
+        time.sleep(0.5)
     return False
 
 
@@ -92,15 +107,31 @@ def serve(video: Path, out: Path, port: int, timeout_s: float,
     reload picks up the next clip; opening it per clip left ten tabs behind.
     """
     before = out.stat().st_mtime if out.is_file() else None
+    # Keep the server's output. Sending it to DEVNULL made a failure to bind
+    # the port indistinguishable from a slow start: both present as "nothing
+    # is listening", and the reason was being thrown away.
+    log_dir = REPO / "data" / "runs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log = log_dir / f"court_setup_{out.stem}.log"
+    fh = log.open("w", encoding="utf-8", errors="replace")
     proc = subprocess.Popen(
         [str(PY), str(REPO / "tools/court_setup_server.py"),
          "--video", str(video), "--out", str(out),
          "--port", str(port), "--no-browser"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        stdout=fh, stderr=subprocess.STDOUT)
     url = f"http://127.0.0.1:{port}/"
     try:
         if not wait_until_listening(port, proc):
-            print("    could not start the setup tool for this clip — skipping")
+            tail = ""
+            try:
+                fh.flush()
+                tail = log.read_text(encoding="utf-8",
+                                     errors="replace").strip().splitlines()[-1:]
+                tail = tail[0] if tail else ""
+            except OSError:
+                pass
+            print(f"    could not start the setup tool — skipping. {tail}")
+            print(f"    full log: {log}")
             return False
         if open_browser:
             webbrowser.open(url)
@@ -125,6 +156,12 @@ def serve(video: Path, out: Path, port: int, timeout_s: float,
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             proc.kill()
+            proc.wait(timeout=5)
+        fh.close()
+        # The next clip reuses this port. Give the socket time to release,
+        # or the next server dies on bind and the queue silently skips the
+        # rest of the list.
+        wait_until_free(port)
 
 
 def audit(pts: Path) -> str:
