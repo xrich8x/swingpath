@@ -50,6 +50,34 @@ def refused_clips(audit_path: Path):
     return [r["clip"] for r in sorted(out, key=lambda r: -r.get("votes", 0))]
 
 
+def wait_until_listening(port: int, proc, timeout_s: float = 240.0) -> bool:
+    """Block until the setup tool is actually accepting connections.
+
+    NOT a fixed sleep. The tool builds a temporal clean plate before it serves
+    anything — decoding ~80 frames spread across the clip — which takes 30-45 s
+    on a half-hour 1080p file and longer on the biggest. A first version slept
+    3 s and opened the browser into a dead port, which presents as "the server
+    isn't connecting" rather than "it is still starting". Poll the socket.
+    """
+    import socket
+
+    deadline = time.time() + timeout_s
+    told = False
+    while time.time() < deadline:
+        if proc.poll() is not None:
+            return False                     # it exited; nothing to connect to
+        with socket.socket() as s:
+            s.settimeout(0.5)
+            if s.connect_ex(("127.0.0.1", port)) == 0:
+                return True
+        if not told and time.time() > deadline - timeout_s + 4:
+            print("    building the clean plate (players removed) — "
+                  "30-60 s on a long clip...")
+            told = True
+        time.sleep(1.0)
+    return False
+
+
 def serve(video: Path, out: Path, port: int, timeout_s: float):
     """Run the setup tool until `out` appears. Returns True if it was saved."""
     before = out.stat().st_mtime if out.is_file() else None
@@ -60,7 +88,9 @@ def serve(video: Path, out: Path, port: int, timeout_s: float):
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     url = f"http://127.0.0.1:{port}/"
     try:
-        time.sleep(3.0)                      # the clean plate takes a few seconds
+        if not wait_until_listening(port, proc):
+            print("    could not start the setup tool for this clip — skipping")
+            return False
         webbrowser.open(url)
         print(f"    {url}  — auto-seed, Snap, Save. Ctrl+C here to skip.")
         deadline = time.time() + timeout_s
