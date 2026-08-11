@@ -29,6 +29,11 @@ sys.path.insert(0, str(REPO / "backend"))
 sys.path.insert(0, str(REPO / "tools"))
 
 DBL = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"]
+# A seed must put at least this share of the court template on real white
+# paint, or it is not shown. Below it, a plain rectangle is less work than
+# correcting a wrong court — measured against verify_court's own 0.40 accept
+# bar, set lower here because a SEED only has to be worth nudging.
+MIN_SEED_COVERAGE = 0.30
 
 
 def clean_plate_and_motion(video_path, n=80, span_s=60.0, start_frac=0.30):
@@ -186,6 +191,36 @@ def auto_fit(frame):
         use = locked
     except Exception:
         pass   # keep the roll-frozen seed if the trusted re-lock can't fit
+
+    # REFUSE A SEED THE DETECTOR DOES NOT BELIEVE.
+    # `verify_court` samples real pixels along the projected lines and reports how
+    # much of the template lands on actual white paint.
+    #
+    # MEASURED, AND IT IS A WEAK GUARD: on the 10 hand-calibrated clips in this
+    # pool, comparing each single-frame seed against the corners a human then
+    # placed, 2 produced no lock and 5 were 174-438 px out — a WRONG RUNG, the
+    # service line taken for the baseline or the court next door. Coverage does
+    # not separate those: the 221 px-wrong seed scored 61% on paint and a
+    # 122 px-wrong one scored 94%, because a wrong-rung court still lies along
+    # real white lines. So this catches only a seed that is on nothing at all.
+    # The check that DOES separate them is multi-frame consensus (>=6 of 8
+    # agreeing frames, Session H part 2), which a single frame cannot run — which
+    # is why gallery mode gates seeding on the consensus verdict instead.
+    try:
+        H = calibration.compute_homography(
+            [court.LANDMARKS[k] for k in DBL], [use[k] for k in DBL])
+        chk = calibration.verify_court(frame, H)
+        cov = float(getattr(chk, "coverage", 1.0))
+        if cov < MIN_SEED_COVERAGE:
+            print(f"[setup] auto-fit REFUSED: only {cov * 100:.0f}% of the court "
+                  f"template lands on white paint (need "
+                  f"{MIN_SEED_COVERAGE * 100:.0f}%). Opening on a plain overlay — "
+                  f"dragging a fresh rectangle beats correcting a wrong court.")
+            return None
+        print(f"[setup] auto-fit court ({cov * 100:.0f}% of the template on paint)")
+        return {k: [float(use[k][0]), float(use[k][1])] for k in DBL}
+    except Exception:
+        pass   # verifier unavailable: fall through and show the seed as before
     print("[setup] auto-fit court")
     return {k: [float(use[k][0]), float(use[k][1])] for k in DBL}
 
@@ -533,7 +568,17 @@ def select_clip(state, idx: int):
                 return True
         except (json.JSONDecodeError, OSError, TypeError, ValueError, KeyError):
             pass
-    state["seed"] = auto_fit(frame)
+    # Seed ONLY when multi-frame consensus accepted this clip's court.
+    # A single-frame seed was measured at 174-438 px out on 5 of 10 clips
+    # here, and dragging a wrong court into place is more work than dragging
+    # a fresh rectangle. Consensus is the project's own bar for "this court
+    # is real"; below it, show nothing and let the user place it.
+    if c.get("seed_ok"):
+        state["seed"] = auto_fit(frame)
+    else:
+        state["seed"] = None
+        print(f"[setup] {c['name']}: auto-detect did not reach consensus on "
+              f"this clip — opening on a plain overlay rather than a guess.")
     return True
 
 
@@ -811,8 +856,21 @@ def main():
                       if p.suffix.lower() in (".png", ".jpg", ".jpeg"))
         if not imgs:
             raise SystemExit(f"no images in {gdir}")
+        # Which clips earned a seed: those the pipeline's own multi-frame
+        # consensus accepted. Read from the audit if one exists; without it
+        # nothing is seeded, which is the safe direction.
+        seed_ok = set()
+        audit = REPO / "data" / "output" / "new_clip_audit.json"
+        if audit.is_file():
+            try:
+                seed_ok = {r["clip"] for r in json.loads(
+                    audit.read_text(encoding="utf-8"))["clips"]
+                    if r.get("calibrated")}
+            except (json.JSONDecodeError, OSError, KeyError):
+                pass
         state = {"gallery": [{"name": p.stem, "image": str(p),
-                              "out": str(odir / f"{p.stem}_pts.json")}
+                              "out": str(odir / f"{p.stem}_pts.json"),
+                              "seed_ok": p.stem in seed_ok}
                              for p in imgs],
                  "seq": 0}
         # Open on the first UNSAVED clip, so resuming a queue lands where it

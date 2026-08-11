@@ -151,6 +151,8 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 
 ---
 
+| **Single-frame court auto-seed in the setup tool** | MEASURED against 10 clips a human then calibrated by hand: **2 seeds produced no lock and 5 were 174-438 px out** — a wrong RUNG (service line taken for the baseline, or the court next door), with the remaining 3 still 107-128 px off. **7 of 10 were worse than starting from a blank rectangle**, and the user said so before it was measured. `verify_court` coverage does NOT separate them: the 221 px-wrong seed scored 61% of the template on real white paint and a 122 px-wrong one scored 94%, because a wrong-rung court still lies along real lines. Only multi-frame consensus (>=6 of 8) tells the cases apart, and a single frame cannot run it — so gallery mode now seeds ONLY clips consensus accepted, and shows a plain overlay otherwise | 2026-08-11 |
+
 ## Traps
 
 Process failures this project has hit **more than once**. Each cost real work.
