@@ -223,6 +223,17 @@ Process failures this project has hit **more than once**. Each cost real work.
    from the right one is worth 21. **When a per-clip split explains a result, check the
    per-FRAME pixels before naming the variable** — clips differ in many ways at once, and
    n=12 clips is one observation of each.
+15. **Re-implementing the thing you are trying to predict.** `audit_new_clips.py` was
+   written to tell a user which new clips will auto-calibrate. Its first version drove
+   `auto_fit_frame`/`consensus` by hand instead of calling `pipeline._sample_calib_frames`
+   + `courtfit.fit_video_frames`, and sampled 15-85% of the clip where the pipeline
+   samples 2-98%. It reported **1 of 12** clips calibrating; the shipped path gets more,
+   and two clips flipped from refuse to accept once it called the real code. An audit
+   that disagrees with the product is worse than no audit — it sends you to hand-calibrate
+   clips that calibrate themselves. **Predict a behaviour by invoking it, never by
+   re-deriving it.** Related: the same tool first reported a confident camera height
+   (4.35 m, close calls 74%) from a **2-of-8** consensus, against a bar measured at 6 —
+   a wrong court yields a wrong height that looks exactly like a right one.
 14. **Judging a filter by what it KEPT.** Three versions of the play-segment finder
    were written for the nine new match uploads. Each reported a plausible kept-percentage
    and each was wrong in a way the percentage could not show: version 1 discarded real
