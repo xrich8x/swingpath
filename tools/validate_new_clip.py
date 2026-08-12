@@ -54,7 +54,7 @@ def frame_size_for(kp_path, default):
     # back to 720p for a pool of 1080p clips — which reads the camera ~20% high
     # and stamped NINE correctly-placed calibrations DEGENERATE (fit 15-56 px).
     # The same files audit at 2.5 px and PASS once the real size is used.
-    for sub in ("", "train_clips", "amateur_clips", "incoming", "gold"):
+    for sub in ("", "train_clips", "gold_clips", "amateur_clips", "incoming", "gold"):
         vid = REPO / "data" / sub / f"{tag}.mp4" if sub else REPO / "data" / f"{tag}.mp4"
         if vid.exists():
             import cv2

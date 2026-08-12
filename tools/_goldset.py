@@ -55,8 +55,31 @@ def _clip(name: str, calib: bool) -> GoldClip:
                     labels=f"data/gold/{name}.labels.json")
 
 
+def _trimmed(stem: str) -> GoldClip:
+    """A clip promoted to gold from the trimmed training pool (2026-08-11).
+
+    Different layout from the originals and deliberately not forced into
+    `_clip`'s: the video lives in data/gold_clips (kept out of data/ so nothing
+    picks it up as training footage), and the calibration is keyed on the CLIP
+    stem while the gold set is keyed on `gold_<stem>`.
+    """
+    return GoldClip(name=f"gold_{stem}",
+                    video=f"data/gold_clips/{stem}.mp4",
+                    calib=f"data/{stem}_pts.json",
+                    labels=f"data/gold/gold_{stem}.labels.json")
+
+
+#: The six clips every number published before 2026-08-11 was measured against.
+#: Kept as a named set so a historical figure can still be reproduced exactly
+#: after the benchmark grew — see tests/test_goldset_registry.py.
+LEGACY_SIX = ("am_hard_utr", "gold_shell", "gold_clay", "gold_am",
+              "yt_rally2", "yt_match40")
+
 # CANONICAL ORDER. Every historical table is a prefix-preserving subsequence of
 # this, so deriving from it reproduces each tool's iteration order exactly.
+# The four appended clips are NEW — every pooled number moves when they are
+# included, and a figure quoted from before that date is not comparable to one
+# quoted after it without saying which set it used.
 GOLD: dict[str, GoldClip] = {c.name: c for c in (
     _clip("am_hard_utr", calib=True),    # 1080p, 1.74 m mount — the primary hard clip
     _clip("gold_shell", calib=False),    # broadcast wide; the only clip where pose finds both players
@@ -64,7 +87,17 @@ GOLD: dict[str, GoldClip] = {c.name: c for c in (
     _clip("gold_am", calib=False),
     _clip("yt_rally2", calib=True),
     _clip("yt_match40", calib=True),
+    # 2026-08-11: four venues at 2.88-3.35 m. The set previously had ONE clip
+    # in that band (yt_rally2, 3.30 m) and could say almost nothing about the
+    # height regime that measures best.
+    _trimmed("UHf0LeMU2pg"),             # 3.35 m indoor, no overlay
+    _trimmed("sAjkpeRq4P4"),             # 3.33 m outdoor clay
+    _trimmed("uR5q2cSM6AY"),             # 3.32 m indoor, full SwingVision overlay
+    _trimmed("L73ep7JHiJ4"),             # 2.88 m indoor
 )}
+
+#: The six-clip set as it stood before the 2026-08-11 additions.
+LEGACY: dict[str, GoldClip] = {k: GOLD[k] for k in LEGACY_SIX}
 
 #: the three clips with a calibration — the only ones with a geometric far band
 CALIBRATED: dict[str, GoldClip] = {k: v for k, v in GOLD.items() if v.has_calibration}

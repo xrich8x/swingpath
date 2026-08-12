@@ -54,35 +54,48 @@ LIT_CALIB_MAP = {                                # eval_model_filters, tune_supp
 }
 
 
-def test_videos_table():
-    assert gs.videos() == LIT_VIDEOS
-    assert list(gs.videos()) == list(LIT_VIDEOS), "iteration order changed"
+# The literals above are the SIX-clip tables as they stood before 2026-08-11.
+# Four clips were added that day. These tests now check two things: the legacy
+# six still derive exactly as they did (so a historical number stays
+# reproducible), and the additions appear in canonical order at the END (so a
+# pooled figure accumulated in iteration order changes only by extension).
+
+def test_the_legacy_six_still_derive_exactly():
+    assert {k: v for k, v in gs.videos().items() if k in gs.LEGACY_SIX} == LIT_VIDEOS
+    assert [r for r in gs.name_video_calib() if r[0] in gs.LEGACY_SIX]         == LIT_NAME_VIDEO_CALIB
+    assert [r for r in gs.calibrated_triples() if r[0] in gs.LEGACY_SIX]         == LIT_CALIB_TRIPLES
+    assert {k: v for k, v in gs.calibrated_map().items() if k in gs.LEGACY_SIX}         == LIT_CALIB_MAP
 
 
-def test_name_video_calib_table():
-    assert gs.name_video_calib() == LIT_NAME_VIDEO_CALIB
+def test_the_legacy_six_come_first_and_in_the_original_order():
+    """Pooled numbers accumulate in iteration order and the committed evidence
+    JSONs record per-clip blocks in it. Appending is safe; interleaving is not."""
+    assert list(gs.videos())[:6] == list(LIT_VIDEOS)
+    assert list(gs.calibrated_map())[:3] == list(LIT_CALIB_MAP)
 
 
-def test_calibrated_triples_table():
-    assert gs.calibrated_triples() == LIT_CALIB_TRIPLES
-
-
-def test_calibrated_map_table():
-    assert gs.calibrated_map() == LIT_CALIB_MAP
-    assert list(gs.calibrated_map()) == list(LIT_CALIB_MAP), "iteration order changed"
-
-
-def test_exactly_three_clips_are_calibrated():
-    """The geometric far-court band exists only on these. A clip silently losing
-    its calibration would move far_geo without moving anything else."""
-    assert set(gs.CALIBRATED) == {"am_hard_utr", "yt_rally2", "yt_match40"}
+def test_the_calibrated_set_grew_from_three_to_seven():
+    """The geometric far-court band exists only on calibrated clips. It used to
+    be three; the four additions all carry a hand-placed homography, which is
+    what makes far_geo answerable on a high mount at all."""
+    assert set(gs.CALIBRATED) == {
+        "am_hard_utr", "yt_rally2", "yt_match40",
+        "gold_UHf0LeMU2pg", "gold_sAjkpeRq4P4", "gold_uR5q2cSM6AY",
+        "gold_L73ep7JHiJ4"}
 
 
 def test_every_clip_has_labels_and_a_real_video_path():
     for name, c in gs.GOLD.items():
         assert c.labels == f"data/gold/{name}.labels.json"
-        assert c.video == f"data/{name}.mp4"
         assert (REPO / c.labels).is_file(), f"{name}: labels missing"
+        if name in gs.LEGACY_SIX:
+            assert c.video == f"data/{name}.mp4"
+        else:
+            # Promoted clips live in data/gold_clips so nothing picks them up as
+            # training footage, and their calibration is keyed on the clip stem.
+            assert c.video == f"data/gold_clips/{name.removeprefix('gold_')}.mp4"
+            assert c.calib == f"data/{name.removeprefix('gold_')}_pts.json"
+            assert (REPO / c.calib).is_file(), f"{name}: calibration missing"
 
 
 def test_res_scale_is_a_no_op_at_720p():
@@ -90,14 +103,34 @@ def test_res_scale_is_a_no_op_at_720p():
     assert gs.res_scale(1080) == 1.5
 
 
-def test_ball_and_noball_populations_match_published_counts():
-    """The numbers every criterion in this project is scored against. 1201 ball
-    clicks and 204 no-ball frames are quoted throughout CLAUDE.md; 'unsure' is in
-    neither population."""
-    total_ball = sum(len(gs.ball_frames(c)) for c in gs.GOLD)
-    total_noball = sum(len(gs.noball_frames(c)) for c in gs.GOLD)
-    assert total_ball == 1201, f"ball population drifted: {total_ball}"
-    assert total_noball == 204, f"no-ball population drifted: {total_noball}"
+def test_the_legacy_six_still_reproduce_the_published_counts():
+    """1201 ball clicks and 204 no-ball frames are quoted throughout CLAUDE.md.
+    The benchmark GREW on 2026-08-11, so the totals legitimately changed — but
+    every historical figure was measured against these six clips, and it must
+    stay possible to reproduce one exactly. If this drifts, an old number in the
+    docs has silently stopped meaning what it says."""
+    total_ball = sum(len(gs.ball_frames(c)) for c in gs.LEGACY_SIX)
+    total_noball = sum(len(gs.noball_frames(c)) for c in gs.LEGACY_SIX)
+    assert total_ball == 1201, f"legacy ball population drifted: {total_ball}"
+    assert total_noball == 204, f"legacy no-ball population drifted: {total_noball}"
+
+
+def test_the_new_clips_actually_add_population():
+    """A clip in the registry with no labels scores nothing while making every
+    'pooled over N clips' line read larger — the worst kind of quiet dilution."""
+    added = [c for c in gs.GOLD if c not in gs.LEGACY_SIX]
+    assert added, "the 2026-08-11 additions are missing from the registry"
+    for name in added:
+        assert len(gs.ball_frames(name)) > 0, f"{name} contributes no ball frames"
+        assert len(gs.noball_frames(name)) > 0, f"{name} contributes no no-ball frames"
+
+
+def test_pooled_numbers_are_not_comparable_across_the_growth():
+    """Guards the reason this is dangerous: the pooled populations moved, so a
+    figure quoted before the additions cannot be set beside one quoted after."""
+    legacy_ball = sum(len(gs.ball_frames(c)) for c in gs.LEGACY_SIX)
+    all_ball = sum(len(gs.ball_frames(c)) for c in gs.GOLD)
+    assert all_ball > legacy_ball
 
 
 def test_rate_at_edges():

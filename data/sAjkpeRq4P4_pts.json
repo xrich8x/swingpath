@@ -18,7 +18,7 @@
  "_exact": true,
  "_audit": {
   "tool": "validate_new_clip.py --stamp",
-  "date": "2026-08-11",
+  "date": "2026-08-12",
   "verdict": "PASS",
   "fit_residual_px": 2.8,
   "camera_height_m": 3.33,
