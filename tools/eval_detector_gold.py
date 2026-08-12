@@ -352,7 +352,7 @@ def main() -> None:
     print("far_px  = top 36% of frame height. Available on every clip, comparable "
           "across resolutions; THE HEADLINE.")
     print("far_geo = where 1 px of centroid error costs more than "
-          "RELIABLE_SCALE_M_PER_PX of court. Needs a calibration (3 of 6 clips).")
+          "RELIABLE_SCALE_M_PER_PX of court. Needs a calibration.")
     print("CAREFUL: far_geo is not a synonym for 'far court'. It is 'the part of "
           "this clip we cannot measure in', and on a low camera that is most of the "
           "frame — am_hard_utr is measurable to only 32% of court depth, so its "
