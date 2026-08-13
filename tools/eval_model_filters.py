@@ -309,6 +309,14 @@ def main():
         tr = B.remove_outliers(list(raw), max_jump=max(W, Hh) * 0.06)
         tr = B.rectify_track(tr, max_speed_px=3000.0 * rs / fps_eff, resid_px=35.0 * rs)
         stages.append(measure(tr, ballg, noball, step, "+ rectify", far_px, far_geo))
+        # NOTE smooth_forecast's `blocked` mask is deliberately NOT passed here,
+        # because the shipped pipeline does not pass it either and this ladder
+        # must mirror the shipped chain. It was wired up and scored on 2026-08-13
+        # (data/output/smoother_coherence.md): ghost fires 19 -> 15 but pooled
+        # recall -5.1 pts and far_geo -7.2 on the worst clip, failing both recall
+        # guards. To re-measure it, set `blocked` from a pre-suppression copy of
+        # `tr` here AND in pipeline.analyze_video — changing one without the other
+        # is the mismatch this file exists to prevent.
         tr = B.suppress_false_locks(tr, fps_eff=fps_eff, res_scale=rs)
         stages.append(measure(tr, ballg, noball, step, "+ suppress_false_locks",
                               far_px, far_geo))

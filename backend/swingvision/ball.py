@@ -637,6 +637,7 @@ def smooth_forecast(
     max_jerk_ratio: float = 4.0,
     jerk_ref_pct: float = 50.0,
     res_scale: float = 1.0,
+    blocked: Optional[Sequence[bool]] = None,
 ) -> tuple[list[Optional[list[float]]], list[bool], list[float]]:
     """Smooth AND forecast the ball track with one physics model — a constant-
     acceleration Kalman filter + RTS (forward-backward) smoother in image pixels.
@@ -793,6 +794,24 @@ def smooth_forecast(
     # Interpolation only: every accepted detection, plus gaps <= max_gap frames that
     # are bounded by an accepted detection on both sides within one segment. Leading/
     # trailing extrapolation (a segment's forecast tail) is never emitted.
+    #
+    # `blocked` marks frames an EARLIER stage positively judged not-a-ball — in the
+    # pipeline, the locks suppress_false_locks and the court gate deleted. Without it
+    # this stage cannot tell those two gaps apart:
+    #
+    #   detector never fired here      -> the ball was probably there and unseen;
+    #                                     interpolating is the right guess.
+    #   a lock was DELETED as false    -> the pipeline has already decided there was
+    #                                     no ball here; interpolating across it
+    #                                     re-asserts exactly what suppression denied.
+    #
+    # Measured on the three calibrated gold clips (2026-08-13): suppression takes
+    # ghost fires 9 -> 1 on am_hard_utr and this stage put them back to 6, all five
+    # added ones interpolated. Five of six model x clip runs got worse here. So a gap
+    # whose interior contains a blocked frame is left unbridged. This is NOT
+    # `max_gap_s` by another name — that shrinks every bridge and was measured to
+    # cost recall ~1:1 (Session F step 4); this refuses only the bridges a previous
+    # stage already argued against, and leaves ordinary detector gaps alone.
     accepted_by_seg: dict[int, list[int]] = {}
     for i in range(n):
         if used[i] and seg_id[i] >= 0 and xs[i] is not None:
@@ -801,10 +820,14 @@ def smooth_forecast(
         for u in U:
             emit(u, False)
         for a, b in zip(U, U[1:]):
-            if 1 < (b - a) <= max_gap + 1:
-                for k in range(a + 1, b):
-                    if xs[k] is not None:
-                        emit(k, True)
+            if not (1 < (b - a) <= max_gap + 1):
+                continue
+            if blocked is not None and any(
+                    k < len(blocked) and blocked[k] for k in range(a + 1, b)):
+                continue
+            for k in range(a + 1, b):
+                if xs[k] is not None:
+                    emit(k, True)
     return out, coasted, conf
 
 

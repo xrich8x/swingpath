@@ -1374,6 +1374,24 @@ def analyze_video(
     # yt_rally2 gold it moved nothing that matters (far hit@10 +1.2 pt, overall
     # -0.8, false-fire flat, jerkiness 2.04 -> 1.94 px/frame^2, all inside noise on
     # 258 labelled frames) and the median-referenced variant was actively worse.
+    # MEASURED NEGATIVE (2026-08-13), and it reframes suppress_false_locks.
+    # smooth_forecast takes a `blocked` mask so it will not interpolate back
+    # across a lock an earlier stage deleted as false — the two stages are
+    # otherwise blind to each other, and on 5 of 6 model x clip runs the smoother
+    # visibly UNDID the suppression (am_hard_utr: 9 ghost fires -> 1 after
+    # suppression -> 6 after the Kalman, every added one interpolated).
+    # Wired up and scored against a pre-registered gate on the three calibrated
+    # gold clips: ghost fires DID fall 19 -> 15 and solid ghosts held at 9, but
+    # pooled recall fell 66.9% -> 61.8% (-5.1 pts over 532 frames) and far_geo
+    # -7.2 pts on the worst clip. Both recall guards FAIL. ~7 real ball frames
+    # lost per ghost frame removed.
+    # WHY, and this is the useful part: the gaps suppression opens are mostly
+    # gaps where it deleted a REAL far-court ball — it is already known to cost
+    # 5-10 pts of recall — so refusing to bridge them compounds its own error
+    # instead of correcting a ghost. Same ~1:1 recall trade Session F measured
+    # for max_gap_s, reached by an independent route, which makes it structural
+    # rather than a tuning artefact. Evidence: data/output/smoother_coherence.md.
+    # The parameter and its tests stay; the pipeline does not use it.
     ball_px, ball_coasted, _ball_kconf = ball_mod.smooth_forecast(
         ball_px, fps_eff=fps_eff, res_scale=res_scale)
     print(f"[analyze] kalman smooth+forecast: "

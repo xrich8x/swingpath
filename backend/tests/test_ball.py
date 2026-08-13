@@ -650,3 +650,59 @@ def test_rectify_track_handles_spike_next_to_a_gap():
              [132.0, 200.0], [140.0, 200.0]]
     rec = rectify_track(track, max_speed_px=60.0, resid_px=40.0)
     assert rec[4] is None
+
+
+# --- smoother/suppression coherence (2026-08-13) --------------------------------
+#
+# suppress_false_locks deletes a lock it judged not-a-ball; smooth_forecast then
+# used to interpolate straight back across the hole, undoing it. Measured on the
+# three calibrated gold clips, five of six model x clip runs got WORSE at the
+# smoother — am_hard_utr went 9 ghost fires -> 1 after suppression and back to 6
+# after the Kalman, every added one interpolated. `blocked` closes that.
+
+def test_blocked_gap_is_not_bridged():
+    pos = [[10.0 + 3 * i, 20.0] for i in range(12)]
+    pos[5] = pos[6] = None
+    from swingvision.ball import smooth_forecast
+    _out, coasted, _c = smooth_forecast(pos, fps_eff=30.0)
+    assert sum(coasted) == 2, "setup: the gap should normally be bridged"
+
+    blk = [False] * 12
+    blk[5] = True                      # one blocked frame inside the gap
+    out2, coasted2, _c2 = smooth_forecast(pos, fps_eff=30.0, blocked=blk)
+    assert sum(coasted2) == 0, "a gap containing a blocked frame must not be bridged"
+    assert out2[5] is None and out2[6] is None
+
+
+def test_blocked_none_is_an_exact_no_op():
+    """The parameter must not perturb the shipped path when unused — every
+    historical number was measured without it."""
+    pos = [[10.0 + 3 * i, 20.0] for i in range(12)]
+    pos[5] = pos[6] = None
+    from swingvision.ball import smooth_forecast
+    a = smooth_forecast(pos, fps_eff=30.0)
+    b = smooth_forecast(pos, fps_eff=30.0, blocked=None)
+    assert a == b
+
+
+def test_blocking_outside_a_gap_changes_nothing():
+    """Only frames INSIDE a bridged gap matter. A blocked frame elsewhere must
+    not suppress an unrelated bridge — otherwise one deleted lock anywhere in the
+    clip would start deleting real interpolation."""
+    pos = [[10.0 + 3 * i, 20.0] for i in range(12)]
+    pos[5] = pos[6] = None
+    from swingvision.ball import smooth_forecast
+    base = smooth_forecast(pos, fps_eff=30.0)
+    blk = [False] * 12
+    blk[0] = blk[11] = True            # blocked, but not inside the gap
+    assert smooth_forecast(pos, fps_eff=30.0, blocked=blk) == base
+
+
+def test_blocked_shorter_than_track_is_tolerated():
+    """The pipeline diffs two lists to build the mask; a length mismatch must
+    degrade to 'not blocked' rather than raise mid-analysis."""
+    pos = [[10.0 + 3 * i, 20.0] for i in range(12)]
+    pos[5] = pos[6] = None
+    from swingvision.ball import smooth_forecast
+    out, coasted, _c = smooth_forecast(pos, fps_eff=30.0, blocked=[False, False])
+    assert sum(coasted) == 2
