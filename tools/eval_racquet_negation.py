@@ -178,10 +178,19 @@ def main() -> None:
             "tool": "eval_racquet_negation",
             "created": time.strftime("%Y-%m-%d %H:%M:%S"),
             "model": "yolo11m.pt (COCO)", "imgsz": args.imgsz, "conf": args.conf,
+            # The clip counts are DERIVED, not written down. They were hardcoded
+            # as "6 gold clips" and stayed that way after the benchmark grew to
+            # ten, so the field that exists to say what a number was measured
+            # against was quietly saying the wrong thing. Note the two
+            # populations legitimately differ in width: CATCH can only be scored
+            # where a human classified a lock, and false_lock_classes.json covers
+            # fewer clips than the gold set does.
             "measured_against":
                 f"human labels only: {len(racq)} racquet-class and {len(person)} "
-                f"person-attached locks from data/gold/false_lock_classes.json for CATCH; "
-                f"{ball_total} human ball clicks across 6 gold clips for COLLATERAL.",
+                f"person-attached locks from data/gold/false_lock_classes.json "
+                f"across {len({r['clip'] for r in racq})} clip(s) for CATCH; "
+                f"{ball_total} human ball clicks across {len(gs.GOLD)} gold clips "
+                f"for COLLATERAL.",
             "n_racquet_locks": len(racq), "n_person_locks": len(person),
             "n_ball_clicks": ball_total,
             "gate": {"catch_pct": args.catch_gate, "collateral_pct": args.collateral_gate,

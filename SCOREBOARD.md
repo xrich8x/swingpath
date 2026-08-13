@@ -129,7 +129,7 @@ Ordered roughly by how much it moved. Every number is against human gold labels.
 | Shrinking smoother `max_gap_s` | Every value fails. Solid ghosts sit at **9 regardless** — the gap policy cannot touch them. |
 | Motion attention (TrackNetV4) | **Skipped on evidence.** It suppresses *static* confusers; ours **move** (59.2% travel with a person). |
 | Pose-proximity negative mining | **11.4%** catch at the 5% collateral ceiling vs a 60% gate. The racquet is **2.12 body heights** from the nearest keypoint — a skeleton has no racquet. |
-| Racquet-box negation (COCO class 38) | **54.5%** catch at 4.5% collateral — 5.5 pts under gate. Right object, loose localiser. |
+| Racquet-box negation (COCO class 38) | **Failed twice, and the second run found the reason.** Session G part 4: 54.5% catch at 4.5% collateral, 5.5 pts under gate. Re-scored on the Session K detector: **23.3% at 4.6%** — now 36.7 pts under. The control reproduces Session G digit for digit, so the harness is sound. **But the numerator is what matters**: the box catches ~12 locks in every population (12/22 → 12/32 → 7/30); the rate collapsed because 10 racquet locks were added when `gold_uR5q2cSM6AY` was classified and the box catches **0** of them. On all 10, the lock sits **737–869 px** from the nearest racket box — YOLO found the **near** player's racket (80–150 px, conf 0.46–0.83, low in frame) and missed the **far** player's, which the ball detector was firing on (high in frame; where a far racket *is* found it is 37×56 px at conf **0.12**). So *"a racket is found on 64–100% of frames"* — quoted in G part 4 as evidence the ceiling was the criterion — was true and useless: **it was finding the wrong racket.** COCO's racket class is trained on large sharp rackets, so racquet negation is structurally blind exactly where the confuser lives. Evidence: data/output/racquet_negation_k.md |
 | Tightening it to the racket **HEAD** | **The head is not the discriminator.** On the wrist→head axis, racquet locks sit at median **0.57** and real balls at **0.55** — indistinguishable. Every tightening costs more catch than collateral (cut 0.5 → catch 36.4%, collateral only 4.5→2.6%). The whole box is the best version of the idea; 54.5%@4.5% is its ceiling. |
 | Raising `acquire_bound_m` 4 → 10 m | Static analysis said free; end to end it bought +0.6 pt recall for +1.9 pt false-fire. |
 | Blur augmentation alone | Dead end on its own; only pays off combined with occlusion work. |
@@ -325,3 +325,13 @@ Process failures this project has hit **more than once**. Each cost real work.
    than by eye: several gold clips do carry a burned-in scoreboard, but only **1 of 166**
    locks lands in the top-left corner where they sit, and 17 anywhere in the outer 12%
    band. Burned-in graphics are not where these false fires come from.)
+19. **Reading a detection RATE as evidence the detector found the right thing.** Session G
+   part 4 reported "stock racket detection genuinely works on this footage — a racket is
+   found on 64–100% of sampled frames per clip, so the ceiling here is the CRITERION, not
+   the detector", and that sentence shaped two sessions of follow-up. Re-measured: on the
+   clip where racquet confusers dominate, a racket is found on 79.5% of frames and sits
+   **737–869 px** from the lock every time. It was finding the near player's racket while
+   the ball detector fired on the far player's. A coverage percentage answers *did the
+   model output something*, never *did it output the thing this argument needs*. **Score
+   the association, not the presence** — distance from the lock to the nearest box was one
+   line of code and reverses the conclusion.

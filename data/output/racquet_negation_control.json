@@ -1,0 +1,113 @@
+{
+ "tool": "eval_racquet_negation",
+ "created": "2026-08-13 17:09:02",
+ "model": "yolo11m.pt (COCO)",
+ "imgsz": 1280,
+ "conf": 0.1,
+ "measured_against": "human labels only: 22 racquet-class and 44 person-attached locks from data/gold/false_lock_classes.json for CATCH; 1851 human ball clicks across 6 gold clips for COLLATERAL.",
+ "n_racquet_locks": 22,
+ "n_person_locks": 44,
+ "n_ball_clicks": 1851,
+ "gate": {
+  "catch_pct": 60.0,
+  "collateral_pct": 5.0,
+  "passed": false
+ },
+ "coco_sports_ball_recall_pct": 35.4,
+ "per_clip": {
+  "am_hard_utr": {
+   "frames": 199,
+   "frames_with_a_racket": 169,
+   "racket_detect_rate": 84.9
+  },
+  "gold_shell": {
+   "frames": 201,
+   "frames_with_a_racket": 201,
+   "racket_detect_rate": 100.0
+  },
+  "gold_clay": {
+   "frames": 220,
+   "frames_with_a_racket": 173,
+   "racket_detect_rate": 78.6
+  },
+  "gold_am": {
+   "frames": 193,
+   "frames_with_a_racket": 161,
+   "racket_detect_rate": 83.4
+  },
+  "yt_rally2": {
+   "frames": 265,
+   "frames_with_a_racket": 171,
+   "racket_detect_rate": 64.5
+  },
+  "yt_match40": {
+   "frames": 194,
+   "frames_with_a_racket": 148,
+   "racket_detect_rate": 76.3
+  },
+  "gold_UHf0LeMU2pg": {
+   "frames": 168,
+   "frames_with_a_racket": 125,
+   "racket_detect_rate": 74.4
+  },
+  "gold_sAjkpeRq4P4": {
+   "frames": 151,
+   "frames_with_a_racket": 131,
+   "racket_detect_rate": 86.8
+  },
+  "gold_uR5q2cSM6AY": {
+   "frames": 163,
+   "frames_with_a_racket": 126,
+   "racket_detect_rate": 77.3
+  },
+  "gold_L73ep7JHiJ4": {
+   "frames": 168,
+   "frames_with_a_racket": 167,
+   "racket_detect_rate": 99.4
+  }
+ },
+ "rows": [
+  {
+   "margin_px": 0,
+   "catch_racquet_pct": 54.5,
+   "catch_person_pct": 36.4,
+   "collateral_pct": 4.6,
+   "passes_gate": false
+  },
+  {
+   "margin_px": 5,
+   "catch_racquet_pct": 54.5,
+   "catch_person_pct": 36.4,
+   "collateral_pct": 5.8,
+   "passes_gate": false
+  },
+  {
+   "margin_px": 10,
+   "catch_racquet_pct": 54.5,
+   "catch_person_pct": 36.4,
+   "collateral_pct": 7.1,
+   "passes_gate": false
+  },
+  {
+   "margin_px": 20,
+   "catch_racquet_pct": 54.5,
+   "catch_person_pct": 36.4,
+   "collateral_pct": 9.9,
+   "passes_gate": false
+  },
+  {
+   "margin_px": 30,
+   "catch_racquet_pct": 59.1,
+   "catch_person_pct": 40.9,
+   "collateral_pct": 12.9,
+   "passes_gate": false
+  },
+  {
+   "margin_px": 50,
+   "catch_racquet_pct": 63.6,
+   "catch_person_pct": 50.0,
+   "collateral_pct": 18.9,
+   "passes_gate": false
+  }
+ ]
+}
