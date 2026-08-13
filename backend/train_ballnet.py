@@ -160,6 +160,49 @@ def assert_no_gold_leak(root, exclude):
           f"dataset dirs")
 
 
+def assert_no_swingvision_leak(root, exclude=()):
+    """Abort if a dataset dir's clip carries a SwingVision overlay and has not
+    been scrubbed.
+
+    User instruction, 2026-08-13: do not train on SwingVision information. Five
+    clips in the pool carry another system's rendered output — mini-court radar,
+    stroke/speed readout, score panel, and a watermark that is a literal yellow
+    tennis ball — and 83 pseudo-labels landed inside one of those graphics.
+
+    Same shape as the gold guard, for the same reason: the rule has to be
+    enforced by the trainer rather than remembered by whoever runs it. A dir is
+    compliant when tools/scrub_swingvision.py has written swingvision_mask.json
+    into it; BallWindows then paints the boxes at load and drops the in-box
+    labels. Excluding the dir entirely is also compliant — it just costs the 27%
+    of the pool those clips represent.
+    """
+    sys.path.insert(0, os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
+    try:
+        from scrub_swingvision import sv_clips
+    except Exception as e:                       # tool absent: fail loud, not open
+        raise SystemExit(f"REFUSING TO TRAIN: cannot import the SwingVision "
+                         f"scrub guard ({e}). The rule is not optional.")
+    stems = {f"yt_{s}" for s in sv_clips()}
+    missing = []
+    for tag in sorted(os.listdir(root)):
+        d = os.path.join(root, tag)
+        if not os.path.isfile(os.path.join(d, "labels.json")) or tag in exclude:
+            continue
+        if tag in stems and not os.path.isfile(
+                os.path.join(d, "swingvision_mask.json")):
+            missing.append(tag)
+    if missing:
+        raise SystemExit(
+            "REFUSING TO TRAIN: these dataset dirs carry a burned-in SwingVision "
+            "overlay and have not been scrubbed:\n"
+            + "\n".join(f"    {t}" for t in missing)
+            + "\nRun `py tools/scrub_swingvision.py --write`, or pass them to "
+              "--exclude deliberately.")
+    present = [t for t in stems if os.path.isdir(os.path.join(root, t))]
+    print(f"[swingvision-guard] {len(present)} overlay clip(s) present, all scrubbed")
+
+
 class BallWindows(Dataset):
     def __init__(self, root, split="train", val_frac=0.2, augment=True,
                  exclude=(), use_hard_negs=True, hard_weight=1.0, conf_radius=12):
@@ -173,6 +216,11 @@ class BallWindows(Dataset):
         self.augment = augment and split == "train"
         self.hard_weight = float(hard_weight)
         self.conf_radius = int(conf_radius)
+        # SwingVision overlays, painted at load. See tools/scrub_swingvision.py:
+        # five training clips carry another system's rendered output, including a
+        # watermark that is a literal yellow tennis ball, and 83 pseudo-labels
+        # landed inside one. Keyed by directory so _frame can paint per clip.
+        self.sv_masks: dict[str, list] = {}
         for tag in sorted(os.listdir(root)):
             if tag in exclude:
                 continue
@@ -182,7 +230,18 @@ class BallWindows(Dataset):
                 continue
             with open(lp, "r", encoding="utf-8") as f:
                 meta = json.load(f)
-            items = sorted(((int(k), v) for k, v in meta["labels"].items()))
+            sv_drop: set[int] = set()
+            svp = os.path.join(d, "swingvision_mask.json")
+            if os.path.isfile(svp):
+                with open(svp, "r", encoding="utf-8") as f:
+                    sv = json.load(f)
+                self.sv_masks[d] = sv.get("boxes") or []
+                sv_drop = {int(i) for i in (sv.get("drop_labels") or [])}
+            # A positive that sits inside a painted box is a label on flat grey.
+            # Dropping beats keeping: these are the pseudo-labeller having locked
+            # onto SwingVision's watermark ball.
+            items = sorted((int(k), v) for k, v in meta["labels"].items()
+                           if int(k) not in sv_drop)
             labeled = {int(k) for k in meta["labels"]}   # frames that HAVE a ball
             # Confuser LOCATIONS for these frames, if mined. Keyed by frame index.
             conf = {}
@@ -235,6 +294,18 @@ class BallWindows(Dataset):
         img = cv2.imread(os.path.join(d, f"{i:05d}.jpg"))
         if img is None:   # missing predecessor: repeat the nearest available
             img = cv2.imread(os.path.join(d, f"{max(i, 0):05d}.jpg"))
+        boxes = self.sv_masks.get(d)
+        if img is not None and boxes:
+            # Paint out SwingVision's rendered output. Done at LOAD rather than
+            # baked into the JPEGs so the scrub is re-applied on every run and
+            # stays visible to anyone reading the code — a one-off rewrite of
+            # 11k frames is invisible six months later. Same fill as
+            # tools/mask_hud.py so a frame painted for training matches a frame
+            # painted for the far-court label queue.
+            for b in boxes:
+                x0, y0 = max(0, int(b["x"])), max(0, int(b["y"]))
+                x1, y1 = x0 + int(b["w"]), y0 + int(b["h"])
+                img[y0:y1, x0:x1] = (60, 60, 60)
         return img
 
     def __getitem__(self, k):
@@ -421,6 +492,7 @@ def main():
     torch.cuda.manual_seed_all(args.seed)
 
     assert_no_gold_leak(args.data, args.exclude)
+    assert_no_swingvision_leak(args.data, args.exclude)
     # Confuser weighting applies to TRAINING only. Weighting the validation loss
     # would change what "best checkpoint" means mid-experiment, and the whole point
     # is to compare against the shipped recipe on an unchanged yardstick.
