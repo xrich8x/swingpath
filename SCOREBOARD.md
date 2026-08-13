@@ -74,6 +74,14 @@ trusted. The full discipline is in ML_PRACTICES.md; this is the working summary.
    this attached to* needs 140 px of context, *is this literally a tennis ball* needs
    44 px blown up. Judging either from the wrong one produces confident nonsense — see
    Trap 18.
+9. **And look at them MOVING.** `tools/false_fire_reel.py` renders ±0.5 s around each
+   false fire with the detector run continuously and its lock drawn every frame. A still
+   cannot separate a racquet head from a ball — both are ball-sized, ball-coloured blobs
+   — and the thing that separates them is that one is on a short arc pinned to a person.
+   Two sessions were spent proving the pipeline cannot make that call from geometry while
+   the discriminator was motion, which no contact sheet shows. Annotation colour is
+   **magenta on purpose**: the subject and every confuser are yellow-green, so a yellow
+   marker hides inside the object it points at.
 
 ---
 

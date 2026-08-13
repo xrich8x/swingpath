@@ -84,6 +84,7 @@ data/output/*
 data/output/false_fires/**/*.png
 data/output/false_fires/**/*.jpg
 data/output/false_fires/**/*.html
+data/output/false_fires/**/*.mp4
 data/output/fps/*.png
 # Re-including the fps/ directory above also un-ignored the rendered videos it
 # holds (46 MB of *.annotated.mp4). Videos stay ignored one level down too —
