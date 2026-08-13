@@ -27,6 +27,16 @@ backend/weights/*.pth.tar
 !backend/weights/ballnet_i_base.pt
 !backend/weights/ballnet_i_conf.pt
 
+# Session K's data-volume A/B arms (2026-08-13). Both `--seed 0` and recipe-stamped,
+# so unlike Session I's they ARE reproducible in principle — but only from
+# data/ball_dataset, which is gitignored and has no off-machine copy, and only at
+# 1h16m / 1h52m of GPU. `pool_new_s0` is the +57%-data arm and the highest detector
+# recall this project has recorded (82.2% on the legacy six vs v21's 69.4%); it is a
+# SHIPPING CANDIDATE, not shipped — the chain test has not been run. Every number in
+# data/output/pool_ab.md is measured on these exact files.
+!backend/weights/pool_old_s0.pt
+!backend/weights/pool_new_s0.pt
+
 # Exported mobile models (regenerate with mobile/export_tracknet.py)
 mobile/models/*.onnx
 mobile/models/*.onnx.data

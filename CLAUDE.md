@@ -891,6 +891,49 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   Steps 5-6 are NOT run: sizing waits for one round labelled under the new rule. Clip mix
   is decided — even round-robin. 326 tests (37 new).
 
+- Session K (2026-08-13): MORE DATA IS A LEVER — the first one in nine sessions that
+  moved a headline number, and it moved the one nobody was attacking. The eight clips
+  ingested on 2026-08-11 added 15,097 labelled frames from eight unseen venues (26,293 ->
+  41,390, **+57%**). Two 15-epoch arms, `--seed 0` on BOTH, one variable: arm A excludes
+  the eight new dirs (14 dirs, 1h16m), arm B takes everything (22 dirs, 1h52m). Scored on
+  the ten-clip benchmark against human clicks. Evidence: data/output/pool_ab.md.
+  (1) POOLED DETECTOR RECALL **74.8 -> 80.4%** (1384 -> 1488 of 1851 ball frames, 4.1
+  sigma), far_px 73.3 -> 79.8% (3.2 sigma), far_geo 74.0 -> 79.5%. Recall is up on **9 of
+  10 clips, flat on 1, down on none**.
+  (2) IT GENERALISES, which is the part that makes it worth acting on. On the **LEGACY
+  SIX alone** — clips whose venues share nothing with the added footage — recall goes
+  **77.0 -> 82.2%** (925 -> 987 of 1201, 3.1 sigma). That is the highest figure ever
+  recorded on the historical benchmark; shipped `ballnet_v21` reads 69.4% and Session I's
+  arms 79.9/80.4%. So this is not the model learning the new venues, and it is not the
+  benchmark growing.
+  (3) **FALSE FIRE DID NOT MOVE.** 57.1 -> 53.9% is **0.8 sigma** on 308 no-ball frames,
+  and on the legacy six it is +0.5 pts — flat. The -10.6 on the four new clips is 1.5
+  sigma on 104 frames. Do NOT call this a precision gain; every previous session's win
+  was on that axis and this one is not.
+  (4) NOT THE PRODUCT, AND NOT SHIPPED. `ballnet_v21.pt` remains the default. The chain
+  test (`eval_model_filters` on the calibrated clips: chain recall + SOLID ghosts) has not
+  been run and costs a fresh perception pass per clip. Two reasons to run it before
+  promoting: v21 scores 9 solid ghosts where Session I's 15-epoch arms scored 14-15
+  DESPITE better detector recall, and arm B is also 15 epochs; and the standing "detector
+  precision does not reach the product" finding is about PRECISION, so it neither predicts
+  nor excuses what a RECALL gain does downstream — more firing could plausibly make
+  ghosting worse.
+  (5) LEAK CHECKED FIRST, because a +5.6 pt jump is exactly what a leak looks like.
+  `gold_source_videos()` knows 11 gold source videos including the lineage alias
+  `7 utr vs 8 utr [uhf0lemu2pg].mp4` (the trap-17 fix), and `assert_no_gold_leak` confirms
+  none appear in the 22 dataset dirs — the four clips promoted to gold on 2026-08-11 are
+  absent from the training pool entirely.
+  (6) CAVEAT, unchanged from Session I and still the limit: **n=1 training run per arm**.
+  `--seed 0` on both fixes initialisation and seeds the shuffle, but the datasets differ
+  in size so batch composition and augmentation draws still differ, and the 9-of-10
+  per-clip sign test measures EVALUATION noise, not training noise. Each arm is also its
+  own best epoch on its OWN validation split (A epoch 6, B epoch 12; B's val contains the
+  new venues). A `--seed 1` replication of arm B would size the run-to-run floor.
+  MEASUREMENT NOTE: `eval_detector_gold`'s JSON carries a `POOLED` row alongside the
+  per-clip rows. Filtering by clip name and re-pooling counts it as an eleventh clip and
+  doubles every denominator — the rates survive, the sigmas do not (recall reads 5.8 not
+  4.1). Drop `clip == "POOLED"` before aggregating.
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers
