@@ -259,7 +259,7 @@ def test_the_round_trip_gate_passes_a_correctly_built_dataset(tmp_path):
                                           for f in (10, 20, 30)}}))
     l2d.build("c", vid, lab, tmp_path / "ds")
     rt = f2d.verify_round_trip(tmp_path / "ds", "c", vid,
-                               {str(f): {} for f in (10, 20, 30)})
+                               {str(f): _click(20.0, 20.0) for f in (10, 20, 30)})
     assert rt["checked"] == 3 and rt["mismatches"] == []
 
 
@@ -284,7 +284,7 @@ def test_the_round_trip_gate_catches_an_off_by_one(tmp_path):
     cv2.imwrite(str(tmp_path / "ds" / "c" / "00005.jpg"),
                 cv2.resize(wrong, (512, 288)))
     rt = f2d.verify_round_trip(tmp_path / "ds", "c", vid,
-                               {str(f): {} for f in (10, 20, 30)})
+                               {str(f): _click(20.0, 20.0) for f in (10, 20, 30)})
     assert [m["source_frame"] for m in rt["mismatches"]] == [20]
     assert rt["mismatches"][0]["closest_to"] == 21
 
@@ -335,3 +335,38 @@ def test_a_real_gradient_to_another_frame_is_still_a_mismatch():
 def test_a_clean_match_still_passes():
     d = {9: 5.0, 10: 1.0, 11: 5.2}
     assert _verdict(d, 10) == "ok"
+
+
+# --- the gate's index mapping (2026-08-13) ---------------------------------------
+# build() numbers each triplet by its POSITION in the usable-frame list, so the
+# round-trip gate must invert that with the SAME list. It re-derived the list and
+# included `unsure` frames, which build() drops; on any clip with one, every later
+# sample was checked against the wrong source frame and the gate reported a phantom
+# 2-3 frame offset. It discriminated perfectly on the real data: the only two clips
+# that failed were the only two with an unsure label, 19 with none all passed.
+
+def test_usable_frames_drops_unsure_and_keeps_both_verdicts():
+    import labels_to_dataset as l2d
+    raw = {"10": {"ball": True, "x": 1.0, "y": 2.0},
+           "11": {"unsure": True, "x": 3.0, "y": 4.0},   # dropped by build()
+           "12": {"ball": False},
+           "13": {"ball": True, "x": None}}             # no position -> unusable
+    assert l2d.usable_frames(raw) == [10, 12]
+
+
+def test_the_gate_and_the_builder_agree_on_which_frames_are_written():
+    """The bug was two implementations of one rule. This fails if they diverge."""
+    import labels_to_dataset as l2d
+    raw = {"5": {"ball": True, "x": 1.0, "y": 1.0},
+           "6": {"unsure": True},
+           "7": {"ball": True, "x": 2.0, "y": 2.0},
+           "8": {"ball": False}}
+    wanted = l2d.usable_frames(raw)
+    # what build() would compute internally, spelled out independently here
+    pos = {int(k) for k, v in raw.items()
+           if not v.get("unsure") and v.get("ball") and v.get("x") is not None}
+    neg = {int(k) for k, v in raw.items()
+           if not v.get("unsure") and v.get("ball") is False}
+    assert wanted == sorted(pos | neg)
+    # and the sample index for entry k is 3k+2, so an unsure frame must not shift it
+    assert wanted.index(7) == 1, "an unsure frame must not occupy a triplet slot"

@@ -349,3 +349,16 @@ Process failures this project has hit **more than once**. Each cost real work.
    `end_s` is the last shot's *bounce*, not the criterion the code splits on. **Before
    sizing a defect, establish what the correct answer is** — here it was sitting in the
    pixels of three clips, free.
+21. **Re-deriving a rule instead of sharing it — then trusting the copy over the pixels.**
+   `build()` numbers each training triplet by its POSITION in the usable-frame list and drops
+   `unsure` labels; the round-trip gate re-derived that list and KEPT them, so on any clip
+   with an unsure label every later sample was checked against the wrong source frame. It
+   presented as a clean, alarming **+2/+3 frame offset with a 20–30% lead** — exactly what a
+   real data corruption looks like — and the first response was to write it up as one and
+   plan to exclude the clips. What settled it was **sequential decode from frame 0**, the one
+   read path that uses no seeking: `build()` was exact to **MAD 0.0000**. The tell had been
+   free all along — the only two clips that failed were the only two with an `unsure` label,
+   and all 19 with none passed. **When a checker and the thing it checks disagree, the checker
+   is a suspect too**, and a rule with two implementations will eventually have two meanings.
+   Now one function, `labels_to_dataset.usable_frames`, called by both, with an assertion in
+   `build()` that it still selects exactly what gets written.

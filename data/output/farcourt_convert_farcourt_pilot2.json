@@ -1,0 +1,617 @@
+{
+ "tool": "farcourt_labels_to_dataset.py",
+ "queue": "farcourt_pilot2",
+ "created": "2026-08-13 21:46:01",
+ "anchor_control": true,
+ "anchor_px": 15.0,
+ "gaps": [
+  {
+   "gap": 0,
+   "clip": "yt_6jp23ghDY9Q",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    0
+   ],
+   "accepted": false,
+   "repeat": true,
+   "click_motion_px": 6.6,
+   "tracker_motion_px": 241.9,
+   "midpoints": [
+    1
+   ]
+  },
+  {
+   "gap": 1,
+   "clip": "yt_6jp23ghDY9Q",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    3
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 35.1,
+   "tracker_motion_px": 3.4,
+   "midpoints": [
+    4
+   ]
+  },
+  {
+   "gap": 2,
+   "clip": "yt_8-BkpjFFIhQ",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    8
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 28.7,
+   "tracker_motion_px": 332.1,
+   "midpoints": [
+    7
+   ]
+  },
+  {
+   "gap": 3,
+   "clip": "yt_8-BkpjFFIhQ",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": true,
+   "click_motion_px": 0,
+   "tracker_motion_px": 101.0,
+   "midpoints": [
+    10
+   ]
+  },
+  {
+   "gap": 4,
+   "clip": "yt_RZ_wyJ9rI3Q",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    14
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 33.1,
+   "tracker_motion_px": 109.0,
+   "midpoints": [
+    13
+   ]
+  },
+  {
+   "gap": 5,
+   "clip": "yt_RZ_wyJ9rI3Q",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": true,
+   "click_motion_px": 30.6,
+   "tracker_motion_px": 4.8,
+   "midpoints": [
+    16
+   ]
+  },
+  {
+   "gap": 6,
+   "clip": "yt_TilAFMPc0yg",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    18,
+    20
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 22.7,
+   "tracker_motion_px": 17.9,
+   "midpoints": [
+    19
+   ]
+  },
+  {
+   "gap": 7,
+   "clip": "yt_VZWi6Vf-sX0",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    21,
+    23
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 9.3,
+   "tracker_motion_px": 5.5,
+   "midpoints": [
+    22
+   ]
+  },
+  {
+   "gap": 8,
+   "clip": "yt_TilAFMPc0yg",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    26
+   ],
+   "accepted": false,
+   "repeat": true,
+   "click_motion_px": 8.4,
+   "tracker_motion_px": 60.0,
+   "midpoints": [
+    25
+   ]
+  },
+  {
+   "gap": 9,
+   "clip": "yt_WjHZrIYteDA",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    27
+   ],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 2.8,
+   "tracker_motion_px": 380.8,
+   "midpoints": [
+    28
+   ]
+  },
+  {
+   "gap": 10,
+   "clip": "yt_VZWi6Vf-sX0",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    30,
+    32
+   ],
+   "accepted": false,
+   "repeat": true,
+   "click_motion_px": 6.4,
+   "tracker_motion_px": 5.4,
+   "midpoints": [
+    31
+   ]
+  },
+  {
+   "gap": 11,
+   "clip": "yt_am_dbl_classb",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 15.2,
+   "tracker_motion_px": 34.6,
+   "midpoints": [
+    34
+   ]
+  },
+  {
+   "gap": 12,
+   "clip": "yt_col_hard_zheng",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    36,
+    38
+   ],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 7.0,
+   "tracker_motion_px": 4.9,
+   "midpoints": [
+    37
+   ]
+  },
+  {
+   "gap": 13,
+   "clip": "yt_WjHZrIYteDA",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [
+    39
+   ],
+   "accepted": false,
+   "repeat": true,
+   "click_motion_px": 1.7,
+   "tracker_motion_px": 583.6,
+   "midpoints": [
+    40
+   ]
+  },
+  {
+   "gap": 14,
+   "clip": "yt_ewqSn18xdsY",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 32.0,
+   "tracker_motion_px": 11.7,
+   "midpoints": [
+    43
+   ]
+  },
+  {
+   "gap": 15,
+   "clip": "yt_am_dbl_classb",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    45
+   ],
+   "accepted": true,
+   "repeat": true,
+   "click_motion_px": 64.5,
+   "tracker_motion_px": 248.3,
+   "midpoints": [
+    46
+   ]
+  },
+  {
+   "gap": 16,
+   "clip": "yt_nQan0M5JDM8",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    48,
+    50
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 28.3,
+   "tracker_motion_px": 29.5,
+   "midpoints": [
+    49
+   ]
+  },
+  {
+   "gap": 17,
+   "clip": "yt_rz4T0-VALNw",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 53.3,
+   "tracker_motion_px": 46.8,
+   "midpoints": [
+    52
+   ]
+  },
+  {
+   "gap": 18,
+   "clip": "yt_col_hard_zheng",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [
+    56
+   ],
+   "accepted": false,
+   "repeat": true,
+   "click_motion_px": 0,
+   "tracker_motion_px": 18.3,
+   "midpoints": [
+    55
+   ]
+  },
+  {
+   "gap": 19,
+   "clip": "yt_tC0z7FYvMks",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    57,
+    59
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 163.1,
+   "tracker_motion_px": 153.1,
+   "midpoints": [
+    58
+   ]
+  },
+  {
+   "gap": 20,
+   "clip": "yt_ewqSn18xdsY",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": true,
+   "click_motion_px": 6.4,
+   "tracker_motion_px": 7.9,
+   "midpoints": [
+    61
+   ]
+  },
+  {
+   "gap": 21,
+   "clip": "yt_6jp23ghDY9Q",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [
+    63
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 36.7,
+   "tracker_motion_px": 432.9,
+   "midpoints": [
+    64
+   ]
+  },
+  {
+   "gap": 22,
+   "clip": "yt_8-BkpjFFIhQ",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    66
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 56.1,
+   "tracker_motion_px": 431.2,
+   "midpoints": [
+    67
+   ]
+  },
+  {
+   "gap": 23,
+   "clip": "yt_nQan0M5JDM8",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    69,
+    71
+   ],
+   "accepted": true,
+   "repeat": true,
+   "click_motion_px": 60.4,
+   "tracker_motion_px": 52.8,
+   "midpoints": [
+    70
+   ]
+  },
+  {
+   "gap": 24,
+   "clip": "yt_RZ_wyJ9rI3Q",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 3.0,
+   "midpoints": [
+    73
+   ]
+  },
+  {
+   "gap": 25,
+   "clip": "yt_rz4T0-VALNw",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    77
+   ],
+   "accepted": true,
+   "repeat": true,
+   "click_motion_px": 116.5,
+   "tracker_motion_px": 152.1,
+   "midpoints": [
+    76
+   ]
+  },
+  {
+   "gap": 26,
+   "clip": "yt_TilAFMPc0yg",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    78,
+    80
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 27.2,
+   "tracker_motion_px": 27.6,
+   "midpoints": [
+    79
+   ]
+  },
+  {
+   "gap": 27,
+   "clip": "yt_VZWi6Vf-sX0",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    83
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 36.7,
+   "tracker_motion_px": 132.8,
+   "midpoints": [
+    82
+   ]
+  },
+  {
+   "gap": 28,
+   "clip": "yt_tC0z7FYvMks",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    84,
+    86
+   ],
+   "accepted": true,
+   "repeat": true,
+   "click_motion_px": 18.5,
+   "tracker_motion_px": 15.5,
+   "midpoints": [
+    85
+   ]
+  },
+  {
+   "gap": 29,
+   "clip": "yt_WjHZrIYteDA",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    87,
+    89
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 44.3,
+   "tracker_motion_px": 39.5,
+   "midpoints": [
+    88
+   ]
+  }
+ ],
+ "datasets": [
+  {
+   "clip": "farcourt_pilot2_6jp23ghDY9Q",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_pilot2_6jp23ghDY9Q",
+   "frames": 18,
+   "positives": 5,
+   "negatives": 1,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 6,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.7122,
+    "n_frames_written": 18
+   }
+  },
+  {
+   "clip": "farcourt_pilot2_8-BkpjFFIhQ",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_pilot2_8-BkpjFFIhQ",
+   "frames": 18,
+   "positives": 6,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 6,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.4637,
+    "n_frames_written": 18
+   }
+  },
+  {
+   "clip": "farcourt_pilot2_RZ_wyJ9rI3Q",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_pilot2_RZ_wyJ9rI3Q",
+   "frames": 6,
+   "positives": 2,
+   "negatives": 0,
+   "unsure_dropped": 1,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 2,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.1796,
+    "n_frames_written": 6
+   }
+  },
+  {
+   "clip": "farcourt_pilot2_TilAFMPc0yg",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_pilot2_TilAFMPc0yg",
+   "frames": 18,
+   "positives": 6,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 6,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.2144,
+    "n_frames_written": 18
+   }
+  },
+  {
+   "clip": "farcourt_pilot2_VZWi6Vf-sX0",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_pilot2_VZWi6Vf-sX0",
+   "frames": 18,
+   "positives": 6,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 6,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.4743,
+    "n_frames_written": 18
+   }
+  },
+  {
+   "clip": "farcourt_pilot2_WjHZrIYteDA",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_pilot2_WjHZrIYteDA",
+   "frames": 9,
+   "positives": 3,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 3,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.6729,
+    "n_frames_written": 9
+   }
+  },
+  {
+   "clip": "farcourt_pilot2_am_dbl_classb",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_pilot2_am_dbl_classb",
+   "frames": 9,
+   "positives": 3,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 3,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.0897,
+    "n_frames_written": 9
+   }
+  },
+  {
+   "clip": "farcourt_pilot2_nQan0M5JDM8",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_pilot2_nQan0M5JDM8",
+   "frames": 15,
+   "positives": 5,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 5,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.1992,
+    "n_frames_written": 15
+   }
+  },
+  {
+   "clip": "farcourt_pilot2_rz4T0-VALNw",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_pilot2_rz4T0-VALNw",
+   "frames": 9,
+   "positives": 3,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 3,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.1374,
+    "n_frames_written": 9
+   }
+  },
+  {
+   "clip": "farcourt_pilot2_tC0z7FYvMks",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_pilot2_tC0z7FYvMks",
+   "frames": 18,
+   "positives": 6,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 6,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.2949,
+    "n_frames_written": 18
+   }
+  }
+ ]
+}

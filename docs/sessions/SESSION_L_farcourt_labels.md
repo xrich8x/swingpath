@@ -143,8 +143,8 @@ on both frames.** A written instruction on the page is not a control.
 no findable ball, and at a 35% both-filters yield, 300 positives would need ~860 gaps
 (~2,580 frames) clicked.
 
-**L1: partially delivered.** 34 far-court labels converted and round-trip verified, out of
-173 collected. Three defects found and two fixed:
+**L1: COMPLETE.** **105 human far-court ball labels** across 21 dataset dirs, every sample
+round-trip verified. Four defects found and all four fixed:
 
 - the motion test is **now enforced** — its threshold finally reproduced on an independent
   round (bimodal, valley at 9–16 px), which was the only thing blocking its use;
@@ -153,9 +153,11 @@ no findable ball, and at a 35% both-filters yield, 300 positives would need ~860
 - the gate ran *after* the write, leaving unverified data in the pool on failure; it now
   removes the directory.
 
-**Open, and blocking L3:** a genuine **+2/+3 frame offset** on `VZWi6Vf-sX0` and
-`RZ_wyJ9rI3Q` — mean-abs falls monotonically across the whole ±3 window with a 20–30% lead
-over the claimed frame. Other clips round-trip cleanly. Cause unknown, not bulldozed.
+- what looked like a **+2/+3 frame offset** was the gate's own index mapping: `build()`
+  numbers triplets by position in the usable-frame list and drops `unsure` frames, while the
+  gate re-derived that list and kept them. Sequential decode (no seeking) proved the build
+  exact to MAD 0.0000. The only two failing clips were the only two with an unsure label;
+  19 with none passed. The rule now lives once, in `labels_to_dataset.usable_frames`.
 
 Evidence: `data/output/farcourt_l2.md`.
 

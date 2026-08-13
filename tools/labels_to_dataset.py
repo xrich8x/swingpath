@@ -105,6 +105,25 @@ def gold_videos() -> set[str]:
     return out
 
 
+def usable_frames(raw: dict) -> list[int]:
+    """Source frames build() writes a triplet for, in the order it writes them.
+
+    THE SINGLE SOURCE OF THIS RULE, and it exists because there were two.
+    build() numbers each triplet by its POSITION in this list (sample 3k+2 holds
+    the label for entry k), and the round-trip gate has to invert that mapping.
+    The gate re-derived the list itself and included `unsure` frames, which
+    build() drops — so on any clip with an unsure label every subsequent sample
+    was checked against the wrong source frame and the gate reported a phantom
+    2-3 frame offset. It discriminated perfectly: the only two clips that failed
+    were the only two with an unsure label, and 19 with none all passed.
+    Two implementations of "which frames get written" is one too many.
+    """
+    return sorted({int(k) for k, v in raw.items()
+                   if not v.get("unsure")
+                   and ((v.get("ball") and v.get("x") is not None)
+                        or v.get("ball") is False)})
+
+
 def build(clip: str, video: Path, labels_path: Path, out_root: Path,
           quality: int = 92) -> dict:
     data = json.loads(labels_path.read_text(encoding="utf-8"))
@@ -120,7 +139,8 @@ def build(clip: str, video: Path, labels_path: Path, out_root: Path,
             positives[int(k)] = (float(v["x"]), float(v["y"]))
         elif v.get("ball") is False:
             negatives.append(int(k))
-    wanted = sorted(set(positives) | set(negatives))
+    wanted = usable_frames(raw)
+    assert wanted == sorted(set(positives) | set(negatives)),         "usable_frames must select exactly what build() writes"
     if not wanted:
         raise SystemExit(f"{labels_path} has no usable labels "
                          f"({unsure} unsure, {len(raw)} total)")

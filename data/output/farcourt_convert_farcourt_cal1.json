@@ -1,0 +1,914 @@
+{
+ "tool": "farcourt_labels_to_dataset.py",
+ "queue": "farcourt_cal1",
+ "created": "2026-08-13 21:44:33",
+ "anchor_control": true,
+ "anchor_px": 15.0,
+ "gaps": [
+  {
+   "gap": 0,
+   "clip": "yt_6jp23ghDY9Q",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    2
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 86.9,
+   "tracker_motion_px": 131.3,
+   "midpoints": [
+    1
+   ]
+  },
+  {
+   "gap": 1,
+   "clip": "yt_8-BkpjFFIhQ",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 128.0,
+   "tracker_motion_px": 3.0,
+   "midpoints": [
+    4
+   ]
+  },
+  {
+   "gap": 2,
+   "clip": "yt_RZ_wyJ9rI3Q",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    8
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 16.6,
+   "tracker_motion_px": 58.2,
+   "midpoints": [
+    7
+   ]
+  },
+  {
+   "gap": 3,
+   "clip": "yt_TilAFMPc0yg",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    9,
+    11
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 14.4,
+   "tracker_motion_px": 15.8,
+   "midpoints": [
+    10
+   ]
+  },
+  {
+   "gap": 4,
+   "clip": "yt_VZWi6Vf-sX0",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    12,
+    14
+   ],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 6.9,
+   "tracker_motion_px": 6.3,
+   "midpoints": [
+    13
+   ]
+  },
+  {
+   "gap": 5,
+   "clip": "yt_WjHZrIYteDA",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    15,
+    17
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 16.6,
+   "tracker_motion_px": 14.2,
+   "midpoints": [
+    16
+   ]
+  },
+  {
+   "gap": 6,
+   "clip": "yt_am_dbl_classb",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    20
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 53.3,
+   "tracker_motion_px": 160.9,
+   "midpoints": [
+    19
+   ]
+  },
+  {
+   "gap": 7,
+   "clip": "yt_col_hard_zheng",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    21,
+    23
+   ],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 10.7,
+   "tracker_motion_px": 8.2,
+   "midpoints": [
+    22
+   ]
+  },
+  {
+   "gap": 8,
+   "clip": "yt_ewqSn18xdsY",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 303.8,
+   "midpoints": [
+    25
+   ]
+  },
+  {
+   "gap": 9,
+   "clip": "yt_nQan0M5JDM8",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    27,
+    29
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 36.7,
+   "tracker_motion_px": 26.9,
+   "midpoints": [
+    28
+   ]
+  },
+  {
+   "gap": 10,
+   "clip": "yt_rz4T0-VALNw",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    32
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 24.9,
+   "tracker_motion_px": 44.0,
+   "midpoints": [
+    31
+   ]
+  },
+  {
+   "gap": 11,
+   "clip": "yt_tC0z7FYvMks",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    33
+   ],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 4.7,
+   "tracker_motion_px": 41.3,
+   "midpoints": [
+    34
+   ]
+  },
+  {
+   "gap": 12,
+   "clip": "yt_6jp23ghDY9Q",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 221.0,
+   "midpoints": [
+    37
+   ]
+  },
+  {
+   "gap": 13,
+   "clip": "yt_8-BkpjFFIhQ",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 42.3,
+   "tracker_motion_px": 68.7,
+   "midpoints": [
+    40
+   ]
+  },
+  {
+   "gap": 14,
+   "clip": "yt_RZ_wyJ9rI3Q",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [
+    44
+   ],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 8.0,
+   "tracker_motion_px": 133.2,
+   "midpoints": [
+    43
+   ]
+  },
+  {
+   "gap": 15,
+   "clip": "yt_TilAFMPc0yg",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    45,
+    47
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 24.4,
+   "tracker_motion_px": 26.5,
+   "midpoints": [
+    46
+   ]
+  },
+  {
+   "gap": 16,
+   "clip": "yt_VZWi6Vf-sX0",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [
+    50
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 9.0,
+   "tracker_motion_px": 14.3,
+   "midpoints": [
+    49
+   ]
+  },
+  {
+   "gap": 17,
+   "clip": "yt_WjHZrIYteDA",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 16.8,
+   "midpoints": [
+    52
+   ]
+  },
+  {
+   "gap": 18,
+   "clip": "yt_am_dbl_classb",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 4.5,
+   "midpoints": [
+    55
+   ]
+  },
+  {
+   "gap": 19,
+   "clip": "yt_col_hard_zheng",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 14.0,
+   "tracker_motion_px": 6.7,
+   "midpoints": [
+    58
+   ]
+  },
+  {
+   "gap": 20,
+   "clip": "yt_ewqSn18xdsY",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    62
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 39.2,
+   "tracker_motion_px": 266.3,
+   "midpoints": [
+    61
+   ]
+  },
+  {
+   "gap": 21,
+   "clip": "yt_nQan0M5JDM8",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    63,
+    65
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 32.8,
+   "tracker_motion_px": 38.4,
+   "midpoints": [
+    64
+   ]
+  },
+  {
+   "gap": 22,
+   "clip": "yt_rz4T0-VALNw",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    66
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 41.4,
+   "tracker_motion_px": 211.4,
+   "midpoints": [
+    67
+   ]
+  },
+  {
+   "gap": 23,
+   "clip": "yt_tC0z7FYvMks",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [
+    71
+   ],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 53.6,
+   "midpoints": [
+    70
+   ]
+  },
+  {
+   "gap": 24,
+   "clip": "yt_6jp23ghDY9Q",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 174.9,
+   "tracker_motion_px": 160.7,
+   "midpoints": [
+    73
+   ]
+  },
+  {
+   "gap": 25,
+   "clip": "yt_8-BkpjFFIhQ",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    75,
+    77
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 21.3,
+   "tracker_motion_px": 23.6,
+   "midpoints": [
+    76
+   ]
+  },
+  {
+   "gap": 26,
+   "clip": "yt_RZ_wyJ9rI3Q",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 119.8,
+   "midpoints": [
+    79
+   ]
+  },
+  {
+   "gap": 27,
+   "clip": "yt_TilAFMPc0yg",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    81,
+    83
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 24.9,
+   "tracker_motion_px": 23.0,
+   "midpoints": [
+    82
+   ]
+  },
+  {
+   "gap": 28,
+   "clip": "yt_VZWi6Vf-sX0",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    84
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 54.1,
+   "tracker_motion_px": 53.2,
+   "midpoints": [
+    85
+   ]
+  },
+  {
+   "gap": 29,
+   "clip": "yt_WjHZrIYteDA",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 4.7,
+   "midpoints": [
+    88
+   ]
+  },
+  {
+   "gap": 30,
+   "clip": "yt_am_dbl_classb",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 2.6,
+   "midpoints": [
+    91
+   ]
+  },
+  {
+   "gap": 31,
+   "clip": "yt_col_hard_zheng",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 84.9,
+   "tracker_motion_px": 16.6,
+   "midpoints": [
+    94
+   ]
+  },
+  {
+   "gap": 32,
+   "clip": "yt_ewqSn18xdsY",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 318.8,
+   "midpoints": [
+    97
+   ]
+  },
+  {
+   "gap": 33,
+   "clip": "yt_nQan0M5JDM8",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    99,
+    101
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 34.7,
+   "tracker_motion_px": 32.4,
+   "midpoints": [
+    100
+   ]
+  },
+  {
+   "gap": 34,
+   "clip": "yt_rz4T0-VALNw",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    102
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 80.1,
+   "tracker_motion_px": 44.1,
+   "midpoints": [
+    103
+   ]
+  },
+  {
+   "gap": 35,
+   "clip": "yt_tC0z7FYvMks",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    105,
+    107
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 12.1,
+   "tracker_motion_px": 14.1,
+   "midpoints": [
+    106
+   ]
+  },
+  {
+   "gap": 36,
+   "clip": "yt_6jp23ghDY9Q",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 192.5,
+   "midpoints": [
+    109
+   ]
+  },
+  {
+   "gap": 37,
+   "clip": "yt_8-BkpjFFIhQ",
+   "anchors_clicked": 1,
+   "anchors_confirmed": [
+    113
+   ],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 45.9,
+   "midpoints": [
+    112
+   ]
+  },
+  {
+   "gap": 38,
+   "clip": "yt_RZ_wyJ9rI3Q",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 2.9,
+   "midpoints": [
+    115
+   ]
+  },
+  {
+   "gap": 39,
+   "clip": "yt_TilAFMPc0yg",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    117
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 19.6,
+   "tracker_motion_px": 117.7,
+   "midpoints": [
+    118
+   ]
+  },
+  {
+   "gap": 40,
+   "clip": "yt_VZWi6Vf-sX0",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 14.6,
+   "midpoints": [
+    121
+   ]
+  },
+  {
+   "gap": 41,
+   "clip": "yt_WjHZrIYteDA",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    123,
+    125
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 13.7,
+   "tracker_motion_px": 16.3,
+   "midpoints": [
+    124
+   ]
+  },
+  {
+   "gap": 42,
+   "clip": "yt_am_dbl_classb",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 5.1,
+   "midpoints": [
+    127
+   ]
+  },
+  {
+   "gap": 43,
+   "clip": "yt_col_hard_zheng",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 88.7,
+   "tracker_motion_px": 15.7,
+   "midpoints": [
+    130
+   ]
+  },
+  {
+   "gap": 44,
+   "clip": "yt_ewqSn18xdsY",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 313.0,
+   "midpoints": [
+    133
+   ]
+  },
+  {
+   "gap": 45,
+   "clip": "yt_nQan0M5JDM8",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 226.1,
+   "midpoints": [
+    136
+   ]
+  },
+  {
+   "gap": 46,
+   "clip": "yt_rz4T0-VALNw",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 42.6,
+   "tracker_motion_px": 192.4,
+   "midpoints": [
+    139
+   ]
+  },
+  {
+   "gap": 48,
+   "clip": "yt_6jp23ghDY9Q",
+   "anchors_clicked": 2,
+   "anchors_confirmed": [
+    141,
+    143
+   ],
+   "accepted": true,
+   "repeat": false,
+   "click_motion_px": 98.5,
+   "tracker_motion_px": 100.1,
+   "midpoints": [
+    142
+   ]
+  },
+  {
+   "gap": 49,
+   "clip": "yt_RZ_wyJ9rI3Q",
+   "anchors_clicked": 0,
+   "anchors_confirmed": [],
+   "accepted": false,
+   "repeat": false,
+   "click_motion_px": 0,
+   "tracker_motion_px": 48.3,
+   "midpoints": [
+    145
+   ]
+  }
+ ],
+ "datasets": [
+  {
+   "clip": "farcourt_cal1_6jp23ghDY9Q",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_6jp23ghDY9Q",
+   "frames": 18,
+   "positives": 6,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 6,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.4446,
+    "n_frames_written": 18
+   }
+  },
+  {
+   "clip": "farcourt_cal1_8-BkpjFFIhQ",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_8-BkpjFFIhQ",
+   "frames": 9,
+   "positives": 3,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 3,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.222,
+    "n_frames_written": 9
+   }
+  },
+  {
+   "clip": "farcourt_cal1_RZ_wyJ9rI3Q",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_RZ_wyJ9rI3Q",
+   "frames": 9,
+   "positives": 3,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 3,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.1291,
+    "n_frames_written": 9
+   }
+  },
+  {
+   "clip": "farcourt_cal1_TilAFMPc0yg",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_TilAFMPc0yg",
+   "frames": 33,
+   "positives": 11,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 11,
+    "mismatches": [],
+    "unresolved_static": [
+     {
+      "source_frame": 2787,
+      "margin": 0.0,
+      "tied_with": 2786
+     }
+    ],
+    "median_margin": 0.2118,
+    "n_frames_written": 33
+   }
+  },
+  {
+   "clip": "farcourt_cal1_VZWi6Vf-sX0",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_VZWi6Vf-sX0",
+   "frames": 15,
+   "positives": 5,
+   "negatives": 0,
+   "unsure_dropped": 1,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 5,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.1823,
+    "n_frames_written": 15
+   }
+  },
+  {
+   "clip": "farcourt_cal1_WjHZrIYteDA",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_WjHZrIYteDA",
+   "frames": 18,
+   "positives": 6,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 6,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.2144,
+    "n_frames_written": 18
+   }
+  },
+  {
+   "clip": "farcourt_cal1_am_dbl_classb",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_am_dbl_classb",
+   "frames": 9,
+   "positives": 3,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 3,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.1086,
+    "n_frames_written": 9
+   }
+  },
+  {
+   "clip": "farcourt_cal1_ewqSn18xdsY",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_ewqSn18xdsY",
+   "frames": 9,
+   "positives": 3,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 3,
+    "mismatches": [],
+    "unresolved_static": [
+     {
+      "source_frame": 3504,
+      "margin": 0.0002,
+      "tied_with": null
+     }
+    ],
+    "median_margin": 0.0959,
+    "n_frames_written": 9
+   }
+  },
+  {
+   "clip": "farcourt_cal1_nQan0M5JDM8",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_nQan0M5JDM8",
+   "frames": 27,
+   "positives": 9,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 9,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.1958,
+    "n_frames_written": 27
+   }
+  },
+  {
+   "clip": "farcourt_cal1_rz4T0-VALNw",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_rz4T0-VALNw",
+   "frames": 24,
+   "positives": 8,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 8,
+    "mismatches": [],
+    "unresolved_static": [],
+    "median_margin": 0.1077,
+    "n_frames_written": 24
+   }
+  },
+  {
+   "clip": "farcourt_cal1_tC0z7FYvMks",
+   "out": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\ball_dataset\\farcourt_cal1_tC0z7FYvMks",
+   "frames": 9,
+   "positives": 3,
+   "negatives": 0,
+   "unsure_dropped": 0,
+   "skipped": 0,
+   "round_trip": {
+    "checked": 3,
+    "mismatches": [],
+    "unresolved_static": [
+     {
+      "source_frame": 35441,
+      "margin": 0.002,
+      "tied_with": null
+     },
+     {
+      "source_frame": 35447,
+      "margin": 0.0027,
+      "tied_with": null
+     }
+    ],
+    "median_margin": 0.0027,
+    "n_frames_written": 9
+   }
+  }
+ ]
+}

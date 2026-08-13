@@ -219,7 +219,9 @@ def verify_round_trip(out_root: Path, clip: str, video: Path, per_frame: dict,
     import numpy as np
 
     meta = json.loads((out_root / clip / "labels.json").read_text(encoding="utf-8"))
-    wanted = sorted({int(k) for k in per_frame})
+    # Must be build()'s own selection, not a re-derivation of it — see
+    # labels_to_dataset.usable_frames for what re-deriving it cost.
+    wanted = l2d.usable_frames(per_frame)
     cap = cv2.VideoCapture(str(video))
     bad, flat, checked, margins = [], [], 0, []
     # build() writes each labelled source frame f as a triplet at 3k, 3k+1, 3k+2
