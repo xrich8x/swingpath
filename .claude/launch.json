@@ -20,6 +20,13 @@
       "port": 8790
     },
     {
+      "name": "false-fires",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-m", "http.server", "8795", "--directory",
+                      "data/output/false_fires"],
+      "port": 8795
+    },
+    {
       "name": "court-setup",
       "runtimeExecutable": "backend/.venv/Scripts/python.exe",
       "runtimeArgs": ["tools/court_setup_server.py", "--clip", "am_ntrp40",

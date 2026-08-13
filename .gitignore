@@ -68,6 +68,22 @@ data/output/*
 # recall" result (HANDOFF.md §13) and must stay reproducible. Images still ignored.
 !data/output/fps/
 !data/output/fps/*.json
+# Same rule for the false-fire inspection: the per-model locks.json files ARE the
+# evidence (every lock's frame, image position, court position and class), they are
+# ~40 KB each, and data/output/false_fires.md cites them. The contact sheets and the
+# 5.8 MB viewer page are DERIVED — regenerate with tools/false_fire_viewer.py from
+# these JSONs plus data/gold/frames — so images stay ignored as everywhere else.
+!data/output/false_fires/
+!data/output/false_fires/*/
+!data/output/false_fires/*/*.json
+# NOTE the re-ignores below are load-bearing. `data/output/*` only matches ONE
+# level, so un-ignoring the false_fires directory makes git descend and pick up
+# EVERYTHING under it — the first attempt staged 59 MB of contact sheets and a
+# 5.8 MB viewer page. Un-ignoring a directory is not the same as un-ignoring a
+# file type inside it.
+data/output/false_fires/**/*.png
+data/output/false_fires/**/*.jpg
+data/output/false_fires/**/*.html
 data/output/fps/*.png
 # Re-including the fps/ directory above also un-ignored the rendered videos it
 # holds (46 MB of *.annotated.mp4). Videos stay ignored one level down too —
