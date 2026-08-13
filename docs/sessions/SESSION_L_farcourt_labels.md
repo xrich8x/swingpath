@@ -125,3 +125,44 @@ These are unblocked and can be done in any gap:
    (arc reproj 148 → 91 px, HUD speed MAE 38.9 → 33.1%), is a wash on detection, costs 2×
    perception, and needs **no** re-tune (`max_gap_s = 0.4` already correct at both rates).
    A decision, not a task.
+
+---
+
+## Results — L1 and L2, run 2026-08-13
+
+**L2: GATE FAILS at 47%** (bar was ≥60%). Measured on `farcourt_cal1`, 49 gaps — which
+turns out to be the validation round the step called for: it was labelled at 21:50, thirty
+minutes after the "a ball is somewhere different on every frame" rule shipped at 21:20.
+
+**The rule did not work.** `cal1` (after) is *worse* than `pilot2` (before), 47% vs 60%
+ball-like click motion. **Seventeen of 49 gaps have the human clicking the identical pixel
+on both frames.** A written instruction on the page is not a control.
+
+**So L3 does not run**, per the gate. And the diagnosis has moved: the far-court lever is
+**not blocked on labelling effort, it is blocked on queue selection** — 41% of gaps present
+no findable ball, and at a 35% both-filters yield, 300 positives would need ~860 gaps
+(~2,580 frames) clicked.
+
+**L1: partially delivered.** 34 far-court labels converted and round-trip verified, out of
+173 collected. Three defects found and two fixed:
+
+- the motion test is **now enforced** — its threshold finally reproduced on an independent
+  round (bimodal, valley at 9–16 px), which was the only thing blocking its use;
+- the round-trip gate counted an exact **tie** as a mismatch (`argmin` decided by dict
+  order); now judged as unresolved on the same margin;
+- the gate ran *after* the write, leaving unverified data in the pool on failure; it now
+  removes the directory.
+
+**Open, and blocking L3:** a genuine **+2/+3 frame offset** on `VZWi6Vf-sX0` and
+`RZ_wyJ9rI3Q` — mean-abs falls monotonically across the whole ±3 window with a 20–30% lead
+over the claimed frame. Other clips round-trip cleanly. Cause unknown, not bulldozed.
+
+Evidence: `data/output/farcourt_l2.md`.
+
+### Revised next steps
+
+1. Fix (or exclude) the frame-offset clips.
+2. **Move the anchor control from label time to selection time.** It currently runs after
+   the human has spent the effort. Session J already measured that local roam and
+   `suppress_false_locks` both fail as selection screens, so this needs a new idea.
+3. Only then L3, and re-run the L2 gate on the first 30 gaps of it before committing hours.

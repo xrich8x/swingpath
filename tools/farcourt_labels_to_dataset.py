@@ -49,6 +49,12 @@ sys.path.insert(0, str(REPO / "tools"))
 import labels_to_dataset as l2d        # noqa: E402  (path set above)
 
 ANCHOR_PX = 15.0        # at 720p; scaled by frame height, like the rest of the stack
+#: Minimum distance a human click may move across a gap, at 720p. Below this the
+#: labeller was looking at something that does not move, which a ball in play
+#: never is. Pre-registered in Session J from 12 gaps, then CONFIRMED on 49
+#: independent ones (farcourt_cal1) where the distribution is bimodal with a
+#: valley at 9-16 px and 17 clicks at EXACTLY zero. See data/output/farcourt_l2.md.
+MIN_MOTION_PX = 9.0
 
 
 def _dist(a, b):
@@ -58,7 +64,8 @@ def _dist(a, b):
 def click_motion(rs, labels):
     """(human click path length, tracker anchor-to-anchor displacement) in px.
 
-    REPORTED, NOT ENFORCED — and the distinction is the point.
+    ENFORCED as of 2026-08-13; it was reported-only until then, and the reason
+    for the change is that the threshold stopped being fitted to its own evidence.
 
     The anchor control asks whether the human AGREES with the tracker, and the
     masked re-run showed that is not the same as being right: on 2 of 12 repeat
@@ -72,7 +79,11 @@ def click_motion(rs, labels):
     while the tracker's own prior moved 60-583 px. It is not a filter because the
     apparent threshold was found AFTER looking at those twelve gaps, and a cutoff
     fitted to twelve observations is a memory of them rather than a control. The
-    labelling page now carries the rule instead; this measures whether it worked.
+    labelling page carries the rule too — and MEASURED, the rule did NOT work:
+    farcourt_cal1 was labelled 30 minutes after it shipped and is WORSE than the
+    round before it (47% vs 60% ball-like motion). So the control has to be
+    mechanical. Confirmed on those 49 independent gaps: bimodal, valley at
+    9-16 px, 17 clicks at exactly zero. data/output/farcourt_l2.md.
     """
     pts = []
     for r in sorted(rs, key=lambda r: r["frame"]):
@@ -113,7 +124,7 @@ def gap_ids(rows):
 
 
 def adjudicate(manifest: dict, labels: dict, *, anchor_px: float = ANCHOR_PX,
-               enforce: bool = True):
+               enforce: bool = True, min_motion_px: float = MIN_MOTION_PX):
     """(accepted rows, per-gap verdicts). Pure — the tests drive it directly."""
     frames = manifest["frames"]
     gaps: dict = {}
@@ -136,7 +147,19 @@ def adjudicate(manifest: dict, labels: dict, *, anchor_px: float = ANCHOR_PX,
             if _dist((v["x"], v["y"]), (a["prior_x"], a["prior_y"])) <= tol:
                 confirmed.append(a["frame"])
         moved, tmoved = click_motion(rs, labels)
-        ok = bool(confirmed) or not anchors      # no anchors queued -> nothing to check
+        # THE MOTION TEST, now ENFORCED (2026-08-13). Session J found the
+        # separation post-hoc on 12 gaps and deliberately left it reported-only,
+        # because a threshold fitted to the gaps that suggested it is not a
+        # threshold. It has now reproduced on an INDEPENDENT round: farcourt_cal1,
+        # 49 gaps labelled 30 minutes after the "a ball is somewhere different on
+        # every frame" rule shipped. The distribution is cleanly bimodal —
+        # 20 gaps at <=8 px (SEVENTEEN of them at exactly 0, the identical pixel
+        # clicked twice), 23 at >=17 px, and only 6 in the 9-16 px valley between.
+        # A ball in play cannot be in the same place two frames apart, so a
+        # zero-motion click is a static object by definition, not a noisy label.
+        moved_ok = (moved is None) or (moved >= min_motion_px *
+                                       (rs[0].get("height", 720) / 720.0))
+        ok = (bool(confirmed) or not anchors) and moved_ok
         verdicts.append({"gap": gid, "clip": rs[0]["src_dataset"],
                          "anchors_clicked": checked, "anchors_confirmed": confirmed,
                          "accepted": ok or not enforce,
@@ -220,12 +243,25 @@ def verify_round_trip(out_root: Path, clip: str, video: Path, per_frame: dict,
         others = [v for g, v in d.items() if g != f]
         margin = (min(others) - d[f]) / max(d[f], 1e-6) if others else 0.0
         margins.append(round(margin, 4))
-        if best != f:
+        # A "miss" only means something if the winner is meaningfully better than
+        # the claimed frame. On a static court neighbouring frames tie — measured
+        # on TilAFMPc0yg:2787, frames 2786 and 2787 both score 2.575, so argmin
+        # picks whichever it saw first and the verdict is decided by dict order,
+        # not by pixels. That is the same "the argmin is noise" case this function
+        # already reports as unresolved; it simply was not reached when the tie
+        # happened to fall the wrong way. Judged on the SAME min_margin, so there
+        # is one notion of "too close to call" rather than two.
+        # Contrast RZ_wyJ9rI3Q:1231, which reads 3.01 -> 2.187 monotonically across
+        # the window: the true frame is probably outside it. That stays a hard stop.
+        lead = (d[f] - d[best]) / max(d[f], 1e-6)      # how much better `best` is
+        if best != f and lead >= min_margin:
             bad.append({"source_frame": f, "sample": p.name, "closest_to": best,
+                        "lead_over_claimed": round(lead, 4),
                         "mean_abs": {g: round(v, 3) for g, v in d.items()}})
-        elif margin < min_margin:
+        elif best != f or margin < min_margin:
             # Nothing moved in +/-3 frames, so "closest" carries no information.
-            flat.append({"source_frame": f, "margin": round(margin, 4)})
+            flat.append({"source_frame": f, "margin": round(margin, 4),
+                         "tied_with": None if best == f else best})
     cap.release()
     return {"checked": checked, "mismatches": bad, "unresolved_static": flat,
             "median_margin": round(float(np.median(margins)), 4) if margins else None,
@@ -286,6 +322,10 @@ def main() -> None:
     ap.add_argument("--prefix", default="",
                     help="dataset dir name per clip; defaults to <queue>_<video stem>")
     ap.add_argument("--anchor-px", type=float, default=ANCHOR_PX)
+    ap.add_argument("--min-motion-px", type=float, default=MIN_MOTION_PX,
+                    help="minimum human click travel across a gap, at 720p; "
+                         "0 disables the test (it was reported-only before "
+                         "2026-08-13)")
     ap.add_argument("--no-anchor-control", dest="anchor_control",
                     action="store_false", default=True)
     ap.add_argument("--no-verify", dest="verify", action="store_false", default=True)
@@ -315,7 +355,8 @@ def main() -> None:
     l2d.refuse_if_contaminated(man_p, force=args.force)
 
     accepted, verdicts = adjudicate(manifest, labels, anchor_px=args.anchor_px,
-                                    enforce=args.anchor_control)
+                                    enforce=args.anchor_control,
+                                    min_motion_px=args.min_motion_px)
     n_acc = sum(1 for v in verdicts if v["accepted"])
     print(f"{len(verdicts)} gap(s): {n_acc} accepted, {len(verdicts) - n_acc} "
           f"rejected by the anchor control"
@@ -370,11 +411,19 @@ def main() -> None:
             rt = res["round_trip"] = verify_round_trip(Path(args.out), name,
                                                        video, per_frame)
             if rt["mismatches"]:
+                # The gate runs AFTER build(), so a failure leaves an unverified
+                # directory sitting in the training pool — the exact hazard this
+                # check exists to prevent, arriving by a different door. A hard
+                # stop that leaves the bad data behind is not a hard stop.
+                import shutil
+                shutil.rmtree(Path(args.out) / name, ignore_errors=True)
                 raise SystemExit(
                     f"ROUND-TRIP FAILED for {name}: "
                     f"{rt['mismatches']}\nThe built samples are not "
                     f"the frames the human labelled. Nothing downstream would ever "
-                    f"show this, so it is a hard stop.")
+                    f"show this, so it is a hard stop.\n"
+                    f"Removed {Path(args.out) / name} — an unverified dataset "
+                    f"directory must not be left where the trainer will find it.")
             print(f"    round-trip: {rt['checked']} sample(s) closest to their own "
                   f"source frame, median margin {rt['median_margin']}"
                   + (f"; {len(rt['unresolved_static'])} too static to resolve"

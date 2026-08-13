@@ -101,7 +101,9 @@ def test_the_tolerance_scales_with_frame_height():
     off = (100.0 + 20.0, 50.0)                       # 20 px from the prior
     man720 = {"frames": _trio(0, height=720)}
     man1080 = {"frames": _trio(0, height=1080)}
-    labels = {"0": _click(*off)}
+    # The midpoint click must MOVE, or the (separate) motion test rejects the gap
+    # and this stops measuring the anchor tolerance it is named for.
+    labels = {"0": _click(*off), "1": _click(300.0, 200.0)}
     assert f2d.adjudicate(man720, labels)[1][0]["accepted"] is False
     assert f2d.adjudicate(man1080, labels)[1][0]["accepted"] is True
 
@@ -114,10 +116,13 @@ def test_turning_the_control_off_keeps_everything_but_still_records_the_verdict(
     assert verdicts[0]["anchors_confirmed"] == [], "the measurement must survive"
 
 
-# --- the click-motion diagnostic ------------------------------------------------
-# Reported, never enforced. The threshold that separates the cases was found AFTER
-# looking at twelve gaps, so it is pre-registered for the next queue rather than
-# fitted to that one — but the numbers themselves have to be right.
+# --- the click-motion test ------------------------------------------------------
+# Reported-only until 2026-08-13, then ENFORCED. The change is not a change of
+# mind, it is a change of evidence: the threshold was originally found AFTER
+# looking at the twelve gaps that suggested it, and a cutoff fitted to its own
+# evidence is a memory, not a control. It has since reproduced on 49 INDEPENDENT
+# gaps (farcourt_cal1) with a bimodal distribution, a valley at 9-16 px, and 17
+# clicks at exactly zero. data/output/farcourt_l2.md.
 
 def test_click_motion_reports_a_static_click_against_a_moving_tracker():
     """The failure it exists to surface: the human clicks a wall mark while the
@@ -146,14 +151,38 @@ def test_unsure_and_no_ball_frames_drop_out_of_the_path():
     assert f2d.click_motion(rows, labels)[0] == 10.0
 
 
-def test_the_diagnostic_never_changes_a_verdict():
-    """If it ever gated, a cutoff fitted to twelve gaps would be filtering real
-    far-court balls — the exact data this whole queue exists to collect."""
+def test_a_zero_motion_gap_is_now_rejected():
+    """A ball in play cannot be in the same place two frames apart, so a click
+    that never moves is a static object by definition.
+
+    This test previously asserted the OPPOSITE — that the diagnostic never gated —
+    on the grounds that a cutoff fitted to twelve gaps would filter real far-court
+    balls. That reasoning was right for the evidence available then. It was
+    replaced only once the threshold reproduced on an independent round, where 17
+    of 49 clicks sat at exactly zero: those are not noisy labels, they are the
+    labeller clicking the identical pixel twice."""
     man = {"frames": _trio(0)}
     labels = {"0": _click(100, 50), "1": _click(100, 50), "2": _click(100, 50)}
     accepted, verdicts = f2d.adjudicate(man, labels)
     assert verdicts[0]["click_motion_px"] == 0.0
+    assert verdicts[0]["accepted"] is False and accepted == []
+
+
+def test_the_motion_test_can_be_disabled():
+    """0 restores the pre-2026-08-13 behaviour, so the earlier rounds stay
+    re-adjudicable exactly as they were scored at the time."""
+    man = {"frames": _trio(0)}
+    labels = {"0": _click(100, 50), "1": _click(100, 50), "2": _click(100, 50)}
+    accepted, verdicts = f2d.adjudicate(man, labels, min_motion_px=0.0)
     assert verdicts[0]["accepted"] is True and len(accepted) == 3
+
+
+def test_the_motion_threshold_scales_with_frame_height():
+    """Like every other pixel threshold here: the same physical travel covers
+    1.5x the pixels at 1080p, so a click that passes at 720p can fail at 1080p."""
+    lab = {"0": _click(100, 50), "1": _click(110, 50), "2": _click(110, 50)}
+    assert f2d.adjudicate({"frames": _trio(0, height=720)}, lab)[1][0]["accepted"] is True
+    assert f2d.adjudicate({"frames": _trio(0, height=1080)}, lab)[1][0]["accepted"] is False
 
 
 # --- splitting one queue back into many clips ----------------------------------
@@ -269,3 +298,40 @@ def test_the_shipped_pilot_queue_is_quarantined():
     They are kept as evidence and must never become training data."""
     with pytest.raises(SystemExit, match="contaminated"):
         l2d.refuse_if_contaminated(PILOT)
+
+
+# --- the round-trip gate's tie case (2026-08-13) ---------------------------------
+# The gate asks "is this sample closest to the frame it claims?" via an argmin. On
+# a static court neighbouring frames TIE, and argmin then decides by dict order
+# rather than by pixels — measured on TilAFMPc0yg:2787, where frames 2786 and 2787
+# both score 2.575. That was reported as a hard mismatch. It is the same
+# "the argmin carries no information" case the gate already reports as unresolved,
+# so it is now judged on the same min_margin.
+
+def _verdict(d, f, min_margin=0.02):
+    """The gate's decision rule, isolated from video I/O."""
+    best = min(d, key=d.get)
+    others = [v for g, v in d.items() if g != f]
+    margin = (min(others) - d[f]) / max(d[f], 1e-6) if others else 0.0
+    lead = (d[f] - d[best]) / max(d[f], 1e-6)
+    if best != f and lead >= min_margin:
+        return "mismatch"
+    return "unresolved" if (best != f or margin < min_margin) else "ok"
+
+
+def test_an_exact_tie_is_unresolved_not_a_mismatch():
+    d = {2786: 2.575, 2787: 2.575, 2788: 2.702}
+    assert _verdict(d, 2787) == "unresolved"
+
+
+def test_a_real_gradient_to_another_frame_is_still_a_mismatch():
+    """RZ_wyJ9rI3Q:1231 — monotonic across the window, best is 21% better than
+    the claimed frame, so the true match is probably outside it."""
+    d = {1228: 3.01, 1229: 2.946, 1230: 2.887, 1231: 2.764,
+         1232: 2.618, 1233: 2.413, 1234: 2.187}
+    assert _verdict(d, 1231) == "mismatch"
+
+
+def test_a_clean_match_still_passes():
+    d = {9: 5.0, 10: 1.0, 11: 5.2}
+    assert _verdict(d, 10) == "ok"
