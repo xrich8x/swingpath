@@ -89,6 +89,15 @@ cd backend && python run.py demo --out ../frontend/src/data/sample_match.json
    python ../tools/validate_new_clip.py --audit my_court_pts.json
    The fit residual is the number that matters: under 2.5 px is good, over 10 px
    is unusable. Don't name your file court_pts.json — that one is a known-bad one.
+3b. Check what your camera position is worth, BEFORE you spend an analysis run:
+   python run.py check match.mp4 --keypoints my_court_pts.json
+   It runs the same calibration `analyze` runs — so if it refuses here, analyze
+   refuses too — and then tells you the one thing that decides whether the
+   recording was worth making: what share of CLOSE line calls a mount at your
+   height actually gets right. Read it against the floor it prints. Always
+   answering "in" scores 56%, so a phone on a 1 m tripod (54%) is worth LESS
+   than guessing; on a fence at 2.5 m it is ~68%, and at 6 m ~80%. Height is
+   the biggest accuracy lever you control, and it is free.
 4. Analyze. One command runs ball (TrackNet) + players (YOLO-pose), projects to
    court metres, and writes match.json:
    python run.py analyze match.mp4 --keypoints my_court_pts.json --out ../data/output/match.json

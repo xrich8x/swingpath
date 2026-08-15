@@ -479,7 +479,7 @@ def calibrate_video(
                         f'--video "{video_path}" --out my_court_pts.json\n'
                         "(opens pre-fitted - drag to adjust, Snap, Save), then "
                         "re-run with --keypoints my_court_pts.json\n"
-                        "(NOT court_pts.json — a committed data/court_pts.json "
+                        "(NOT court_pts.json - a committed data/court_pts.json "
                         "already exists and is DEGENERATE at 38 px)"
                     )
                 named = {n: list(xy) for n, xy in detected.items()}
