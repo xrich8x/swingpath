@@ -141,8 +141,20 @@ def _cmd_check(args: argparse.Namespace) -> int:
         else:
             print(f"          so this mount is worth ~{call_pct - floor:.0f} points "
                   f"over guessing")
+        # RULE 2 (ML_PRACTICES): state what the number was measured against, in
+        # one sentence. Without this the figure reads as a measurement of THIS
+        # clip. It is not - it is a function of camera height alone, read off a
+        # curve built from simulated flights, and the clip's own footage never
+        # enters it. Only the height does, and that came from the corner fit.
+        print(f"          [measured against simulated flights with a known bounce, "
+              f"on calls within")
+        print(f"           0.5 m of a line; 6 m setback, 100 deg lens, 720p, 30 fps, "
+              f"30% dropout.")
+        print(f"           A function of HEIGHT, not of this clip - real clips land "
+              f"within ~3 points.")
+        print(f"           tools/height_curve.py, data/output/height_curve.md]")
     else:
-        print("\n  Calls   not estimated — no physical camera fits this court shape, "
+        print("\n  Calls   not estimated - no physical camera fits this court shape, "
               "so the height is unknown")
 
     print(f"\n  {angle['msg']}")

@@ -155,6 +155,57 @@ def test_check_prints_call_accuracy_and_floor_at_every_height(monkeypatch, tmp_p
     assert "elevation" not in out.lower()
 
 
+def test_check_states_what_the_call_number_was_measured_against(monkeypatch, tmp_path):
+    """ML_PRACTICES rule 2. Without the qualifier the figure reads as a
+    measurement of the user's own clip; it is a function of camera HEIGHT read
+    off a synthetic curve, and no pixel of their footage enters it."""
+    named = _corners_for_height(3.0)
+
+    def fake_calibrate_video(video_path, keypoints_path=None, overlay_path=None):
+        H = calibration.homography_from_landmarks(named)
+        return H, 0.4, "manual", named, 90.0, 0.0, None
+
+    monkeypatch.setattr(run_cli.pipeline, "calibrate_video", fake_calibrate_video)
+    import cv2
+    monkeypatch.setattr(cv2, "VideoCapture", lambda *a, **k: _StubCap(_frame()))
+
+    args = argparse.Namespace(video=str(tmp_path / "c.mp4"), keypoints=None)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        run_cli._cmd_check(args)
+    out = buf.getvalue()
+
+    assert "measured against" in out, "the number ships without its qualifier"
+    assert "0.5 m of a line" in out, "the population it was scored on must be named"
+    assert "not of this clip" in out, (
+        "the user must be told this is a height curve, not a measurement of "
+        "their footage")
+    assert "height_curve" in out, "point at the evidence that produced it"
+
+
+def test_check_output_is_ascii_only(monkeypatch, tmp_path):
+    """This prints to a Windows console (cp1252). An em-dash renders there as a
+    replacement character - already shipped twice in this command's output."""
+    named = _corners_for_height(1.0)
+
+    def fake_calibrate_video(video_path, keypoints_path=None, overlay_path=None):
+        H = calibration.homography_from_landmarks(named)
+        return H, 0.4, "manual", named, 90.0, 0.0, None
+
+    monkeypatch.setattr(run_cli.pipeline, "calibrate_video", fake_calibrate_video)
+    import cv2
+    monkeypatch.setattr(cv2, "VideoCapture", lambda *a, **k: _StubCap(_frame()))
+
+    args = argparse.Namespace(video=str(tmp_path / "c.mp4"), keypoints=None)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        run_cli._cmd_check(args)
+    out = buf.getvalue()
+
+    bad = sorted({ch for ch in out if ord(ch) > 127})
+    assert not bad, f"non-ASCII in console output, will mangle on cp1252: {bad}"
+
+
 def test_check_says_plainly_when_the_mount_is_worthless(monkeypatch, tmp_path):
     """A 1.0 m mount scores 54.0% against a 56.2% floor - worse than always
     answering 'in'. That has to read as a stop sign, not as a statistic."""
