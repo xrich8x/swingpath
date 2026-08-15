@@ -106,6 +106,13 @@ cd backend && python run.py demo --out ../frontend/src/data/sample_match.json
         player on TV-style footage; fast is ~6x quicker and fine for most clips)
      --frame-step auto                        (auto targets ~30fps; halves work
         on 60fps phone clips)
+     --full-rate                              (process EVERY frame. If you shot
+        at 60fps this is the biggest accuracy gain available and it costs you
+        twice the processing time: bounces land 24-35% closer to the truth, the
+        ball's flight path fits more than twice as tightly, and speeds get
+        noticeably nearer the radar figure. It does NOT find the ball more
+        often — it measures what it finds more precisely. Nothing changes on
+        30fps footage, so the flag is free to leave off there.)
      --max-frames N                           (analyze a segment, not the whole
         match — full matches are long on CPU)
    Re-runs reuse a cached perception file, so tuning the output is instant.

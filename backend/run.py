@@ -36,6 +36,22 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         # one operating point and half another. Stamped into the cache
         # provenance, so a stale cache from another threshold is reported.
         os.environ["BALLNET_SCORE_THRESH"] = str(args.score_thresh)
+
+    # --full-rate is frame_step=1, stated as a product mode rather than as an
+    # integer nobody could interpret. NOTE FOR ANYONE QUOTING A NUMBER LATER:
+    # this makes step 1 a legitimate SHIPPED configuration on 60fps footage,
+    # which Trap 1 predates. The rule is unchanged in substance — the DEFAULT is
+    # still 'auto', so "shipped behaviour" with no qualifier still means auto,
+    # and any figure from a full-rate run has to say so. The perception cache
+    # already stamps frame_step and refuses a cache built at another rate
+    # (pipeline.py), so the two configurations cannot be silently mixed.
+    frame_step = 1 if args.full_rate else args.frame_step
+    if args.full_rate:
+        print("[analyze] --full-rate: processing EVERY frame. On 60fps footage this "
+              "doubles perception time; it is the largest measured accuracy gain "
+              "available (arc reproj 148->91 px, HUD speed error 38.9->33.1%) and a "
+              "wash-to-negative on ball detection. No-op on 30fps footage.")
+
     match = pipeline.analyze_video(
         args.video,
         keypoints_path=args.keypoints,
@@ -43,7 +59,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         pose_quality=args.pose_quality,
         pose_every=args.pose_every,
         max_frames=args.max_frames,
-        frame_step=args.frame_step,
+        frame_step=frame_step,
         camera_hfov_deg=args.camera_hfov,
         use_bgsub=not args.no_bgsub,
         ball_model=args.ball_model,
@@ -296,8 +312,22 @@ def build_parser() -> argparse.ArgumentParser:
                          help="run pose every Nth frame (CPU budget)")
     analyze.add_argument("--max-frames", type=int, default=None, dest="max_frames",
                          help="limit source frames processed (for quick tests)")
-    analyze.add_argument("--frame-step", default="auto", dest="frame_step",
-                         help="process every Nth frame; 'auto' targets ~30fps")
+    # RATE. Mutually exclusive, because passing both is a contradiction rather
+    # than a preference. `--full-rate` is exactly frame_step=1 — the mechanism
+    # already existed, but as a bare integer nothing told anyone it is the single
+    # largest measurement lever in the tool, or what it costs.
+    rate = analyze.add_mutually_exclusive_group()
+    rate.add_argument("--frame-step", default="auto", dest="frame_step",
+                      help="process every Nth frame; 'auto' targets ~30fps (TrackNet's "
+                           "training rate), which halves the work on 60fps phone clips")
+    rate.add_argument("--full-rate", action="store_true", dest="full_rate",
+                      help="process EVERY frame (= --frame-step 1). On 60fps footage "
+                           "this DOUBLES perception time and buys the largest measured "
+                           "accuracy gain available: +5.8 pts close-call accuracy at a "
+                           "1.5 m mount, arc reprojection 148->91 px, HUD speed error "
+                           "38.9%%->33.1%%, bounce error -24..-35%%. It is a "
+                           "wash-to-negative on ball DETECTION. No-op on 30fps footage. "
+                           "Evidence: data/output/fps_decision.md")
     analyze.add_argument("--camera-hfov", type=float, default=None, dest="camera_hfov",
                          help="horizontal field of view (deg) for speed/spin; default: "
                               "self-calibrated from the court homography (phone ~70, broadcast ~28)")
