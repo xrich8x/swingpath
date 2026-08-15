@@ -1,0 +1,307 @@
+{
+ "clip": "am_hard_utr",
+ "measured_against": "the clip's own burned-in broadcast scoreboard, read by per-field state clustering with every state labelled by eye; independent of anything this project computes",
+ "evidence_tag": "MEASURED",
+ "players": [
+  "ANIRUDH",
+  "JACK"
+ ],
+ "fps": 59.94005994005994,
+ "duration_s": 483.8,
+ "sample_every_s": 0.5,
+ "samples_board_absent": 0,
+ "n_points": 36,
+ "n_games": 6,
+ "final_score": "2-4",
+ "validation_issues": [],
+ "points": [
+  {
+   "t_s": 8.008,
+   "frame": 480,
+   "from": "0-0 (0-0)",
+   "to": "0-15 (0-0)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 20.521,
+   "frame": 1230,
+   "from": "0-15 (0-0)",
+   "to": "15-15 (0-0)",
+   "winner": "top",
+   "server": "bot"
+  },
+  {
+   "t_s": 32.032,
+   "frame": 1920,
+   "from": "15-15 (0-0)",
+   "to": "15-30 (0-0)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 36.537,
+   "frame": 2190,
+   "from": "15-30 (0-0)",
+   "to": "15-40 (0-0)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 41.041,
+   "frame": 2460,
+   "from": "15-40 (0-0)",
+   "to": "0-0 (0-1)",
+   "winner": "bot",
+   "server": "top"
+  },
+  {
+   "t_s": 56.056,
+   "frame": 3360,
+   "from": "0-0 (0-1)",
+   "to": "0-15 (0-1)",
+   "winner": "bot",
+   "server": "top"
+  },
+  {
+   "t_s": 75.576,
+   "frame": 4530,
+   "from": "0-15 (0-1)",
+   "to": "0-30 (0-1)",
+   "winner": "bot",
+   "server": "top"
+  },
+  {
+   "t_s": 86.086,
+   "frame": 5160,
+   "from": "0-30 (0-1)",
+   "to": "0-40 (0-1)",
+   "winner": "bot",
+   "server": "top"
+  },
+  {
+   "t_s": 98.599,
+   "frame": 5910,
+   "from": "0-40 (0-1)",
+   "to": "15-40 (0-1)",
+   "winner": "top",
+   "server": "top"
+  },
+  {
+   "t_s": 109.109,
+   "frame": 6540,
+   "from": "15-40 (0-1)",
+   "to": "0-0 (0-2)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 133.133,
+   "frame": 7980,
+   "from": "0-0 (0-2)",
+   "to": "0-15 (0-2)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 139.139,
+   "frame": 8340,
+   "from": "0-15 (0-2)",
+   "to": "0-30 (0-2)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 143.643,
+   "frame": 8610,
+   "from": "0-30 (0-2)",
+   "to": "0-40 (0-2)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 151.151,
+   "frame": 9060,
+   "from": "0-40 (0-2)",
+   "to": "0-0 (0-3)",
+   "winner": "bot",
+   "server": "top"
+  },
+  {
+   "t_s": 160.661,
+   "frame": 9630,
+   "from": "0-0 (0-3)",
+   "to": "0-15 (0-3)",
+   "winner": "bot",
+   "server": "top"
+  },
+  {
+   "t_s": 187.187,
+   "frame": 11220,
+   "from": "0-15 (0-3)",
+   "to": "0-30 (0-3)",
+   "winner": "bot",
+   "server": "top"
+  },
+  {
+   "t_s": 205.205,
+   "frame": 12300,
+   "from": "0-30 (0-3)",
+   "to": "0-40 (0-3)",
+   "winner": "bot",
+   "server": "top"
+  },
+  {
+   "t_s": 212.713,
+   "frame": 12750,
+   "from": "0-40 (0-3)",
+   "to": "15-40 (0-3)",
+   "winner": "top",
+   "server": "top"
+  },
+  {
+   "t_s": 220.721,
+   "frame": 13230,
+   "from": "15-40 (0-3)",
+   "to": "30-40 (0-3)",
+   "winner": "top",
+   "server": "top"
+  },
+  {
+   "t_s": 248.248,
+   "frame": 14880,
+   "from": "30-40 (0-3)",
+   "to": "DU-DU (0-3)",
+   "winner": null,
+   "server": "top"
+  },
+  {
+   "t_s": 262.262,
+   "frame": 15720,
+   "from": "DU-DU (0-3)",
+   "to": "AD-DU (0-3)",
+   "winner": "top",
+   "server": "top"
+  },
+  {
+   "t_s": 280.781,
+   "frame": 16830,
+   "from": "AD-DU (0-3)",
+   "to": "0-0 (1-3)",
+   "winner": "top",
+   "server": "bot"
+  },
+  {
+   "t_s": 292.292,
+   "frame": 17520,
+   "from": "0-0 (1-3)",
+   "to": "15-0 (1-3)",
+   "winner": "top",
+   "server": "bot"
+  },
+  {
+   "t_s": 309.309,
+   "frame": 18540,
+   "from": "15-0 (1-3)",
+   "to": "15-15 (1-3)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 318.318,
+   "frame": 19080,
+   "from": "15-15 (1-3)",
+   "to": "15-30 (1-3)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 322.822,
+   "frame": 19350,
+   "from": "15-30 (1-3)",
+   "to": "15-40 (1-3)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 328.328,
+   "frame": 19680,
+   "from": "15-40 (1-3)",
+   "to": "0-0 (1-4)",
+   "winner": "bot",
+   "server": "top"
+  },
+  {
+   "t_s": 336.837,
+   "frame": 20190,
+   "from": "0-0 (1-4)",
+   "to": "15-0 (1-4)",
+   "winner": "top",
+   "server": "top"
+  },
+  {
+   "t_s": 343.844,
+   "frame": 20610,
+   "from": "15-0 (1-4)",
+   "to": "30-0 (1-4)",
+   "winner": "top",
+   "server": "top"
+  },
+  {
+   "t_s": 360.36,
+   "frame": 21600,
+   "from": "30-0 (1-4)",
+   "to": "40-0 (1-4)",
+   "winner": "top",
+   "server": "top"
+  },
+  {
+   "t_s": 373.873,
+   "frame": 22410,
+   "from": "40-0 (1-4)",
+   "to": "0-0 (2-4)",
+   "winner": "top",
+   "server": "bot"
+  },
+  {
+   "t_s": 380.88,
+   "frame": 22830,
+   "from": "0-0 (2-4)",
+   "to": "0-15 (2-4)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 414.414,
+   "frame": 24840,
+   "from": "0-15 (2-4)",
+   "to": "15-15 (2-4)",
+   "winner": "top",
+   "server": "bot"
+  },
+  {
+   "t_s": 418.918,
+   "frame": 25110,
+   "from": "15-15 (2-4)",
+   "to": "15-30 (2-4)",
+   "winner": "bot",
+   "server": "bot"
+  },
+  {
+   "t_s": 439.439,
+   "frame": 26340,
+   "from": "15-30 (2-4)",
+   "to": "30-30 (2-4)",
+   "winner": "top",
+   "server": "bot"
+  },
+  {
+   "t_s": 475.475,
+   "frame": 28500,
+   "from": "30-30 (2-4)",
+   "to": "30-40 (2-4)",
+   "winner": "bot",
+   "server": "bot"
+  }
+ ]
+}
