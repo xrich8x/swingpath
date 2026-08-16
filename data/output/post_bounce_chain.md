@@ -97,3 +97,60 @@ second-bounce rule contributes 0 of 62 rally breaks. A fix has to keep real post
 detections *without* loosening the outlier gate globally — e.g. resetting on a *detected
 bounce* rather than after N rejections, which is a mechanism change rather than a threshold
 change, and is not what was tested here.
+
+---
+
+# Part 2 — the MECHANISM fix also fails, on all three clips
+
+**Date:** 2026-08-15 (same session). `am_hard_utr` now has a perception cache
+(14,499 frames, `frame_step 2`, **cuda**, thresh 0.5, hfov 86.3 — built to match the
+device and settings of the yt_match40 / yt_rally2 caches so the three are comparable).
+
+## The change
+
+Part 1 concluded a real fix "must reset on a *detected bounce* rather than after N
+rejections — a mechanism change, not a threshold change". That is `ball.smooth_forecast`'s
+new `bounce_reset` (default **off**).
+
+The discriminator is physical rather than a counter: in image pixels y grows downward, so a
+descending ball has `vy > 0` and a bounce flips it. A rejected detection sitting **above**
+the prediction while the model is still descending — with horizontal continuity required, so
+an overhead false lock cannot trigger it — is a reflection, and resets on that frame instead
+of two frames later.
+
+## Result — same pre-registered gate, and it FAILS on all three
+
+| clip | recall@10px | ghosts | real_landing | verdict |
+|---|---|---|---|---|
+| yt_match40 | 52.7 → **53.8** | 5 → 6 | 70.9 → **74.5** (+3.6) | FAIL |
+| yt_rally2 | 42.2 → 41.5 | 4 → 5 | 80.0 → 80.0 (+0.0) | FAIL |
+| am_hard_utr | 34.4 → 34.4 | 11 → **10** | 74.2 → 75.0 (+0.8) | FAIL |
+
+Gate was recall ≥ −2 pts, ghosts must not rise, real_landing ≥ +5 pts. The prize misses on
+every clip; +3.6 on yt_match40 is the best of them and is short of the bar. **Not shipped.**
+Kept as an off-by-default parameter with the numbers in the docstring, so it is not retried.
+
+## The finding that corrects Part 1's framing
+
+Part 1 named "the chain stops following the ball after it lands" as one root cause with two
+payoffs. **On the footage this project actually targets, it is a smaller lever than that
+implied.** On `am_hard_utr`, `real_landing` is already **74.2%** at baseline, yet speed is
+untrusted for **64 of 120 shots** — and the printed reasons are dominated by *coverage*
+(`seen 10–49% < 50%`), with "landing not tracked past bounce" appearing in only ~20 of the
+64. On yt_match40 the landing cause dominated; on the 1.74 m amateur mount it does not.
+
+So the post-bounce loss is real, attributed and worth knowing — but **the binding constraint
+on the target footage is overall in-rally coverage, not the frames after the bounce.** Two
+attempts (threshold, then mechanism) have now failed to convert the post-bounce diagnosis
+into a product gain, and the third clip says why it would not have paid much there anyway.
+
+## Method notes
+
+- **Trap 4 handled explicitly**: `am_hard_utr`'s gold is 50% odd frames and the cache is
+  `frame_step 2`, so **125 of 250 labels land on a processed frame** and the rest are
+  dropped rather than compared against a neighbour. Scoreable: 90 ball clicks, 24 no-ball.
+- Ghost counts rest on 24–26 no-ball frames per clip, under the 74 the product gate uses
+  (trap 9). The ±1 movements are inside sampling noise; the `real_landing` columns carry the
+  verdict.
+- `bounce_reset=False` is verified **byte-identical** to the default path, and the flag is
+  proven non-inert (3,732 frames differ on real data). 4 tests pin both.
