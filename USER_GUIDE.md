@@ -24,7 +24,15 @@ all real and wired end to end (see §5). The forward plan lives in
 - git
 - Later, for real footage: a phone/camera and a way to mount it behind the court.
 
-Check: python --version  /  node --version
+Check: `py --version` on Windows, `python3 --version` on macOS/Linux, and `node --version`.
+
+> **Command convention for the whole guide.** Examples below are written `python ...`.
+> **On Windows type `py` instead** — `python` there is usually a Microsoft Store stub
+> that prints "Python was not found" and installs nothing. Once `backend/.venv` exists,
+> the most reliable form on any OS is to call its interpreter directly and skip
+> activation entirely: `backend\.venv\Scripts\python.exe ...` (Windows) or
+> `backend/.venv/bin/python ...` (macOS/Linux). That is what every command in CLAUDE.md
+> and `tools/` uses.
 
 ## 3. Setup (the easy way)
 
@@ -139,10 +147,11 @@ heuristic; vision scoring is best-effort (correct points by hand when it matters
 1. claude from the repo root (it auto-reads CLAUDE.md).
 2. First time on a fresh machine, paste SETUP_PROMPT.md → get it installed,
    tested, and running.
-3. To build the next feature, open [docs/sessions/](docs/sessions/) and paste a
-   session's kickoff prompt (e.g. `Do Session C (docs/sessions/SESSION_C_flow_polish.md)`).
-   Each brief is self-contained — researched approach, step plan, and what you
-   need to bring. The README in that folder lists them in the recommended order.
+3. **All the session briefs in [docs/sessions/](docs/sessions/) have now run** —
+   each is stamped at the top with what happened to it (SHIPPED / GATE FAILED /
+   STOPPING RULE FIRED). They are kept for their pre-registered gates, not as a
+   queue. **For what to work on next, read [SCOREBOARD.md](SCOREBOARD.md)** —
+   "Open, and what each is waiting on" is the live list.
 
 Keep these rules in front of the agent (they're in CLAUDE.md):
 - Models go in the perception layer only.
@@ -153,13 +162,18 @@ Keep these rules in front of the agent (they're in CLAUDE.md):
 - Before any model work, the agent must read ML_PRACTICES.md + ML_PLAYBOOK.md
   (CLAUDE.md requires it) — measure honestly, never let a model grade itself.
 
-What's next, highest value first, is tracked in docs/sessions/: finishing the
-camera story (lens + watchdog), serve analytics (done), flow polish + heatmaps,
-auto-highlights, and the multi-session ball push (tracking → speed → spin).
+What's next, highest value first, lives in **SCOREBOARD.md** — not here and not in
+docs/sessions/, both of which go stale. As of 2026-08-15 the headline is that the
+**ball detector is closed** (Session L's pre-registered stopping rule fired), and the
+open target is that the processing chain discards ball the detector already found:
+on the amateur test clip the detector clears the coverage bar needed for a trusted
+speed on 106 of 120 shots and only 69 survive. Three attempts at that have failed.
 
 ## 7. Troubleshooting
 
-- python: command not found → try python3; ensure Python 3.12+ on PATH.
+- "Python was not found... Microsoft Store" (Windows) → that is the Store stub, not
+  Python. Use `py` instead, or call `backend\.venv\Scripts\python.exe` directly.
+- python: command not found (macOS/Linux) → try python3; ensure Python 3.12+ on PATH.
 - No module named pytest → activate the venv, then pip install -r requirements.txt.
 - Dashboard blank / "failed to fetch" → regenerate sample_match.json (see §4).
 - npm run dev fails on install → delete frontend/node_modules and re-run npm install on Node 18+.
@@ -169,9 +183,11 @@ auto-highlights, and the multi-session ball push (tracking → speed → spin).
 ## 8. Project map
 
 CLAUDE.md         agent context + doc map (auto-loaded by Claude Code)
+SCOREBOARD.md     THE LIVING RECORD — what has and has not worked, and what is
+                  open. Read this for current state; everything else goes stale.
 README.md         architecture overview + quickstart
 SETUP_PROMPT.md   paste-in prompt to install + run (fresh machine)
-docs/sessions/    the forward plan — one researched brief per session
+docs/sessions/    session briefs — ALL RUN; kept for their pre-registered gates
 ML_PRACTICES.md   how to conduct ML work honestly (required before model work)
 ML_PLAYBOOK.md    how to diagnose/technique the ML (required before model work)
 HANDOFF.md        historical evidence log (paper trail, not current state)

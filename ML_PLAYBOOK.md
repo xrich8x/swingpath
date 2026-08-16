@@ -194,13 +194,25 @@ at the bottom.
   weights ship for all three tasks (BallTrack, RacketPose, TrajPred) via
   `download_checkpoints.py`. NOT stated in the README: per-sport frame counts, and
   whether the footage is broadcast or amateur — check before trusting transfer.
-  *Why it matters here:* Session G part 4 measured racquet-box negation using
-  COCO's generic "tennis racket" box and got **54.5% catch at 4.5% collateral** —
-  5.5 points under the pre-registered gate. A 5-keypoint racket pose gives the
-  racket's GEOMETRY (head vs handle) instead of a loose box, and the head is
-  precisely where the ball-sized, ball-coloured confuser lives. That is the direct
-  route to closing a 5.5-point gap, and it re-runs against the same 22 racquet /
-  44 person-attached locks and 1201 human clicks with the harness we already have.
+  *Why it matters here — READ THE UPDATE BELOW BEFORE ACTING ON THIS.* Session G
+  part 4 measured racquet-box negation using COCO's generic "tennis racket" box and
+  got **54.5% catch at 4.5% collateral**, 5.5 points under the pre-registered gate.
+  A 5-keypoint racket pose gives the racket's GEOMETRY (head vs handle) instead of a
+  loose box, and the head is where the ball-sized, ball-coloured confuser lives.
+  > **STALE AS WRITTEN — corrected 2026-08-15.** The "5.5-point gap" is no longer the
+  > number. Re-scored on the Session K detector, racquet-box negation reads **23.3%
+  > catch at 4.6% collateral — 36.7 points under gate**, and the reason is not box
+  > coarseness: stock COCO detection kept finding the **NEAR** player's racket while
+  > the ball detector was firing on the **FAR** player's, with locks sitting
+  > **737-869 px** from the nearest box. A separate test showed racket-HEAD position
+  > is statistically indistinguishable from a real ball (0.57 vs 0.55 on the
+  > wrist-to-head axis), so finer racket geometry does not obviously rescue it.
+  > Session I then found the surviving ghosts are **not one object type** (3 static
+  > scenery, 2 person-attached), so racket negation reaches at most 2 of 5.
+  > **This is a 3-time measured negative — see SCOREBOARD's dead-end table before
+  > spending anything on it.** RacketVision may still be worth it as an external
+  > ball baseline (below); the negation route is not the "direct fix" this paragraph
+  > originally called it.
   Its BallTrack weights are also an EXTERNAL BALL BASELINE to score on our gold
   set — the only one we have today is COCO sports-ball at 32.1% vs our 69.4%.
   *Steal, but note the warning:* the paper's own headline finding is that

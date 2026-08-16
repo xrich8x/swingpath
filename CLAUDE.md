@@ -212,6 +212,39 @@ Read those before re-proposing anything here.
   `bounce_reset`) both FAIL their pre-registered gate — loosening the outlier gate buys
   coverage and pays in ghosts. `am_hard_utr` finally has a perception cache. 391 tests.
 
+## Keeping the docs true — which file moves with which change
+
+Two guards enforce this; the rest is judgement. **A rule that is only remembered is
+a rule that gets forgotten** — that is why both are hooks, not paragraphs.
+
+| You changed | Update | Enforced by |
+|---|---|---|
+| Any code (`backend/`, `tools/`, `frontend/src/`, `mobile/`, `ball_physics/`) | **SCOREBOARD.md** — the number it moved, or the negative and why | `.claude/hooks/scoreboard-guard.sh` (`[no-scoreboard]` opts out) |
+| `run.py`'s argument parser — a new flag, a removed one, a changed default | **README.md / USER_GUIDE.md / SETUP_PROMPT.md / CLAUDE.md** — whichever now lies | `.claude/hooks/docs-guard.sh` (`[no-docs]` opts out) |
+| `schema.py` (the match.json contract) | **README.md** layout note + the frontend that reads it | judgement |
+| Court constants in `court.py` | `frontend/src/lib/court.js` | `tests/test_js_mirror_parity.py` |
+| `calibration.py`'s call-accuracy table | `frontend/src/lib/calls.js` | `tests/test_js_mirror_parity.py` |
+| A model, weight file, or runtime | **SCOREBOARD.md** "The stack" | judgement |
+| A process mistake hit **twice** | **SCOREBOARD.md** "Traps" | judgement |
+
+**Which doc is authoritative for what**, so they can go stale gracefully instead of
+contradicting each other:
+
+- **SCOREBOARD.md is the only live record of state.** What worked, what failed with
+  its number, what is open. If another doc disagrees with it, that doc is wrong.
+- **CLAUDE.md** (this file) is orientation: architecture, hard rules, conventions,
+  a condensed session log. Not a status board.
+- **README.md / USER_GUIDE.md** are how to run it. They must match the CLI exactly.
+- **docs/sessions/** are pre-registered briefs. **All have run**; they are kept for
+  their gates, not as a queue. Never read them as the forward plan.
+- **HANDOFF.md** is a point-in-time evidence log from 2026-07-05, cited by `§`
+  number from the ML docs. Historical by design — do not update it, and do not
+  renumber its sections.
+- **ML_PRACTICES.md / ML_PLAYBOOK.md** are discipline and technique. When a
+  measurement invalidates advice in the PLAYBOOK, correct it in place with the new
+  number — it has already recommended a route that a later session measured into
+  the ground.
+
 ## Conventions
 
 - schema.py is the single source of truth for match.json. Change shapes there;

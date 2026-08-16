@@ -55,6 +55,9 @@ cd ..\frontend; npm install; npm run dev
 
 ## Analyzing a real clip (the real pipeline is wired end to end)
 
+> Commands below are written `python ...`. **On Windows use `py`**, or call the venv
+> interpreter directly (`backend\.venv\Scripts\python.exe ...`) — see the Quickstart note.
+
 Install the ML deps once (see backend/requirements-ml.txt — CPU torch is fine):
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements-ml.txt
@@ -67,9 +70,22 @@ Then:
    court metres, and writes match.json:
 python run.py analyze match.mp4 --keypoints my_court_pts.json --out ../data/output/match.json
 
+   On 60 fps footage add `--full-rate` to process every frame: bounces land 24-35%
+   closer to truth and the flight fits more than twice as tightly, at 2x the
+   processing time. It is a no-op on 30 fps clips.
+
    Audit any calibration before you trust it — some committed `data/*_pts.json` are
    degenerate and break the overlay + ball gating silently:
    `python ../tools/validate_new_clip.py --audit my_court_pts.json` (good is < 2.5 px).
+2b. Pre-flight — before spending an analysis run, find out what the camera position
+   is worth:
+python run.py check match.mp4 --keypoints my_court_pts.json
+
+   It runs the SAME calibration `analyze` runs (so a refusal here is a refusal
+   there) and prints the measured share of CLOSE line calls a mount at that height
+   gets right, beside the floor that answering "in" every time scores (56%). A 1 m
+   tripod reads 54% — worse than guessing; a fence at 2.5 m ~68%. Height is the
+   largest accuracy lever available and it is free.
 3. View — load that match.json in the dashboard (Load match, top right).
 4. Cut the rallies (optional) — every point becomes its own playable clip, plus a
    top-3 reel, so the dead time between points disappears:

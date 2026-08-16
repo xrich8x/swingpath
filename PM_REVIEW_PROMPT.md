@@ -43,10 +43,12 @@ firing on the FAR player's (locks sat 737-869px from the nearest box), and
 racket-head position is statistically indistinguishable from a real ball
 (0.57 vs 0.55 on the wrist-to-head axis). Its catch rate also re-scored to
 23.3% on the current detector, not the 55% first reported — cite SCOREBOARD's
-"Racquet-box negation" row, not the size argument; a ball in flight obeys gravity, drag and
+"Racquet-box negation" row, not the size argument.
+
+Also true of the physical world here: a ball in flight obeys gravity, drag and
 (at speed) Magnus, never a straight line or a hover; scoring is standard
-tennis only (deuce/ad, tiebreak at 6-6, best-of-3); the camera is assumed
-fixed and often low-mounted (1-2m, amateur footage), not broadcast TV, and
+tennis only (deuce/ad, tiebreak at 6-6, best-of-3); and the camera is assumed
+fixed and often low-mounted (1-2m, amateur footage), not broadcast TV, so
 measurable accuracy is a direct function of that height.
 
 And hold it against real ML/CV technique, not a vibe check: diagnose any

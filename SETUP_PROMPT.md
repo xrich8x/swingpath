@@ -25,9 +25,10 @@ them. Go in order and STOP to show me the exact error and a fix if any step fail
    ultralytics is only required later for real analysis, so don't worry if it's heavy.
 
 3. Demo data — run: python run.py demo --out ../frontend/src/data/sample_match.json
+   (Windows: `py run.py demo ...`, or `.venv\Scripts\python.exe run.py demo ...`)
 
 4. Tests — run: python -m pytest tests/  and confirm the geometry and scoring
-   tests pass.
+   tests pass. (Windows: `.venv\Scripts\python.exe -m pytest tests\`)
 
 5. Frontend — run npm install in frontend/, then npm run dev. Give me the local URL.
 
