@@ -168,6 +168,15 @@ at the bottom.
   visual features. The lesson: pure-appearance TrackNets (V1–V3) fail under
   occlusion/low visibility because they ignore motion. *Steal:* feed BallNet an
   explicit motion cue (multi-frame stack / frame differences), not one RGB frame.
+  > **MEASURED HERE, 2026-08-15 — do not spend a training run on this for the ghost
+  > problem.** `_ballnet.MotionPrompt` implements it and `train_ballnet.py
+  > --motion-attention` switches it on, but **0 of 8 shipped weights have ever used
+  > it**. Tested with the module's own criterion on the 20 solid ghosts that survive
+  > the full chain, against 532 human ball clicks: real balls read p10 1.17 local
+  > motion, and **only 5 of 20 ghosts (25%) fall below that** — 15 sit on things
+  > moving as much as a real ball. A motion gate reaches a quarter of the problem at
+  > best. It may still help *occlusion recall*, which is a different claim and
+  > untested here. See SCOREBOARD's "Motion attention" row.
 - **TOTNet** (2025, occlusion-aware) — **3D temporal convolutions** +
   **visibility-weighted loss** (down-weight occluded frames) + **occlusion
   augmentation** (synthetically paste occluders over the ball in training). Cut
