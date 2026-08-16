@@ -632,6 +632,7 @@ def smooth_forecast(
     sigma_jerk: float = 1.0,
     gate_chi2: float = 13.8,
     reset_after: int = 3,
+    bounce_reset: bool = False,
     max_gap_s: float = 0.4,
     scale_m_per_px: Optional[Sequence[Optional[float]]] = None,
     max_jerk_ratio: float = 4.0,
@@ -686,6 +687,33 @@ def smooth_forecast(
     noise on 258 labelled frames, and nowhere near the 2.4x the Kalman itself
     bought. Kept as an off-by-default option so the measurement isn't repeated.
     Without it (the default, and every uncalibrated clip) behaviour is unchanged.
+
+    `bounce_reset` (MEASURED NEGATIVE, off by default, kept so the measurement is
+    not repeated). This stage is 68% of the post-bounce ball loss (-186 of -274
+    locks in the 6-frame windows after 196 landings on yt_match40), and the cause
+    is above: a reset needs `reset_after` CONSECUTIVE rejections, so a bounce
+    costs the two detections either side of it. `bounce_reset` makes the test
+    PHYSICAL instead of a counter - in image pixels y grows downward, so a
+    descending ball has vy > 0 and a bounce flips it, and a rejection sitting
+    ABOVE the prediction while the model still descends (with horizontal
+    continuity, so an overhead false lock cannot trigger it) is a reflection
+    rather than an outlier, and resets on that frame.
+
+    Pre-registered gate: recall >= -2 pts, ghosts must not rise, real_landing
+    >= +5 pts. Scored on human gold clicks through the shipped chain:
+
+        clip          recall@10px   ghosts   real_landing
+        yt_match40    52.7 -> 53.8   5 -> 6   70.9 -> 74.5
+        yt_rally2     42.2 -> 41.5   4 -> 5   80.0 -> 80.0
+
+    FAILS on both: +3.6 pts of real_landing on yt_match40 is short of the +5 bar,
+    yt_rally2 has no headroom (already 80% however it is configured), and both
+    cost a ghost. Directionally right where detections are SPARSE and inert where
+    they are dense - the same density dependence the `reset_after` sweep and the
+    `max_gap_s` sweep both hit. NOTE the ghost counts rest on 24/26 no-ball frames,
+    well under the 74 the product gate uses, so +1 is inside sampling noise
+    (trap 9); the real_landing columns are the load-bearing ones.
+    Evidence: data/output/post_bounce_chain.md.
 
     Tuned on 1280x720@30fps gold + demo footage (meas_var=25 -> ~5px detector
     noise; sigma_jerk=1.0): jerkiness 9.9 -> 5.6 px/frame^2 at -1.6 pt hit@10.
@@ -764,6 +792,27 @@ def smooth_forecast(
                 accept = True; rej = 0; miss = 0
             else:
                 rej += 1
+                # A BOUNCE IS NOT AN OUTLIER, and waiting for `reset_after`
+                # rejections to notice costs the two detections either side of it.
+                # Measured (data/output/post_bounce_chain.md): this stage is 68%
+                # of the post-bounce ball loss, and losing the frames right after
+                # a landing is what closes the hit->landing span speed needs and
+                # starves the second-bounce rally rule.
+                # The discriminator is physical, not a counter. In image pixels y
+                # grows DOWNWARD, so a descending ball has vy > 0 and a bounce
+                # flips it negative. A rejection that sits ABOVE the prediction
+                # while the model is still descending is a reflection; one that
+                # sits anywhere else is an outlier. Horizontal continuity is
+                # required too, so a false lock overhead cannot trigger a reset.
+                # NOTE the filter runs at dt = 1 FRAME (_ca_transition), so the
+                # state's velocities are already px/frame - no dt factor here.
+                if bounce_reset and rej < reset_after:
+                    px_sd = float(np.sqrt(meas_var)) * res_scale
+                    dy = float(z[1]) - float(x[3])       # +ve = below prediction
+                    dx = abs(float(z[0]) - float(x[0]))
+                    x_tol = max(3.0 * px_sd, 2.0 * abs(float(x[1])))
+                    if float(x[4]) > 0.0 and dy < -2.0 * px_sd and dx <= x_tol:
+                        rej = reset_after      # trip the reset on THIS frame
         if not accept:
             miss += 1
         used[i] = accept
