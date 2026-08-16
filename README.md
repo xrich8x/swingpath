@@ -27,13 +27,31 @@ video -> calibrate -> perceive -> detect events -> measure -> score -> match.jso
 
 ## Quickstart (synthetic data, no model weights)
 
+**Full instructions, including Windows, are in [USER_GUIDE.md](USER_GUIDE.md) §3.**
+This is the short version.
+
+macOS / Linux:
+
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python run.py demo --out ../frontend/src/data/sample_match.json
-cd ../frontend
-npm install
-npm run dev
+cd ../frontend && npm install && npm run dev
+
+Windows (PowerShell) — use `py`, not `python`:
+
+cd backend
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+py run.py demo --out ..\frontend\src\data\sample_match.json
+cd ..\frontend; npm install; npm run dev
+
+> **On Windows `python` is usually a Microsoft Store stub** that prints "Python was
+> not found" and installs nothing. Use `py` to create the venv. Afterwards the most
+> reliable way to run anything is the venv's interpreter directly —
+> `backend\.venv\Scripts\python.exe run.py ...` — which is what every command in
+> CLAUDE.md and the tools uses, and it needs no activation.
 
 ## Analyzing a real clip (the real pipeline is wired end to end)
 

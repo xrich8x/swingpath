@@ -13,6 +13,12 @@ them. Go in order and STOP to show me the exact error and a fix if any step fail
 
 1. Prerequisites — check Python 3.12+, Node 18+ (20+ preferred), npm, and git
    are installed. If any is missing, tell me how to install it on my OS and stop.
+   ON WINDOWS: test with `py --version`, not `python --version`. `python` is
+   usually a Microsoft Store stub that prints "Python was not found" and installs
+   nothing, so a check against `python` will wrongly report Python as missing.
+   Use `py` for every command below, and once backend/.venv exists prefer calling
+   its interpreter directly (`backend\.venv\Scripts\python.exe ...`) — that needs
+   no activation and is what the rest of the repo's commands use.
 
 2. Backend — create a virtual environment at backend/.venv, activate it, and
    install backend/requirements.txt. numpy/scipy/opencv are all the demo needs;

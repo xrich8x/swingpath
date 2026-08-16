@@ -43,16 +43,26 @@ cd ../frontend
 npm install
 npm run dev                      # open the printed http://localhost:5173
 
-Windows (PowerShell):
+Windows (PowerShell) — use `py`, NOT `python`:
 cd backend
-python -m venv .venv
+py -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python run.py demo --out ..\frontend\src\data\sample_match.json
-python -m pytest tests\
+py run.py demo --out ..\frontend\src\data\sample_match.json
+py -m pytest tests\
 cd ..\frontend
 npm install
 npm run dev
+
+On most Windows machines `python` is a Microsoft Store stub: it prints
+"Python was not found..." and installs nothing. `py` is the real launcher.
+
+Once the venv exists, the most reliable way to run anything is the venv's
+interpreter directly, with no activation step at all:
+backend\.venv\Scripts\python.exe run.py demo --out ..\frontend\src\data\sample_match.json
+backend\.venv\Scripts\python.exe -m pytest tests\
+That is the form every command in CLAUDE.md and tools/ uses, and it is immune to
+which shell you are in or whether activation worked.
 
 If PowerShell blocks the activate script, run
 Set-ExecutionPolicy -Scope Process RemoteSigned once, then retry.
