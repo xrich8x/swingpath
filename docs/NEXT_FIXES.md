@@ -1,3 +1,10 @@
+> **COMPLETE as of 2026-08-15 — this is not an open to-do list.** Every Tier 1-3
+> item below was verified done: the stale suppression figure, the hardcoded
+> detector string, the "NOT yet committed" note, the README pointing at a
+> degenerate calibration, and the untracked evidence .txt files.
+> Kept as a record of what was fixed and why.
+> **For open work read [SCOREBOARD.md](../SCOREBOARD.md).**
+
 # Next fixes — the maintenance list
 
 Small, bounded corrections. Distinct from

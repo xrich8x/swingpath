@@ -1,3 +1,6 @@
+> **SUPERSEDED / READ WITH CARE** — stamped 2026-08-15.
+> The masking works, but the problem it was built for was mis-diagnosed - see farcourt_anchor_audit.md. The far-court label lever is closed (gap_findability.md).
+
 # Masking burned-in graphics before a human labels the frame
 
 Five of the far-court pilot's 36 clicks landed inside a burned-in scoreboard

@@ -1,3 +1,9 @@
+> **STATUS: RUN 2026-08-10** — stamped 2026-08-15 during doc cleanup.
+> HUD diagnosis RETRACTED; the real blocker was false-lock anchors.
+> This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
+> For what actually happened and the current state of play, read
+> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+
 # Session J — make far-court labelling actually usable
 
 **Kickoff prompt:** `Do Session J (docs/sessions/SESSION_J_farcourt_labelling.md)`

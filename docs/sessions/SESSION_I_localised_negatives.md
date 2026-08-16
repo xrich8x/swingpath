@@ -1,3 +1,9 @@
+> **STATUS: RUN 2026-08-09 - PRODUCT GATE FAILED** — stamped 2026-08-15 during doc cleanup.
+> Detector improved on 6/6 clips; solid ghosts 14 -> 15. Unattributable (no seed at the time).
+> This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
+> For what actually happened and the current state of play, read
+> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+
 # Session I — localised hard negatives: stop asking about the frame
 
 **Kickoff prompt:** `Do Session I (docs/sessions/SESSION_I_localised_negatives.md)`

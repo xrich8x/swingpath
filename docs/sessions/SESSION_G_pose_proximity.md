@@ -1,3 +1,9 @@
+> **STATUS: RUN 2026-08-02 - GATE FAILED** — stamped 2026-08-15 during doc cleanup.
+> 11.4% catch vs a 60% gate. The racquet is 2.12 body heights from the skeleton.
+> This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
+> For what actually happened and the current state of play, read
+> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+
 # Session G — pose-proximity hard negatives: the last lever the evidence supports
 
 ## Goal

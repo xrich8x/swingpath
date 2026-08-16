@@ -1,3 +1,9 @@
+> **STATUS: SHIPPED** — stamped 2026-08-15 during doc cleanup.
+> Lens k1 shipped behind a cross-frame honesty gate; roll only on the trusted path.
+> This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
+> For what actually happened and the current state of play, read
+> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+
 # Session A — Finish the camera story: lens undistortion + watchdog validation
 
 **Kickoff prompt:** `Do Session A (docs/sessions/SESSION_A_lens_and_watchdog.md)`

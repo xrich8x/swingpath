@@ -1,3 +1,6 @@
+> **SUPERSEDED / READ WITH CARE** — stamped 2026-08-15.
+> Its clip-level HUD attribution was RETRACTED by farcourt_anchor_audit.md (only 5 of 36 clicks were inside a graphic). The real blocker was false-lock anchors, and the whole lever was later closed by Session L's stopping rule - see gap_findability.md.
+
 # Far-court labels: how many are missing, and can they be filled without a human?
 
 Two questions asked before spending any of the user's labelling time. Both are

@@ -1,3 +1,9 @@
+> **STATUS: SHIPPED 2026-08-08** — stamped 2026-08-15 during doc cleanup.
+> Per-rally clips + top-3 reel, ffmpeg stream copy.
+> This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
+> For what actually happened and the current state of play, read
+> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+
 # Session D — Auto-highlights / per-rally clips
 
 **Kickoff prompt:** `Do Session D (docs/sessions/SESSION_D_highlights.md)`

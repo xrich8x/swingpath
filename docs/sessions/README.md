@@ -1,5 +1,14 @@
 # Session plans
 
+> **ALL BRIEFS HERE HAVE RUN.** As of 2026-08-15 there is no "next" brief — every
+> file is stamped at the top with what happened to it. **Session L's stopping rule
+> fired, which closed ball-detector work**, so the table below is history rather
+> than a queue.
+>
+> **For the current state of play read [SCOREBOARD.md](../../SCOREBOARD.md)**, not
+> this directory. These files are kept for their PRE-REGISTERED GATES — the value
+> is seeing what bar was set before the experiment ran.
+
 One file per planned Claude Code session. Each is self-contained: goal, what
 the user brings, the RESEARCHED technical approach with sources, a step plan
 with measurement gates, and a kickoff prompt. Start a session by pasting its

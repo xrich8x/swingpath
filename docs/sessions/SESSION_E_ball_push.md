@@ -1,3 +1,9 @@
+> **STATUS: RUN (multi-session E5+/E6)** — stamped 2026-08-15 during doc cleanup.
+> Its frame-rate finding constrains what footage to record. Largely superseded by SCOREBOARD.
+> This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
+> For what actually happened and the current state of play, read
+> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+
 # Session E (multi-session arc) — The ball stack: tracking → trajectory → arc → speed + spin
 
 **Kickoff prompt:** `Start Session E<n> (docs/sessions/SESSION_E_ball_push.md)`

@@ -1,3 +1,6 @@
+> **SUPERSEDED / READ WITH CARE** — stamped 2026-08-15.
+> Superseded as guidance by farcourt_l2.md and gap_findability.md: the anchor control was later measured to score AGREEMENT WITH THE TRACKER rather than correctness.
+
 # What the far-court pilot's 36 clicks actually landed on
 
 Session I's pilot was read as "the burned-in scoreboard poisons the labels" and

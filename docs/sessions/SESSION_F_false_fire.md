@@ -1,3 +1,9 @@
+> **STATUS: RUN 2026-08-01** — stamped 2026-08-15 during doc cleanup.
+> Steps 1-3 run, 4-5 gated and not run. Key result: the confusers MOVE (59.2% with a person).
+> This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
+> For what actually happened and the current state of play, read
+> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+
 # Session F — false fire: fix the precision we just spent
 
 ## Goal

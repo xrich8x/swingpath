@@ -1,3 +1,9 @@
+> **STATUS: SHIPPED** — stamped 2026-08-15 during doc cleanup.
+> Serve placement + serve/rally dashboard panels shipped. Real clips are serve-sparse.
+> This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
+> For what actually happened and the current state of play, read
+> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+
 # Session B — Serve analytics + expanded match stats
 
 **Kickoff prompt:** `Do Session B (docs/sessions/SESSION_B_serve_stats.md)`

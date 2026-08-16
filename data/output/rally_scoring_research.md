@@ -1,3 +1,6 @@
+> **SUPERSEDED / READ WITH CARE** — stamped 2026-08-15.
+> Its scoreboard-derived truth route was BUILT AND REJECTED ON ITS PREMISE (2026-08-15, reverted in afffb5a) - a burned-in scoreboard is manual data entry, so it is independent but not true. The ~1.6x over-split figure it reports rests on that route and is WITHDRAWN. The rally layer still has NO ground truth. See SCOREBOARD's dead-end table.
+
 # Rally segmentation and scoring — what the code does, and what it can be scored against
 
 **Date:** 2026-08-13 · **Evidence:** `data/output/rallycheck.json` (yt_match40, re-run from the

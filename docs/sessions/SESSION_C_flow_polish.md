@@ -1,3 +1,9 @@
+> **STATUS: STATUS UNCONFIRMED** — stamped 2026-08-15 during doc cleanup.
+> Parts of this (refuse->overlay handoff, setup tool) appear shipped, but no Results section was ever filled in. Verify before re-running.
+> This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
+> For what actually happened and the current state of play, read
+> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+
 # Session C — Flow polish + camera events in UI + player heatmap
 
 **Kickoff prompt:** `Do Session C (docs/sessions/SESSION_C_flow_polish.md)`

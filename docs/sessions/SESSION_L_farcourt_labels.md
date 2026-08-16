@@ -1,3 +1,9 @@
+> **STATUS: RUN 2026-08-13 - STOPPING RULE FIRED** — stamped 2026-08-15 during doc cleanup.
+> Nothing predicts a findable gap (null control confirms the signal is real but far too weak). BALL-DETECTOR WORK IS CLOSED.
+> This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
+> For what actually happened and the current state of play, read
+> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+
 # Session L — far-court labels: the last untried input, and a stopping rule
 
 ## Where this sits

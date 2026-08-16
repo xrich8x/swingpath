@@ -1,3 +1,6 @@
+> **SUPERSEDED / READ WITH CARE** — stamped 2026-08-15.
+> Still valid. Note the wider conclusion moved on: in-rally coverage, not detector quality, is the binding constraint - see post_bounce_chain.md part 3.
+
 # The +57%-data detector does NOT reach the product — and recall now fails the same way precision did
 
 **Date:** 2026-08-13 · **Tool:** `tools/eval_model_filters.py` + `tools/gate_verdict.py`
