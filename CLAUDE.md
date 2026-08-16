@@ -934,6 +934,73 @@ Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
   doubles every denominator — the rates survive, the sigmas do not (recall reads 5.8 not
   4.1). Drop `clip == "POOLED"` before aggregating.
 
+- Session M (2026-08-15): DELIVERY, not accuracy — plus one rejected premise and two
+  counters that name the next target. NO model was created, trained, tuned or evaluated;
+  no gold-benchmark number moved, and none was supposed to. Branch
+  `height-guidance-preflight`, 6 commits, 387 tests (was 365).
+  (1) THE HEIGHT GUIDANCE HAD SHIPPED TO NOBODY. `calibration.expected_call_accuracy`
+  and `CALL_MAJORITY_FLOOR_PCT` were computed, documented and pinned by 6 tests a week
+  earlier, and the only callers of `courtfit.setup_verdict` were two TOOLS. `run.py
+  check` — the command named "pre-flight: grade your court framing" — ended at
+  `elevation 2.68`, an unbounded proxy; the dashboard said nothing. Both now report the
+  measured number beside its floor, and at or below the floor the CLI says THIS MOUNT
+  ADDS NOTHING. The Court Setup tab grades the mount live off the height
+  `fitCamToQuad` already solves for the shape lock (no extra fitting).
+  (2) TRAP 15 HAD ALREADY RECURRED IN THE SHIPPED CLI. `check` read ONE frame through
+  `detect_court_learned` -> `detect_court` while `analyze` runs `courtfit` consensus
+  over 8 and accepts only >=6. MEASURED on demo30 with no keypoints: the old path
+  returned a court and graded it POOR, while analyze REFUSES the clip ("2 of 8 frames
+  (needs 6)"). The pre-flight was grading a court the product would never use. Now calls
+  `pipeline.calibrate_video` itself. `audit_new_clips.py` got this exact fix a session
+  earlier and nobody grepped the other callers — recorded as a recurrence on trap 15.
+  Cost: check is 2.3 s with corners, 15.9 s when it must find the court (was ~1 s).
+  (3) THE TWO JS MIRRORS ARE ENFORCED. `court.js`/`calls.js` are hand-copies of
+  `court.py`/`calibration.py`, guarded by a comment and nothing else — and the frontend
+  has NO test runner, so there was no side to check from (trap 6). `tests/
+  test_js_mirror_parity.py` reads the JS from Python, EVALUATES its arithmetic so
+  derived constants are compared as values, and cross-checks `expected_call_accuracy`
+  against the table the browser holds. THE GUARDS WERE PROVED TO FAIL: corrupting
+  `LENGTH` 23.77->23.78, one table row, and the floor 56.2->50.0 each turned the suite
+  red, files restored byte-identical.
+  (4) 60 FPS DECIDED, shipped opt-in as `--full-rate` (= frame_step 1; the MECHANISM
+  always existed, the product surface did not). Default stays `auto`. Verified end to
+  end: yt_rally2 (60 fps) `frame_step 2 -> 1`, demo30 (29 fps) `1 -> 1` either way, so
+  the "no-op on 30fps" claim is measured. NOTE this makes step 1 a legitimate SHIPPED
+  config on 60fps clips, which trap 1 predates — the default is still auto, so
+  "shipped behaviour" unqualified still means auto.
+  (5) **SCOREBOARD-DERIVED SCORE TRUTH: BUILT, THEN REJECTED ON THE PREMISE. DO NOT
+  REBUILD IT.** A tool read the burned-in point-by-point scoreboards on am_hard_utr and
+  yt_match40 by per-field state clustering with every state labelled by eye, giving 36
+  and 43 points with all 79 transitions legal tennis, and put the rally over-split at
+  1.47x. **The user rejected it and it was reverted (afffb5a); the 1.47x figure is
+  WITHDRAWN.** The error is worth keeping: a burned-in scoreboard is MANUAL DATA ENTRY
+  by a player, editor or app operator. It is genuinely INDEPENDENT of anything this
+  project computes — and independence is not truth. The "79/79 legal transitions" check
+  proves the scoreline is SELF-CONSISTENT, not that it matches the court; a diligently
+  kept wrong scoreboard passes it perfectly. That is internal consistency mistaken for
+  external validity, a cousin of trap 12 (scoring a human against a model). And the
+  intended use made it worse: tuning `gap_s` against point-BOUNDARY timestamps would
+  have calibrated a rally threshold against WHEN SOMEBODY PRESSED A BUTTON. The
+  rally/score layer therefore still has NO ground truth, which is the honest position;
+  anything scoring it must derive truth from the COURT (ball, players, bounces).
+  (6) TWO COUNTERS THAT NAME THE NEXT TARGET, measured on the committed yt_match40
+  artifacts (196 shots / 63 rallies, `ball_px` = tracker output BEFORE
+  `suppress_false_locks` and before the Kalman, so "detector fired" vs "chain kept it"
+  is exactly the available split). SPEED: 95 of 196 shots are `speed_confident=False`,
+  and of those **77 (81%) had the detector firing past the bounce and the chain
+  discarded it**; only 18 (19%) had a silent detector. Over ALL 196 shots the detector
+  is present past the bounce on **90%**. SECOND-BOUNCE RULE: it is NOT structurally
+  dead — `next_hit` is the next hit anywhere in the clip, so the window does span the
+  dead time, and in 46% of rallies the ball survives the rule's 0.25 s minimum. It
+  starves instead: after a rally's final bounce the ball stays tracked for a median of
+  **5 frames (0.17 s)** (p25 1, p75 16, p90 36), and only **14%** of rallies keep it a
+  full second — while registering a SECOND bounce needs the ball tracked through a
+  whole down-up arc. SO THE TWO SYMPTOMS SHARE ONE ROOT CAUSE: the chain stops
+  following the ball shortly after it lands, which both closes off the hit->landing
+  span speed needs AND starves the tennis rule, leaving rally segmentation entirely on
+  a 2 s timeout. **This is CHAIN work, which is open — not detector work, which the
+  Session L stopping rule closed.**
+
 ## The Lab (tools/lab_server.py) — label, train, score, in a browser
 
 - `py tools/lab_server.py` (stdlib only, no venv needed; it discovers
