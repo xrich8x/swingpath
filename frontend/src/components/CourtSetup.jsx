@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LINES, NET_LINE, LENGTH, DOUBLES_WIDTH } from "../lib/court.js";
 import { computeHomography, applyHomography } from "../lib/homography.js";
 import { fitCamToQuad } from "../lib/camfit.js";
+import { callVerdict } from "../lib/calls.js";
 
 // SwingVision-style court setup: a fixed camera is calibrated ONCE by dragging
 // the four court corners onto the real corners. Coarse placement is by drag;
@@ -38,6 +39,9 @@ export default function CourtSetup({ match }) {
   const [step, setStep] = useState(1);
   const [lockShape, setLockShape] = useState(true);
   const [note, setNote] = useState("");
+  // Mount grade, recomputed off the current corners (see the effect below).
+  const [mount, setMount] = useState(null);
+  const mountTimer = useRef(null);
 
   // Seed the corners from the ANALYZED match's own calibration when it carries
   // one (match.calibration.corners — written by run.py analyze), else from the
@@ -86,6 +90,25 @@ export default function CourtSetup({ match }) {
     [H]
   );
   const net = H ? [applyHomography(H, NET_LINE[0]), applyHomography(H, NET_LINE[1])] : null;
+
+  // WHAT THIS MOUNT COSTS IN LINE CALLS — the measured half of "mount it higher".
+  // fitCamToQuad already solves the physical camera for the shape lock, and its
+  // params carry the height (Cz), so the grade is free: no extra fitting, just
+  // reading the number the lock already computed. Debounced because the fit is
+  // a Nelder-Mead polish from 5 starts and the corners move on every drag frame.
+  useEffect(() => {
+    clearTimeout(mountTimer.current);
+    mountTimer.current = setTimeout(() => {
+      const fit = fitCamToQuad(DBL_ORDER.map((k) => pts[k]), frame.w, frame.h);
+      if (!fit) {
+        setMount(null);           // no real camera sees this shape - say nothing
+        return;
+      }
+      const heightM = Math.abs(fit.params[2]);
+      setMount({ heightM, fitPx: fit.fitPx, ...callVerdict(heightM) });
+    }, 250);
+    return () => clearTimeout(mountTimer.current);
+  }, [pts, frame.w, frame.h]);
 
   function nudge(dx, dy) {
     if (!selected) return;
@@ -291,6 +314,46 @@ export default function CourtSetup({ match }) {
                 {c.label}
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className={`mount-grade mount-${mount?.level || "unknown"}`}>
+          <div className="mount-title">This camera position</div>
+          {mount ? (
+            <>
+              <div className="mount-figure">
+                <strong>{mount.pct.toFixed(0)}%</strong>
+                <span className="muted"> of close calls correct</span>
+              </div>
+              <div className="mount-detail">
+                Camera ~{mount.heightM.toFixed(1)} m up. Always answering &ldquo;in&rdquo;
+                scores {mount.floor.toFixed(0)}%, so this mount is worth{" "}
+                <strong>{mount.gain > 0 ? `+${mount.gain.toFixed(0)}` : mount.gain.toFixed(0)} points</strong>{" "}
+                over guessing.
+              </div>
+              {mount.level === "poor" && (
+                <div className="mount-note">
+                  At this height close calls carry no information — raise the camera
+                  before you record. Clamping the phone to the fence (~2.5 m) instead of
+                  a standing tripod takes this to ~68%.
+                </div>
+              )}
+              {mount.level === "warn" && (
+                <div className="mount-note">
+                  Only just above the floor. Every metre higher is worth real accuracy:
+                  ~69% at 3 m, ~80% at 6 m.
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="mount-detail muted">
+              No real camera view fits these corners yet — place all four on the court
+              corners to see what this mount is worth.
+            </div>
+          )}
+          <div className="mount-src muted">
+            Measured on simulated flights with a known bounce, on calls within 0.5 m of a
+            line. Guidance, not a promise.
           </div>
         </div>
 

@@ -36,6 +36,22 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         # one operating point and half another. Stamped into the cache
         # provenance, so a stale cache from another threshold is reported.
         os.environ["BALLNET_SCORE_THRESH"] = str(args.score_thresh)
+
+    # --full-rate is frame_step=1, stated as a product mode rather than as an
+    # integer nobody could interpret. NOTE FOR ANYONE QUOTING A NUMBER LATER:
+    # this makes step 1 a legitimate SHIPPED configuration on 60fps footage,
+    # which Trap 1 predates. The rule is unchanged in substance — the DEFAULT is
+    # still 'auto', so "shipped behaviour" with no qualifier still means auto,
+    # and any figure from a full-rate run has to say so. The perception cache
+    # already stamps frame_step and refuses a cache built at another rate
+    # (pipeline.py), so the two configurations cannot be silently mixed.
+    frame_step = 1 if args.full_rate else args.frame_step
+    if args.full_rate:
+        print("[analyze] --full-rate: processing EVERY frame. On 60fps footage this "
+              "doubles perception time; it is the largest measured accuracy gain "
+              "available (arc reproj 148->91 px, HUD speed error 38.9->33.1%) and a "
+              "wash-to-negative on ball detection. No-op on 30fps footage.")
+
     match = pipeline.analyze_video(
         args.video,
         keypoints_path=args.keypoints,
@@ -43,7 +59,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         pose_quality=args.pose_quality,
         pose_every=args.pose_every,
         max_frames=args.max_frames,
-        frame_step=args.frame_step,
+        frame_step=frame_step,
         camera_hfov_deg=args.camera_hfov,
         use_bgsub=not args.no_bgsub,
         ball_model=args.ball_model,
@@ -63,13 +79,32 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
 
 
 def _cmd_check(args: argparse.Namespace) -> int:
-    """Pre-flight: grade the court framing before analyzing (SwingVision-style:
-    a good, full-court setup is what makes the rest reliable)."""
-    import json
+    """Pre-flight: grade the court setup before analyzing (SwingVision-style:
+    a good, full-court setup is what makes the rest reliable).
 
+    Two rules shape this command.
+
+    PREDICT BY INVOKING, NEVER BY RE-DERIVING (trap 15). This used to read ONE
+    frame and run detect_court_learned -> detect_court, while `analyze` runs
+    `courtfit.fit_video_frames` consensus over 8 frames and only accepts >=6
+    agreeing. A pre-flight on a different, weaker path can refuse a clip that
+    analyzes fine, or bless one that does not — so it now calls
+    `pipeline.calibrate_video`, the exact entry point analyze calls. Everything
+    reported here (source, reprojection error, refusal text) is therefore what
+    analyze will do, not a second opinion about it.
+
+    QUOTE THE MEASURED ERROR, NOT THE GEOMETRIC PROXY. The old output ended at
+    "elevation 0.42" — a 0-1 framing score. What actually decides whether this
+    recording is worth making is `calibration.expected_call_accuracy`: the
+    measured share of NEAR-THE-LINE calls a mount at this height gets right
+    (54% at 1.0 m, 81% at 8 m; tools/height_curve.py, data/output/height_curve.md).
+    It is quoted beside CALL_MAJORITY_FLOOR_PCT because the floor is not 50% —
+    always answering "in" scores 56.2%, so a 1.0 m mount is worth LESS than a
+    constant answer, which "elevation 0.42" could never say.
+    """
     import cv2
 
-    from swingvision import calibration
+    from swingvision import calibration, court, courtfit, pipeline
 
     cap = cv2.VideoCapture(args.video)
     ok, frame = cap.read()
@@ -78,31 +113,67 @@ def _cmd_check(args: argparse.Namespace) -> int:
         print(f"could not read {args.video}")
         return 1
 
-    H, src = None, ""
-    if args.keypoints:
-        with open(args.keypoints, "r", encoding="utf-8") as f:
-            H = calibration.homography_from_landmarks(json.load(f))
-        src = "your corners"
-    else:
-        det = (calibration.detect_court_learned(frame, weights=args.court_weights,
-                                                verify=False)
-               or calibration.detect_court(frame))
-        if det is not None:
-            H, src = det.homography, "auto-detected court"
-
-    if H is None:
-        print("Framing check: could NOT find the court automatically.")
-        print("  - The whole court is probably not in view, or the lines are unclear.")
-        print("  - Fix: set corners manually (--keypoints), or re-record with the full")
-        print("    court in frame, camera ~5 ft up behind the baseline.")
+    print("Framing check: running the same calibration `analyze` runs...")
+    try:
+        _H, err, source, named = pipeline.calibrate_video(
+            args.video, keypoints_path=args.keypoints)[:4]
+    except ValueError as exc:
+        # calibrate_video refuses with the exact overlay-tool command. analyze
+        # would stop here too, so report it verbatim rather than paraphrasing.
+        # ASCII only: this prints to a Windows console (cp1252), where an em-dash
+        # renders as a replacement character.
+        print("\nFraming check: [REFUSED] - `analyze` would stop on this clip.\n")
+        print(f"  {exc}")
         return 0
+    except FileNotFoundError as exc:
+        print(f"\nFraming check: could not calibrate — {exc}")
+        return 1
 
-    r = calibration.framing_report(frame, H)
-    label = {"good": "OK", "warn": "WARN", "poor": "POOR"}[r.level]
-    print(f"Framing check ({src}): [{label}]  corners {r.corners_visible}/4 in frame, "
-          f"centred {r.centrality:.2f}, lines {r.coverage:.2f}, elevation {r.elevation:.2f}")
-    for m in r.messages:
-        print(f"  - {m}")
+    v = courtfit.setup_verdict(frame, named, calibration, court)
+    view, angle = v["view"], v["angle"]
+    worst = "poor" if "poor" in (view["level"], angle["level"]) else (
+        "warn" if "warn" in (view["level"], angle["level"]) else "good")
+    label = {"good": "OK", "warn": "WARN", "poor": "POOR"}[worst]
+
+    print(f"\nFraming check: [{label}]   source={source}, reprojection {err:.2f} px\n")
+    print(f"  View    corners {view['corners_visible']}/4 in frame, "
+          f"centred {view['centrality']:.2f}, lines {view['coverage']:.2f}")
+    print(f"          {view['msg']}")
+
+    if angle.get("height_m") is not None:
+        print(f"\n  Camera  {angle['height_m']:.2f} m up, {angle['hfov_deg']:.0f} deg lens, "
+              f"roll {angle['roll_deg']:+.1f} deg")
+        print(f"          ~{angle['reliable_frac'] * 100:.0f}% of the court is measurable "
+              f"(reliable to ~{angle['reliable_to_m']:.1f} m of {court.LENGTH:.1f} m)")
+
+    call_pct, floor = angle.get("call_accuracy_pct"), angle.get("call_floor_pct")
+    if call_pct is not None:
+        print(f"\n  Calls   ~{call_pct:.0f}% of close calls correct at this mount height")
+        print(f"          floor is {floor:.0f}% - that is what always answering "
+              f'"in" scores')
+        if call_pct <= floor + 1.0:
+            print(f"          *** THIS MOUNT ADDS NOTHING: {call_pct:.0f}% vs a "
+                  f"{floor:.0f}% floor. Raise the camera before recording. ***")
+        else:
+            print(f"          so this mount is worth ~{call_pct - floor:.0f} points "
+                  f"over guessing")
+        # RULE 2 (ML_PRACTICES): state what the number was measured against, in
+        # one sentence. Without this the figure reads as a measurement of THIS
+        # clip. It is not - it is a function of camera height alone, read off a
+        # curve built from simulated flights, and the clip's own footage never
+        # enters it. Only the height does, and that came from the corner fit.
+        print(f"          [measured against simulated flights with a known bounce, "
+              f"on calls within")
+        print(f"           0.5 m of a line; 6 m setback, 100 deg lens, 720p, 30 fps, "
+              f"30% dropout.")
+        print(f"           A function of HEIGHT, not of this clip - real clips land "
+              f"within ~3 points.")
+        print(f"           tools/height_curve.py, data/output/height_curve.md]")
+    else:
+        print("\n  Calls   not estimated - no physical camera fits this court shape, "
+              "so the height is unknown")
+
+    print(f"\n  {angle['msg']}")
     return 0
 
 
@@ -241,8 +312,22 @@ def build_parser() -> argparse.ArgumentParser:
                          help="run pose every Nth frame (CPU budget)")
     analyze.add_argument("--max-frames", type=int, default=None, dest="max_frames",
                          help="limit source frames processed (for quick tests)")
-    analyze.add_argument("--frame-step", default="auto", dest="frame_step",
-                         help="process every Nth frame; 'auto' targets ~30fps")
+    # RATE. Mutually exclusive, because passing both is a contradiction rather
+    # than a preference. `--full-rate` is exactly frame_step=1 — the mechanism
+    # already existed, but as a bare integer nothing told anyone it is the single
+    # largest measurement lever in the tool, or what it costs.
+    rate = analyze.add_mutually_exclusive_group()
+    rate.add_argument("--frame-step", default="auto", dest="frame_step",
+                      help="process every Nth frame; 'auto' targets ~30fps (TrackNet's "
+                           "training rate), which halves the work on 60fps phone clips")
+    rate.add_argument("--full-rate", action="store_true", dest="full_rate",
+                      help="process EVERY frame (= --frame-step 1). On 60fps footage "
+                           "this DOUBLES perception time and buys the largest measured "
+                           "accuracy gain available: +5.8 pts close-call accuracy at a "
+                           "1.5 m mount, arc reprojection 148->91 px, HUD speed error "
+                           "38.9%%->33.1%%, bounce error -24..-35%%. It is a "
+                           "wash-to-negative on ball DETECTION. No-op on 30fps footage. "
+                           "Evidence: data/output/fps_decision.md")
     analyze.add_argument("--camera-hfov", type=float, default=None, dest="camera_hfov",
                          help="horizontal field of view (deg) for speed/spin; default: "
                               "self-calibrated from the court homography (phone ~70, broadcast ~28)")
@@ -281,11 +366,15 @@ def build_parser() -> argparse.ArgumentParser:
                               "count. Either way, player tracking resolves two players")
     analyze.set_defaults(func=_cmd_analyze)
 
-    check = sub.add_parser("check", help="pre-flight: grade your court framing before analyzing")
+    check = sub.add_parser("check", help="pre-flight: grade your court setup, and what "
+                                         "your mount height costs in line-call accuracy")
     check.add_argument("video", help="input video path")
     check.add_argument("--keypoints", help="court calibration JSON (else auto-detect the court)")
-    check.add_argument("--court-weights", default="weights/court_detector.pt",
-                       dest="court_weights", help="learned court model checkpoint")
+    # NO --court-weights here on purpose. `analyze` has no such flag, and this
+    # command's whole job is to predict `analyze`. A checkpoint override that
+    # only check honoured would reintroduce exactly the divergence being fixed.
+    # To point the learned tier at another checkpoint, set COURTNET_WEIGHTS —
+    # both commands read it, so they stay in step.
     check.set_defaults(func=_cmd_check)
 
     live_p = sub.add_parser("live", help="stream live IN/OUT line calls from a video or webcam")
