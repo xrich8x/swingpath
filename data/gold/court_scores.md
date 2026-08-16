@@ -1,3 +1,11 @@
+> **DO NOT USE THESE NUMBERS.** This table was produced BEFORE the court train/test
+> split existed, when 17 of the 20 gold clips were also in `data/court_dataset/` -
+> so every figure here is the model scored on its own training data. It has no
+> `split` column and it is NOT a valid "before" for any comparison.
+> **The valid, leak-aware table is [court_scores_split.md](court_scores_split.md).**
+> Kept only because Session H and `train_courtnet.py` cite it as the example of
+> what went wrong.
+
 ```
 clip                   usable detect%  kp_err  corner within% court_IoU  false%
 -------------------------------------------------------------------------------

@@ -1,3 +1,8 @@
+> **KEEP.** The `.mp4` source files for these gold clips are gitignored, so this is
+> the only record of HOW to regenerate them - segment, resolution and codec are
+> pinned below. The manifests carry the `video_sha1` to verify a regenerated clip;
+> this file carries the recipe.
+
 # New gold test clips (2026-07-22)
 
 Three human-labeled ball TEST clips added to widen the benchmark beyond

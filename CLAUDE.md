@@ -133,7 +133,8 @@ Read those before re-proposing anything here.
   am_hard_utr was understated. `avg 0.0` FIXED → **62.8 avg / 91.9 top km/h**. `scale_ok` is
   measured ANTI-correlated with speed accuracy and is off the speed test. 171 tests.
 - **Session F (2026-08-01).** Per-frame false-fire is NOT the product. THE CONFUSERS MOVE:
-  71 raw false locks classified — **59.2% travel with a person**, 38.0% static scenery. So
+  71 raw false locks classified (`data/output/false_fires.md`) — **59.2% travel with a
+  person**, 38.0% static scenery. So
   motion attention is skipped on evidence. `score_thresh` swept for the first time: **0.5
   stays** (0.6/0.7 fail the recall gate). `max_gap_s` swept: **0.4 stays**, and solid ghost
   fires sit at **9 at every setting** — nothing downstream removes a solid ghost. 209 tests.
@@ -156,9 +157,11 @@ Read those before re-proposing anything here.
   **20.2%** held-out detect. The bottleneck is REFUSAL, not accuracy. 228 tests.
 - **H part 2.** COURT AUTO-DETECTION CLOSED AS A MODEL PROBLEM. `courtfit` consensus is
   Tier 1 and beats CourtNet; the 6/8 bar is empirically correct (the one 5-vote clip is
-  wrong by **68.7 px**, every ≥6-vote clip lands 3.4-13.9 px). 11 of 20 clips auto-calibrate
-  with a perfect precision record. Also: 8 `am_indoor_hard1` gold frames are MISLABELLED —
-  deliberately not "fixed", because human ground truth is never quietly edited.
+  wrong by **68.7 px**, every ≥6-vote clip lands 3.4-13.9 px; evidence
+  `data/output/court_consensus_bar.md`). 11 of 20 clips auto-calibrate with a perfect
+  precision record. Also: 8 `am_indoor_hard1` gold frames are MISLABELLED — deliberately
+  not "fixed", because human ground truth is never quietly edited. The valid court score
+  table is `data/gold/court_scores_split.md`; `court_scores.md` is the pre-split leaked one.
 - **H part 3.** SYNTHETIC GROUND TRUTH — the first ABSOLUTE accuracy here. Line calls
   **95.9%** correct, bounce **0.75 m** median. The −15..−20% speed rule CONFIRMED as physics
   (drag −21.7%; losing the vertical only −0.9%). New limit: flat z=0 back-projection is

@@ -1,3 +1,8 @@
+> **This is the VALID court table** - leak-aware, with a `split` column separating
+> held-out from trained-on clips. It replaces [court_scores.md](court_scores.md),
+> which measured the model on its own training data. Nothing linked here until the
+> 2026-08-15 doc cleanup, while the invalid table was cited six times.
+
 ```
 clip                   usable detect%  kp_err  corner within% court_IoU  false%      split
 ------------------------------------------------------------------------------------------
