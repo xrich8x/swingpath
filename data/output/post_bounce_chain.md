@@ -154,3 +154,52 @@ into a product gain, and the third clip says why it would not have paid much the
   verdict.
 - `bounce_reset=False` is verified **byte-identical** to the default path, and the flag is
   proven non-inert (3,732 frames differ on real data). 4 tests pin both.
+
+---
+
+# Part 3 — the DOMINANT failure is in-rally coverage, and the same two stages own it
+
+Part 2 found that on the target footage the binding constraint is overall in-rally
+coverage, not the frames after the bounce. This attributes *that* loss, by the same
+method: `seen_frac = real_fraction(hit, landing)` must be ≥50% for a speed to be trusted,
+so the whole hit→landing span is counted at every chain stage.
+
+| stage | am_hard_utr mean seen_frac | shots ≥50% | yt_match40 | shots ≥50% |
+|---|---|---|---|---|
+| raw (tracker out) | **75.5%** | **106**/120 | **79.3%** | **182**/196 |
+| `+rectify_track` | 72.1% (−3.4) | 101 | 77.5% (−1.8) | 174 |
+| `+suppress_false_locks` | 64.9% (−10.6) | 90 | 69.4% (−9.9) | 150 |
+| `+gate_ball_to_court` | 64.9% (**0**) | 90 | 69.4% (**0**) | 150 |
+| **`+smooth_forecast`** | **52.9% (−22.6)** | **69** | **59.7% (−19.6)** | **124** |
+
+## The headline
+
+**The detector already gives ≥50% coverage on 106 of 120 shots (88%) on am_hard_utr. Only
+69 (58%) survive the chain.** 37 shots lose their speed to the chain, not to the detector.
+yt_match40 is the same shape: 182 → 124.
+
+Per-stage, consistent on both clips and in the same order:
+
+- **`smooth_forecast` is the largest** — −12.0 pts on am_hard_utr, −9.7 on yt_match40
+- **`suppress_false_locks` second** — −7.2 and −8.1
+- **`gate_ball_to_court` costs exactly zero**, on both, reproducing Session G part 3
+- together the two own **~85%** of the loss
+
+The smoother's cost here is real detections its innovation gate **rejected** — a coasted
+frame is drawn but does not count as seen, which is precisely what `real_fraction` measures.
+
+## Why this supersedes the post-bounce framing
+
+Parts 1–2 chased the frames *after* the landing. That is a real effect and it is 68% of the
+*post-bounce* loss — but post-bounce is the minor failure mode. Across the whole flight the
+same two stages cost **20–23 points of coverage**, which is what actually pushes shots under
+the 50% gate. **The target is the same code, measured on the population that matters.**
+
+## Deliberately NOT proposing a fix here
+
+Two attempts at the smoother (a threshold, then a bounce-aware mechanism) have already
+failed their pre-registered gate, and the reason both failed is that loosening the gate
+buys coverage and pays in ghosts. Nothing in this measurement changes that trade — it only
+says the trade is worth **20–23 pts of coverage** rather than the 3–4 the post-bounce window
+suggested. A third attempt needs a mechanism that separates *real* from *false* better,
+not one that admits more of both. Recorded and stopped.
