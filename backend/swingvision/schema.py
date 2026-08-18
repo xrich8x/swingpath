@@ -152,9 +152,16 @@ class Stats:
     distance_run_m: dict[str, float | None] = field(default_factory=dict)
     # Percent of processed frames each player was actually located on,
     # {"A": near, "B": far}. This is the denominator behind distance_run_m and
-    # the reason a value may be None; it is also useful on its own as an honest
-    # statement of how much of the clip each player was visible for.
+    # one of the two reasons a value may be None; it is also useful on its own as
+    # an honest statement of how much of the clip each player was visible for.
     player_track_coverage: dict[str, float] = field(default_factory=dict)
+    # Why a distance_run_m entry is None, per player. There are TWO independent
+    # reasons and coverage only explains one of them: a sparse track (low
+    # coverage), or DOUBLES, where the two-slot tracker puts both partners
+    # through one slot and coverage stays high while identity is lost. The UI
+    # must show this rather than assuming "not enough frames". Absent for any
+    # player whose distance is a real number.
+    distance_run_note: dict[str, str] = field(default_factory=dict)
     # --- Serve + rally analytics (additive; older match.json simply omit these) --
     # Serve placement counts per server, by court side and lateral band. Only serves
     # that landed IN (and whose call we trust) are placed — a fault has no zone.

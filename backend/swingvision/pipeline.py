@@ -1950,28 +1950,20 @@ def _build_match_from_events(
         duration_s=round(track[-1][0], 1) if track else 0.0,
     )
     stats = compute_stats(shots, rallies)
-    # Distance run is a path INTEGRAL, so it is only meaningful if the player was
-    # actually located often enough to integrate over. Measured on the committed
-    # perception caches, the far player is found on **1.0%** of frames on
-    # am_hard_utr, 11.0% on yt_match40, 9.6% on demo30 — so "B" was reporting
-    # 0.0 m on every real clip, which the dashboard drew as a zero-length bar
-    # next to the player's name. A user reads that as "B never moved"; the truth
-    # is "we never saw B". compute_stats already made exactly this fix for speed
-    # ("reporting 0.0 was indistinguishable from a broken pipeline"); this
-    # applies it to movement. None = not measurable, which is NOT zero.
-    cov = {"A": _track_coverage(near_court), "B": _track_coverage(far_court)}
-    stats.player_track_coverage = {k: round(100.0 * v, 1) for k, v in cov.items()}
-    stats.distance_run_m = {
-        "A": (_distance_run_m(near_court, fps)
-              if cov["A"] >= MIN_TRACK_COVERAGE else None),
-        "B": (_distance_run_m(far_court, fps)
-              if cov["B"] >= MIN_TRACK_COVERAGE else None),
-    }
-    for pid, side in (("A", "near"), ("B", "far")):
-        if stats.distance_run_m[pid] is None:
-            print(f"[analyze] distance run {pid} ({side}) NOT REPORTED — player "
-                  f"located on {stats.player_track_coverage[pid]:.1f}% of frames, "
-                  f"under the {MIN_TRACK_COVERAGE*100:.0f}% bar a path integral needs")
+    # Distance run is a path INTEGRAL, so it is a fiction unless the positions
+    # behind it are both DENSE enough and about ONE PERSON. `_reportable_distance`
+    # checks both and returns the reason when it refuses.
+    dist, cover, notes = {}, {}, {}
+    for pid, positions, side in (("A", near_court, "near"), ("B", far_court, "far")):
+        d, c, why = _reportable_distance(positions, fps, singles)
+        dist[pid] = d
+        cover[pid] = round(100.0 * c, 1)
+        if why:
+            notes[pid] = why
+            print(f"[analyze] distance run {pid} ({side}) NOT REPORTED — {why}")
+    stats.distance_run_m = dist
+    stats.player_track_coverage = cover
+    stats.distance_run_note = notes
     return Match(
         video=video,
         players=players,
@@ -2001,6 +1993,39 @@ def _track_coverage(positions) -> float:
     if not positions:
         return 0.0
     return sum(p is not None for p in positions) / len(positions)
+
+
+def _reportable_distance(positions, fps, singles: bool):
+    """(distance_m or None, coverage_fraction, reason_or_None).
+
+    A path length is only meaningful when the positions behind it are dense
+    enough AND belong to one person. Those fail independently, and only one of
+    them is visible in the coverage number:
+
+    DENSITY — the player was barely located. `_distance_run_m` forward-fills, so
+        a sparse track flattens into a SHORT path and returns a small, confident
+        number rather than an obviously broken one.
+
+    IDENTITY — in DOUBLES the tracker keeps **one slot per court half**
+        (`pose.select_players_on_court` returns the most central person on each
+        side; `tests/test_doubles.py` records the two-slot design as deliberate,
+        and `schema` has no C/D players to hold the partners). The slot therefore
+        swaps between partners and the "path" teleports between two people.
+        **Coverage stays HIGH through all of that**, so the density check cannot
+        see it — which is exactly why this is a separate test and not a lower
+        threshold. `_distance_run_m`'s 2 m/0.25 s cap silently *discards* the
+        swap steps for partners standing far apart and *adds* them as real
+        distance for partners standing close, so the error has no fixed sign.
+    """
+    cov = _track_coverage(positions)
+    if not singles:
+        return None, cov, ("doubles: tracking keeps one slot per court half, so "
+                           "that slot holds both partners and a path cannot be "
+                           "attributed to a single player")
+    if cov < MIN_TRACK_COVERAGE:
+        return None, cov, (f"located on {100.0 * cov:.1f}% of frames, under the "
+                           f"{MIN_TRACK_COVERAGE * 100:.0f}% a path integral needs")
+    return _distance_run_m(positions, fps), cov, None
 
 
 def _distance_run_m(positions, fps) -> float:

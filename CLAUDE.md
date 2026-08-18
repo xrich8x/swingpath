@@ -232,7 +232,19 @@ Read those before re-proposing anything here.
   the value is **None (not measurable), never 0.0**, and `stats.player_track_coverage`
   ships the denominator. UI says "not tracked" with the percent. **The cause is NOT
   fixed** — the far player really is untracked, now a named Open row with two unmeasured
-  levers (`--pose-quality accurate`, `--far-player-rescue`). 397 tests.
+  levers (`--pose-quality accurate`, `--far-player-rescue`).
+  **A SECOND gate covers the axis coverage cannot see:** player tracking is deliberately
+  **two-slot** (one per court half), so in DOUBLES the slot swaps between partners while
+  coverage stays HIGH — distance is now refused there too, with its own reason in
+  `stats.distance_run_note`. Verified by forcing `--doubles`: player A at **90.8%**
+  coverage would have reported a confident 61.4 m. This is review finding P2-5 in its
+  real form — doubles, not the singles net-exchange the review described (feet cannot
+  legally cross the net mid-point). Also corrected a **SCOREBOARD self-contradiction**:
+  its Open row told the next session to build score truth from burned-in scoreboards
+  while its own dead-end table recorded that as built-then-rejected-on-premise and
+  reverted; the `~1.6x` over-split came from that same withdrawn source and is now
+  WITHDRAWN too (trap 20 fired twice — the second time on its own correction).
+  400 tests.
 
 ## Keeping the docs true — which file moves with which change
 

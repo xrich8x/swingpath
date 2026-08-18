@@ -171,7 +171,7 @@ def _stats_from_dicts(shots: list[dict], rallies: list[dict],
     # denominator that explains why a distance may be None, so dropping it on a
     # correction replay would leave an unexplained "not tracked" in the UI.
     for k in ("serve_placement", "serve_split", "distance_run_m",
-              "player_track_coverage",
+              "player_track_coverage", "distance_run_note",
               "rally_length_buckets", "shot_mix_by_player"):
         if k in previous and not out.get(k):
             out[k] = previous[k]

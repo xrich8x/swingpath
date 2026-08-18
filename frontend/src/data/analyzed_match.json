@@ -2240,6 +2240,9 @@
       "A": 90.8,
       "B": 0.0
     },
+    "distance_run_note": {
+      "B": "located on 0.0% of frames, under the 50% a path integral needs"
+    },
     "serve_placement": {
       "A": {
         "deuce": {

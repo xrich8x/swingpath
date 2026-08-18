@@ -275,15 +275,14 @@ export default function Statistics({ match }) {
   // pipeline.MIN_TRACK_COVERAGE. Only real numbers scale the bars, so an
   // untracked player cannot silently define the maximum.
   const dist = s.distance_run_m || {};
-  const cover = s.player_track_coverage || {};
+  // Why a value is missing. Do NOT assume "too few frames": in doubles the
+  // track is dense but holds two people, so the backend supplies the reason.
+  const distNote = s.distance_run_note || {};
   const distMax = Math.max(
     ...["A", "B"].map((p) => (typeof dist[p] === "number" ? dist[p] : 0)), 1);
-  // Only quote coverage when we actually have it (older match.json omit it).
-  const untracked = ["A", "B"].filter((p) => typeof dist[p] !== "number"
-                                          && typeof cover[p] === "number");
-  const coverageNote = untracked.length
-    ? ` (${untracked.map((p) => `${playerName(match, p)} ${cover[p]}%`).join(", ")})`
-    : "";
+  const missingReasons = ["A", "B"]
+    .filter((p) => typeof dist[p] !== "number" && distNote[p])
+    .map((p) => `${playerName(match, p)}: ${distNote[p]}`);
 
   // Physics-based spin (ball_physics): populated when bounce-anchored fits succeed.
   const spins = (match.shots || []).filter((sh) => sh.spin_rpm > 0).map((sh) => sh.spin_rpm);
@@ -417,9 +416,9 @@ export default function Statistics({ match }) {
             })}
           </div>
           <p className="muted">
-            Court-plane distance run. “Not tracked” means this player was located on
-            too few frames to measure a path{coverageNote} — it does not mean they
-            did not move. On a single low camera the far player is often missed.
+            Court-plane distance run. “Not tracked” means we could not measure a path
+            for that player — it does <strong>not</strong> mean they did not move.
+            {missingReasons.length > 0 && ` ${missingReasons.join("; ")}.`}
           </p>
         </section>
       </div>

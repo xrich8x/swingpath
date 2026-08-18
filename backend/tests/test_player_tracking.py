@@ -70,6 +70,50 @@ def test_sparse_track_understates_rather_than_looking_broken():
 
 # --- The user-visible contract ---------------------------------------------
 
+# --- IDENTITY: the failure coverage cannot see -----------------------------
+
+def test_doubles_refuses_even_on_a_perfectly_dense_track():
+    """The whole reason this is a separate check and not a stricter threshold.
+
+    `pose.select_players_on_court` keeps ONE slot per court half (deliberate —
+    see tests/test_doubles.py), so in doubles that slot swaps between partners.
+    Coverage stays at 100% throughout, so the density gate sees nothing wrong.
+    """
+    dense = [(float(i % 4), 5.0) for i in range(120)]
+    assert pipeline._track_coverage(dense) == 1.0      # density is perfect...
+
+    d_singles, cov_s, why_s = pipeline._reportable_distance(dense, 30.0, singles=True)
+    d_doubles, cov_d, why_d = pipeline._reportable_distance(dense, 30.0, singles=False)
+
+    assert d_singles is not None and why_s is None     # ...and singles reports it
+    assert d_doubles is None                           # ...but doubles refuses
+    assert cov_d == 1.0                                # NOT because of coverage
+    assert "doubles" in why_d
+
+
+def test_refusal_always_carries_a_reason_and_a_number_never_does():
+    sparse = [None] * 90 + [(1.0, 1.0)] * 10
+    dense = [(float(i % 4), 5.0) for i in range(120)]
+
+    _, _, why_sparse = pipeline._reportable_distance(sparse, 30.0, singles=True)
+    _, _, why_doubles = pipeline._reportable_distance(dense, 30.0, singles=False)
+    val, _, why_ok = pipeline._reportable_distance(dense, 30.0, singles=True)
+
+    # The two refusals must be DISTINGUISHABLE — the UI explains them differently.
+    assert why_sparse and why_doubles and why_sparse != why_doubles
+    assert "%" in why_sparse and "doubles" not in why_sparse
+    assert isinstance(val, float) and why_ok is None
+
+
+def test_coverage_is_reported_even_when_the_distance_is_refused():
+    """Coverage is the denominator; it must survive the refusal so the user can
+    see HOW badly tracked a player was, not just that we gave up."""
+    sparse = [None] * 95 + [(1.0, 1.0)] * 5
+    dist, cov, why = pipeline._reportable_distance(sparse, 30.0, singles=True)
+    assert dist is None and why
+    assert cov == pytest.approx(0.05)
+
+
 def test_none_and_zero_are_different_answers():
     """The whole point of the field. A player who stood still has 0.0; a player
     we could not track has None. Collapsing these is the bug being fixed."""
