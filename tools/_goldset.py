@@ -102,6 +102,20 @@ LEGACY: dict[str, GoldClip] = {k: GOLD[k] for k in LEGACY_SIX}
 #: the three clips with a calibration — the only ones with a geometric far band
 CALIBRATED: dict[str, GoldClip] = {k: v for k, v in GOLD.items() if v.has_calibration}
 
+#: BLIND HOLDOUT (2026-08-16, review finding P0-1). tune_smoother.py and
+#: tune_suppress.py had been sweeping max_gap_s / suppression thresholds /
+#: score_thresh directly against the same 1851 clicks that also produce every
+#: headline recall/false-fire number — the gold set was a validation set wearing
+#: a test set's reputation. These two clips are withdrawn from both tuning
+#: tools' --clip choices from this commit forward, one indoor + one outdoor so
+#: the eventual release-candidate check still spans surfaces. This choice is
+#: ONE-WAY, same discipline as data/gold/court_split.json's TEST/TRAIN split:
+#: do not add a clip back to the tunable pool once a sweep has looked at it.
+#: They remain fully visible to eval_gold.py / eval_detector_gold.py /
+#: eval_model_filters.py — the rule is about what CHOSE a parameter value, not
+#: about what gets measured and reported.
+HOLDOUT: frozenset[str] = frozenset({"gold_UHf0LeMU2pg", "gold_sAjkpeRq4P4"})
+
 
 def videos() -> dict[str, str]:
     """name -> video. (eval_pose_proximity, eval_racquet_negation)"""
@@ -121,6 +135,14 @@ def calibrated_triples() -> list[tuple[str, str, str]]:
 def calibrated_map() -> dict[str, tuple[str, str, str]]:
     """name -> (video, calib, labels), calibrated only. (eval_model_filters, tune_suppress)"""
     return {c.name: (c.video, c.calib, c.labels) for c in CALIBRATED.values()}
+
+
+def tunable_calibrated_map() -> dict[str, tuple[str, str, str]]:
+    """calibrated_map() minus HOLDOUT. The only clip table a tune_*.py sweep may
+    offer as a --clip choice — see HOLDOUT for why. Reporting tools
+    (eval_model_filters, eval_gold, eval_detector_gold) keep using
+    calibrated_map()/GOLD directly; they measure a fixed config, they don't pick one."""
+    return {k: v for k, v in calibrated_map().items() if k not in HOLDOUT}
 
 
 # --------------------------------------------------------------------------

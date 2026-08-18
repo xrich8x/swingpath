@@ -190,7 +190,20 @@ def main():
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--freeze-encoder", action="store_true", dest="freeze_encoder",
                     help="train the decoder only (v1 recipe; too conservative alone)")
+    ap.add_argument("--seed", type=int, default=0,
+                    help="PAIRS AN A/B, same discipline as train_ballnet.py's --seed. "
+                         "Without this, two arms differ by init, shuffle order and "
+                         "augmentation draws as well as by the flag under test, so a "
+                         "small effect can't be attributed to the flag.")
     args = ap.parse_args()
+
+    # Not bit-determinism: cuDNN picks conv algorithms nondeterministically and
+    # forcing otherwise costs real time. This pairs the things that dominate a short
+    # run — the init and the order the data (and augmentation) arrives in.
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
 
     # The split is enforced twice, on purpose. assert_no_court_gold_leak refuses to
     # start if a TEST clip sits in the training root at all; the `exclude` below
@@ -209,6 +222,7 @@ def main():
     # benchmark is tools/eval_court.py over the TEST clips.
     print(f"train {len(train_ds)} / val {len(val_ds)} | device {args.device}")
     train_ld = DataLoader(train_ds, batch_size=args.batch, shuffle=True, num_workers=2,
+                          generator=torch.Generator().manual_seed(args.seed),
                           pin_memory=(args.device == "cuda"))
     val_ld = DataLoader(val_ds, batch_size=args.batch, num_workers=2)
 

@@ -34,8 +34,9 @@ import _goldset as gs  # noqa: E402  — single source for the gold clip table
 from swingvision import ball as B, calibration, court, courtfit  # noqa: E402
 
 CORN = ("near_bl_doubles", "near_br_doubles", "far_bl_doubles", "far_br_doubles")
-# The three calibrated gold clips, from the registry (was a literal here).
-CLIPS = gs.calibrated_map()
+# The tunable calibrated gold clips (calibrated_map() minus the blind HOLDOUT —
+# this tool sweeps parameters, so it may never select the two withheld clips).
+CLIPS = gs.tunable_calibrated_map()
 
 
 def build_calib(pts_rel, wh):

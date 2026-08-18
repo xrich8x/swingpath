@@ -50,15 +50,21 @@ sys.path.insert(0, str(REPO / "tools"))
 
 import cv2  # noqa: E402
 
+import _goldset as gs  # noqa: E402  — single source for the gold clip table
 from eval_model_filters import (CLIPS, build_calib, far_masks, gold,  # noqa: E402
                                 measure, perceive)
 
 SWEEP = (0.0, 0.10, 0.15, 0.20, 0.30, 0.40)     # 0.40 is shipped
+# This tool sweeps a parameter and picks a value from the result, so it may
+# never select the blind HOLDOUT clips (review finding P0-1) — CLIPS itself
+# stays the full calibrated_map() import above since eval_model_filters also
+# uses it for single-config reporting runs, which the holdout stays open to.
+TUNABLE_CLIPS = gs.tunable_calibrated_map()
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--clip", default="yt_rally2", choices=list(CLIPS))
+    ap.add_argument("--clip", default="yt_rally2", choices=list(TUNABLE_CLIPS))
     ap.add_argument("--weights", default="weights/ballnet_v21.pt")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--frame-step", type=int, default=None,

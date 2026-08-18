@@ -223,7 +223,9 @@ at the bottom.
   > ball baseline (below); the negation route is not the "direct fix" this paragraph
   > originally called it.
   Its BallTrack weights are also an EXTERNAL BALL BASELINE to score on our gold
-  set — the only one we have today is COCO sports-ball at 32.1% vs our 69.4%.
+  set — the only one we have today is COCO sports-ball at **35.4%** (656/1851,
+  ten-clip gold set) vs our 69.4% (32.1% was the older six-clip number) —
+  data/output/racquet_negation_k.md.
   *Steal, but note the warning:* the paper's own headline finding is that
   **naively concatenating racket-pose features DEGRADES performance**, and a
   CrossAttention fusion is what unlocks them. Our instinct — hard-negate anything

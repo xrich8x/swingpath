@@ -893,14 +893,22 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
     # saves a blind quarter-hour run with the wrong model.
     if ball_model == "auto":
         # BallNet (our tennis-tailored net) is the measured-best detector when a
-        # court gate is available to contain its false-fires: on human gold it
-        # beats TrackNet by +10.5 pts hit@10 (81.8 vs 71.3) and +9.5 far-court on
-        # yt_rally2, +8.2 on the cold yt_match40, halving misses; end-to-end vs the
-        # HUD its extra recall cut per-shot speed error 28% -> 16% (E3j). It DOES
-        # false-fire more (65% vs 23% on no-ball frames), which the height-aware
-        # court gate + live-ball filter + rectifier now suppress — so prefer it
-        # only WITH calibration, and fall back to the TrackNet/WASB fire probe on
-        # uncalibrated footage where those gates are off.
+        # court gate is available to contain its false-fires. RE-MEASURED
+        # 2026-08-17 on the current 10-clip gold set (v21, +57% training data and
+        # hard-negative mining since the numbers below were first written): it
+        # beats TrackNet by +2.9 pts hit@10 pooled (60.8 vs 57.9) and WASB by
+        # +11.5 pts (60.8 vs 49.3) — real, but a much smaller TrackNet margin than
+        # this comment used to claim; end-to-end vs the HUD its extra recall cut
+        # per-shot speed error 28% -> 16% (E3j, not re-measured here). It DOES
+        # false-fire more under identical BallTracker gating (55.1% vs TrackNet's
+        # 31.5%, WASB's 40.1% on no-ball frames — NOT the shipped ~6% pooled
+        # false-fire, which is measured AFTER suppress_false_locks + smooth_
+        # forecast, absent from this raw comparison), which the height-aware
+        # court gate + suppress_false_locks + rectify_track now suppress (the
+        # live-ball filter this comment used to cite was retired as net-negative,
+        # E5+) — so prefer it only WITH calibration, and fall back to the
+        # TrackNet/WASB fire probe on uncalibrated footage where those gates are
+        # off. Evidence: data/output/ballnet_vs_baselines_p1_1.md
         import os as _os
         ballnet_ok = _os.path.exists(_os.path.join(
             _os.path.dirname(ball_weights) or ".", "ballnet.pt"))

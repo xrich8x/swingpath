@@ -150,7 +150,9 @@ Read those before re-proposing anything here.
   `suppress_false_locks`' shipped parameters already dominate all nine sweep alternatives.
 - **G part 4.** Racquet-box negation (COCO class 38) FAILS at **54.5%** catch / 4.5%
   collateral against a 60% gate — but 4.8× better than pose proximity. Free external
-  baseline: COCO "sports ball" scores **32.1%** recall against BallNet v21's 69.4%.
+  baseline: COCO "sports ball" scored **32.1%** recall on the six-clip gold set then;
+  re-measured on the current ten-clip set it's **35.4%** (656/1851) vs BallNet v21's
+  69.4% — data/output/racquet_negation_k.md.
 - **Session H (2026-08-06).** THE COURT TEST SET WAS THE TRAINING SET — **17 of 20** gold
   clips were in `data/court_dataset/` and the court trainer had NO guard. Fixed with
   `court_split.json` + `assert_no_court_gold_leak`. Honest baseline on the clean split:
@@ -211,6 +213,16 @@ Read those before re-proposing anything here.
   second (−7.2), `gate_ball_to_court` exactly zero.** Two smoother fixes (`reset_after`,
   `bounce_reset`) both FAIL their pre-registered gate — loosening the outlier gate buys
   coverage and pays in ghosts. `am_hard_utr` finally has a perception cache. 391 tests.
+- **Session N (2026-08-17).** RESPONSE TO THE 2026-08-16 REVIEW. Carved out a permanent
+  blind holdout (2 of 10 gold clips) that `tune_smoother.py`/`tune_suppress.py` can no
+  longer select (P0-1) — pre-registering each sweep's gate never stopped the cumulative
+  drift of a dozen sweeps against one fixed set. Seeded CourtNet training to match
+  BallNet's discipline (P2-1). Fixed a COCO baseline number that had gone stale (32.1%
+  from the six-clip set, quoted with no qualifier; current is 35.4% on ten clips).
+  Re-ran BallNet v21 vs TrackNet vs WASB (P1-1) on the current 10-clip gold set: BallNet
+  still wins pooled hit@10 but by **+2.9 pts, not the +10.5 an undated `pipeline.py`
+  comment claimed** — corrected in place, and not a clean win (TrackNet beats it
+  outright on 2 of 10 clips). 391 tests.
 
 ## Keeping the docs true — which file moves with which change
 
