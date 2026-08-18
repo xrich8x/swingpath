@@ -270,9 +270,20 @@ export default function Statistics({ match }) {
   const callTotal = s.line_calls.in + s.line_calls.out || 1;
   const inPct = Math.round((s.line_calls.in / callTotal) * 100);
 
-  // Player movement (court-plane distance run). Far player is approximate.
+  // Player movement (court-plane distance run). A value is null when the player
+  // was not located on enough frames to integrate a path — see
+  // pipeline.MIN_TRACK_COVERAGE. Only real numbers scale the bars, so an
+  // untracked player cannot silently define the maximum.
   const dist = s.distance_run_m || {};
-  const distMax = Math.max(dist.A || 0, dist.B || 0, 1);
+  const cover = s.player_track_coverage || {};
+  const distMax = Math.max(
+    ...["A", "B"].map((p) => (typeof dist[p] === "number" ? dist[p] : 0)), 1);
+  // Only quote coverage when we actually have it (older match.json omit it).
+  const untracked = ["A", "B"].filter((p) => typeof dist[p] !== "number"
+                                          && typeof cover[p] === "number");
+  const coverageNote = untracked.length
+    ? ` (${untracked.map((p) => `${playerName(match, p)} ${cover[p]}%`).join(", ")})`
+    : "";
 
   // Physics-based spin (ball_physics): populated when bounce-anchored fits succeed.
   const spins = (match.shots || []).filter((sh) => sh.spin_rpm > 0).map((sh) => sh.spin_rpm);
@@ -382,21 +393,34 @@ export default function Statistics({ match }) {
           <h3>Player movement</h3>
           <div className="bars">
             {["A", "B"].map((pid) => {
-              const m = dist[pid] || 0;
-              const pct = Math.round((m / distMax) * 100);
+              // null/undefined means the player was never tracked densely enough
+              // to integrate a path — NOT that they stood still. Rendering that
+              // as a 0 m bar told the user the opposite of the truth, and it was
+              // the normal case for the far player (tracked on 1-11% of frames).
+              const m = dist[pid];
+              const tracked = typeof m === "number";
+              const pct = tracked ? Math.round((m / distMax) * 100) : 0;
               return (
                 <div className="bar-row" key={pid}>
                   <div className="bar-label">{playerName(match, pid)}</div>
                   <div className="bar-track">
-                    <div className={`bar-fill bar-${pid === "A" ? "forehand" : "backhand"}`}
-                         style={{ width: `${pct}%` }} />
+                    {tracked && (
+                      <div className={`bar-fill bar-${pid === "A" ? "forehand" : "backhand"}`}
+                           style={{ width: `${pct}%` }} />
+                    )}
                   </div>
-                  <div className="bar-value">{m} m</div>
+                  <div className="bar-value">
+                    {tracked ? `${m} m` : <span className="muted">not tracked</span>}
+                  </div>
                 </div>
               );
             })}
           </div>
-          <p className="muted">Court-plane distance run · far player approximate (single camera).</p>
+          <p className="muted">
+            Court-plane distance run. “Not tracked” means this player was located on
+            too few frames to measure a path{coverageNote} — it does not mean they
+            did not move. On a single low camera the far player is often missed.
+          </p>
         </section>
       </div>
     </div>

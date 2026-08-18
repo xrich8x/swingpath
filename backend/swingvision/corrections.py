@@ -167,7 +167,11 @@ def _stats_from_dicts(shots: list[dict], rallies: list[dict],
     out = fresh.__dict__.copy() if hasattr(fresh, "__dict__") else dict(fresh)
 
     # Carry forward what compute_stats does not derive from shots+rallies alone.
+    # `player_track_coverage` travels WITH `distance_run_m` — it is the
+    # denominator that explains why a distance may be None, so dropping it on a
+    # correction replay would leave an unexplained "not tracked" in the UI.
     for k in ("serve_placement", "serve_split", "distance_run_m",
+              "player_track_coverage",
               "rally_length_buckets", "shot_mix_by_player"):
         if k in previous and not out.get(k):
             out[k] = previous[k]

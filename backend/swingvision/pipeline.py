@@ -1950,10 +1950,28 @@ def _build_match_from_events(
         duration_s=round(track[-1][0], 1) if track else 0.0,
     )
     stats = compute_stats(shots, rallies)
+    # Distance run is a path INTEGRAL, so it is only meaningful if the player was
+    # actually located often enough to integrate over. Measured on the committed
+    # perception caches, the far player is found on **1.0%** of frames on
+    # am_hard_utr, 11.0% on yt_match40, 9.6% on demo30 — so "B" was reporting
+    # 0.0 m on every real clip, which the dashboard drew as a zero-length bar
+    # next to the player's name. A user reads that as "B never moved"; the truth
+    # is "we never saw B". compute_stats already made exactly this fix for speed
+    # ("reporting 0.0 was indistinguishable from a broken pipeline"); this
+    # applies it to movement. None = not measurable, which is NOT zero.
+    cov = {"A": _track_coverage(near_court), "B": _track_coverage(far_court)}
+    stats.player_track_coverage = {k: round(100.0 * v, 1) for k, v in cov.items()}
     stats.distance_run_m = {
-        "A": _distance_run_m(near_court, fps),
-        "B": _distance_run_m(far_court, fps),
+        "A": (_distance_run_m(near_court, fps)
+              if cov["A"] >= MIN_TRACK_COVERAGE else None),
+        "B": (_distance_run_m(far_court, fps)
+              if cov["B"] >= MIN_TRACK_COVERAGE else None),
     }
+    for pid, side in (("A", "near"), ("B", "far")):
+        if stats.distance_run_m[pid] is None:
+            print(f"[analyze] distance run {pid} ({side}) NOT REPORTED — player "
+                  f"located on {stats.player_track_coverage[pid]:.1f}% of frames, "
+                  f"under the {MIN_TRACK_COVERAGE*100:.0f}% bar a path integral needs")
     return Match(
         video=video,
         players=players,
@@ -1964,12 +1982,37 @@ def _build_match_from_events(
     )
 
 
+#: Minimum fraction of processed frames a player must actually be located on
+#: before their path length is reportable. NOT a new invented threshold: this is
+#: the same >=50% seen-fraction bar the project already uses to decide a speed is
+#: trusted (SCOREBOARD, Session M part 2), because it is the same question — is
+#: this track dense enough to integrate over. Below it `_distance_run_m` would
+#: forward-fill mostly-stale positions into a flat path and systematically
+#: UNDERSTATE the distance, which is worse than silence because it looks precise.
+MIN_TRACK_COVERAGE = 0.50
+
+
+def _track_coverage(positions) -> float:
+    """Fraction of processed frames on which this player was actually located.
+
+    The denominator is every processed frame, not every frame with a position —
+    the whole point is to expose how much of the clip the player was missing for.
+    """
+    if not positions:
+        return 0.0
+    return sum(p is not None for p in positions) / len(positions)
+
+
 def _distance_run_m(positions, fps) -> float:
     """Court-plane distance a player ran (metres) from their per-frame positions.
 
     Gaps are forward-filled, the path is lightly smoothed, then summed at ~4 Hz with
     a per-sample sanity cap (a player can't cross >2 m in 0.25 s) so perspective
     jitter — worst for the far player — doesn't inflate the total. Best-effort.
+
+    Callers MUST gate this on `_track_coverage() >= MIN_TRACK_COVERAGE`: with a
+    sparse track the forward-fill makes the path flat rather than noisy, so the
+    answer comes back small and confident instead of obviously broken.
     """
     last = None
     filled = []

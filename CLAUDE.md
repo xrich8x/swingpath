@@ -223,6 +223,16 @@ Read those before re-proposing anything here.
   still wins pooled hit@10 but by **+2.9 pts, not the +10.5 an undated `pipeline.py`
   comment claimed** — corrected in place, and not a clean win (TrackNet beats it
   outright on 2 of 10 clips). 391 tests.
+- **Session N part 2 (2026-08-17).** THE DASHBOARD WAS INVENTING A STAT. `distance_run_m`
+  is a path integral and was reported unconditionally, so **player B read a confident
+  `0.0 m` on every real clip** — on yt_rally2 integrated over **0.0%** coverage (far
+  player located on ZERO frames; 1.0% am_hard_utr, 9.6% demo30, 11.0% yt_match40).
+  Forward-filling makes a sparse track *flat*, so it fails small-and-precise rather than
+  obviously broken. Gated on the project's existing **≥50% seen-fraction** bar: below it
+  the value is **None (not measurable), never 0.0**, and `stats.player_track_coverage`
+  ships the denominator. UI says "not tracked" with the percent. **The cause is NOT
+  fixed** — the far player really is untracked, now a named Open row with two unmeasured
+  levers (`--pose-quality accurate`, `--far-player-rescue`). 397 tests.
 
 ## Keeping the docs true — which file moves with which change
 

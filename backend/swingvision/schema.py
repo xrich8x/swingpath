@@ -141,9 +141,20 @@ class Stats:
     # SwingVision HUD (tools/speed_band.py). Calibration is thin — 10 groundstrokes
     # on ONE clip — so it is a band, not a guarantee.
     speed_err_pct: float = 0.0
-    # Metres each player ran (court-plane path length), {"A": near, "B": far}. The
-    # far player's value is approximate (perspective amplifies its position jitter).
-    distance_run_m: dict[str, float] = field(default_factory=dict)
+    # Metres each player ran (court-plane path length), {"A": near, "B": far}.
+    # A value is **None when the player was not tracked densely enough to
+    # integrate a path** (see pipeline.MIN_TRACK_COVERAGE) — None means NOT
+    # MEASURABLE and must never be rendered as 0. That distinction is the whole
+    # point of the field: measured on the committed caches the far player is
+    # located on only 1.0-11.0% of frames, so "B" used to read a confident
+    # 0.0 m on every real clip. Read alongside `player_track_coverage`, which
+    # says what the number was measured against (and is populated either way).
+    distance_run_m: dict[str, float | None] = field(default_factory=dict)
+    # Percent of processed frames each player was actually located on,
+    # {"A": near, "B": far}. This is the denominator behind distance_run_m and
+    # the reason a value may be None; it is also useful on its own as an honest
+    # statement of how much of the clip each player was visible for.
+    player_track_coverage: dict[str, float] = field(default_factory=dict)
     # --- Serve + rally analytics (additive; older match.json simply omit these) --
     # Serve placement counts per server, by court side and lateral band. Only serves
     # that landed IN (and whose call we trust) are placed — a fault has no zone.
