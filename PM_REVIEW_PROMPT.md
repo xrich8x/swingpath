@@ -23,7 +23,7 @@ dashboard). I cannot read code. Ground yourself before judging anything:
    --oneline -15` and `git diff` / `git status`) for what was actually done
    recently — files touched, decisions made, walls hit, numbers reported.
 2. Read CLAUDE.md's most recent Status entries and Gotchas section, and all
-   of SCOREBOARD.md — especially "What has not worked" and "Traps". Do not
+   of SCOREBOARD.md — especially "What has not worked" — and of TRAPS.md. Do not
    evaluate anything without checking it against that table first; this
    project's biggest recurring risk is re-proposing an idea already measured
    and killed.

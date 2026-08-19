@@ -3,7 +3,8 @@
 #
 # THE FAILURE MODE THIS EXISTS FOR, measured three times:
 #   a figure is corrected or withdrawn in an append-only table (What has worked /
-#   has not worked / Traps) and a COPY of it lives on in the mutable "Open" table,
+#   has not worked, or TRAPS.md) and a COPY of it lives on in the mutable "Open"
+#   table,
 #   which is the section the next session reads as the plan. It happened with the
 #   1.47x rally over-split, then with the 1.6x that replaced it, then inside Trap 20
 #   where the withdrawn figure was being used as the CORRECTIVE. Each was caught by
@@ -39,7 +40,7 @@ cd "$repo_root" 2>/dev/null || allow
 
 # Live docs only. Everything else is a dated record and legitimately keeps the
 # old number.
-LIVE="CLAUDE.md SCOREBOARD.md ML_PRACTICES.md ML_PLAYBOOK.md README.md USER_GUIDE.md SETUP_PROMPT.md PM_REVIEW_PROMPT.md"
+LIVE="CLAUDE.md SCOREBOARD.md TRAPS.md ML_PRACTICES.md ML_PLAYBOOK.md README.md USER_GUIDE.md SETUP_PROMPT.md PM_REVIEW_PROMPT.md"
 
 # Pull the registered figures into a shell array (one per line).
 figures=$(sed -n '/^## Withdrawn figures/,/^## Open/p' SCOREBOARD.md \

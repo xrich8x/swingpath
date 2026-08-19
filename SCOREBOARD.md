@@ -30,11 +30,7 @@ worked / not worked / Traps) while a *copy* of it survived in the mutable Open
 table. One number, one home. If Open needs to mention it, name the row that owns
 it so a withdrawal cannot orphan a duplicate.
 
-**Known backlog, stated rather than quietly carried:** 5 figures still appear in
-both Open and an append-only table. One of them (`1.47x`) is already withdrawn,
-so that copy is rot TODAY; the rest (`33.1%`, `5 of 36`, `6 of 6`, `66.9%`) are
-correct now and are duplicates waiting to rot the next time one is corrected.
-Dedupe a row when you next touch it.
+**Audited 2026-08-17 and now CLEAR.** A grep for cross-table duplicates first reported 9, then 5; inspecting each brought it to **3 real ones**, all fixed — the Open rows for 60 fps, localised weighting and the chain A/B were restating figures owned by rows in What has worked / has not worked, and now cite them. The last two the grep flags are **not violations and should stay**: `5 of 36` is OWNED by its Open row and merely referenced from Traps (the rule constrains what Open restates, not what cites Open), and `1.47x` appears in an Open row that is explicitly discussing its withdrawal. **The lesson is about the audit, not the file** — a literal-string grep cannot tell restating from citing, so it over-reports by ~3x; read every hit before acting on it.
 
 ---
 
@@ -242,8 +238,8 @@ number — that is what a dated record is. The guard skips them.
 |---|---|
 | **Far-court recall** (detector fires on nothing in 24–27% of frames) | **Human far-court labels — now measured, not assumed.** The hole is **4,087 frames** (not "a few hundred"), which would grow far-court training data 43% but costs 4–5 hours of clicking. Automating it is a **measured negative**: 89% of those frames are bridged by confident anchors, but interpolating between them lands within 10 px only **63%** of the time, flat across bridge length (data/output/farcourt_label_yield.md). So: **rank, don't complete** — one frame per gap (1,259 gaps, not 4,087 frames; every frame in a gap is a near-duplicate), round-robin across clips. `tools/select_farcourt_labels.py` builds the queue into `data/labels/`; **a 12-gap / 36-frame pilot is waiting in the Lab**, all at source resolution (720p/1080p from `data/train_clips/`, not the 512×288 network input where a far ball is ~1.6 px and unclickable). Run it before committing hours: spot checks show the missed ball landing on background its own colour (white ball on white signage, dark on dark wall), so it may not be visible even at full res. **PILOT RUN, and re-adjudicating it changed the diagnosis.** The frames ARE readable at source resolution. But the HUD story is **RETRACTED**: re-checking every click against the pixels, **5 of 36** landed inside a burned-in graphic — not "every click on the four HUD clips" — and two of the four clips that table blamed carry **no overlay at all**. What 11 of 29 ball clicks actually landed on is empty sky, foliage, flat court or a floodlight, and the reason is that **the ANCHORS bracketing those gaps were themselves false locks** on a wall, a hedge, a parked car. The queue selects a gap when the tracker is confident on both sides, and about half the time that is two false positives. Split by the human's own verdict on the anchors: **at least one anchor confirmed → 5 of 5 midpoints are on a real ball; neither confirmed → 0 of 7**. The queue already collected that control and nothing read it. Now enforced by `tools/farcourt_labels_to_dataset.py`, plus HUD masking (`tools/mask_hud.py`, gate passed on 19 boxes × 4 real frames) and a mechanical quarantine of the pilot's labels. Frame extraction was ruled out first: **0 of 36** queue frames mismatch their claimed source frame. Evidence: data/output/farcourt_anchor_audit.md, farcourt_hud_mask.md. **A 12-gap masked re-run is waiting in the Lab (`farcourt_pilot2`)** — same 12 gaps, so it is a controlled test of the mask. Any training run that follows must pre-register a **ghost-ball gate**: teaching the detector to fire where the ball can't be seen is one step from teaching it to hallucinate an arc. |
 | **9 solid ghost balls — and we now know why nothing removes them** | **All 19 chain false locks have `run_len = 1`** (roam 208–829 px) — by the tool's own legend, *"a real ball scores high roam and short run; a fixture the reverse"*. Every survivor carries the kinematic signature of a real ball, so `suppress_false_locks` cannot touch them without also deleting single-frame real-ball sightings — the far-court balls we are already short of. That is why nine downstream attempts failed (all test for non-ball-like behaviour) and why detector work does not reach the product (this is the one-off *tail*, not the bulk error rate). Composition: **five frames defeat all three models** (yt_rally2 18/762/1494, yt_match40 4773, am_hard_utr 13276) and they are **not one object type** — 3 static scenery, 2 person-attached — so racket negation reaches 2 of 5. Two of the five may be *mislabels* (a ball-sized object beside a mid-swing player on a "no ball" frame); that is a Lab re-label question, not a model fix. **Read Trap 9 first**: at 74 no-ball frames the gate can only see a near-elimination. |
-| **Confirming the localised-weighting detector win** | **~2h20m of GPU, and it is now well-motivated** — a −11.7 pt pooled false-fire effect on 6 of 6 clips is large enough to confirm or kill cleanly. Re-run the pair with the new `--seed 0` on both arms so the flag is the only difference, plus a third arm at `--seed 1 --hard-weight 1.0` (~1h10m) to measure how far two *identical* recipes drift — without that floor a paired difference still cannot be sized. Do NOT spend the ~12h on a 40-epoch pair until this comes back. |
-| **~~Whether the +5.6 pt recall gain reaches the product~~ — ANSWERED: it does not** | Chain test run 2026-08-13 on all three calibrated clips (data/output/chain_ab.md). **GATE FAILS: pooled solid ghosts 9 -> 13**, chain recall **66.9% -> 66.9%** (exactly flat). `ballnet_v21.pt` stays the default; arm B is NOT shipped. v21's 9 reproduces the standing figure exactly, checking the measurement chain. The clip that collapses is **am_hard_utr, the 1.74 m 1080p amateur mount this project targets: 1 -> 7 solid ghosts**. Caveats the tool flags: the clips disagree in sign (+6/+1/-3) and only 4 of 18 ghost frames overlap, so this is "arm B did not clear the bar", not "more data makes ghosting worse". |
+| **Confirming the localised-weighting detector win** | **~2h20m of GPU, and it is now well-motivated** — the pooled false-fire effect recorded in the **Localised confuser weighting** row (What has not worked) is large enough to confirm or kill cleanly. Re-run the pair with the new `--seed 0` on both arms so the flag is the only difference, plus a third arm at `--seed 1 --hard-weight 1.0` (~1h10m) to measure how far two *identical* recipes drift — without that floor a paired difference still cannot be sized. Do NOT spend the ~12h on a 40-epoch pair until this comes back. |
+| **~~Whether the +5.6 pt recall gain reaches the product~~ — ANSWERED: it does not** | Chain test run 2026-08-13 on all three calibrated clips (data/output/chain_ab.md). **GATE FAILS: pooled solid ghosts 9 -> 13**, chain recall **exactly flat** against the shipped baseline stated in the **Making the smoother respect suppression** row. `ballnet_v21.pt` stays the default; arm B is NOT shipped. v21's 9 reproduces the standing figure exactly, checking the measurement chain. The clip that collapses is **am_hard_utr, the 1.74 m 1080p amateur mount this project targets: 1 -> 7 solid ghosts**. Caveats the tool flags: the clips disagree in sign (+6/+1/-3) and only 4 of 18 ghost frames overlap, so this is "arm B did not clear the bar", not "more data makes ghosting worse". |
 | **Whether more data is what actually caused it** | **n = 1 training run per arm.** `--seed 0` on both fixes initialisation and seeds the shuffle, which is a real improvement on Session I's unseeded pair, but the datasets differ in size so batch composition and augmentation draws still differ, and the 9-of-10 per-clip sign test measures *evaluation* noise. Also: each arm's checkpoint is its own best epoch on its **own** validation split (A epoch 6, B epoch 12), and B's val contains the new venues. A `--seed 1` replication of arm B (~1h52m) would size the run-to-run floor; the effect is 4.1σ against evaluation noise, so the question is whether training noise is anywhere near 5 pts. |
 | **Whether a better detector can reach the ghost ball at all** | Three interventions have now cut detector false fire substantially and delivered nothing to the rendered output. Before the next detector idea, establish *which* stage absorbs it — the tracker gates and `suppress_false_locks` are the suspects, and `fire_frames_solid` plus the per-gate miss counters can answer it without new training. |
 | **Second-disk copy of the training data — DONE 2026-08-15; off-machine still open** | **The figures in this row were badly stale and the risk was bigger than recorded**: measured, `data/train_clips/` is **20 videos / 2.73 GB** (not 12 / 1.06) and `data/ball_dataset/` is **73,098 files / 3.45 GB** (not 43,904 / 2.0). Both gitignored, tracked by nothing. The dataset is nominally regenerable from the videos (`relabel_train_clips.py`) but re-processing yields different pseudo-labels, so treat it as semi-irreplaceable too. **DONE — both now copied to `C:\SwingPath_Backup\`, a physically separate disk** (E: Gigabyte / C: Kingston, both NVMe): `train_clips` all **21 files verified by SHA256 manifest**, `ball_dataset` all **73,098 files / 3.45 GB verified by count and byte-sum**. That retires **single-disk failure**, the dominant risk. **STILL OPEN:** same machine, so fire, theft and ransomware are uncovered — needs an external drive or cloud target. (Gotcha for whoever repeats it: `robocopy` exits **1** on a successful copy, so a wrapper that trusts the exit code reports a false failure.) |
@@ -256,209 +252,16 @@ number — that is what a dated record is. The guard skips them.
 | **Rally segmentation over-splits — the SIZE is WITHDRAWN, and the layer has NO ground truth** | Researched 2026-08-13 (data/output/rally_scoring_research.md). `segment_rallies` splits on a hit-to-hit time gap and on a second-bounce force-break; on yt_match40 **62 of 62 breaks came from the time rule and 0 from the force rule**. The suspect is named: `pipeline.py:1868` overrides `gap_s` to **2.0 s**, and within-rally intervals run median 0.97 s, p90 1.69 s, **max exactly 2.00** — a distribution truncated at the threshold. 30 of the 62 breaks came from gaps of only 2-3 s, ordinary for a deep defensive ball. SIZE OF THE DEFECT — **WITHDRAWN 2026-08-17.** It read *"~35-40 real points vs 63 rallies, so ~1.6x"*, counted from the clip's own burned-in scoreboard: the same rejected family as the 1.47x already withdrawn in the dead-end table, so it should have gone with it and did not. **The over-split is real but currently UNSIZED.** **WHY THE TENNIS RULE NEVER FIRES — measured 2026-08-15.** It is NOT structurally dead: `next_hit` is the next hit anywhere in the clip, so the window does span the dead time, and in **46%** of rallies the ball survives the rule's 0.25 s minimum. It **starves**. After a rally's final bounce the ball stays tracked for a median of **5 frames (0.17 s)** — p25 **1**, p75 16, p90 36 — and only **14%** of rallies keep it a full second, while registering a SECOND bounce needs the ball tracked through a whole down-up arc. **Same root cause as the speed-coverage row: the chain stops following the ball shortly after it lands.** Fixing that would let segmentation follow the actual tennis law instead of a 2 s timeout, and needs no ground truth to attempt. **THE BLOCKER FOR SCORING IT IS THAT NOTHING CAN SCORE THIS.** Ball has 1851 human clicks, court has 20 clips, speed has `synth_truth` (and the SwingVision HUD, which per method rule 11 is *agreement with another estimator*, not truth); rallies and score have **nothing** - no point boundary has ever been labelled. **DO NOT close that gap with the burned-in scoreboards.** Until 2026-08-17 this row ended by recommending exactly that — *"3 of 10 gold clips carry a burned-in point-by-point score ... free exact truth ... Build the reference before touching `gap_s`"* — while the dead-end table three sections up already recorded the same idea as **BUILT, THEN REJECTED ON THE PREMISE, reverted (`afffb5a`)**. So SCOREBOARD contradicted itself, and because this file is the designated forward-looking record, the next session would have read the closed route as the plan. The premise is what failed, not the implementation: a burned-in board is **manual data entry**, and its self-consistency is not correctness against the court. Anything that SCORES this layer must take truth from the COURT (ball, players, bounces). **What survives here is everything measured from the court and the ball** — the `gap_s` truncation and the starvation finding — and per the line above those are enough to *attempt* the fix without any ground truth at all; you simply cannot yet *grade* the result. |
 | **Trimming was the missing first step** | The Lab could *sample frames from inside* chosen time ranges but never *cut the video*, so an hour of phone footage stayed an hour and every perception pass decoded the warm-up and the breaks. `tools/trim_clip.py` + a Trim control in step 1 of the guided flow. It **re-encodes by default**: with `-ss` before `-i` and `-c copy`, ffmpeg snaps to the keyframe at or before the start, so the clip begins early *and ends early* — the exact bug already found once in the highlights cutter. Verified frame-accurate against the pixels (trim frame 0 == source frame 300 for a 5.0 s start at 60 fps, duration 7.00 s to the frame). `--fast` restores stream copy and says what it trades. |
 | **Phone app shell** | App development, not ML. The model export and call logic are done and verified bit-identical in JS; no phone fps has ever been measured, so do not quote one. |
-| ~~**Processing 60 fps clips at full rate**~~ — **DECIDED 2026-08-15: shipped opt-in as `--full-rate`** | The product call was made rather than measured further, because the measurement was already complete: `max_gap_s = 0.4` is correct at 60 fps on both native-60fps gold clips, so no re-tune was needed. 60 fps wins the MEASUREMENT (arc reproj 148 → 91 px, HUD speed MAE 38.9 → 33.1%, bounce error −24..−35%, +5.8 pts close-call accuracy at a 1.5 m mount) and is a wash-to-negative on DETECTION (yt_rally2 recall +2.7, far_geo −1.7, false-fire +7.7), at 2× perception cost. **Opt-in, not default** — the default stays `auto` until a full match has been run end to end at full rate. See "What has worked". |
+| ~~**Processing 60 fps clips at full rate**~~ — **DECIDED 2026-08-15: shipped opt-in as `--full-rate`** | The product call was made rather than measured further, because the measurement was already complete: `max_gap_s = 0.4` is correct at 60 fps on both native-60fps gold clips, so no re-tune was needed. 60 fps wins the MEASUREMENT — arc reprojection, HUD speed error, bounce error and close-call accuracy all improve, with the figures owned by the **Frame rate isolated from detector dropout** row in What has worked (read them there, not from a copy here) and is a wash-to-negative on DETECTION (yt_rally2 recall +2.7, far_geo −1.7, false-fire +7.7), at 2× perception cost. **Opt-in, not default** — the default stays `auto` until a full match has been run end to end at full rate. See "What has worked". |
 
 ---
 
 ## Traps
 
-Process failures this project has hit **more than once**. Each cost real work.
+Moved to **[TRAPS.md](TRAPS.md)** on 2026-08-17 — 21 entries, 202 of this file's
+430 lines. They are append-only *history* while everything above is mutable
+*state*, and mixing the two in one file is precisely what let a correction in one
+section leave a stale copy in another (see the audit note at the top).
 
-1. **Quoting a `--frame-step 1` number as shipped behaviour.** It doubles `fps_eff` and
-   every time-threshold's frame count. Two wrong mechanism conclusions came from this —
-   the second *after* the rule was written down. Use step 1 only for A/B deltas and for
-   clips whose gold parity demands it.
-2. **Trusting a stale cache.** Perception caches are calibration- and
-   settings-dependent. A whole set of published figures was withdrawn over this.
-   Re-perceive; the provenance stamp exists to catch it.
-3. **Unscaled pixel constants.** Anything tuned at 720p silently deletes real balls at
-   1080p. Scale by `frame_height/720` — except the fixture radius, where measurement
-   says otherwise.
-4. **A scorer that mis-aligns frames.** Gold frame `f` compared against track index
-   `f//step` without checking `f` was processed understated the tracker for a whole
-   session and forced a retraction.
-5. **Measuring against a model instead of a human.** Every leaderboard this project
-   built before the gold set was measuring its own reflection.
-5b. **Trusting the flat z=0 projection for an AIRBORNE ball.** Measured against
-   simulated truth: back-projecting the whole arc onto the court plane and
-   integrating path length reads **+72% median, p90 +25,000%** — a near-grazing ray
-   runs to infinity. Under 1 m of height it is +15% bias. This is precisely why
-   `gate_ball_to_court` and the physics arc fit exist, and why the `approx` speed
-   path is a floor rather than a measurement.
-6. **Letting the test set into the training set.** The ball side has enforced a one-way
-   gold/train split since Session 2. The COURT side never did: **17 of the 20
-   hand-labelled court gold clips were also in `data/court_dataset/`**, and
-   `train_courtnet.py` had no guard at all, so every figure in
-   `data/gold/court_scores.md` was the model scored on its own homework. Fixed
-   2026-08-06 with `data/gold/court_split.json` + `assert_no_court_gold_leak()`. The
-   lesson generalises: a discipline enforced on one model is not enforced on the
-   project. Check each new model for its own guard.
-7. **Fanning out to parallel agents.** The bottleneck here is one GPU and one gold set,
-   not context. Two multi-agent research runs burned ~971k tokens and returned **zero**
-   results; the same research done inline took two searches and four fetches.
-8. **Scoring on a population where the decision is easy.** Pooled line-call agreement
-   reads **87–99%** across camera heights from 1 m to 12 m — it cannot tell a worthless
-   mount from a good one, because most simulated bounces land nowhere near a line and
-   metres of error still call them correctly. Restricted to bounces within 0.5 m of a
-   line it reads **54% → 81%** over the same range. This is the same shape as
-   "per-frame false-fire is not the product" (Session F): *pick the population where
-   the answer is actually in doubt.* And **always state the majority-class floor** — on
-   that population, answering "in" every time scores 56.2%, so the 1 m camera's 54% is
-   not "slightly better than chance", it is worse than a constant.
-9. **Calling "no effect" without checking the test could have seen one.** The solid-ghost
-   gate has been run **nine times** and never once alongside its own resolution. It is a
-   count of ~14 out of **74** no-ball frames, where sampling alone moves the count by
-   **±3.4**: near-elimination is detectable (needs 62 frames), but *halving* the ghost
-   rate needs **212** frames and a 30% cut needs **656**. So nine null results license
-   only "nothing has come close to eliminating the ghost ball" — not "none of these did
-   anything". `tools/gate_verdict.py` now prints the required-n next to the verdict so
-   the claim can never again outrun the evidence. Contrast the detector table, where 204
-   no-ball frames over six clips resolved an 11.7-point effect comfortably: the method
-   is fine, the *chain* metric is just restricted to three calibrated clips.
-10. **Running an A/B with more than one variable.** `train_ballnet.py` had **no seed** —
-   no `manual_seed`, no `random.seed` — so Session I's two arms differed by weight
-   initialisation, batch order and augmentation draws as well as by the flag under test.
-   The tell was the three clips disagreeing in **sign** on every axis. Same family as the
-   `ballnet_v21.pt` provenance gap that forced the session to spend an hour training its
-   own control. Fixed with `--seed` and `recipe_stamp`; the standing rule is that a
-   checkpoint must say how it was made, and an arm must differ from its control in
-   exactly one recorded way.
-11. **Reading a clip-level correlation as the cause.** The far-court pilot's clips split
-   cleanly into "human agreed with the tracker to 0.6–7.2 px" and "human was 112–645 px
-   out", and the split was attributed to the four clips carrying a burned-in scoreboard.
-   It was really the four clips where the tracker had been tracking a **ball** rather
-   than a wall — two of the "HUD" clips have no overlay at all. The fix that followed
-   from the wrong cause (mask the graphics) is worth 5 of 36 labels; the fix that follows
-   from the right one is worth 21. **When a per-clip split explains a result, check the
-   per-FRAME pixels before naming the variable** — clips differ in many ways at once, and
-   n=12 clips is one observation of each.
-17. **Trimming a clip renames it, and the gold guard matches on the NAME.** Caught
-   live, not hypothetically: gold clip `hd_shortcourt_1` is `7 UTR vs 8 UTR
-   [UHf0LeMU2pg].mp4`, a training set had been built from `UHf0LeMU2pg.mp4` — the same
-   match, cut shorter — and `assert_no_gold_leak` reported **no leak**, because the
-   filenames differ. Every one of the 12 clips trimmed that day carried the same hole,
-   so the exam set was one training run away from being inside the revision. The guard
-   was correct for the world it was written in, where `data/` held whole recordings
-   under their own names; cutting clips created a lineage the identity check could not
-   see. Fixed by recording {cut: source} in `data/train_clips/lineage.json` at cut time
-   and expanding gold through it. **A provenance check keyed on a name breaks the moment
-   the pipeline gains a step that renames things** — and the new step will not know it
-   is supposed to tell the old check.
-16. **A default that is silently wrong for a whole new pool.** `validate_new_clip`
-   looked for a clip's video at `data/<tag>.mp4` only, and fell back to "assume 1280x720"
-   when it missed. The new training footage lives in `data/train_clips/` and is all
-   1080p, so every calibration the user hand-placed audited at the wrong resolution and
-   came back **DEGENERATE, fit residual 15.9-56.3 px** — nine of them, i.e. the entire
-   session's manual work. At the true 1920x1080 the same files read **0.3-6.5 px, six
-   PASS and three LOW-CAMERA**. Corners are pixel coordinates, so every geometric check
-   is resolution-dependent; the fallback was reasonable when `data/` held every clip and
-   became a lie the moment a subdirectory appeared. It now searches the directories clips
-   actually live in. **A fallback that cannot tell "not found" from "found and fine" will
-   eventually indict good work** — and the tell was that ALL of them failed, which is
-   almost never what a real quality problem looks like.
-15. **Re-implementing the thing you are trying to predict.** `audit_new_clips.py` was
-   written to tell a user which new clips will auto-calibrate. Its first version drove
-   `auto_fit_frame`/`consensus` by hand instead of calling `pipeline._sample_calib_frames`
-   + `courtfit.fit_video_frames`, and sampled 15-85% of the clip where the pipeline
-   samples 2-98%. It reported **1 of 12** clips calibrating; the shipped path gets more,
-   and two clips flipped from refuse to accept once it called the real code. An audit
-   that disagrees with the product is worse than no audit — it sends you to hand-calibrate
-   clips that calibrate themselves. **Predict a behaviour by invoking it, never by
-   re-deriving it.** Related: the same tool first reported a confident camera height
-   (4.35 m, close calls 74%) from a **2-of-8** consensus, against a bar measured at 6 —
-   a wrong court yields a wrong height that looks exactly like a right one.
-   **IT HAD ALREADY HAPPENED IN THE SHIPPED CLI, and nobody looked** (found 2026-08-14).
-   `run.py check` — the user-facing pre-flight — read ONE frame through
-   `detect_court_learned` -> `detect_court`, while `analyze` runs `courtfit`
-   consensus over 8 frames and accepts only >=6 agreeing. Measured on demo30 with no
-   keypoints: the old check returned a court and graded it `[POOR] elevation 2.68`,
-   while analyze **refuses the clip outright**. So the pre-flight's verdict was about a
-   court the product would never use, and a user could act on either answer. Fixed by
-   calling `pipeline.calibrate_video` itself. **The tell was that the audit tool got
-   this exact fix a session earlier and the CLI was never checked for the same shape** —
-   when a trap is found in one caller, grep for the other callers of the thing it was
-   re-deriving, because the pattern is a habit, not an incident.
-14. **Judging a filter by what it KEPT.** Three versions of the play-segment finder
-   were written for the nine new match uploads. Each reported a plausible kept-percentage
-   and each was wrong in a way the percentage could not show: version 1 discarded real
-   tennis on 6 of 9 clips, version 2 on 5 of 9 — including **ten minutes of rallies from
-   one clip while reporting 58% kept**. Both were caught the same way, by rendering the
-   frames they THREW AWAY rather than the ones they kept. The root cause was shared:
-   "looks unlike the average frame" is not "is not tennis", and over half an hour outdoors
-   shadows crawl and exposure drifts. The fix was to detect the thing being REMOVED (a
-   face filling the frame) so the failure mode flips to keeping too much. Even that has
-   blind spots the count cannot reveal — a face in profile, and a sponsor read that cuts
-   to close-ups of a book with no face in it at all. **Always inspect the rejects.**
-12. **Scoring a HUMAN against a model, which is self-grading wearing a disguise.** The
-   far-court queue accepts a labelled gap when the human's click on an anchor agrees
-   with the tracker's position there. On the masked re-run that agreement rate went
-   **42% → 75% on the same twelve gaps** — and inspection showed at least two of the
-   flips were the human clicking a static wall mark or a window, on one clip the *same*
-   mark the tracker had locked onto, agreeing to 2–5 px. A labeller who cannot find the
-   ball clicks the most ball-like thing in the frame, which is what the detector locked
-   onto for the same reasons, so agreement rises while truth does not. The tell was
-   motion: human clicks moved **1–8 px** across a gap where the tracker's own prior moved
-   **60–583 px**. Rule 1 of ML_PRACTICES applies to human graders too — *what independent
-   ground truth is this measured against?*
-13. **Reusing a verification method across a change of scale.** The round-trip check for
-   "is this built sample the frame the human labelled?" reached for the dHash that
-   verified the window mapping in Session I. That question was ±1600 frames and a
-   different scene; this one is ±1 frame on a 60 fps static court, where **every
-   candidate frame reads 14 bits** and JPEG plus the 1080p→512×288 resize contribute 6–8
-   of their own. The test would have passed identically whether the mapping was right or
-   wrong. Replaced with an argmin of mean-abs-diff over ±3 frames, which resolves it —
-   and which reports its margin, so a frozen scene declares itself unresolvable instead
-   of quietly passing.
-18. **Reading a crop as if it were the frame.** Reviewing arm B's 166 false fires from
-   140 px context tiles, four `am_hard_utr` locks looked like close-ups of a face and
-   were written up as "the clip cuts to commentary — footage no ball detector can be
-   scored on", with a follow-on recommendation to trim the old gold clips. Pulling the
-   **full** frames killed it: every one is an ordinary wide tennis shot with a player
-   walking past the near corner, whose head fills a 140 px tile taken from 1920×1080.
-   The shipped face test agreed — 0 big faces in all 308 no-ball frames — and the
-   correct response was to believe it and go look, not to assume the cascade had missed
-   a cap and sunglasses. Same shape as calling the user's hand calibrations misplaced
-   from 560 px thumbnails, twice. **A crop is evidence about a crop.** Before any claim
-   about what a frame *is* — a cutaway, an overlay, a scene cut — render the frame.
-   (The overlay version of the same hypothesis was then killed by measurement rather
-   than by eye: several gold clips do carry a burned-in scoreboard, but only **1 of 166**
-   locks lands in the top-left corner where they sit, and 17 anywhere in the outer 12%
-   band. Burned-in graphics are not where these false fires come from.)
-19. **Reading a detection RATE as evidence the detector found the right thing.** Session G
-   part 4 reported "stock racket detection genuinely works on this footage — a racket is
-   found on 64–100% of sampled frames per clip, so the ceiling here is the CRITERION, not
-   the detector", and that sentence shaped two sessions of follow-up. Re-measured: on the
-   clip where racquet confusers dominate, a racket is found on 79.5% of frames and sits
-   **737–869 px** from the lock every time. It was finding the near player's racket while
-   the ball detector fired on the far player's. A coverage percentage answers *did the
-   model output something*, never *did it output the thing this argument needs*. **Score
-   the association, not the presence** — distance from the lock to the nearest box was one
-   line of code and reverses the conclusion.
-20. **Inferring a defect's SIZE from an assumption about the footage.** Rally
-   segmentation was written up as "63 rallies where reality is 8–15 points, the score is
-   badly wrong" — from a real symptom (0 of 62 inter-rally gaps ≥10 s) plus an unstated
-   assumption that the clip contained unedited between-point dead time. It does not: only
-   **12%** of yt_match40's human-labelled frames are no-ball, where an unedited match is
-   mostly dead time. The replacement figure — **~35–40 points against 63 rallies, a
-   1.6× over-split rather than 5×** — was read off the clip's own burned-in scoreboard
-   and is itself **WITHDRAWN (2026-08-17)** with the rest of that family, so the
-   over-split is now **UNSIZED**. Two further numbers in the same write-up were
-   artefacts: the "median gap 0.00 s" measured `start_s − end_s` where `end_s` is the
-   last shot's *bounce*, not the criterion the code splits on. **Before sizing a defect,
-   establish what the correct answer is** — and note this trap has now fired TWICE on
-   the same defect, the second time on its own correction. The closing advice used to
-   read *"it was sitting in the pixels of three clips, free"*; it was free because it
-   was somebody's **data entry**, not the court.
-21. **Re-deriving a rule instead of sharing it — then trusting the copy over the pixels.**
-   `build()` numbers each training triplet by its POSITION in the usable-frame list and drops
-   `unsure` labels; the round-trip gate re-derived that list and KEPT them, so on any clip
-   with an unsure label every later sample was checked against the wrong source frame. It
-   presented as a clean, alarming **+2/+3 frame offset with a 20–30% lead** — exactly what a
-   real data corruption looks like — and the first response was to write it up as one and
-   plan to exclude the clips. What settled it was **sequential decode from frame 0**, the one
-   read path that uses no seeking: `build()` was exact to **MAD 0.0000**. The tell had been
-   free all along — the only two clips that failed were the only two with an `unsure` label,
-   and all 19 with none passed. **When a checker and the thing it checks disagree, the checker
-   is a suspect too**, and a rule with two implementations will eventually have two meanings.
-   Now one function, `labels_to_dataset.usable_frames`, called by both, with an assertion in
-   `build()` that it still selects exactly what gets written.
+Add a trap when a process mistake happens the **second** time. Never renumber
+them: they are cited by number from 13 files, including code.

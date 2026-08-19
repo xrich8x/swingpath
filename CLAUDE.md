@@ -13,6 +13,9 @@ Project context for Claude Code. Read this before editing.
   `.claude/hooks/scoreboard-guard.sh` refuses any commit that touches code without also
   modifying SCOREBOARD.md. Doc-, data- and config-only commits pass; put
   `[no-scoreboard]` in the message for a change that genuinely moves no number.
+- **[TRAPS.md](TRAPS.md)** — 21 process failures this project hit **twice**, split
+  out of SCOREBOARD on 2026-08-17. Append-only history, unlike SCOREBOARD's mutable
+  state. **Never renumber** — cited by number from 13 files including code.
 - **[README.md](README.md)** — what the project is + how to run it (quickstart, layout).
 - **[ML_PRACTICES.md](ML_PRACTICES.md)** — how to *conduct* ML work: honesty, evidence
   tags, ground-truth-before-metrics, reproducibility, the session-end checklist.
@@ -303,7 +306,7 @@ a rule that gets forgotten** — that is why both are hooks, not paragraphs.
 | Court constants in `court.py` | `frontend/src/lib/court.js` | `tests/test_js_mirror_parity.py` |
 | `calibration.py`'s call-accuracy table | `frontend/src/lib/calls.js` | `tests/test_js_mirror_parity.py` |
 | A model, weight file, or runtime | **SCOREBOARD.md** "The stack" | judgement |
-| A process mistake hit **twice** | **SCOREBOARD.md** "Traps" | judgement |
+| A process mistake hit **twice** | **[TRAPS.md](TRAPS.md)** (split out of SCOREBOARD 2026-08-17; never renumber — cited by number from code) | judgement |
 
 **Which doc is authoritative for what**, so they can go stale gracefully instead of
 contradicting each other:
