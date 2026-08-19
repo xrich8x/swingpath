@@ -1,0 +1,93 @@
+{
+ "clip": "yt_rally2",
+ "video": "data/yt_rally2.mp4",
+ "video_sha1": "6afdbd376a6ed7729ecfe515d81bb2b8e812dd15",
+ "width": 1280,
+ "height": 720,
+ "fps": 60.0,
+ "video_frames": 2215,
+ "created": "2026-07-05 22:50:42",
+ "params": {
+  "target": 250,
+  "frame_step": 2,
+  "static_step_px": 3.0,
+  "static_min_run": 5,
+  "disagree_px": 10.0,
+  "caches": [
+   "data/output/demo30.perception.json",
+   "data/output/demo30_staticgate_fusion.perception.json",
+   "data/output/demo30_staticgate_tracknet.perception.json",
+   "data/output/demo30b.perception.json"
+  ],
+  "match": "data/output/demo30.json",
+  "keypoints": "data/yt_rally2_pts.json"
+ },
+ "bucket_counts": {
+  "serve": 50,
+  "disagree": 50,
+  "noball": 100,
+  "near": 50,
+  "far": 50
+ },
+ "frames": [
+  {
+   "frame": 82,
+   "bucket": "serve"
+  },
+  {
+   "frame": 210,
+   "bucket": "noball"
+  },
+  {
+   "frame": 440,
+   "bucket": "noball"
+  },
+  {
+   "frame": 930,
+   "bucket": "disagree"
+  },
+  {
+   "frame": 1056,
+   "bucket": "disagree"
+  },
+  {
+   "frame": 1240,
+   "bucket": "disagree"
+  },
+  {
+   "frame": 1316,
+   "bucket": "noball"
+  },
+  {
+   "frame": 1570,
+   "bucket": "disagree"
+  },
+  {
+   "frame": 1820,
+   "bucket": "serve"
+  },
+  {
+   "frame": 1954,
+   "bucket": "near"
+  },
+  {
+   "frame": 2024,
+   "bucket": "noball"
+  }
+ ],
+ "extensions": [
+  {
+   "date": "2026-07-05 23:53:34",
+   "tool": "extend_noball_frames.py",
+   "added": 50,
+   "fp_candidates": 25,
+   "seeded": 25
+  }
+ ],
+ "relabel_pass": {
+  "of": "yt_rally2",
+  "seed": 0,
+  "n": 11,
+  "why": "P0-2 self-consistency, blind re-label"
+ }
+}

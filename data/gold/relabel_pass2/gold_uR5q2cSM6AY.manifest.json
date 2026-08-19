@@ -1,0 +1,66 @@
+{
+ "clip": "gold_uR5q2cSM6AY",
+ "video": "data/gold_clips/uR5q2cSM6AY.mp4",
+ "video_sha1": "aa173305b6f2872337069b0e375137dc499a33d3",
+ "width": 1920,
+ "height": 1080,
+ "fps": 60.0,
+ "video_frames": 21361,
+ "created": "2026-08-11 22:39:29",
+ "params": {
+  "target": 200,
+  "frame_step": 2,
+  "static_step_px": 3.0,
+  "static_min_run": 5,
+  "disagree_px": 10.0,
+  "caches": [
+   "data/output/demo30.perception.json",
+   "data/output/demo30_staticgate_fusion.perception.json",
+   "data/output/demo30_staticgate_tracknet.perception.json",
+   "data/output/demo30b.perception.json"
+  ],
+  "match": "data/output/demo30.json",
+  "keypoints": "data/uR5q2cSM6AY_pts.json",
+  "segments": null,
+  "segment_windows": null
+ },
+ "bucket_counts": {
+  "serve": 40,
+  "disagree": 40,
+  "noball": 40,
+  "near": 40,
+  "far": 40
+ },
+ "frames": [
+  {
+   "frame": 518,
+   "bucket": "far"
+  },
+  {
+   "frame": 616,
+   "bucket": "near"
+  },
+  {
+   "frame": 882,
+   "bucket": "disagree"
+  },
+  {
+   "frame": 1056,
+   "bucket": "disagree"
+  },
+  {
+   "frame": 1292,
+   "bucket": "disagree"
+  },
+  {
+   "frame": 1544,
+   "bucket": "near"
+  }
+ ],
+ "relabel_pass": {
+  "of": "gold_uR5q2cSM6AY",
+  "seed": 0,
+  "n": 6,
+  "why": "P0-2 self-consistency, blind re-label"
+ }
+}

@@ -2240,6 +2240,11 @@
       "A": 90.8,
       "B": 0.0
     },
+    "rally_break_reasons": {
+      "timeout": 5,
+      "tennis_rule": 0
+    },
+    "score_validation_note": "unvalidated: all 5 rally breaks came from a 2.0 s gap timer, none from the tennis second-bounce rule, and this layer has no ground truth to be scored against",
     "distance_run_note": {
       "B": "located on 0.0% of frames, under the 50% a path integral needs"
     },

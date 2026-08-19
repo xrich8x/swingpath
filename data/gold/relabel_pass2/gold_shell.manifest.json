@@ -1,0 +1,59 @@
+{
+ "clip": "gold_shell",
+ "video": "data/gold_shell.mp4",
+ "video_sha1": "4f6c9f201b94e0fd117c8bb616e50437f3305fe0",
+ "width": 1280,
+ "height": 720,
+ "fps": 30.0,
+ "video_frames": 5400,
+ "created": "2026-07-22 12:38:24",
+ "params": {
+  "target": 240,
+  "frame_step": 1,
+  "static_step_px": 3.0,
+  "static_min_run": 5,
+  "disagree_px": 10.0,
+  "caches": [],
+  "match": "",
+  "keypoints": ""
+ },
+ "bucket_counts": {
+  "uniform": 240
+ },
+ "frames": [
+  {
+   "frame": 407,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 1559,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 3050,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 3479,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 3705,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 4157,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 5196,
+   "bucket": "uniform"
+  }
+ ],
+ "relabel_pass": {
+  "of": "gold_shell",
+  "seed": 0,
+  "n": 7,
+  "why": "P0-2 self-consistency, blind re-label"
+ }
+}

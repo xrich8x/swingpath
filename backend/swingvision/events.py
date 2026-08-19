@@ -445,31 +445,48 @@ def detect_bounces_between_hits(
 
 
 def segment_rallies(hit_times: Sequence[float], gap_s: float = 4.0,
-                    force_break_after: Sequence[int] = ()) -> list[list[int]]:
+                    force_break_after: Sequence[int] = (),
+                    with_reasons: bool = False):
     """Group hit indices into rallies. A gap longer than `gap_s` between
     consecutive hits ends a rally. Pure logic — a deterministic split.
 
     `force_break_after` are hit indices after which the rally MUST end regardless
     of timing — the tennis rule that a second bounce before the next contact ends
-    the point (whatever contact follows is a pickup/feed, not rally play)."""
+    the point (whatever contact follows is a pickup/feed, not rally play).
+
+    `with_reasons=True` also returns WHICH rule ended each rally, as
+    {"timeout": n, "tennis_rule": m}. That distinction is the only honest signal
+    this layer has about itself: it has no ground truth at all (no point boundary
+    has ever been labelled), so it cannot be scored — but it CAN say whether it is
+    following the laws of tennis or a stopwatch. Measured on yt_match40, **62 of 62
+    breaks came from the timeout and 0 from the tennis rule**, because the ball is
+    lost a median of 5 frames after the final bounce and a second bounce needs a
+    whole down-up arc. A split driven entirely by a 2 s timer is a heuristic
+    wearing a rule's clothes, and the user should be told so.
+
+    The default return shape is UNCHANGED so existing callers are untouched.
+    """
     breaks = set(force_break_after)
     rallies: list[list[int]] = []
     current: list[int] = []
     prev_t: float | None = None
+    reasons = {"timeout": 0, "tennis_rule": 0}
     for i, t in enumerate(hit_times):
         if prev_t is not None and t - prev_t > gap_s:
             if current:
                 rallies.append(current)
+                reasons["timeout"] += 1
             current = []
         current.append(i)
         prev_t = t
         if i in breaks:
             rallies.append(current)
+            reasons["tennis_rule"] += 1
             current = []
             prev_t = None
     if current:
         rallies.append(current)
-    return rallies
+    return (rallies, reasons) if with_reasons else rallies
 
 
 def _kp(kpts, idx, conf=0.3):

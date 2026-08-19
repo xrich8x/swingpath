@@ -318,7 +318,14 @@ export default function Statistics({ match }) {
     <div className="stats">
       <div className="tiles">
         <Tile label="Shots" value={s.shot_count} />
-        <Tile label="Rallies" value={s.rally_count} />
+        {/* Rally segmentation has no ground truth and is currently split by a
+            2 s gap timer rather than the tennis second-bounce rule; the backend
+            reports which, and the tile must not imply a validated count. */}
+        <Tile
+          label="Rallies"
+          value={s.rally_count}
+          sub={s.score_validation_note ? "unvalidated" : undefined}
+        />
         <Tile
           label="Avg speed"
           value={s.avg_speed_kmh > 0 ? `${speedPrefix}${fmtSpeed(s.avg_speed_kmh)}` : fmtSpeed(s.avg_speed_kmh)}

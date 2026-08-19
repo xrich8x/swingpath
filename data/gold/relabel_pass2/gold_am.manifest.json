@@ -1,0 +1,75 @@
+{
+ "clip": "gold_am",
+ "video": "data/gold_am.mp4",
+ "video_sha1": "5f7b7b288547ea13b637e529ef1928ef6b6e8b0c",
+ "width": 1280,
+ "height": 720,
+ "fps": 30.0,
+ "video_frames": 5400,
+ "created": "2026-07-22 12:38:45",
+ "params": {
+  "target": 240,
+  "frame_step": 1,
+  "static_step_px": 3.0,
+  "static_min_run": 5,
+  "disagree_px": 10.0,
+  "caches": [],
+  "match": "",
+  "keypoints": ""
+ },
+ "bucket_counts": {
+  "uniform": 240
+ },
+ "frames": [
+  {
+   "frame": 181,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 678,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 994,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 2440,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 2553,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 2688,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 2779,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 3027,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 3501,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 3705,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 4947,
+   "bucket": "uniform"
+  }
+ ],
+ "relabel_pass": {
+  "of": "gold_am",
+  "seed": 0,
+  "n": 11,
+  "why": "P0-2 self-consistency, blind re-label"
+ }
+}

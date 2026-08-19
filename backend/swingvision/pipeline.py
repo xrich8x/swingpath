@@ -612,7 +612,8 @@ def _probe_ball_model(video_path, ball_weights, device, frame_step, max_frames,
     return max(scores, key=scores.get)
 
 
-def _reject_static_player(positions, kpts, label, min_move_px: float = 12.0):
+def _reject_static_player(positions, kpts, label, min_move_px: float = 12.0,
+                          body_relative: bool = False):
     """Null a player track that barely moves over the clip.
 
     Selection can fall back to a person-shaped static object (poster, fixture)
@@ -622,6 +623,25 @@ def _reject_static_player(positions, kpts, label, min_move_px: float = 12.0):
     amplification turns pose jitter on a fixture into fake metres). Below
     `min_move_px` (90th-percentile displacement from the median body centre) the
     whole track is wiped.
+
+    KNOWN DEPTH BIAS, measured 2026-08-17 — the fixed 20 px / 8 px radii below are
+    depth-blind, and that is why the far player never survives. With
+    `--far-player-rescue` on yt_rally2 the far track arrives here at **412/1108
+    frames (37.2%)** and leaves at **0.0%**: 304 frames are dropped as
+    "static fixtures" and the remnant is then binned by the <15% rule. The near
+    player on the same clip is untouched (90.8% → 90.8%). The cause is geometry,
+    not detection: a far player on a 3.2 m mount is a fraction of a near player's
+    pixel size, so metres of real running map to a handful of image pixels and
+    land inside a radius written for a near player. Same family as the resolution
+    scaling trap, on the DEPTH axis instead.
+
+    `body_relative=True` expresses the radii as fractions of that track's own
+    median body height instead of absolute pixels, which is depth-invariant: a
+    poster still does not move relative to its own size, so the fixture test
+    survives while the far-player bias does not. **Off by default and NOT shipped**
+    — it is one measurement on one clip and the fixture population it guards
+    against is not represented in any gold clip. Numbers are in the docstring so
+    the measurement is not repeated (same treatment as `bounce_reset`).
     """
     idx, centres = [], []
     for i, k in enumerate(kpts):
@@ -643,10 +663,26 @@ def _reject_static_player(positions, kpts, label, min_move_px: float = 12.0):
     drop = set()
     frames = np.asarray(idx)
     coverage = n / max(len(kpts), 1)
+    # Depth-invariant radii: a fraction of THIS track's own body height. 20 px and
+    # 8 px were written for a near player and are what deletes the far one.
+    r20, r8 = 20.0, 8.0
+    if body_relative:
+        heights = []
+        for k in kpts:
+            if not k:
+                continue
+            ys = [y for _, y, c in k if c > 0.3]
+            if len(ys) >= 2:
+                heights.append(max(ys) - min(ys))
+        if heights:
+            bh = float(np.median(heights))
+            if bh > 1e-6:
+                # 20 px against a ~110 px near-player body ~= 0.18 body heights.
+                r20, r8 = 0.18 * bh, 0.072 * bh
     for j in range(n):
         d = np.hypot(arr[:, 0] - arr[j, 0], arr[:, 1] - arr[j, 1])
-        near20 = d < 20.0
-        near8 = d < 8.0
+        near20 = d < r20
+        near8 = d < r8
         # ±8 px recurrence across a long span flags a fixture — but only on SPARSE
         # tracks (fixtures are fallbacks that appear when the real player is
         # missed). A well-tracked real player legitimately returns to the same
@@ -1891,8 +1927,9 @@ def _build_match_from_events(
 
     # Segment shots into rallies by the gap between consecutive hits — and break
     # unconditionally after any shot whose SECOND bounce ended the point.
-    groups = events.segment_rallies([s.t_hit_s for s in shots], gap_s=2.0,
-                                    force_break_after=force_break)
+    groups, break_reasons = events.segment_rallies(
+        [s.t_hit_s for s in shots], gap_s=2.0, force_break_after=force_break,
+        with_reasons=True)
     rallies: list[Rally] = []
     for rid, group in enumerate(groups):
         rshots = [shots[i] for i in group]
@@ -1962,6 +1999,29 @@ def _build_match_from_events(
             notes[pid] = why
             print(f"[analyze] distance run {pid} ({side}) NOT REPORTED — {why}")
     stats.distance_run_m = dist
+    # The rally/score layer has NO ground truth — no point boundary has ever been
+    # labelled — so it cannot be scored. What it CAN report is which rule split
+    # the rallies: the laws of tennis (a second bounce) or a 2 s stopwatch. When
+    # the tennis rule never fires, segmentation is a heuristic wearing a rule's
+    # clothes and the score built on it is unvalidated. Say so rather than
+    # printing a confident scoreline.
+    stats.rally_break_reasons = dict(break_reasons)
+    _tot_breaks = break_reasons["timeout"] + break_reasons["tennis_rule"]
+    if _tot_breaks and break_reasons["tennis_rule"] == 0:
+        stats.score_validation_note = (
+            f"unvalidated: all {break_reasons['timeout']} rally breaks came from a "
+            f"2.0 s gap timer, none from the tennis second-bounce rule, and this "
+            f"layer has no ground truth to be scored against")
+    elif _tot_breaks:
+        stats.score_validation_note = (
+            f"unvalidated: {break_reasons['timeout']} of {_tot_breaks} rally breaks "
+            f"came from a 2.0 s gap timer rather than the tennis second-bounce "
+            f"rule; this layer has no ground truth to be scored against")
+    else:
+        stats.score_validation_note = (
+            "unvalidated: this layer has no ground truth to be scored against")
+    print(f"[analyze] rally breaks: {break_reasons['timeout']} timeout / "
+          f"{break_reasons['tennis_rule']} tennis-rule -> score reported as UNVALIDATED")
     stats.player_track_coverage = cover
     stats.distance_run_note = notes
     return Match(

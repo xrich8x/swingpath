@@ -103,11 +103,24 @@ export default function App() {
           </button>
         </div>
 
-        <div className="scoreline" title="Final / running score">
+        <div
+          className="scoreline"
+          title={
+            match.stats?.score_validation_note
+              ? `Score is UNVALIDATED - ${match.stats.score_validation_note}`
+              : "Final / running score"
+          }
+        >
           <div className="scoreline-players">
             {playerName(match, "A")} vs {playerName(match, "B")}
           </div>
           <div className="scoreline-score">{match.score.final}</div>
+          {/* No ground truth exists for this layer - no point boundary has ever
+              been labelled - so the scoreline must not read as a measurement the
+              way a shot speed or a line call does. */}
+          {match.stats?.score_validation_note && (
+            <div className="scoreline-caveat">unvalidated</div>
+          )}
         </div>
 
         <div className="topbar-actions">

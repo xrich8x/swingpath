@@ -1,0 +1,46 @@
+{
+ "clip": "gold_UHf0LeMU2pg",
+ "video": "data/gold_clips/UHf0LeMU2pg.mp4",
+ "video_sha1": "77da8bcd2642ce70a0052a7fddd3473dabfaa027",
+ "width": 1920,
+ "height": 1080,
+ "fps": 60.0,
+ "video_frames": 7441,
+ "created": "2026-08-11 22:39:53",
+ "params": {
+  "target": 200,
+  "frame_step": 2,
+  "static_step_px": 3.0,
+  "static_min_run": 5,
+  "disagree_px": 10.0,
+  "caches": [
+   "data/output/demo30.perception.json",
+   "data/output/demo30_staticgate_fusion.perception.json",
+   "data/output/demo30_staticgate_tracknet.perception.json",
+   "data/output/demo30b.perception.json"
+  ],
+  "match": "data/output/demo30.json",
+  "keypoints": "data/UHf0LeMU2pg_pts.json",
+  "segments": null,
+  "segment_windows": null
+ },
+ "bucket_counts": {
+  "serve": 40,
+  "disagree": 40,
+  "noball": 40,
+  "near": 40,
+  "far": 40
+ },
+ "frames": [
+  {
+   "frame": 624,
+   "bucket": "noball"
+  }
+ ],
+ "relabel_pass": {
+  "of": "gold_UHf0LeMU2pg",
+  "seed": 0,
+  "n": 1,
+  "why": "P0-2 self-consistency, blind re-label"
+ }
+}

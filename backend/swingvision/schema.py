@@ -155,6 +155,15 @@ class Stats:
     # one of the two reasons a value may be None; it is also useful on its own as
     # an honest statement of how much of the clip each player was visible for.
     player_track_coverage: dict[str, float] = field(default_factory=dict)
+    # Which rule ended each rally: {"timeout": n, "tennis_rule": m}. The rally and
+    # score layer has NO ground truth (no point boundary has ever been labelled),
+    # so it cannot be scored — but it can report whether it followed the laws of
+    # tennis or a 2 s stopwatch. Measured on yt_match40: 62 timeout, 0 tennis_rule.
+    rally_break_reasons: dict[str, int] = field(default_factory=dict)
+    # Plain-English reason the score/rally figures are not validated. ALWAYS set
+    # by analyze_video, because this layer is unvalidated in every case today —
+    # the UI must not present a scoreline as a measurement.
+    score_validation_note: str = ""
     # Why a distance_run_m entry is None, per player. There are TWO independent
     # reasons and coverage only explains one of them: a sparse track (low
     # coverage), or DOUBLES, where the two-slot tracker puts both partners

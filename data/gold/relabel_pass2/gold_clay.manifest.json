@@ -1,0 +1,63 @@
+{
+ "clip": "gold_clay",
+ "video": "data/gold_clay.mp4",
+ "video_sha1": "bcba794b568948b50252d51be3e66dd6d74ec6f3",
+ "width": 1280,
+ "height": 720,
+ "fps": 59.94006309148265,
+ "video_frames": 10790,
+ "created": "2026-07-22 12:38:31",
+ "params": {
+  "target": 240,
+  "frame_step": 1,
+  "static_step_px": 3.0,
+  "static_min_run": 5,
+  "disagree_px": 10.0,
+  "caches": [],
+  "match": "",
+  "keypoints": ""
+ },
+ "bucket_counts": {
+  "uniform": 240
+ },
+ "frames": [
+  {
+   "frame": 2844,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 4605,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 4830,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 6410,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 8667,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 8758,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 10428,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 10789,
+   "bucket": "uniform"
+  }
+ ],
+ "relabel_pass": {
+  "of": "gold_clay",
+  "seed": 0,
+  "n": 8,
+  "why": "P0-2 self-consistency, blind re-label"
+ }
+}

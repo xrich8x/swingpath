@@ -1,0 +1,71 @@
+{
+ "clip": "yt_match40",
+ "video": "data/yt_match40.mp4",
+ "video_sha1": "74b22f2f125f30d98c2d9acf3772cc2e03a97b68",
+ "width": 1280,
+ "height": 720,
+ "fps": 29.0,
+ "video_frames": 10268,
+ "created": "2026-07-06 00:13:53",
+ "params": {
+  "target": 300,
+  "frame_step": 1,
+  "static_step_px": 3.0,
+  "static_min_run": 5,
+  "disagree_px": 10.0,
+  "caches": [],
+  "match": "",
+  "keypoints": ""
+ },
+ "bucket_counts": {
+  "uniform": 300
+ },
+ "frames": [
+  {
+   "frame": 584,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 858,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 1374,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 2095,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 4327,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 5734,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 7039,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 8893,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 8962,
+   "bucket": "uniform"
+  },
+  {
+   "frame": 9786,
+   "bucket": "uniform"
+  }
+ ],
+ "relabel_pass": {
+  "of": "yt_match40",
+  "seed": 0,
+  "n": 10,
+  "why": "P0-2 self-consistency, blind re-label"
+ }
+}
