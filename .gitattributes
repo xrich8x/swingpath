@@ -1,3 +1,11 @@
 # Python sources are LF in git. Two files on a working branch got written back as
 # CRLF, which turned a 213-line merge into a 3335-line whole-file conflict.
 *.py text eol=lf
+
+# Markdown is LF in git too, for the same reason as the Python rule above and
+# because it bit again on 2026-08-17: a tool rewrote CLAUDE.md and
+# ML_PRACTICES.md and silently flipped them LF->CRLF, turning a 106-line edit
+# into a 728-line whole-file diff. Before this rule the repo was split 41 LF /
+# 11 CRLF / 1 MIXED, with SCOREBOARD.md - the file that MUST change on every
+# code commit - on the minority side.
+*.md text eol=lf
