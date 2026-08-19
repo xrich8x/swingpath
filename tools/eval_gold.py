@@ -99,6 +99,41 @@ def score(cache: dict, gold: dict[int, dict], buckets: dict[int, str],
     return res
 
 
+def prf1(r: dict) -> dict:
+    """Precision / recall / F1 from the hit-wrong-miss-FP counts.
+
+    WHY THIS EXISTS (review finding P1-2)
+    -------------------------------------
+    Every number this project publishes is a HIT-RATE at tau=10 px. The ball-
+    tracking literature reports **F1 at tau=4 px** (WASB, TrackNetV3). Those are
+    not comparable on either axis, and nothing said so - so "ours gets 69.4%"
+    sitting next to "WASB gets F1 95.6" invited a comparison that is invalid
+    twice over before footage difficulty is even considered.
+
+    Definitions, stated because the ball case has a third outcome most detection
+    tasks do not:
+      TP  a lock within tau px of the human click on a ball frame
+      FP  a lock FARTHER than tau on a ball frame (the tracker found something
+          else - "wrong"), PLUS any lock on a human no-ball frame
+      FN  no lock at all on a ball frame ("miss")
+    Counting `wrong` as a false positive is the strict reading and the right one:
+    a confident lock on a net post is not a partial success.
+
+    AP IS DELIBERATELY ABSENT. Average Precision needs a per-detection confidence
+    to sweep, and the perception caches store positions only (`ball_px`), no
+    score. Emitting an AP-shaped number from thresholded data would be inventing
+    a metric, so this reports what the data supports and says why.
+    """
+    tp = r["hit"]
+    fp = r["wrong"] + r["fp"]
+    fn = r["miss"]
+    prec = tp / (tp + fp) if (tp + fp) else 0.0
+    rec = tp / (tp + fn) if (tp + fn) else 0.0
+    f1 = 2 * prec * rec / (prec + rec) if (prec + rec) else 0.0
+    return {"precision": prec, "recall": rec, "f1": f1,
+            "tp": tp, "fp": fp, "fn": fn}
+
+
 def pct(a: int, b: int) -> str:
     return f"{100.0 * a / b:5.1f}%" if b else "    –"
 
@@ -180,6 +215,28 @@ def main() -> None:
           f"{pct(r['hits5'], r['n_ball']):>7} {pct(r['hits25'], r['n_ball']):>7} "
           f"{med:>8} {pct(r['fp'], r['n_noball']):>12}"
           + (f"  [{r['skipped']} skipped]" if r["skipped"] else ""))
+    w()
+
+    # Comparability block: the field reports F1 at tau=4, we report hit-rate at
+    # tau=10. Print BOTH so the gap is visible rather than implied.
+    w("precision / recall / F1 - `wrong` counted as a false positive, and a lock "
+      "on a no-ball frame too.")
+    w("tau=4 px is the ball-tracking literature's threshold (WASB, TrackNetV3); "
+      "tau=10 px is what this")
+    w("project has always reported. AP is NOT shown: it needs a per-detection "
+      "confidence and the caches")
+    w("store positions only - see tools/eval_gold.prf1.")
+    hdr3 = (f"{'track':<22} {'P@4':>7} {'R@4':>7} {'F1@4':>7}   "
+            f"{'P@10':>7} {'R@10':>7} {'F1@10':>7}")
+    w(hdr3)
+    w("-" * len(hdr3))
+    for name, _ in results:
+        cache = caches[names.index(name)]
+        a = prf1(score(cache, gold, buckets, 4.0))
+        b = prf1(score(cache, gold, buckets, 10.0))
+        w(f"{name:<22} {100*a['precision']:6.1f}% {100*a['recall']:6.1f}% "
+          f"{100*a['f1']:6.1f}%   {100*b['precision']:6.1f}% "
+          f"{100*b['recall']:6.1f}% {100*b['f1']:6.1f}%")
     w()
 
     bucket_names = [b for b in ("serve", "near", "far", "disagree", "noball")

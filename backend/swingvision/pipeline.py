@@ -933,6 +933,13 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
         # 2026-08-17 on the current 10-clip gold set (v21, +57% training data and
         # hard-negative mining since the numbers below were first written): it
         # beats TrackNet by +2.9 pts hit@10 pooled (60.8 vs 57.9) and WASB by
+        # +11.5 — but hit-rate ignores false positives, and on F1 that lead is
+        # a TIE at tau=10 (71.4 vs 70.9) and a 9.3-point LOSS at the field's
+        # tau=4, where TrackNet wins 9 of 10 clips. BallNet is recall-first
+        # (best recall, worst precision of the three); its value is what the
+        # suppression chain below turns that recall into, which is exactly why
+        # it is gated on having a calibration. Do not quote it as the better
+        # bare detector.
         # +11.5 pts (60.8 vs 49.3) — real, but a much smaller TrackNet margin than
         # this comment used to claim; end-to-end vs the HUD its extra recall cut
         # per-shot speed error 28% -> 16% (E3j, not re-measured here). It DOES

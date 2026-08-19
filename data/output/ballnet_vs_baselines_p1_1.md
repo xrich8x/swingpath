@@ -28,7 +28,44 @@ shipped ~6.0% pooled false-fire figure in SCOREBOARD.md; it's the RELATIVE
 precision of the three raw-ish detectors under identical conditions, which is the
 correct question for a baseline comparison, just not the product number.
 
-## Reading this honestly
+## CORRECTION 2026-08-17 — on F1 the conclusion above is too kind, and at the field's threshold it reverses
+
+The table above is **hit-rate**, which counts a lock near the human click and
+ignores every lock that is somewhere else. Adding precision/recall/F1 (review
+finding P1-2, now implemented in `tools/eval_gold.py`) changes the answer,
+because F1 charges for the false positives hit-rate does not.
+
+Pooled over the same 10 clips and the same caches:
+
+| model | P@4 | R@4 | **F1@4** | P@10 | R@10 | **F1@10** |
+|---|---|---|---|---|---|---|
+| tracknet | 52.8% | 63.8% | **57.8%** | 71.4% | 70.5% | **70.9%** |
+| wasb | 42.2% | 54.4% | **47.5%** | 62.4% | 63.8% | **63.1%** |
+| ballnet_v21 (ours) | 38.2% | 66.5% | **48.5%** | 66.2% | 77.5% | **71.4%** |
+
+**At tau=4 px — the threshold WASB and TrackNetV3 publish against — TrackNet
+beats BallNet by 9.3 F1 points and wins 9 of 10 clips. BallNet wins none.**
+At tau=10 px BallNet's win shrinks to **+0.5 F1**, i.e. a tie, not the "+2.9 pts"
+the hit-rate table reports.
+
+The shape is consistent and diagnostic: BallNet has the **best recall of the
+three at both thresholds** (66.5 / 77.5) and the **worst precision** (38.2 /
+66.2). It finds the ball more often and localises it less precisely, while firing
+more often on things that are not the ball. A strict threshold punishes exactly
+that trade.
+
+**What this does NOT say.** These caches are tracker output *without*
+`suppress_false_locks` and `smooth_forecast`, which is where this project spends
+most of its effort converting BallNet's recall into usable precision. All three
+models are handicapped identically, so the comparison stays fair, but the
+absolute precision here is not the shipped number. The honest summary is:
+**BallNet is a recall-first detector that the chain is built to clean up, and
+judged as a bare detector at the field's threshold it is behind TrackNet.**
+
+AP is still not reported: it needs a per-detection confidence to sweep and the
+caches store positions only.
+
+## Reading this honestly (hit-rate view — read the F1 correction above first)
 
 **BallNet v21 still wins on hit@10, but by a much smaller margin than the
 undated "+10.5 pts" claim that lived in `pipeline.py`'s auto-select comment**
@@ -46,9 +83,13 @@ where all three sit at 16-29%). That co-movement is a point in favor of
 "this footage is hard," not "our detector is broken."
 
 **So the honest one-line answer to "is the custom model still worth its
-training cost":** yes on raw hit-rate, by a real but modest margin over
-TrackNet and a clear one over WASB — but the bigger, well-established lever
-remains what the suppression chain buys on top, not detector choice alone.
+training cost" — SUPERSEDED by the F1 correction above, kept for the reasoning.**
+It read: *"yes on raw hit-rate, by a real but modest margin."* On F1, which
+charges for false positives, the margin at tau=10 is +0.5 (a tie) and at the
+field's tau=4 TrackNet is ahead by 9.3 points on 9 of 10 clips. The defensible
+version: **BallNet is a recall-first detector whose value is realised by the
+suppression chain, not by beating TrackNet as a bare detector.** The bigger lever
+is still the chain, which both readings agree on.
 
 ## Per clip
 
