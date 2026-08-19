@@ -17,6 +17,13 @@
             "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/docs-guard.sh\"",
             "timeout": 10,
             "statusMessage": "Checking the user-facing docs match the CLI"
+          },
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/withdrawn-guard.sh\"",
+            "timeout": 10,
+            "statusMessage": "Checking no withdrawn figure survives in a live doc"
           }
         ]
       }

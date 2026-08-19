@@ -22,6 +22,20 @@ a change that genuinely moves no number — a typo, a rename, a revert — put
 - changed the stack (a model, a runtime, a piece of hardware) → update **The stack**
 - got burned by a process mistake twice → add it to **Traps**
 
+**The one formatting rule, and it exists because ignoring it has cost three
+corrections:** an **Open** row may NOT restate a number that another table owns —
+it cites the row instead. Every self-contradiction this file has produced had the
+same shape: a figure was corrected or withdrawn in an append-only table (What has
+worked / not worked / Traps) while a *copy* of it survived in the mutable Open
+table. One number, one home. If Open needs to mention it, name the row that owns
+it so a withdrawal cannot orphan a duplicate.
+
+**Known backlog, stated rather than quietly carried:** 5 figures still appear in
+both Open and an append-only table. One of them (`1.47x`) is already withdrawn,
+so that copy is rot TODAY; the rest (`33.1%`, `5 of 36`, `6 of 6`, `66.9%`) are
+correct now and are duplicates waiting to rot the next time one is corrected.
+Dedupe a row when you next touch it.
+
 ---
 
 ## The stack
@@ -202,6 +216,26 @@ absolute-accuracy source here.
 
 ---
 
+## Withdrawn figures
+
+Numbers this project published and later retracted. **This table is machine-read:**
+`.claude/hooks/withdrawn-guard.sh` refuses any commit where one of these strings
+still appears in a live doc without a withdrawal marker in the same block. Add a row
+the moment you withdraw a number — that is what stops a stale copy surviving
+somewhere else, which has now happened three times.
+
+| Figure | What it claimed | Withdrawn because | Date |
+|---|---|---|---|
+| `1.47x` | rally segmentation over-split vs real points | read off a burned-in scoreboard; the user rejected that premise and the tool was reverted (`afffb5a`) | 2026-08-15 |
+| `1.6x` | the same over-split, re-counted | same source, same rejected premise — it should have gone with the 1.47x and did not, surviving in the Open table and in Trap 20 | 2026-08-17 |
+| `1.6×` | as above, unicode-multiplication-sign spelling | registered separately because a literal-string check cannot see it otherwise | 2026-08-17 |
+
+Not covered here on purpose: `HANDOFF.md`, `docs/sessions/`, `docs/REVIEW-*` and
+`data/output/*` are point-in-time records. They are SUPPOSED to still contain the old
+number — that is what a dated record is. The guard skips them.
+
+---
+
 ## Open, and what each is waiting on
 
 | Item | Waiting on |
@@ -213,7 +247,7 @@ absolute-accuracy source here.
 | **Whether more data is what actually caused it** | **n = 1 training run per arm.** `--seed 0` on both fixes initialisation and seeds the shuffle, which is a real improvement on Session I's unseeded pair, but the datasets differ in size so batch composition and augmentation draws still differ, and the 9-of-10 per-clip sign test measures *evaluation* noise. Also: each arm's checkpoint is its own best epoch on its **own** validation split (A epoch 6, B epoch 12), and B's val contains the new venues. A `--seed 1` replication of arm B (~1h52m) would size the run-to-run floor; the effect is 4.1σ against evaluation noise, so the question is whether training noise is anywhere near 5 pts. |
 | **Whether a better detector can reach the ghost ball at all** | Three interventions have now cut detector false fire substantially and delivered nothing to the rendered output. Before the next detector idea, establish *which* stage absorbs it — the tracker gates and `suppress_false_locks` are the suspects, and `fire_frames_solid` plus the per-gate miss counters can answer it without new training. |
 | **Second-disk copy of the training data — DONE 2026-08-15; off-machine still open** | **The figures in this row were badly stale and the risk was bigger than recorded**: measured, `data/train_clips/` is **20 videos / 2.73 GB** (not 12 / 1.06) and `data/ball_dataset/` is **73,098 files / 3.45 GB** (not 43,904 / 2.0). Both gitignored, tracked by nothing. The dataset is nominally regenerable from the videos (`relabel_train_clips.py`) but re-processing yields different pseudo-labels, so treat it as semi-irreplaceable too. **DONE — both now copied to `C:\SwingPath_Backup\`, a physically separate disk** (E: Gigabyte / C: Kingston, both NVMe): `train_clips` all **21 files verified by SHA256 manifest**, `ball_dataset` all **73,098 files / 3.45 GB verified by count and byte-sum**. That retires **single-disk failure**, the dominant risk. **STILL OPEN:** same machine, so fire, theft and ransomware are uncovered — needs an external drive or cloud target. (Gotcha for whoever repeats it: `robocopy` exits **1** on a successful copy, so a wrapper that trusts the exit code reports a false failure.) |
-| **The far player is barely tracked at all — now measured and no longer hidden** | Newly *exposed* by the `distance_run_m` coverage gate above, which stopped the symptom (a fabricated 0.0 m) without touching the cause. Far-player coverage on the committed caches: **yt_rally2 0.0%, am_hard_utr 1.0%, demo30 9.6%, yt_match40 11.0%** — against near-player 74–92%. So every "player B" figure in the product rests on almost nothing, and `stats.player_track_coverage` now says so out loud rather than letting a stat imply otherwise. This is a KNOWN trade, not a regression: pose defaults to the `fast` preset (yolo11m@1280) because `accurate` (yolo11x@1920) costs ~2.4 s/frame, and CLAUDE.md already records that the far player is what `fast` gives up. Two untested levers exist and neither has ever been measured on this axis: `--pose-quality accurate` and `--far-player-rescue` (the tiled far-half estimator, already built and wired, default OFF). **Do not assume either works** — measure coverage before and after on a calibrated clip, and note the far player may simply be too small to resolve at a 3.2 m mount, in which case the honest answer is the gate, not more compute. Any fix must also be scored on whether it moves a *product* number, not just coverage (see the "expecting a detector gain to reach the product" dead end — four for four). |
+| **The far player is barely tracked at all — now measured and no longer hidden** | Newly *exposed* by the `distance_run_m` coverage gate above, which stopped the symptom (a fabricated 0.0 m) without touching the cause. Far-player coverage on the committed caches is **owned by the `distance_run_m` row in What has worked** — read the numbers there rather than from a copy here (method rule: an Open row cites, it does not restate). Near-player coverage is 3–4x higher on every clip. So every "player B" figure in the product rests on almost nothing, and `stats.player_track_coverage` now says so out loud rather than letting a stat imply otherwise. This is a KNOWN trade, not a regression: pose defaults to the `fast` preset (yolo11m@1280) because `accurate` (yolo11x@1920) costs ~2.4 s/frame, and CLAUDE.md already records that the far player is what `fast` gives up. Two untested levers exist and neither has ever been measured on this axis: `--pose-quality accurate` and `--far-player-rescue` (the tiled far-half estimator, already built and wired, default OFF). **Do not assume either works** — measure coverage before and after on a calibrated clip, and note the far player may simply be too small to resolve at a 3.2 m mount, in which case the honest answer is the gate, not more compute. Any fix must also be scored on whether it moves a *product* number, not just coverage (see the "expecting a detector gain to reach the product" dead end — four for four). |
 | **Bounce detection** | No true ball height from one camera. Unevaluated candidates: audio impact (module exists, unwired), monocular 3D. |
 | **Speed coverage is CHAIN-shaped, and the two stages are named** — *the best-measured open target* | **ATTRIBUTED 2026-08-15 on the population that matters.** `seen_frac` over the whole hit→landing span must be ≥50% for a trusted speed. Counting it at every chain stage: on **am_hard_utr** mean coverage goes **raw 75.5% → 72.1 (rectify) → 64.9 (suppress) → 64.9 (court gate, ZERO cost) → 52.9 (smoother)**, and shots clearing the gate go **106 of 120 → 69**. **yt_match40 is the same shape** (79.3% → 59.7%, 182 → 124). So **the detector already covers 88% of shots on the target clip and only 58% survive the chain — 37 shots lose their speed to the chain, not the detector.** Per-stage, identical order on both clips: **`smooth_forecast` largest (−12.0 / −9.7 pts), `suppress_false_locks` second (−7.2 / −8.1), court gate exactly zero** (reproducing Session G part 3); the two own ~85%. This **supersedes the post-bounce framing** — that window is the minor failure mode worth 3–4 pts, this is worth **20–23**. NO FIX PROPOSED: two smoother attempts have already failed because loosening the gate buys coverage and pays in ghosts, and this measurement does not change that trade, only its size. A third attempt needs a mechanism that **separates** real from false better, not one that admits more of both. Evidence: data/output/post_bounce_chain.md (part 3) |
 | ~~**Speed coverage — and it is CHAIN work, not detector work**~~ (superseded by the row above) | On yt_match40, **speed is not trusted for 95 of 196 shots (48%)**, the largest named reason being losing the ball *after* it lands, which closes the hit→landing span a path integral needs. **MEASURED 2026-08-15, and it settles the scoping question**: of those 95, **77 (81%) had the detector firing past the bounce and the chain discarded it**; only **18 (19%)** had a silent detector. Over ALL 196 shots the detector is present past the bounce on **90%**. (`ball_px` from the committed perception cache is the tracker's output BEFORE `suppress_false_locks` and before the Kalman, so this is exactly the "existed vs survived" split.) So this is **open chain work**, NOT the detector work the Session L stopping rule closed — and it shares a root cause with the dead second-bounce rule below. The −15% bias is average-vs-launch physics and must **never** be corrected away. |
