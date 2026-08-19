@@ -63,6 +63,50 @@ Every stage is one of three kinds. Respect the boundary — it's the architectur
 
 Do NOT "ML-ify" the geometry or logic layers — it adds error to exact answers.
 
+## The second principle: learn the GAME, not the VIDEO
+
+**Truth comes from the court — the ball, the players, the bounces, the physics.
+It never comes from something a human or an app burned into the frame.**
+
+A tennis video often carries two different things: the *game* (what the players
+and the ball actually did) and *annotations about* the game (a burned-in
+scoreboard, a SwingVision HUD reporting shot speed and stroke type, a graphic
+someone rendered on top). The second kind is tempting because it is free,
+exact-looking and already aligned to the frames. **It is somebody's data entry,
+not a measurement of the court**, and it is out of bounds as a training target,
+as a ground-truth reference and as a tuning signal.
+
+Why, concretely:
+- **Independence is not truth.** A burned-in scoreline is genuinely independent
+  of anything we compute — and still only proves it is *self-consistent*. A
+  diligently-kept WRONG board passes every internal check perfectly.
+- **It encodes another system's errors and latency.** Tuning a rally threshold
+  against point-boundary timestamps calibrates against *when somebody pressed a
+  button*, reaction lag included. Copying a HUD's shot speed teaches us to
+  reproduce SwingVision's estimator, including where it is wrong — a ceiling,
+  not a target.
+- **It does not generalise.** The user's own phone clip has no scoreboard and no
+  HUD. Anything that leans on one works only on footage that already carries the
+  answer, which is the footage that least needs us.
+- **It leaks into training.** Five training clips carried a SwingVision overlay
+  whose watermark is *a literal yellow tennis ball*, and 83 pseudo-labels landed
+  inside those graphics — we were teaching the detector that a logo is a ball.
+  Now scrubbed and enforced (`assert_no_swingvision_leak`).
+
+Legitimate references, by contrast, all describe the court: **human clicks** on
+the ball/court, **`tools/synth_truth.py`** (simulated flights with known
+physics), and geometry we can derive ourselves.
+
+**Applies to evaluation as much as to training** — the burned-in-scoreboard tool
+was a *grading* tool and was still rejected on this premise (`afffb5a`). If a
+number's provenance is "read off the video", it is not ground truth.
+
+**Known live exception, flagged not hidden:** `tools/hud_ocr.py` reads
+SwingVision's burned-in MPH panel and several shipped speed figures are measured
+against it (see SCOREBOARD method rule 11). Those numbers are *agreement with
+another estimator*, not accuracy, and must be labelled that way; `synth_truth`
+is the compliant reference for speed.
+
 ## Status: real vs stubbed
 
 - Working + tested: court.py, calibration.compute_homography/image_to_court,

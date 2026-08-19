@@ -88,6 +88,41 @@ always: build the exam first, then train.
   (23,000 pseudo-labels) for judging a model. Use the big set to train, the small
   honest set to grade.
 
+### Ground truth describes the GAME, never the VIDEO
+
+A source being *independent of us* does not make it *true*. A tennis video often
+carries annotations **about** the game — a burned-in scoreboard, a SwingVision
+HUD reporting shot speed and stroke type, a rendered graphic. Those are somebody
+else's **data entry**, and they are barred as a training target, as a
+ground-truth reference and as a tuning signal.
+
+- **Self-consistency is not correctness.** A tool read the point-by-point boards
+  on two clips and every one of 79 score transitions was legal tennis — which
+  proves the scoreline is internally coherent, not that it matches the court. A
+  diligently-kept *wrong* board passes that check perfectly. Built, rejected on
+  its premise, reverted (`afffb5a`).
+- **You inherit the other system's errors and lag.** Tuning a rally threshold
+  against point-boundary timestamps calibrates against *when somebody pressed a
+  button*. Fitting to a HUD's shot speed teaches you to reproduce that
+  estimator's mistakes — it makes the other product a ceiling, not a target.
+- **It does not generalise.** The footage this project targets — an amateur
+  phone on a fence — has no scoreboard and no HUD. Anything leaning on one works
+  only where the answer is already printed on the frame.
+- **It leaks.** Five training clips carried a SwingVision overlay whose
+  watermark is a literal yellow tennis ball; 83 pseudo-labels landed inside those
+  graphics, teaching the detector that a logo is a ball. Now scrubbed and
+  refused by `assert_no_swingvision_leak`.
+
+**Compliant sources, all of which describe the court:** human clicks on the
+ball/court, `tools/synth_truth.py` (simulated flights with known physics — the
+only absolute accuracy figures this project has), and geometry derived from the
+homography.
+
+**Live exception to declare, not hide:** `tools/hud_ocr.py` reads SwingVision's
+burned-in MPH panel, and several shipped speed numbers are measured against it.
+Report those as **agreement with another estimator, not accuracy** — the other
+system's error is inside every one of them. Prefer `synth_truth`.
+
 ## Data quality beats model cleverness
 
 Most failures on this project were data failures wearing a model costume.
