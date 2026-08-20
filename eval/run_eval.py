@@ -415,6 +415,8 @@ def main():
 
     if a.drop:
         groups = drop_clips()
+        if a.clips:
+            groups = [(c, ps) for c, ps in groups if c in set(a.clips)]
         if not groups:
             print(f"\nnothing in {DROP} - drop frames there (loose files, or one "
                   f"subdirectory per clip so its frames can vote).")

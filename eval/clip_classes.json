@@ -1,46 +1,162 @@
 {
-  "_what": [
-    "A HUMAN EYEBALL VERDICT on every recording in eval/frames/, recorded so the",
-    "denominator of any pass-rate is explicit and arguable. Made by reading",
-    "eval/sheets/*.jpg, NOT by asking the detector - selecting the test set with the",
-    "thing under test would make every survivor pass by construction.",
-    "",
-    "Why it matters: the shipped accept rule is a >=6-of-8 frame CONSENSUS, which",
-    "assumes one fixed camera on one static court. Footage that breaks that premise",
-    "refuses for reasons that have nothing to do with surface, angle or corner",
-    "visibility, so pooling it into a single headline number would be misleading.",
-    "",
-    "  fixed      one fixed camera, one court - the product's actual input, and the",
-    "             honest denominator for 'does court detection work'.",
-    "  broadcast  one venue, MULTIPLE cameras (baseline cam, serve cam, close-ups).",
-    "             The vote's premise is violated; a refusal is uninformative.",
-    "  multivenue several different courts inside one file (a highlight compilation).",
-    "             The vote CANNOT succeed - the frames are not the same court."
+ "_what": [
+  "A HUMAN EYEBALL VERDICT on every recording in eval/frames/, recorded so the",
+  "denominator of any pass-rate is explicit and arguable. Made by reading",
+  "eval/sheets/*.jpg, NOT by asking the detector - selecting the test set with the",
+  "thing under test would make every survivor pass by construction.",
+  "",
+  "Why it matters: the shipped accept rule is a >=6-of-8 frame CONSENSUS, which",
+  "assumes one fixed camera on one static court. Footage that breaks that premise",
+  "refuses for reasons that have nothing to do with surface, angle or corner",
+  "visibility, so pooling it into a single headline number would be misleading.",
+  "",
+  "  fixed      one fixed camera, one court - the product's actual input, and the",
+  "             honest denominator for 'does court detection work'.",
+  "  broadcast  one venue, MULTIPLE cameras (baseline cam, serve cam, close-ups).",
+  "             The vote's premise is violated; a refusal is uninformative.",
+  "  multivenue several different courts inside one file (a highlight compilation).",
+  "             The vote CANNOT succeed - the frames are not the same court."
+ ],
+ "_reviewed": "2026-08-20, all 54 recordings, from eval/sheets/sheet_00..06.jpg",
+ "multivenue": {
+  "uOy8ow5yoQ4": "at least 5 distinct venues across its 8 frames (Cincinnati-ish blue/green, Shanghai purple, ATP purple, Tokyo blue-green). Excluded from every pass-rate."
+ },
+ "broadcast": {
+  "45VdNMtbulA": "Australian Open, one court, broadcast cameras",
+  "9gUvgm23qMU": "Australian Open, one court, broadcast cameras",
+  "BwLUgip8OSI": "Australian Open, one court; frame 8 is a different framing",
+  "DY6WVsuHqFs": "Roland Garros clay; frames 4-5 are a low serve-cam, not the baseline camera",
+  "J8__TwOgTY0": "Wimbledon grass; frame 5 is a player close-up over the court",
+  "U5Af1jGgYqA": "Wimbledon grass, broadcast cameras",
+  "eala_segment": "grass broadcast",
+  "eala_swiatek": "grass broadcast",
+  "tennis_sample": "clay broadcast (TennisTV)",
+  "tennis_sample_short": "Shanghai broadcast; only 3 frames survived de-duplication"
+ },
+ "surface_notes": {
+  "_why": "Recorded because the brief targets clay and shell specifically, and the court GOLD set has one clay clip and no shell at all. These are eyeball surface calls on the drop set, not labels.",
+  "clay": [
+   "gold_clay",
+   "CYqapSq5llo",
+   "EQSfL7bwJ_I",
+   "SgZpQtiTG1A",
+   "l6o8FOoy3MY",
+   "tnxkujogch4",
+   "sAjkpeRq4P4",
+   "tennis_sample",
+   "DY6WVsuHqFs"
   ],
-  "_reviewed": "2026-08-20, all 54 recordings, from eval/sheets/sheet_00..06.jpg",
-  "multivenue": {
-    "uOy8ow5yoQ4": "at least 5 distinct venues across its 8 frames (Cincinnati-ish blue/green, Shanghai purple, ATP purple, Tokyo blue-green). Excluded from every pass-rate."
+  "shell_or_pale": [
+   "gold_shell",
+   "esnrHQhCIxQ",
+   "am_dbl_classb",
+   "rNMc9tpWWZ0"
+  ],
+  "grass": [
+   "J8__TwOgTY0",
+   "U5Af1jGgYqA",
+   "eala_segment",
+   "eala_swiatek"
+  ],
+  "indoor": [
+   "QsO90orMfWM",
+   "nQan0M5JDM8",
+   "rally",
+   "uR5q2cSM6AY",
+   "UHf0LeMU2pg",
+   "RZ_wyJ9rI3Q"
+  ],
+  "night_floodlit": [
+   "VZWi6Vf-sX0",
+   "rNMc9tpWWZ0",
+   "ihXS4IDvF0A"
+  ],
+  "very_low_mount": [
+   "col_hard_zheng",
+   "e8T34KoJzOw",
+   "demo30",
+   "am_hard_utr"
+  ]
+ },
+ "view_selection": {
+  "_what": "Human ruling on WHICH camera angle of a cut recording is under test. Only the top-down view that shows the whole court is kept; half-court cameras, serve cams and close-ups are a different problem and pooling them measures nothing. Chosen from eval/sheets/pick_<clip>.jpg by eye, never by asking the detector.",
+  "45VdNMtbulA": {
+   "kept": [
+    1,
+    3,
+    9,
+    12,
+    14,
+    17,
+    20,
+    23
+   ],
+   "note": "elevated top-down TV camera; 0/5/7/8 were close-ups and a low tight angle"
   },
-  "broadcast": {
-    "45VdNMtbulA": "Australian Open, one court, broadcast cameras",
-    "9gUvgm23qMU": "Australian Open, one court, broadcast cameras",
-    "BwLUgip8OSI": "Australian Open, one court; frame 8 is a different framing",
-    "DY6WVsuHqFs": "Roland Garros clay; frames 4-5 are a low serve-cam, not the baseline camera",
-    "J8__TwOgTY0": "Wimbledon grass; frame 5 is a player close-up over the court",
-    "U5Af1jGgYqA": "Wimbledon grass, broadcast cameras",
-    "eala_segment": "grass broadcast",
-    "eala_swiatek": "grass broadcast",
-    "tennis_sample": "clay broadcast (TennisTV)",
-    "tennis_sample_short": "Shanghai broadcast; only 3 frames survived de-duplication"
+  "9gUvgm23qMU": {
+   "kept": [
+    2,
+    6,
+    9,
+    11,
+    14,
+    16,
+    20,
+    23
+   ],
+   "note": "elevated top-down TV camera; 8 of 24 candidates were close-ups/crowd"
   },
-  "surface_notes": {
-    "_why": "Recorded because the brief targets clay and shell specifically, and the court GOLD set has one clay clip and no shell at all. These are eyeball surface calls on the drop set, not labels.",
-    "clay": ["gold_clay", "CYqapSq5llo", "EQSfL7bwJ_I", "SgZpQtiTG1A", "l6o8FOoy3MY",
-             "tnxkujogch4", "sAjkpeRq4P4", "tennis_sample", "DY6WVsuHqFs"],
-    "shell_or_pale": ["gold_shell", "esnrHQhCIxQ", "am_dbl_classb", "rNMc9tpWWZ0"],
-    "grass": ["J8__TwOgTY0", "U5Af1jGgYqA", "eala_segment", "eala_swiatek"],
-    "indoor": ["QsO90orMfWM", "nQan0M5JDM8", "rally", "uR5q2cSM6AY", "UHf0LeMU2pg", "RZ_wyJ9rI3Q"],
-    "night_floodlit": ["VZWi6Vf-sX0", "rNMc9tpWWZ0", "ihXS4IDvF0A"],
-    "very_low_mount": ["col_hard_zheng", "e8T34KoJzOw", "demo30", "am_hard_utr"]
+  "DY6WVsuHqFs": {
+   "kept": [
+    1,
+    4,
+    7,
+    9,
+    13,
+    16,
+    19,
+    20
+   ],
+   "note": "RG top-down TV camera; excluded serve-cam, close-ups and title cards"
+  },
+  "J8__TwOgTY0": {
+   "kept": [
+    0,
+    2,
+    5,
+    8,
+    11,
+    14,
+    18,
+    22
+   ],
+   "note": "Wimbledon top-down TV camera; excluded score cards and close-ups"
+  },
+  "U5Af1jGgYqA": {
+   "kept": [
+    0,
+    4,
+    7,
+    9,
+    12,
+    15,
+    19,
+    21
+   ],
+   "note": "Wimbledon top-down TV camera"
+  },
+  "eala_segment": {
+   "kept": [
+    0,
+    3,
+    6,
+    10,
+    13,
+    16,
+    20,
+    23
+   ],
+   "note": "already a single top-down camera; 23 of 24 candidates were this view"
   }
+ }
 }
