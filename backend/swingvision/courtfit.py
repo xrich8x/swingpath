@@ -1059,12 +1059,19 @@ def setup_verdict(frame, named, calibration, court):
     return {"view": view, "angle": angle}
 
 
-def auto_fit_frame(frame, calibration, court):
+def auto_fit_frame(frame, calibration, court, *, with_score=False):
     """The full single-frame recipe: line-fit autodetect -> guarded corner snap
-    -> physical shape re-lock. Returns {corner:[x,y]} or None (no lock)."""
+    -> physical shape re-lock. Returns {corner:[x,y]} or None (no lock).
+
+    with_score (eval harness only, default off so the shipped return is byte-for-byte
+    unchanged): also return `autodetect`'s raw ranking score as (corners, score),
+    (None, None) on a refusal. The score EXISTS ONLY AS A DIAGNOSTIC and is not
+    comparable across mask paths - the white path ranks by g*(0.5+0.5*st) and the
+    clay path by st alone, on different scales. Nothing may gate on it while that
+    is true; eval/run_eval.py prints it to make the incomparability visible."""
     res = autodetect(frame, calibration, court)
     if res is None:
-        return None
+        return (None, None) if with_score else None
     ref = res[2]
     named = {k: [float(ref[k][0]), float(ref[k][1])] for k in DBL}
     _, out, _snapped, _c0, _c1 = calibration.snap_to_lines(
@@ -1072,8 +1079,9 @@ def auto_fit_frame(frame, calibration, court):
     use = out if all(k in out for k in DBL) else named
     # the free corner-snap can undo the physical gate; re-lock to a camera view
     h, w = frame.shape[:2]
-    return lock_quad(use, calibration, court, w, h,
-                     dt=line_distance_map(frame, calibration))[0]
+    out = lock_quad(use, calibration, court, w, h,
+                    dt=line_distance_map(frame, calibration))[0]
+    return (out, float(res[1])) if with_score else out
 
 
 def fit_video_frames(frames, calibration, court):

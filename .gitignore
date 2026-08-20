@@ -162,3 +162,7 @@ frontend/public/rallies/*
 # this clip is a highlights DEMO, not a tuning target: the 511 KB match.json is the
 # artifact anything downstream reads. Re-make it with `run.py analyze` if needed.
 data/output/yt_match40.perception.json
+
+# eval/ — the court-detection feedback loop. The harness and the drop-zone are
+# tracked; the rendered overlays are regenerable output (run eval/run_eval.py).
+eval/out/
