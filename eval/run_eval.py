@@ -64,6 +64,10 @@ WRONG_PX = 20.0
 # of some other k is a rule nobody measured.
 ACCEPT_VOTES, ACCEPT_K = 6, 8
 
+# Max width of ONE overlay panel, in px. Detection always runs at the frame's native
+# resolution; this only bounds the picture written for eye review.
+OVERLAY_PANEL_PX = 640
+
 
 def _fmt(v, spec="6.1f"):
     return "-".rjust(int(spec.split(".")[0])) if v is None else format(v, spec)
@@ -193,8 +197,74 @@ def write_overlay(path: Path, frame, calibration, court, H=None, gt=None, note="
     panels = [left,
               _mask_panel(frame, calibration.line_ridge_mask, calibration, "white ridge"),
               _mask_panel(frame, lambda f: cf._clay_mask(f, calibration), calibration, "clay/shell")]
+    # Cap the written size. The panels are diagnostics for a human eye, and at
+    # 1080p x 3 panels x hundreds of frames the sweep writes gigabytes for no extra
+    # information. Detection still runs at native resolution - only the picture shrinks.
+    if OVERLAY_PANEL_PX and panels[0].shape[1] > OVERLAY_PANEL_PX:
+        sc = OVERLAY_PANEL_PX / panels[0].shape[1]
+        panels = [cv2.resize(p_, (int(p_.shape[1] * sc), int(p_.shape[0] * sc))) for p_ in panels]
     path.parent.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite(str(path), np.hstack(panels))
+    cv2.imwrite(str(path), np.hstack(panels), [cv2.IMWRITE_JPEG_QUALITY, 88])
+
+
+def verdict_row(clip, frames, pts, calibration, court, cols=4, tile=340):
+    """One clip as a strip: the CONSENSUS court drawn on `cols` frames.
+
+    Without ground truth a pass-rate is only "it locked", never "it locked to the
+    right place" - a wrong court that reproduces across 8 frames votes itself
+    through. On the gold set no >=6-vote court has ever been wrong, but that is 20
+    clips and extending it to unseen footage is an assumption, not a measurement.
+    So every GT-free acceptance gets looked at, and this is what gets looked at."""
+    import cv2
+
+    H = None
+    if pts is not None:
+        H = calibration.compute_homography([court.LANDMARKS[n] for n in DBL],
+                                           [pts[n] for n in DBL])
+    cells = []
+    for _key, im in frames[:cols]:
+        vis = im.copy()
+        if H is not None:
+            for a, b in court.LINES:
+                pa = calibration.court_to_image(H, [a])[0]
+                pb = calibration.court_to_image(H, [b])[0]
+                if np.all(np.isfinite([pa, pb])) and np.max(np.abs([pa, pb])) < 1e5:
+                    cv2.line(vis, (int(pa[0]), int(pa[1])), (int(pb[0]), int(pb[1])),
+                             (90, 235, 120), 3, cv2.LINE_AA)
+        hh = int(tile * vis.shape[0] / vis.shape[1])
+        cells.append(cv2.resize(vis, (tile, hh)))
+    if not cells:
+        return None
+    hh = min(c.shape[0] for c in cells)
+    row = np.hstack([c[:hh] for c in cells])
+    if row.shape[1] < cols * tile:
+        row = np.hstack([row, np.zeros((hh, cols * tile - row.shape[1], 3), np.uint8)])
+    return row
+
+
+def write_verdict_sheets(rows, out_dir, per_sheet=8):
+    import cv2
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    paths = []
+    for i in range(0, len(rows), per_sheet):
+        batch = [r for _lab, r in rows[i:i + per_sheet] if r is not None]
+        if not batch:
+            continue
+        hh = min(r.shape[0] for r in batch)
+        sheet = np.vstack([r[:hh] for r in batch])
+        y = 0
+        for lab, r in rows[i:i + per_sheet]:
+            if r is None:
+                continue
+            for col, th in (((0, 0, 0), 4), ((80, 255, 120), 2)):
+                cv2.putText(sheet, lab, (8, y + 26), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
+                            col, th, cv2.LINE_AA)
+            y += hh
+        p = out_dir / f"verdict_{i // per_sheet:02d}.jpg"
+        cv2.imwrite(str(p), sheet, [cv2.IMWRITE_JPEG_QUALITY, 88])
+        paths.append(p)
+    return paths
 
 
 # --- scoring ----------------------------------------------------------------
@@ -224,7 +294,7 @@ def score_clip(clip, frames, gt, overlays=True, out_root=OUT):
             note = (f"{clip} f{key}  " +
                     ("REFUSED" if corners is None
                      else f"fit score={sc:.3f}" + (f"  err={err:.1f}px" if err is not None else "")))
-            write_overlay(out_root / clip / f"f{key}.png", im, calibration, court,
+            write_overlay(out_root / clip / f"f{key}.jpg", im, calibration, court,
                           H=H, gt=gt.get(key), note=note)
 
     pts, votes = courtfit.consensus(fits)
@@ -246,7 +316,8 @@ def score_clip(clip, frames, gt, overlays=True, out_root=OUT):
             for g in gt.values()]))
     return rows, {"clip": clip, "frames": len(frames),
                   "locked": sum(1 for f in fits if f), "votes": votes,
-                  "tag": tag, "accepted": accepted, "err": cerr}
+                  "tag": tag, "accepted": accepted, "err": cerr,
+                  "_pts": pts, "_frames": frames}
 
 
 # --- report -----------------------------------------------------------------
@@ -309,6 +380,9 @@ def main():
     ap.add_argument("--no-overlays", action="store_true", help="skip writing eval/out/")
     ap.add_argument("--out", default=None, help="overlay root (default eval/out)")
     ap.add_argument("--json", default=None, help="also write the summary as JSON here")
+    ap.add_argument("--verdict-sheets", action="store_true", dest="verdict_sheets",
+                    help="render eval/verdicts/ - the CONSENSUS court drawn on 4 frames "
+                         "per clip, so a GT-free acceptance can be checked by eye")
     a = ap.parse_args()
     if not (a.gold or a.drop):
         a.gold = True
@@ -316,6 +390,7 @@ def main():
     out_root = Path(a.out) if a.out else OUT
     overlays = not a.no_overlays
     result = {}
+    from swingvision import calibration, court
 
     if a.gold:
         names = a.clips or gold_clips()
@@ -331,6 +406,12 @@ def main():
             print(f"[done] {s['clip']:24s} {s['locked']}/{s['frames']} locked, "
                   f"{s['votes']} votes, {'ACCEPTED' if s['accepted'] else (s['tag'] or 'refused')}")
         result["gold"] = report(rows, sums, "gold")
+        if a.verdict_sheets:
+            vr = [(f"{s_['clip']}  {'ACCEPTED' if s_['accepted'] else (s_['tag'] or 'refused')}"
+                   f"  {s_['votes']}v", verdict_row(s_["clip"], s_["_frames"], s_["_pts"],
+                                                    calibration, court)) for s_ in sums]
+            for pth in write_verdict_sheets(vr, REPO / "eval" / "verdicts" / "gold"):
+                print(f"  {pth}")
 
     if a.drop:
         groups = drop_clips()
@@ -347,6 +428,12 @@ def main():
                 rows += r
                 sums.append(s)
             result["drop"] = report(rows, sums, "drop")
+            if a.verdict_sheets:
+                vr = [(f"{s_['clip']}  {'ACCEPTED' if s_['accepted'] else (s_['tag'] or 'refused')}"
+                       f"  {s_['votes']}v", verdict_row(s_["clip"], s_["_frames"], s_["_pts"],
+                                                        calibration, court)) for s_ in sums]
+                for pth in write_verdict_sheets(vr, REPO / "eval" / "verdicts" / "drop"):
+                    print(f"  {pth}")
 
     if overlays:
         print(f"\noverlays -> {out_root}")
