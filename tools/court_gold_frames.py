@@ -58,6 +58,11 @@ def main() -> None:
     ap.add_argument("--out", default="data/gold")
     ap.add_argument("--extract-only", action="store_true",
                     help="re-extract JPEGs for an existing manifest (after re-clone)")
+    ap.add_argument("--to-eval", action="store_true",
+                    help="dump the frames into eval/frames/<clip>/ for eval/run_eval.py "
+                         "instead of data/gold/. NO manifest and NO gold declaration: this "
+                         "is the look-at-it drop-zone, not the labelled TEST set, so it "
+                         "commits you to nothing and yields no ground truth.")
     args = ap.parse_args()
 
     import cv2
@@ -70,7 +75,8 @@ def main() -> None:
         raise SystemExit(f"cannot find video: {video_path}")
     clip = args.clip or video_path.stem
     out_dir = REPO / args.out
-    frames_dir = out_dir / "frames" / clip
+    frames_dir = ((REPO / "eval" / "frames" / clip) if args.to_eval
+                  else out_dir / "frames" / clip)
     manifest_path = out_dir / f"{clip}.court.manifest.json"
 
     if args.extract_only:
@@ -94,6 +100,14 @@ def main() -> None:
         int(x) for x in np.linspace(lo, max(lo, hi), args.n).round().astype(int)))
 
     extract(video_path, frames_dir, frame_nums)
+
+    if args.to_eval:
+        # Deliberately no manifest: eval/frames is unlabelled by design. Declaring a
+        # clip gold is ONE-WAY (data/gold/court_split.json), so it must be a separate,
+        # deliberate act - not a side effect of wanting to look at a surface.
+        print(f"{len(frame_nums)} frames -> {frames_dir}")
+        print("now: backend/.venv/Scripts/python.exe eval/run_eval.py --drop")
+        return
 
     sha1 = hashlib.sha1()
     with open(video_path, "rb") as f:
