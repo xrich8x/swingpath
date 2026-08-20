@@ -110,6 +110,26 @@ against it (see SCOREBOARD method rule 11). Those numbers are *agreement with
 another estimator*, not accuracy, and must be labelled that way; `synth_truth`
 is the compliant reference for speed.
 
+## Out of scope: the rally / score layer
+
+**Ruled out by the user on 2026-08-20: the score layer is not important and will
+not be worked on in any session.** It is not an open problem, not a backlog item,
+and not something to research, diagnose or improve. Do not propose work on point
+boundaries, rally segmentation, the `gap_s` override, the second-bounce rule, or
+any ground-truth source for points.
+
+What already exists keeps working and needs no attention: `scoring.py` runs the
+tennis state machine, `corrections.py` replays it after a human correction, and
+`stats.score_validation_note` labels the output as unvalidated in the dashboard.
+Leave that code alone rather than removing it — the corrections replay depends
+on it, and the honesty label is what stops the UI presenting a scoreline as a
+measurement.
+
+One thing that stays on the record: deriving score truth from a burned-in
+scoreboard was built, rejected on its premise and reverted (`afffb5a`). That
+entry stays in SCOREBOARD's dead-end table so the idea cannot return a third
+time — see also the second principle above.
+
 ## Status: real vs stubbed
 
 - Working + tested: court.py, calibration.compute_homography/image_to_court,
