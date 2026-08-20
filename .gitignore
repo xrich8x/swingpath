@@ -169,3 +169,8 @@ eval/out/
 
 eval/sheets/
 eval/verdicts/
+
+# The extracted eval frames are regenerable output (eval/collect_frames.py is
+# deterministic: uniform positions, then the dominant-view cluster). The README
+# and eval/clip_classes.json - the human court-in-view verdicts - stay tracked.
+eval/frames/*/
