@@ -145,3 +145,86 @@ scoring failure behind a reachability failure.
 So the useful ordering is now: **fix the agreement score first.** Widening the search
 before that actively costs precision, and precision is the one thing this detector has
 never spent.
+
+---
+
+## 7. The mask fix: built, measured, REJECTED. And the proxy did not predict the product.
+
+Section 6 concluded the agreement score is the binding constraint. So a candidate mask was
+built (`eval/masks_candidate.py`, never in `backend/`) and measured two ways.
+
+### The proxy said it worked
+
+`eval/score_truth.py` scores the criteria at 30 HUMAN-placed courts, search-free, and
+reports the margin over the best wrong candidate from the shipped grid.
+
+| mask | truth outscores every distractor | median margin | g@truth below the 0.33 gate |
+|---|---|---|---|
+| white (shipped) | 25/30 | +0.214 | **11/30** |
+| `_clay_mask` | 26/30 | +0.201 | 11/30 |
+| CLAHE only | 28/30 | +0.239 | 4/30 |
+| chroma only | 28/30 | +0.213 | **3/30** |
+| both | 28/30 | +0.197 | 4/30 |
+| **neither** | 25/30 | +0.214 | **11/30** |
+
+Clay clips scoring literally **0.000** at the human's own court (`am_lk35`,
+`am_rally32short`) reach 0.20-0.32. **CHROMA AND CLAHE ARE REDUNDANT SUBSTITUTES** - either
+alone gives the whole gain, both gives nothing more, neither gives exactly the baseline.
+Reading the single ablations alone said "neither matters", which was an artefact of
+removing one while the other still covered for it. Only the joint removal separates them.
+
+### The product gate said it did not
+
+Same pre-registered gate as the grid sweep: accepted >= 11 of 20 **and** zero accepted court
+over 20 px. Here the candidate replaces `calibration.line_ridge_mask` outright, so
+`_precompute`, `_clay_mask`, `snap_to_lines`, `verify_court` and `line_distance_map` all see
+it - which is what shipping would mean.
+
+```
+arm          accepted  median   range      wrong (>20px)                    verdict
+baseline       11/20    8.3 px  3.4-13.9   none                             PASS
+chroma_only     9/20    9.1 px  2.0-15.1   none                             FAILS (recall)
+clahe_only     13/20    8.2 px  1.7-22.4   am_beginner 22.4, am_classB 22.4 FAILS (precision)
+both            6/20   10.7 px  2.5-17.7   none                             FAILS (recall)
+```
+
+**All fail. Nothing ships.**
+
+**The proxy did not predict the product, and that is the lesson.** All three candidates are
+indistinguishable on `score_truth` (28/30, 3-4/30) and span **6/20 to 13/20** on the gate.
+`score_truth` asks whether the criteria RECOGNISE a court handed to them; it says nothing
+about what the search finds once the mask changes underneath it, nor about the four
+downstream stages the mask also feeds. It is a screening tool, not a gate, and a variant
+must clear the full eval regardless of how good its margin looks.
+
+### What 22.4 px actually is - and why the gate still stands
+
+Rendered (`eval/verdicts/gate_22px.jpg`), both 22.4 px courts are **the same court as the
+human's**, slightly narrow at the near baseline, with service lines and centre line tracking
+correctly. That is a loose fit, not the different-rectangle failure the 77.7 px grid-sweep
+case was. The 20 px line was drawn across a gap the gold set had no data in (accepted
+3.4-13.9, refused 25.5+), and this probes inside it.
+
+**The gate was pre-registered and it fails; the line does not move after the fact.** A
+principled replacement was tested rather than assumed - court-outline IoU:
+
+```
+am_beginner  clahe_only  IoU 0.842      am_ntrp50       baseline  IoU 0.714  (wrong, 66 px)
+am_classB    clahe_only  IoU 0.782      am_indoor_hard2 baseline  IoU 0.641  (wrong, 86 px)
+am_usta40    baseline    IoU 0.945      am_ntrp45w      baseline  IoU 0.221  (wrong, 111 px)
+```
+
+**IoU does not separate them** - 0.782 for the near-miss against 0.714 for a genuinely wrong
+court, seven hundredths apart, against the 11.6 px gap the pixel metric had. So there is no
+better-founded discriminator available and the pixel gate stays exactly as it is.
+
+### The one genuine positive
+
+**`am_rally32short` - clay - auto-calibrates in ALL THREE arms.** No clay clip has ever
+auto-calibrated on this gold set before. `am_indoor_hard2` also gains in all three. The mask
+work is reaching the right surfaces; it is the collateral on hard courts that fails it -
+`clahe_only` loses `am_usta60`, `chroma_only` loses four, `both` loses seven.
+
+The next candidate should therefore be **additive, not a replacement**: keep the shipped mask
+where it already works and fuse the new channel only where the shipped one has no evidence.
+Every arm here swapped the mask globally, which is why each bought clay and paid in hard courts.

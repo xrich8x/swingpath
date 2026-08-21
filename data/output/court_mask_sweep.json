@@ -1,0 +1,82 @@
+{
+ "baseline": {
+  "n": 11,
+  "accepted": [
+   "am_classB",
+   "am_college",
+   "am_fr_sud",
+   "am_grass1",
+   "am_ntrp30",
+   "am_ntrp40",
+   "am_ntrp45_courtlevel",
+   "am_rec30",
+   "am_usta40",
+   "am_usta45",
+   "am_usta60"
+  ],
+  "median": 8.286765650164613,
+  "wrong": [],
+  "gate_pass": true
+ },
+ "chroma_only": {
+  "n": 9,
+  "accepted": [
+   "am_college",
+   "am_fr_sud",
+   "am_indoor_hard2",
+   "am_ntrp30",
+   "am_ntrp40",
+   "am_ntrp45_courtlevel",
+   "am_rally32short",
+   "am_rec30",
+   "am_usta45"
+  ],
+  "median": 9.130970871840164,
+  "wrong": [],
+  "gate_pass": false
+ },
+ "clahe_only": {
+  "n": 13,
+  "accepted": [
+   "am_beginner",
+   "am_classB",
+   "am_college",
+   "am_fr_sud",
+   "am_grass1",
+   "am_indoor_hard2",
+   "am_ntrp30",
+   "am_ntrp40",
+   "am_ntrp45_courtlevel",
+   "am_rally32short",
+   "am_rec30",
+   "am_usta40",
+   "am_usta45"
+  ],
+  "median": 8.200660259132162,
+  "wrong": [
+   [
+    "am_beginner",
+    22.4
+   ],
+   [
+    "am_classB",
+    22.4
+   ]
+  ],
+  "gate_pass": false
+ },
+ "both": {
+  "n": 6,
+  "accepted": [
+   "am_college",
+   "am_indoor_hard2",
+   "am_ntrp40",
+   "am_ntrp45_courtlevel",
+   "am_rally32short",
+   "am_usta45"
+  ],
+  "median": 10.652235405139036,
+  "wrong": [],
+  "gate_pass": false
+ }
+}
