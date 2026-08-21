@@ -309,3 +309,57 @@ genuinely separate venue.
 broader clay evidence (total votes across the 7 drop clips 15 -> 27, 5 of 7 improving)
 is what suggests it is an effect rather than a lucky clip, and two of those seven got
 slightly worse.
+
+---
+
+## 9. Surface routing across ALL 54 recordings, and against the human references
+
+The gate is a 20-clip set. This is what routing does everywhere else.
+
+### The 54 recordings (votes only - no ground truth here)
+
+```
+                                     baseline    routed
+ALL 54 recordings                    17/54  ->  19/54    gained gold_clay, tnxkujogch4   lost none
+  fixed camera (the product's input) 17/43  ->  19/43    39.5% -> 44.2%
+  broadcast                           0/10  ->   0/10    unchanged
+  surface: clay                        1/7  ->    3/7
+  surface: shell / pale                2/4  ->    2/4    unchanged
+  surface: indoor                      2/6  ->    2/6    unchanged
+  surface: night floodlit              2/3  ->    2/3    unchanged
+  surface: very low mount              2/4  ->    2/4    unchanged
+```
+
+**Not one clip anywhere lost acceptance.** Every non-clay surface is bit-identical,
+which is the routing design working exactly as intended and not a happy accident.
+
+**Broadcast stays at 0 of 10, as predicted.** It fails for a different reason - three
+hypotheses were tested there (seeding, apparent court size, camera-angle selection) and
+none implicated the mask, so a mask fix was never going to move it.
+
+### Measured against the ten human-placed calibrations
+
+The stronger evidence, because these are real pixel errors rather than vote counts, and
+because these clips have hand calibrations *precisely because auto-detection failed on them*.
+
+| clip | baseline | routed |
+|---|---|---|
+| **sAjkpeRq4P4** (clay) | 4 votes, refused, 11.4 px | **ACCEPTED, 6 votes, 2.3 px** |
+| CYqapSq5llo (clay) | 51.6 px | **16.9 px** — 3x better fit, still refused |
+| am_hard_utr | ACCEPTED 14.3 px | unchanged |
+| the other seven | — | unchanged |
+
+Accepted 1/10 -> **2/10**, and **2.3 px@640 is tighter than any court in the gold set's
+accepted band**, which starts at 3.4. Nothing regressed.
+
+### What it costs, stated plainly
+
+Two clay clips lose votes without losing acceptance: `CYqapSq5llo` 3 -> 2 and
+`SgZpQtiTG1A` 3 -> 1 (the latter now reaches a court only through the stacked-clay
+rescue). Against that, `tnxkujogch4` gains 7 votes from zero, `gold_clay` 5, and
+`sAjkpeRq4P4` 2. Five of eight clay recordings improve, two get worse, one is flat.
+
+The clay gain is real but concentrated: `gold_clay`, `tnxkujogch4` and `sAjkpeRq4P4`
+share a house, a windbreak and a treeline and are very likely **one club**. Read the
+clay result as one venue family plus `am_rally32short` on the gold set, not as five
+independent venues.
