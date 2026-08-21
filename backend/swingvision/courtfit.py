@@ -647,9 +647,7 @@ def autodetect(frame, calibration, court, *, topk=12,
     court_pts = [court.LANDMARKS[n] for n in DBL]
     prior = _load_prior() if use_prior else False
 
-    coarse = ([0.40, 0.47, 0.53, 0.60], [0.74, 0.85, 0.95, 1.06],
-              [0.18, 0.28, 0.38, 0.48], [0.40, 0.51, 0.61, 0.72],
-              [0.20, 0.27, 0.35, 0.42])
+    coarse = COARSE_GRID
     ax = tuple(np.asarray(v) * (w if i in (0, 3, 4) else h) for i, v in enumerate(coarse))
     ranked = _scan(ax, calibration, court, court_pts, dt, cos2, sin2, w, h, tol, athr, prior)
     if prior:
@@ -744,6 +742,13 @@ def autodetect(frame, calibration, court, *, topk=12,
                           mask_fn=lambda f: _clay_mask(f, calibration), _fallback=False)
     return best
 
+
+# The coarse seed grid: (cx, y_near, y_far, half_width_near, half_width_far) as
+# fractions of frame width (cx/wn/wf) or height (yn/yf). Hoisted out of autodetect
+# so a change to it can be measured rather than argued about.
+COARSE_GRID = ([0.40, 0.47, 0.53, 0.60], [0.74, 0.85, 0.95, 1.06],
+               [0.18, 0.28, 0.38, 0.48], [0.40, 0.51, 0.61, 0.72],
+               [0.20, 0.27, 0.35, 0.42])
 
 AGREE_PX = 30.0     # two courts "agree" when their corners sit within this
 MIN_VOTES = 2       # need at least this many frames agreeing to trust a court

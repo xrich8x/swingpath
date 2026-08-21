@@ -101,3 +101,47 @@ real courts sit at **0.09–0.22** — **30 of 30 fall outside the grid's range*
 largely searching poses that do not occur; the learned prior is doing the seeding work,
 which is consistent with it failing wherever the prior has no coverage. Not fixed here —
 recorded as the concrete thing to change first if search is the half being attacked.
+
+---
+
+## 6. The seed-grid fix was BUILT, MEASURED and REJECTED — and it reprioritises the work
+
+Section 5 said the coarse grid searches far-half-width 0.20–0.42 and near-half-width
+0.40–0.72 while all 30 human-measured courts sit at wf 0.09–0.22, wn 0.40–0.85. That is a
+defect, not a preference, so it was fixed and measured. The grid was hoisted to
+`courtfit.COARSE_GRID` (pure refactor: the baseline arm below reproduces the committed
+scorecard exactly) and three arms were run, one variable at a time.
+
+**Gate, pre-registered before the first run:** accepted must stay ≥ 11 of 20 **and** zero
+accepted court may exceed 20 px. Buying recall with a wrong court fails.
+
+```
+arm       accepted  median   range      wrong (>20px)                         verdict
+baseline    11/20    8.3 px  3.4-13.9   none                                  PASS
+A_wf        13/20   10.0 px  3.4-77.7   am_beginner 26.1, am_indoor_hard2 77.7  FAILS
+B_wn        12/20    8.3 px  2.9-25.3   am_beginner 25.3                      FAILS
+C_both      12/20    8.4 px  2.9-25.5   am_beginner 25.5                      FAILS
+```
+
+**All three fail. Nothing ships; `COARSE_GRID` keeps its shipped values.**
+
+The mechanism worked exactly as predicted — no arm loses a single existing clip, and the
+widened grid does reach clips the old one could not. **Every clip it newly reaches, it gets
+wrong.** `am_indoor_hard2` at 77.7 px is not a near miss; it is a different rectangle.
+
+This would have been **the first wrong court ever auto-accepted on this gold set**
+([court_consensus_bar.md](court_consensus_bar.md)), which is precisely what the gate was
+written to prevent.
+
+### What it means — the scoring is the binding constraint, not the search
+
+Section 3 split the failures five/five between "the gate rejects the true court" and "the
+true court passes but is not found", and called the second half a search problem. **This
+result corrects that reading.** When the search is extended to reach those courts, what it
+finds and accepts is wrong — so on those clips the scoring cannot separate the true court
+from a wrong one either. The search was not the thing holding them back; it was hiding a
+scoring failure behind a reachability failure.
+
+So the useful ordering is now: **fix the agreement score first.** Widening the search
+before that actively costs precision, and precision is the one thing this detector has
+never spent.
