@@ -363,3 +363,66 @@ The clay gain is real but concentrated: `gold_clay`, `tnxkujogch4` and `sAjkpeRq
 share a house, a windbreak and a treeline and are very likely **one club**. Read the
 clay result as one venue family plus `am_rally32short` on the gold set, not as five
 independent venues.
+
+---
+
+## 10. CORRECTION: the gold set and the drop set are NOT independent populations
+
+Found while rendering the before/after pictures - the `am_rally32short` panel showed the
+same venue as the drop-set clay clips, which contradicted what section 9 claimed.
+
+**`data/gold/am_rally32short.court.manifest.json` records its source video as
+`data/amateur_clips/yt_tnxkujogch4.mp4`.** It is not a similar court, it is the SAME
+RECORDING as drop group `tnxkujogch4` - dHash 3 bits apart, where identical scenes are 0-4.
+
+Checking every gold manifest: **9 of the 20 court gold clips share a source video with the
+54-recording drop set.**
+
+```
+am_beginner          == drop 'QsO90orMfWM'      am_ntrp45_courtlevel == drop '0genZFgM61E'
+am_classB            == drop 'esnrHQhCIxQ'      am_rally32short      == drop 'tnxkujogch4'
+am_college           == drop '5VUiurUhSRY'      am_rec30             == drop 'rNMc9tpWWZ0'
+am_ntrp30            == drop 'deNCnfQjfoU'      am_usta45            == drop 'ihXS4IDvF0A'
+am_ntrp40            == drop '4apx6gd5Uxs'
+```
+
+**This is trap 17 recurring** - a clip renamed on the way into the gold set, and identity
+matched on filename. `eval/collect_frames.py` deduped by filename and YouTube id, which
+correctly merged trims within the drop set but could not see that a gold clip called
+`am_rally32short` is a file called `yt_tnxkujogch4.mp4`. The gold manifests record the
+source and were never consulted.
+
+### What this corrects
+
+**Section 9's claim that "the gold-set gain (`am_rally32short`) is a genuinely separate
+venue" is WRONG.** It is the same recording as the drop-set gain `tnxkujogch4`. The gate
+gain and one of the two breadth gains are the same footage counted twice.
+
+Restated honestly, surface routing newly accepts **two distinct recordings**:
+
+* `tnxkujogch4` / `am_rally32short` - one recording, appearing in both sets
+* `gold_clay` - a different recording, but by eye the same club (shared house, windbreak,
+  treeline; sig distance 5.9 to `tnxkujogch4`)
+
+plus `sAjkpeRq4P4` improving on the same club (6 -> 8 votes on the drop frames; on the
+human reference, refused at 11.4 px -> **accepted at 2.3 px**).
+
+**So the clay evidence is essentially one club, not five venues.** That is a materially
+smaller claim than section 9 made.
+
+### What it does NOT change
+
+The gate result stands on its own terms: **12/20 accepted, nothing lost, zero wrong
+courts**, reproduced against the shipped call sites. Non-clay surfaces remain
+bit-identical by construction and no clip anywhere lost acceptance. The 2.3 px fit on
+`sAjkpeRq4P4` is measured against a human placement and is real.
+
+What is weakened is the *breadth* of the evidence, not its correctness. Two distinct
+recordings at one club is thin support for a general clay fix, and the honest next step
+is clay footage from venues this club has nothing to do with.
+
+### The fix to the harness
+
+Any future population split must key on the gold manifest's `video` field, not on clip
+names. Until that lands, treat "gold" and "drop" as overlapping by 9 recordings and do
+not quote them as independent confirmation of each other.
