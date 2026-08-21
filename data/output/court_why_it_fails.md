@@ -228,3 +228,84 @@ work is reaching the right surfaces; it is the collateral on hard courts that fa
 The next candidate should therefore be **additive, not a replacement**: keep the shipped mask
 where it already works and fuse the new channel only where the shipped one has no evidence.
 Every arm here swapped the mask globally, which is why each bought clay and paid in hard courts.
+
+---
+
+## 8. SHIPPED: surface routing. 11/20 to 12/20, nothing lost, zero wrong.
+
+The user's proposal, and the first change in this line of work to clear the gate:
+**judge the surface, then use the mask built for it**, instead of finding one mask that
+serves every surface. Sections 6 and 7 each failed by trading gains on one surface for
+losses on another; routing removes that mechanism, because a non-clay frame takes a
+bit-identical path.
+
+### The surface is separable from colour alone
+
+Measured over 31 recordings against the eyeball labels in `eval/clip_classes.json`, in
+OpenCV Lab where 128 is neutral:
+
+```
+clay    a* 148.0-163.5      everything else tops out at 132.0   -> 16 units clear
+shell   L* 170.0-176.5      hard courts top out at 163.0        ->  7 units clear
+hard    a* 112.5-131.5
+```
+
+`CLAY_A_STAR = 140.0` sits in the middle of the clay gap: **3 of 3 clay gold clips
+called correctly, zero false positives on the other 17**, and 9 of 9 on the wider set.
+
+**Shell is deliberately NOT special-cased.** It was measured to work already —
+`gold_shell` auto-calibrates at 8/8 votes — because a pale surface still yields a
+luminance ridge. Only clay lacks one. That is one fewer detector than the proposal
+called for, on evidence.
+
+### Routing to the EXISTING clay mask does nothing
+
+Measured first, because it was the cheapest thing to try: identical to baseline,
+gained none, lost none. `autodetect` already falls back to `_clay_mask` when the
+white path fails, so promoting that fallback to a route changes no outcome. What was
+needed was a better clay mask, not a better time to reach for the old one.
+
+### The gate
+
+```
+                       accepted  median   range      wrong (>20px)  verdict
+baseline                 11/20    8.3 px  3.4-13.9   none           PASS
+routed, clay=chroma      12/20    8.1 px  2.0-13.9   none           PASS
+routed, clay=CLAHE       12/20    8.1 px  1.7-13.9   none           PASS
+```
+
+Both gain `am_rally32short` and lose nothing. **Re-run against the shipped code path —
+named call sites, not the monkeypatch the sweep used — reproduces exactly: 12/20,
+median 8.1, range 1.7-13.9, zero wrong.**
+
+### CLAHE beats chroma on the clay footage outside the gold set
+
+Seven fixed-camera clay recordings in `eval/frames`, no ground truth, so lock/votes only:
+
+```
+                 baseline          chroma            CLAHE
+gold_clay        1/8 lock  1v      8/8  8v ACCEPT    8/8  6v ACCEPT
+tnxkujogch4      0/8 lock  0v      8/8  8v ACCEPT    8/8  7v ACCEPT
+sAjkpeRq4P4      8/8  6v ACCEPT    8/8  5v  LOST     8/8  8v ACCEPT
+                 1/7 accepted      2/7               3/7
+```
+
+`tnxkujogch4` goes from **0 of 8 frames locking to 8 of 8**. Chroma *loses*
+`sAjkpeRq4P4` (6 votes to 5), so CLAHE ships.
+
+All three accepted courts were rendered and checked by eye
+(`eval/verdicts/clay_accepted.jpg`): the overlay sits on the real clay lines,
+service boxes and centre line included. They are correct courts, not consensus
+on a wrong one.
+
+### Two honest limits on the size of this
+
+**The three accepted clay clips look like one club** — the same house, windbreak and
+treeline appear in all three. So "3 of 7" overstates the independence; read it as one
+venue family now working where none did. The gold-set gain (`am_rally32short`) is a
+genuinely separate venue.
+
+**It is one clip on a 20-clip gate.** Real, reproduced, verified — and small. The
+broader clay evidence (total votes across the 7 drop clips 15 -> 27, 5 of 7 improving)
+is what suggests it is an effect rather than a lucky clip, and two of those seven got
+slightly worse.

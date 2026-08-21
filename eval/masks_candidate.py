@@ -104,3 +104,56 @@ VARIANTS = {
     "fused_noclahe":  dict(clahe=False),
     "fused_raw":      dict(structure_clean=False),
 }
+
+
+# --- surface routing -------------------------------------------------------
+# The user's proposal, and the measurements back it: judge the SURFACE from
+# colour and texture, then use the mask built for it. Independent of detection,
+# so unlike "pick whichever mask detects best" it cannot grade its own homework.
+#
+# Measured on 31 recordings against eyeball surface labels (eval/clip_classes.json):
+#     clay   a* 148.0-163.5     everything else tops out at 132.0   -> 16 units clear
+#     shell  L* 170.0-176.5     hard courts top out at 163.0        ->  7 units clear
+#     hard   a* 112.5-131.5
+# a* is OpenCV Lab where 128 is neutral; clay's red/orange pushes it up hard.
+CLAY_A = 140.0      # midpoint of a 16-unit gap
+SHELL_L = 166.0     # midpoint of a 7-unit gap - thinner, watch it
+
+
+def surface_of(frame):
+    """'clay' | 'shell' | 'hard', from the lower-middle of the frame."""
+    import cv2
+
+    h, w = frame.shape[:2]
+    roi = frame[int(h * 0.45):int(h * 0.95), int(w * 0.15):int(w * 0.85)]
+    lab = cv2.cvtColor(roi, cv2.COLOR_BGR2LAB)
+    a = float(np.median(lab[:, :, 1]))
+    L = float(np.median(lab[:, :, 0]))
+    if a >= CLAY_A:
+        return "clay"
+    return "shell" if L >= SHELL_L else "hard"
+
+
+def routed_mask(frame, calibration, base):
+    """Shipped mask everywhere it already works; the hue-agnostic one on clay.
+
+    `base` is passed in rather than read off the module because installing this
+    as calibration.line_ridge_mask would otherwise recurse - _clay_mask calls
+    line_ridge_mask(tau=12, sat_max=255) internally.
+
+    Shell deliberately routes to the SHIPPED mask: it was measured at 2 of 4
+    auto-calibrating with gold_shell at 8/8 votes, so a pale surface still gives
+    a luminance ridge and needs no special case. Only clay does."""
+    import cv2
+
+    if surface_of(frame) != "clay":
+        return base(frame)
+    # _clay_mask inlined against `base` for the same reason
+    raw = base(frame, tau=12, sat_max=255)
+    segs = cv2.HoughLinesP(raw, 1, np.pi / 180, threshold=50,
+                           minLineLength=max(40, int(frame.shape[1] * 0.08)), maxLineGap=14)
+    clean = np.zeros_like(raw)
+    if segs is not None:
+        for x1, y1, x2, y2 in segs[:, 0]:
+            cv2.line(clean, (int(x1), int(y1)), (int(x2), int(y2)), 255, 2)
+    return clean

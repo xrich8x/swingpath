@@ -108,7 +108,7 @@ def _precompute(frame, calibration, mask_fn=None):
     """Per-frame maps: distance-to-line, the local LINE ORIENTATION (double-angle
     cos/sin, so 0 and 180deg are the same line), and the DISTINCT real lines."""
     import cv2
-    mask = (mask_fn or calibration.line_ridge_mask)(frame)
+    mask = (mask_fn or calibration.court_line_mask)(frame)
     h, w = mask.shape[:2]
     dt = cv2.distanceTransform(255 - mask, cv2.DIST_L2, 5)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float32)
@@ -641,7 +641,7 @@ def autodetect(frame, calibration, court, *, topk=12,
     court must claim 4 distinct real lines at regulation spacing with a plausible
     camera pose, so the extra noise a permissive mask lets in is rejected on
     geometry, not on colour."""
-    mf = mask_fn or calibration.line_ridge_mask
+    mf = mask_fn or calibration.court_line_mask
     dt, cos2, sin2, w, h, lines = _precompute(frame, calibration, mf)
     tol = max(2.0, w * 0.006)
     court_pts = [court.LANDMARKS[n] for n in DBL]
@@ -806,7 +806,7 @@ def line_distance_map(frame, calibration, mask_fn=None):
     Cheaper than _precompute when the caller needs ONLY the dt — no Sobel,
     orientation maps, or Hough pass."""
     import cv2
-    mask = (mask_fn or calibration.line_ridge_mask)(frame)
+    mask = (mask_fn or calibration.court_line_mask)(frame)
     return cv2.distanceTransform(255 - mask, cv2.DIST_L2, 5)
 
 

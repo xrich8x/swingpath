@@ -935,6 +935,90 @@ def line_ridge_mask(frame: np.ndarray, tau: int = 9, sat_max: int = 90) -> np.nd
                             cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)))
 
 
+# --- Surface-routed line mask ------------------------------------------------
+# Clay's paint is whitish-on-orange, so `line_ridge_mask`'s `sat < sat_max` test
+# discards it and its luminance ridge fires on foliage instead: measured, the mask
+# scores a HUMAN-placed clay court at g = 0.000 on two gold clips. The fix is NOT a
+# better single mask - three global replacements were built and all three failed the
+# gold gate by trading clay gains for hard-court losses (data/output/
+# court_why_it_fails.md section 7). Judge the SURFACE first, then use the mask built
+# for it, leaving every other surface on a bit-identical path.
+#
+# Thresholds are measured, not chosen. Over 31 recordings labelled by eye
+# (eval/clip_classes.json), in OpenCV Lab where 128 is neutral:
+#     clay   a* 148.0-163.5   everything else tops out at 132.0   -> 16 units clear
+#     hard   a* 112.5-131.5
+# 3 of 3 clay gold clips called correctly, zero false positives on the other 17.
+#
+# SHELL IS DELIBERATELY NOT SPECIAL-CASED. It was measured to work already -
+# gold_shell auto-calibrates at 8/8 votes - because a pale surface still yields a
+# luminance ridge. Only clay lacks one.
+CLAY_A_STAR = 140.0     # midpoint of the measured 16-unit gap
+
+
+def court_surface(frame: np.ndarray) -> str:
+    """'clay' or 'hard', from the lower-middle of the frame (court in every
+    framing in the gold set). Deliberately independent of court detection:
+    choosing the mask by which one detects best would let the detector pick its
+    own test."""
+    import cv2
+
+    h, w = frame.shape[:2]
+    roi = frame[int(h * 0.45):int(h * 0.95), int(w * 0.15):int(w * 0.85)]
+    a = float(np.median(cv2.cvtColor(roi, cv2.COLOR_BGR2LAB)[:, :, 1]))
+    return "clay" if a >= CLAY_A_STAR else "hard"
+
+
+def clay_line_mask(frame: np.ndarray, tau: int = 10) -> np.ndarray:
+    """Line mask for clay: local-contrast ridge on L*, no saturation gate, then
+    keep only pixels on a long straight segment.
+
+    CLAHE on L* judges each pixel against its own neighbourhood rather than a
+    global constant, which is what recovers dusty low-contrast paint. Dropping the
+    saturation gate is what lets orange-tinted lines through at all. The Hough
+    pass is essential, not cosmetic: without a saturation gate the clay surface's
+    own speckle floods the mask, and only "lies on a long straight line" removes it.
+
+    Measured against courtfit's existing `_clay_mask` on the same clips: this is
+    what actually rescues clay (am_rally32short 0 of 8 frames locking -> 8 of 8);
+    routing to `_clay_mask` instead was measured identical to baseline."""
+    import cv2
+
+    d = max(2, int(round(frame.shape[1] * 0.006)))
+    L = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)[:, :, 0]
+    L = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8)).apply(L).astype(np.int16)
+
+    hit = np.zeros(L.shape, bool)
+    for ax in (0, 1):
+        a, b = np.roll(L, d, axis=ax), np.roll(L, -d, axis=ax)
+        h_ = (L - a >= tau) & (L - b >= tau)
+        if ax == 0:
+            h_[:d] = h_[-d:] = False
+        else:
+            h_[:, :d] = h_[:, -d:] = False
+        hit |= h_
+    raw = hit.astype(np.uint8) * 255
+
+    segs = cv2.HoughLinesP(raw, 1, np.pi / 180, threshold=50,
+                           minLineLength=max(40, int(frame.shape[1] * 0.08)),
+                           maxLineGap=14)
+    clean = np.zeros_like(raw)
+    if segs is not None:
+        for x1, y1, x2, y2 in segs[:, 0]:
+            cv2.line(clean, (int(x1), int(y1)), (int(x2), int(y2)), 255, 2)
+    return clean
+
+
+def court_line_mask(frame: np.ndarray) -> np.ndarray:
+    """The default mask for COURT detection: clay gets `clay_line_mask`, every
+    other surface gets `line_ridge_mask` unchanged.
+
+    `line_ridge_mask` itself is untouched - it is a primitive with other callers,
+    and a silently surface-adaptive primitive would be worse than an explicit
+    router."""
+    return clay_line_mask(frame) if court_surface(frame) == "clay" else line_ridge_mask(frame)
+
+
 def court_line_coverage(frame: np.ndarray, H: np.ndarray,
                         tol_px: Optional[float] = None,
                         mask_fn=None, mask=None) -> tuple[float, float]:
@@ -951,7 +1035,7 @@ def court_line_coverage(frame: np.ndarray, H: np.ndarray,
     import cv2
 
     if mask is None:
-        mask = (mask_fn or line_ridge_mask)(frame)
+        mask = (mask_fn or court_line_mask)(frame)
     h, w = mask.shape[:2]
     if tol_px is None:
         tol_px = max(2.0, w * 0.006)
@@ -1297,7 +1381,7 @@ def snap_to_lines(frame: np.ndarray, named, *, min_coverage: float = 0.40,
     Returns (H, named_out, snapped: bool, cov_before, cov_after). On skip/refuse,
     named_out is the input `named` and H is built from it unchanged.
     """
-    mf = mask_fn or line_ridge_mask
+    mf = mask_fn or court_line_mask
     corners = {n: list(named[n]) for n in _DBL_CORNERS if n in named}
     if len(corners) < 4 or len(named) < 4:
         # Can't snap without the four corners; return H from the clicks if solvable.
@@ -1351,7 +1435,7 @@ def court_lock_step(frame: np.ndarray, H_prev: np.ndarray, boxes=None,
 
     # `mask`: optionally reuse a precomputed line mask (copied - boxes are
     # zeroed in place below and the caller may share the mask with other checks).
-    mask = mask.copy() if mask is not None else (mask_fn or line_ridge_mask)(frame)
+    mask = mask.copy() if mask is not None else (mask_fn or court_line_mask)(frame)
     for b in boxes or []:
         if b is None:
             continue

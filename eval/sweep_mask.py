@@ -31,10 +31,34 @@ def wrap(**kw):
         return mc.fused_mask(frame, calibration, **kw)
     return f
 
+def routed():
+    """Surface-routed: clay gets the hue-agnostic mask, everything else is
+    UNTOUCHED. The previous arms swapped the mask globally, which is why each
+    bought clay and paid for it on hard courts."""
+    def f(frame, tau=None, sat_max=None):
+        if tau is not None or sat_max is not None:      # an internal call
+            return SHIPPED(frame, tau=tau or 9, sat_max=sat_max or 90)
+        return mc.routed_mask(frame, calibration, SHIPPED)
+    return f
+
+def routed_fused(**kw):
+    """Surface-routed with the FUSED mask on clay. Routing to the EXISTING
+    _clay_mask was measured identical to baseline (gained none, lost none) -
+    the pipeline already falls back to it, so routing adds nothing there. The
+    fused mask is what actually rescued clay in the global arms; this gives it
+    to clay ONLY, leaving every other surface untouched."""
+    def f(frame, tau=None, sat_max=None):
+        if tau is not None or sat_max is not None:
+            return SHIPPED(frame, tau=tau or 9, sat_max=sat_max or 90)
+        if mc.surface_of(frame) == "clay":
+            return mc.fused_mask(frame, calibration, **kw)
+        return SHIPPED(frame)
+    return f
+
 ARMS = {"baseline": None,
-        "chroma_only": wrap(clahe=False),
-        "clahe_only":  wrap(use_chroma=False),
-        "both":        wrap()}
+        "routed_clay_chroma": routed_fused(clahe=False),
+        "routed_clay_clahe":  routed_fused(use_chroma=False),
+        }
 out = {}
 for name, fn in ARMS.items():
     calibration.line_ridge_mask = SHIPPED if fn is None else fn
