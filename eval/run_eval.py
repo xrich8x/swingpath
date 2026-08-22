@@ -359,6 +359,23 @@ def report(rows, summaries, source):
         line += f"   median consensus err {np.median(errs):.1f} px (range {min(errs):.1f}-{max(errs):.1f})"
     line += f"   WRONG (>{WRONG_PX:.0f}px) {n_wrong}"
     print(line)
+    if source == "drop":
+        # 9 of the 20 court gold clips ARE drop recordings under another name
+        # (eval/recordings.py). Quoting the whole drop set as independent
+        # confirmation of a gate result double-counts them, which is exactly the
+        # error this line exists to stop.
+        try:
+            from recordings import overlap
+            shared = set(overlap().values())
+        except Exception:
+            shared = set()
+        if shared:
+            ind = [s_ for s_ in summaries if s_["clip"] not in shared]
+            ia = [s_ for s_ in ind if s_["accepted"]]
+            dup = sorted({s_["clip"] for s_ in summaries if s_["clip"] in shared})
+            print(f"INDEPENDENT of the court gold set: ACCEPTED {len(ia)}/{len(ind)}  "
+                  f"({len(summaries) - len(ind)} recordings excluded as gold duplicates)")
+            print(f"  excluded: {', '.join(dup)}")
     if summaries and summaries[0]["frames"] != ACCEPT_K:
         print(f"NOTE: k={summaries[0]['frames']}, not {ACCEPT_K}. The >={ACCEPT_VOTES}-vote "
               f"accept bar was measured at k={ACCEPT_K}; the ACCEPTED column is not the "

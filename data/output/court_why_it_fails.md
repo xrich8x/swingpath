@@ -426,3 +426,48 @@ is clay footage from venues this club has nothing to do with.
 Any future population split must key on the gold manifest's `video` field, not on clip
 names. Until that lands, treat "gold" and "drop" as overlapping by 9 recordings and do
 not quote them as independent confirmation of each other.
+
+---
+
+## 11. FIXED: recording identity now comes from the source video, not the clip name
+
+Section 10's correction, made structural.
+
+`eval/recordings.py` resolves every gold clip and every drop group to a canonical
+**recording key** derived from the source video the gold manifest records, and exposes
+`overlap()` and `independent_drop_groups()`. `eval/run_eval.py --drop` now prints the
+independent subset alongside the full one and names what it excluded;
+`eval/collect_frames.py` prints the same warning at collection time, so the overlap is
+visible without reading a document. Four tests in
+`backend/tests/test_recording_identity.py` fail if identity regresses to clip names, if
+the overlap stops being reported, or if a streamed clip is given a local key it cannot have.
+
+### The corrected numbers
+
+```
+population                            baseline  routed   gained
+ALL 54 (double-counts 9)                17/54    19/54   gold_clay, tnxkujogch4
+INDEPENDENT of the gold set (45)        10/45    11/45   gold_clay
+```
+
+**Two figures reported earlier in this session are wrong and are corrected here:**
+
+* the breadth gain is **+1 independent recording, not +2** — `tnxkujogch4` is the gate
+  gain `am_rally32short`, so it was counted twice;
+* the drop set's baseline acceptance is **10/45 = 22.2%, not 17/54 = 31.5%**. The nine
+  duplicates are gold clips and seven of the nine already pass, so removing them lowers
+  the rate rather than leaving it flat.
+
+Eleven gold clips are `youtube-stream` with no local file and are genuinely independent
+of the drop set; the overlap is confined to the nine built from `data/amateur_clips/`.
+
+### What it does not change
+
+The gate is unaffected — it was always the 20 court gold clips alone, never a mixture,
+so **12/20 accepted, nothing lost, zero wrong** stands exactly as measured. So does the
+2.3 px fit on `sAjkpeRq4P4`, which is a pixel error against a human placement rather than
+a population statistic.
+
+What shrinks is the independent support for the clay work: **one recording beyond the
+gate, at the same club as the gate's own gain.** Clay footage from unrelated venues is
+now the single thing that would move this from "works on one club" to "works on clay".
