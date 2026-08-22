@@ -48,9 +48,30 @@ class GoldClip:
         return self.calib is not None
 
 
+# Source videos live under data/incoming/<surface>/ since the 2026-08-20
+# reorganisation. Resolve by BASENAME rather than a hardcoded folder: the
+# basename is what the ball gold-leak guard and lineage.json key on, so it is the
+# one part of a video's identity that must never change, which makes it the only
+# safe thing to look a file up by.
+_VIDEO_INDEX = None
+
+
+def find_video(basename: str) -> str:
+    """Repo-relative path for a source video, or the legacy path if not found
+    (so a missing file still reports a sensible name rather than None)."""
+    global _VIDEO_INDEX
+    if _VIDEO_INDEX is None:
+        _VIDEO_INDEX = {}
+        inc = REPO / "data" / "incoming"
+        if inc.exists():
+            for v in inc.rglob("*.mp4"):
+                _VIDEO_INDEX.setdefault(v.name, str(v.relative_to(REPO)).replace("\\", "/"))
+    return _VIDEO_INDEX.get(basename, f"data/{basename}")
+
+
 def _clip(name: str, calib: bool) -> GoldClip:
     return GoldClip(name=name,
-                    video=f"data/{name}.mp4",
+                    video=find_video(f"{name}.mp4"),
                     calib=f"data/{name}_pts.json" if calib else None,
                     labels=f"data/gold/{name}.labels.json")
 
@@ -64,7 +85,7 @@ def _trimmed(stem: str) -> GoldClip:
     stem while the gold set is keyed on `gold_<stem>`.
     """
     return GoldClip(name=f"gold_{stem}",
-                    video=f"data/gold_clips/{stem}.mp4",
+                    video=find_video(f"{stem}.mp4"),
                     calib=f"data/{stem}_pts.json",
                     labels=f"data/gold/gold_{stem}.labels.json")
 

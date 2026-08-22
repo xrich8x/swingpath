@@ -8,6 +8,14 @@ a reordering would silently change published output without failing anything els
 
 If a gold clip is ever added, these literals are meant to fail: update them
 deliberately, and re-check any pooled number that moves.
+
+VIDEO PATHS UPDATED 2026-08-20: source videos were reorganised into
+data/incoming/<surface>/. The FILES are byte-identical and their BASENAMES are
+unchanged - which is what matters, because the ball gold-leak guard
+(train_ballnet.gold_source_videos) and data/train_clips/lineage.json both key on
+basename, and a rename would silently defeat both (trap 17). Only the directory
+moved, so every historical number remains reproducible from the same bytes; these
+literals track the move rather than pinning a folder that no longer exists.
 """
 
 import sys
@@ -21,35 +29,35 @@ import _goldset as gs
 # ---- the literals, copied verbatim from each tool before the refactor ----
 
 LIT_VIDEOS = {                                   # eval_pose_proximity, eval_racquet_negation
-    "am_hard_utr": "data/am_hard_utr.mp4",
-    "gold_shell": "data/gold_shell.mp4",
-    "gold_clay": "data/gold_clay.mp4",
-    "gold_am": "data/gold_am.mp4",
-    "yt_rally2": "data/yt_rally2.mp4",
-    "yt_match40": "data/yt_match40.mp4",
+    "am_hard_utr": "data/incoming/Hardcourt/am_hard_utr.mp4",
+    "gold_shell": "data/incoming/Shell/gold_shell.mp4",
+    "gold_clay": "data/incoming/Clay/gold_clay.mp4",
+    "gold_am": "data/incoming/Hardcourt/gold_am.mp4",
+    "yt_rally2": "data/incoming/Shell/yt_rally2.mp4",
+    "yt_match40": "data/incoming/Hardcourt/yt_match40.mp4",
 }
 
 LIT_NAME_VIDEO_CALIB = [                         # eval_detector_gold
-    ("am_hard_utr", "data/am_hard_utr.mp4", "data/am_hard_utr_pts.json"),
-    ("gold_shell", "data/gold_shell.mp4", None),
-    ("gold_clay", "data/gold_clay.mp4", None),
-    ("gold_am", "data/gold_am.mp4", None),
-    ("yt_rally2", "data/yt_rally2.mp4", "data/yt_rally2_pts.json"),
-    ("yt_match40", "data/yt_match40.mp4", "data/yt_match40_pts.json"),
+    ("am_hard_utr", "data/incoming/Hardcourt/am_hard_utr.mp4", "data/am_hard_utr_pts.json"),
+    ("gold_shell", "data/incoming/Shell/gold_shell.mp4", None),
+    ("gold_clay", "data/incoming/Clay/gold_clay.mp4", None),
+    ("gold_am", "data/incoming/Hardcourt/gold_am.mp4", None),
+    ("yt_rally2", "data/incoming/Shell/yt_rally2.mp4", "data/yt_rally2_pts.json"),
+    ("yt_match40", "data/incoming/Hardcourt/yt_match40.mp4", "data/yt_match40_pts.json"),
 ]
 
 LIT_CALIB_TRIPLES = [                            # eval_court_gate
-    ("am_hard_utr", "data/am_hard_utr.mp4", "data/am_hard_utr_pts.json"),
-    ("yt_rally2", "data/yt_rally2.mp4", "data/yt_rally2_pts.json"),
-    ("yt_match40", "data/yt_match40.mp4", "data/yt_match40_pts.json"),
+    ("am_hard_utr", "data/incoming/Hardcourt/am_hard_utr.mp4", "data/am_hard_utr_pts.json"),
+    ("yt_rally2", "data/incoming/Shell/yt_rally2.mp4", "data/yt_rally2_pts.json"),
+    ("yt_match40", "data/incoming/Hardcourt/yt_match40.mp4", "data/yt_match40_pts.json"),
 ]
 
 LIT_CALIB_MAP = {                                # eval_model_filters, tune_suppress
-    "am_hard_utr": ("data/am_hard_utr.mp4", "data/am_hard_utr_pts.json",
+    "am_hard_utr": ("data/incoming/Hardcourt/am_hard_utr.mp4", "data/am_hard_utr_pts.json",
                     "data/gold/am_hard_utr.labels.json"),
-    "yt_rally2": ("data/yt_rally2.mp4", "data/yt_rally2_pts.json",
+    "yt_rally2": ("data/incoming/Shell/yt_rally2.mp4", "data/yt_rally2_pts.json",
                   "data/gold/yt_rally2.labels.json"),
-    "yt_match40": ("data/yt_match40.mp4", "data/yt_match40_pts.json",
+    "yt_match40": ("data/incoming/Hardcourt/yt_match40.mp4", "data/yt_match40_pts.json",
                    "data/gold/yt_match40.labels.json"),
 }
 
@@ -88,13 +96,17 @@ def test_every_clip_has_labels_and_a_real_video_path():
     for name, c in gs.GOLD.items():
         assert c.labels == f"data/gold/{name}.labels.json"
         assert (REPO / c.labels).is_file(), f"{name}: labels missing"
-        if name in gs.LEGACY_SIX:
-            assert c.video == f"data/{name}.mp4"
-        else:
-            # Promoted clips live in data/gold_clips so nothing picks them up as
-            # training footage, and their calibration is keyed on the clip stem.
-            assert c.video == f"data/gold_clips/{name.removeprefix('gold_')}.mp4"
-            assert c.calib == f"data/{name.removeprefix('gold_')}_pts.json"
+        # Source videos moved to data/incoming/<surface>/ on 2026-08-20 and are
+        # now resolved by BASENAME (_goldset.find_video), because the basename is
+        # what the ball leak guard and lineage.json key on - the one part of a
+        # video's identity that must never change. So assert the basename and
+        # that the file is really there, NOT a hardcoded folder that will rot the
+        # next time the footage is reorganised.
+        stem = name if name in gs.LEGACY_SIX else name.removeprefix("gold_")
+        assert Path(c.video).name == f"{stem}.mp4", f"{name}: wrong video basename"
+        assert (REPO / c.video).is_file(), f"{name}: video missing at {c.video}"
+        if name not in gs.LEGACY_SIX:
+            assert c.calib == f"data/{stem}_pts.json"
             assert (REPO / c.calib).is_file(), f"{name}: calibration missing"
 
 

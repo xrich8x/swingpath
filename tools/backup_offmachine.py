@@ -58,7 +58,11 @@ REPO = Path(__file__).resolve().parents[1]
 #:                       frame images, regenerable from the videos above.
 #:                       Including it made this tool report 3,258 "missing" files
 #:                       against a perfectly good backup.
-TARGETS = ("data/train_clips", "data/ball_dataset")
+# data/train_clips was folded into data/incoming/<surface>/ on 2026-08-20. The
+# backup MUST follow the footage: a target list pointing at an empty directory
+# reports a clean backup while covering nothing, which is the failure mode this
+# tool exists to prevent.
+TARGETS = ("data/incoming", "data/ball_dataset")
 
 
 def sha256(path: Path, chunk: int = 1 << 20) -> str:

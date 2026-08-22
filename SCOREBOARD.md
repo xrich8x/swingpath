@@ -50,6 +50,20 @@ it so a withdrawal cannot orphan a duplicate.
 | Shipped inference | CPU-first, ~0.7–1.1 s/frame | Offline-first by design; there is no real-time requirement. |
 | Mobile | ONNX + int8, argmax baked into the graph | 0.9 MB / 11 MB. Call logic ported to JS, verified bit-identical. |
 
+**Footage layout (reorganised 2026-08-20):** every source video lives under
+`data/incoming/<surface>/` - **Clay 9, Hardcourt 38, Shell 6, Grass 4**, plus
+`Raw - Do Not Process` (9 full-length downloads whose trims are already in the surface
+folders; the eval skips it by rule, because sweeping both counts the same court twice).
+`data/amateur_clips`, `data/train_clips`, `data/gold_clips` and `data/highlights` are gone.
+**FILENAMES ARE NEVER CHANGED** - the ball gold-leak guard and `lineage.json` key on
+basename, so a rename silently defeats both (trap 17); only directories moved.
+`tools/backup_offmachine.py` TARGETS moved with the footage - a backup target pointing at
+an emptied directory reports a clean backup while covering nothing. **One safety cue was
+traded for documentation:** `data/gold_clips` used to keep gold videos out of the training
+pool by LOCATION; filed by surface they now sit beside training footage, so
+`data/incoming/README.md` lists all 19 gold files explicitly. The guard still catches a
+leak (it derives from the manifests, not a folder) but a human has no visual warning.
+
 **Target footage:** amateur phone video on a fence or tripod, 720p–1080p, 30–60 fps,
 often a low mount. Measured mounts: **1.38 m** and **1.74 m**. That is the constraint
 that shapes everything — a low camera limits *measurable depth* to 22–32% of the court.

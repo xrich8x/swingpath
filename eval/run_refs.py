@@ -41,9 +41,9 @@ sys.path.insert(0, str(REPO))
 
 from swingvision.courtfit import DBL  # noqa: E402
 
-# Where to look for the one file a reference belongs to, most-specific first.
-SEARCH = ["data", "data/train_clips", "data/gold_clips", "data/amateur_clips",
-          "data/highlights", "data/incoming"]
+# Source videos now live under data/incoming/<surface>/, so resolve a reference to
+# its file by searching that tree rather than a fixed list of legacy folders.
+SEARCH_ROOT = "data/incoming"
 
 ACCEPT_VOTES, ACCEPT_K = 6, 8
 
@@ -61,11 +61,9 @@ def references() -> list[tuple[str, Path, Path]]:
             continue                      # not a deliberate human placement
         stem = p.stem[:-4] if p.stem.endswith("_pts") else p.stem
         vid = None
-        for pool in SEARCH:
-            c = REPO / pool / f"{stem}.mp4"
-            if c.exists():
-                vid = c
-                break
+        for c in (REPO / SEARCH_ROOT).rglob(f"{stem}.mp4"):
+            vid = c
+            break
         if vid is not None:
             out.append((stem, p, vid))
     return out

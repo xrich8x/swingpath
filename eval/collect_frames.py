@@ -34,11 +34,22 @@ REPO = Path(__file__).resolve().parents[1]
 DROP = REPO / "eval" / "frames"
 SHEETS = REPO / "eval" / "sheets"
 
-POOLS = ["data/train_clips", "data/amateur_clips", "data/incoming",
-         "data/highlights", "data/gold_clips"]
-ROOTS = ["am_hard_utr", "demo30", "eala_segment", "eala_swiatek", "gold_am",
-         "gold_clay", "gold_shell", "tennis_sample", "tennis_sample_short",
-         "yt_match40", "yt_rally", "yt_rally2"]
+# Source videos live under data/incoming/<surface>/ (Clay, Hardcourt, Shell,
+# Grass). "Raw - Do Not Process" is EXCLUDED on purpose and not merely by name:
+# it holds the full-length downloads whose trims are already in the surface
+# folders, so sweeping both would count the same court twice - the double-count
+# that eval/recordings.py exists to stop.
+INCOMING = "data/incoming"
+SKIP_DIRS = {"raw - do not process"}
+
+
+def _pools():
+    root = REPO / INCOMING
+    if not root.exists():
+        return []
+    return [d for d in sorted(root.iterdir())
+            if d.is_dir() and d.name.lower() not in SKIP_DIRS]
+
 
 # A YouTube id in square brackets, or as a yt_/e2e_ prefix, or a bare 11-char stem.
 _YTID = re.compile(r"\[([A-Za-z0-9_-]{11})\]")
@@ -75,12 +86,8 @@ def discover() -> dict[str, list[Path]]:
     if lp.exists():
         lineage = json.loads(lp.read_text(encoding="utf-8")).get("clips", {})
     files = []
-    for pool in POOLS:
-        files += sorted((REPO / pool).glob("*.mp4"))
-    for r in ROOTS:
-        p = REPO / "data" / f"{r}.mp4"
-        if p.exists():
-            files.append(p)
+    for pool in _pools():
+        files += sorted(pool.glob("*.mp4"))
     groups: dict[str, list[Path]] = {}
     for f in files:
         groups.setdefault(_group_key(f, lineage), []).append(f)

@@ -150,7 +150,13 @@ data/output/synth/*.npz
 # for each clip) is deliberately NOT ignored: it is the record of which footage
 # is benchmark and which is training data.
 data/runs/*.log
-data/incoming/
+# Source videos (6.6 GB) stay out of git, but the layout README does NOT: it
+# records which files are GOLD test footage, and that is the only warning a human
+# gets now that gold videos sit beside training footage in the surface folders.
+# A directory rule would stop git descending, so exclude the CONTENTS and re-admit
+# the README.
+data/incoming/*
+!data/incoming/README.md
 
 # Per-rally highlight clips (run.py highlights) are generated artifacts, same
 # policy as data/output: the mp4s are ignored, the manifest is evidence.
