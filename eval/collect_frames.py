@@ -62,8 +62,19 @@ def _ascii(s: str) -> str:
     return s.encode("ascii", "replace").decode("ascii")
 
 
+_CUT_SUFFIX = re.compile(r"_p\d+$")             # split_by_serve output: name_p07
+_HC_CUT = re.compile(r"^(hc\d+)_.*$")           # hand cuts: hc1_2-1 -> hc1
+
+
 def _group_key(path: Path, lineage: dict[str, str]) -> str:
-    """The recording a file belongs to. Same key = same court = one entry."""
+    """The recording a file belongs to. Same key = same court = one entry.
+
+    N cuts of one recording are ONE court. Counting them separately inflates any
+    pass-rate, which is the bug eval/recordings.py exists to stop - and with 88
+    hand cuts of three hard-court videos now on disk it would swamp every number.
+
+    Order matters: lineage is authoritative where it exists, and the filename
+    patterns are the fallback for cuts made outside these tools."""
     name = path.name
     src = lineage.get(name)                     # a trim -> its source recording
     if src:
@@ -77,17 +88,24 @@ def _group_key(path: Path, lineage: dict[str, str]) -> str:
             stem = stem[len(pre):]
     # a trimmed segment (X_s1, X_s2) is the same recording as X
     stem = re.sub(r"_s\d+$", "", stem)
+    stem = _CUT_SUFFIX.sub("", stem)            # split_by_serve cuts
+    m2 = _HC_CUT.match(stem)                    # hand cuts hc1_2-1 -> hc1
+    if m2:
+        stem = m2.group(1)
     return stem
 
 
 def discover() -> dict[str, list[Path]]:
     lineage = {}
-    lp = REPO / "data" / "train_clips" / "lineage.json"
-    if lp.exists():
-        lineage = json.loads(lp.read_text(encoding="utf-8")).get("clips", {})
+    for lp in (REPO / "data" / "train_clips" / "lineage.json",
+               REPO / "data" / "incoming" / "lineage.json"):
+        if lp.exists():
+            lineage.update(json.loads(lp.read_text(encoding="utf-8")).get("clips", {}))
     files = []
     for pool in _pools():
-        files += sorted(pool.glob("*.mp4"))
+        # RECURSIVE: cuts of a long recording are filed in per-clip subfolders
+        # (hc1_2/hc1_2-1.mp4). A non-recursive glob made 88 of them invisible.
+        files += sorted(pool.rglob("*.mp4"))
     groups: dict[str, list[Path]] = {}
     for f in files:
         groups.setdefault(_group_key(f, lineage), []).append(f)

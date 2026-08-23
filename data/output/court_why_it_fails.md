@@ -471,3 +471,60 @@ a population statistic.
 What shrinks is the independent support for the clay work: **one recording beyond the
 gate, at the same club as the gate's own gain.** Clay footage from unrelated venues is
 now the single thing that would move this from "works on one club" to "works on clay".
+
+---
+
+## 12. WITHDRAWN: "shell already works". On the real target footage it is 0 of 5.
+
+Five new Philippine shell recordings arrived (Manila Polo Club, Flexi League,
+Hillsborough) — 4K, 20–39 min, indoor, dim, faded lines. They were cut into 58 clips
+by `tools/split_by_serve.py` and grouped back to **5 recordings** via
+`data/incoming/lineage.json`.
+
+### The result
+
+```
+recording      frames locked votes   result
+71sXQ2mCbCo         6      3     1   refused     (flexi_joy)
+kYI7HjYBwC0         8      3     1   refused     (mpc_mixed)
+l4CAptCem88         8      7     1   refused     (flexi_franz)
+NL57h6vMKPQ         8      0     0   refused     (mpc_tuesday)
+o5uCLE930FU         6      2     1   refused     (hillsborough)
+```
+
+**0 of 5.** `l4CAptCem88` locks 7 of 8 frames and still scores 1 vote — the detector
+fires and finds a *different* court every frame. `NL57h6vMKPQ` locks nothing at all.
+
+### What this withdraws
+
+Section 8 shipped surface routing with the claim that **shell needs no special case,
+measured at 2 of 4 with `gold_shell` at 8/8 votes**. That was four clips, and they were
+all *bright* pale courts. The footage this project actually targets — Philippine indoor
+shell — is **0 of 5**. The claim is withdrawn: it was true of the sample and false of
+the population.
+
+### And the surface classifier does not generalise either
+
+`court_surface` called **all five "hard"**. `SHELL_L = 166` was fitted to four bright
+clips (L\* 170–176); these indoor courts measure **L\* 119–164**, and Manila Polo sits at
+**a\* 137 against a clay line of 140**. The rule captures "bright and pale", not "shell".
+The 7-unit margin flagged as thin in section 8 is now simply broken.
+
+**It costs nothing today** — shell and hard route to the same mask, so a misclassification
+changes no behaviour. But the rule must not be trusted if shell ever gets its own mask.
+
+### The cause is NOT the surface — the mask already has the lines
+
+Rendered (`eval/verdicts/shell_fail.jpg`), the masks contain the court clearly: baselines,
+service lines and sidelines are all traced. What drowns them is the **building** — roof
+trusses, strip lights, mesh fence lattice, chairs, railings. Mask sizes are 395k–1,257k
+pixels and `_detect_lines` returns 16–40 distinct lines, of which the strongest are
+architecture, not paint.
+
+**This is failure family 2 from section 3** — "architecture outcompetes the paint", first
+seen on `am_ntrp45w` (indoor, 111 px wrong). These five are that case in force.
+
+So a better *shell mask* would not fix them, because the mask is not what is failing.
+The next lever is line **selection**: the court is on the ground and the trusses are above
+the horizon, so position relative to the ground plane separates them, and nothing in
+`_detect_lines` currently uses it.
