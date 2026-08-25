@@ -54,8 +54,19 @@ def frame_size_for(kp_path, default):
     # back to 720p for a pool of 1080p clips — which reads the camera ~20% high
     # and stamped NINE correctly-placed calibrations DEGENERATE (fit 15-56 px).
     # The same files audit at 2.5 px and PASS once the real size is used.
-    for sub in ("", "train_clips", "gold_clips", "amateur_clips", "incoming", "gold"):
-        vid = REPO / "data" / sub / f"{tag}.mp4" if sub else REPO / "data" / f"{tag}.mp4"
+    # SEARCH RECURSIVELY. The list below used to be a flat set of directories,
+    # which broke a second time the moment data/incoming was reorganised into
+    # data/incoming/<surface>/ — the videos were one level deeper than the check
+    # looked, every 4K shell calibration fell back to 720p, and all five audited
+    # DEGENERATE at 41-117 px fit residual. Exactly the nine-false-DEGENERATE
+    # failure described above, recurring because the fix was a hard-coded list.
+    # A recursive search cannot be broken by moving a file, which is the point.
+    candidates = [REPO / "data" / f"{tag}.mp4"]
+    for sub in ("incoming", "train_clips", "gold_clips", "amateur_clips", "gold"):
+        d = REPO / "data" / sub
+        if d.is_dir():
+            candidates += sorted(d.rglob(f"{tag}.mp4"))
+    for vid in candidates:
         if vid.exists():
             import cv2
             c = cv2.VideoCapture(str(vid))
