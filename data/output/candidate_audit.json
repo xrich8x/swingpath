@@ -1,0 +1,318 @@
+[
+ {
+  "clip": "A7vXlWIlyrI",
+  "w": 1920,
+  "h": 1080,
+  "frames": 8,
+  "locked": 6,
+  "n_good": 2,
+  "best_err": 5.376695003671983,
+  "errs": [
+   5.376695003671983,
+   17.30624799162916,
+   23.098862754237874,
+   25.764065904401946,
+   30.51257878745557,
+   47.755505873521834
+  ],
+  "agree_good": 1,
+  "votes": 2,
+  "cons_err": 21.535078388581827,
+  "within_margin": 0.009561618194099591,
+  "truth_fails": [
+   "g>=.33",
+   "struct",
+   "suffic",
+   "verify"
+  ],
+  "selects_against_truth": [
+   "g>=.33",
+   "struct",
+   "suffic",
+   "verify"
+  ],
+  "truth_would_pass": false,
+  "verdict": "TRUTH REACHED x2 but they disagree"
+ },
+ {
+  "clip": "am_hard_utr",
+  "w": 1920,
+  "h": 1080,
+  "frames": 8,
+  "locked": 8,
+  "n_good": 8,
+  "best_err": 7.5499820930976185,
+  "errs": [
+   7.5499820930976185,
+   12.723722169714339,
+   12.930823075192308,
+   14.825502641652905,
+   14.983824123225528,
+   15.293472682679964,
+   15.470019426948468,
+   18.7122993188259
+  ],
+  "agree_good": 7,
+  "votes": 7,
+  "cons_err": 14.303171090649531,
+  "within_margin": -0.3047737224446504,
+  "truth_fails": [
+   "g>=.33"
+  ],
+  "selects_against_truth": [
+   "g>=.33"
+  ],
+  "truth_would_pass": false,
+  "verdict": "TRUTH REACHED x8, AGREEING - gating can convert"
+ },
+ {
+  "clip": "CYqapSq5llo",
+  "w": 1920,
+  "h": 1080,
+  "frames": 8,
+  "locked": 8,
+  "n_good": 4,
+  "best_err": 4.259469969840071,
+  "errs": [
+   4.259469969840071,
+   9.770262340588314,
+   16.128831506327224,
+   18.812818560550248,
+   20.174437926826666,
+   21.02379938294568,
+   28.78574291890788,
+   30.516183306413353
+  ],
+  "agree_good": 2,
+  "votes": 3,
+  "cons_err": 16.877601729235856,
+  "within_margin": 0.10168638370662222,
+  "truth_fails": [
+   "g>=.33",
+   "struct",
+   "suffic",
+   "verify"
+  ],
+  "selects_against_truth": [
+   "g>=.33",
+   "struct",
+   "suffic",
+   "verify"
+  ],
+  "truth_would_pass": false,
+  "verdict": "TRUTH REACHED x4, AGREEING - gating can convert"
+ },
+ {
+  "clip": "e8T34KoJzOw_s2",
+  "w": 1920,
+  "h": 1080,
+  "frames": 8,
+  "locked": 8,
+  "n_good": 3,
+  "best_err": 1.6044159730236758,
+  "errs": [
+   1.6044159730236758,
+   16.028450253551757,
+   19.888660629473467,
+   32.97560008582712,
+   34.8935801294368,
+   35.099912968164254,
+   41.72479547795733,
+   47.101566780571524
+  ],
+  "agree_good": 2,
+  "votes": 2,
+  "cons_err": 17.949058162066148,
+  "within_margin": 0.016849921738220308,
+  "truth_fails": [
+   "g>=.33"
+  ],
+  "selects_against_truth": [
+   "g>=.33"
+  ],
+  "truth_would_pass": false,
+  "verdict": "TRUTH REACHED x3, AGREEING - gating can convert"
+ },
+ {
+  "clip": "HoHxFSX_gLk_s1",
+  "w": 1920,
+  "h": 1080,
+  "frames": 8,
+  "locked": 4,
+  "n_good": 0,
+  "best_err": 55.631403445364015,
+  "errs": [
+   55.631403445364015,
+   56.63533053552258,
+   61.33729785838801,
+   64.77007933188696
+  ],
+  "agree_good": 0,
+  "votes": 1,
+  "cons_err": null,
+  "within_margin": -0.11200165376250121,
+  "truth_fails": [
+   "g>=.33",
+   "struct",
+   "suffic",
+   "verify"
+  ],
+  "selects_against_truth": [
+   "g>=.33",
+   "struct",
+   "suffic",
+   "verify"
+  ],
+  "truth_would_pass": false,
+  "verdict": "TRUTH NEVER REACHED - a refuse-only gate cannot help; the locks OUTRANK truth (scoring)"
+ },
+ {
+  "clip": "HoHxFSX_gLk_s2",
+  "w": 1920,
+  "h": 1080,
+  "frames": 8,
+  "locked": 8,
+  "n_good": 1,
+  "best_err": 18.22537028828254,
+  "errs": [
+   18.22537028828254,
+   25.051137500264744,
+   30.097325555925355,
+   30.615918306843227,
+   33.317961999125345,
+   34.712201159952954,
+   36.8055711241679,
+   66.21871200348636
+  ],
+  "agree_good": 1,
+  "votes": 3,
+  "cons_err": 32.818333036274076,
+  "within_margin": -0.1184229559946326,
+  "truth_fails": [
+   "g>=.33"
+  ],
+  "selects_against_truth": [
+   "g>=.33"
+  ],
+  "truth_would_pass": false,
+  "verdict": "TRUTH REACHED ONCE - needs a second good frame"
+ },
+ {
+  "clip": "sAjkpeRq4P4",
+  "w": 1920,
+  "h": 1080,
+  "frames": 8,
+  "locked": 8,
+  "n_good": 6,
+  "best_err": 2.462174775916302,
+  "errs": [
+   2.462174775916302,
+   2.907612583070404,
+   3.084244503750494,
+   3.28175869194202,
+   3.3845408962259818,
+   8.989223505205231,
+   59.93747353304594,
+   101.4029723942851
+  ],
+  "agree_good": 6,
+  "votes": 6,
+  "cons_err": 2.323228593031329,
+  "within_margin": -0.06115879828326182,
+  "truth_fails": [
+   "g>=.33"
+  ],
+  "selects_against_truth": [
+   "g>=.33"
+  ],
+  "truth_would_pass": false,
+  "verdict": "TRUTH REACHED x6, AGREEING - gating can convert"
+ },
+ {
+  "clip": "tc8CGFxyRE8",
+  "w": 1920,
+  "h": 1080,
+  "frames": 8,
+  "locked": 7,
+  "n_good": 0,
+  "best_err": 26.083961585870377,
+  "errs": [
+   26.083961585870377,
+   40.40164158022937,
+   48.87568151644829,
+   59.33331513276673,
+   59.67676273928689,
+   63.77475590097605,
+   63.97531867716396
+  ],
+  "agree_good": 0,
+  "votes": 3,
+  "cons_err": 59.582138025847804,
+  "within_margin": 0.1609165268456376,
+  "truth_fails": [],
+  "selects_against_truth": [],
+  "truth_would_pass": true,
+  "verdict": "TRUTH NEVER REACHED - a refuse-only gate cannot help; truth OUTRANKS the locks (search/gate lost it)"
+ },
+ {
+  "clip": "UHf0LeMU2pg",
+  "w": 1920,
+  "h": 1080,
+  "frames": 8,
+  "locked": 7,
+  "n_good": 0,
+  "best_err": 39.78982302822226,
+  "errs": [
+   39.78982302822226,
+   53.58207489354982,
+   54.04010574537672,
+   55.6323839127216,
+   73.61653188603647,
+   79.9207654133617,
+   82.72057426290418
+  ],
+  "agree_good": 0,
+  "votes": 3,
+  "cons_err": 54.97527601562368,
+  "within_margin": 0.03789058410970378,
+  "truth_fails": [
+   "g>=.33",
+   "struct",
+   "verify"
+  ],
+  "selects_against_truth": [
+   "g>=.33",
+   "struct",
+   "verify"
+  ],
+  "truth_would_pass": false,
+  "verdict": "TRUTH NEVER REACHED - a refuse-only gate cannot help; truth OUTRANKS the locks (search/gate lost it)"
+ },
+ {
+  "clip": "uR5q2cSM6AY",
+  "w": 1920,
+  "h": 1080,
+  "frames": 8,
+  "locked": 8,
+  "n_good": 1,
+  "best_err": 19.675645656300667,
+  "errs": [
+   19.675645656300667,
+   21.046426139788206,
+   21.14059781450493,
+   21.87223489685195,
+   28.429324290255863,
+   29.514570795752377,
+   34.45646101217372,
+   41.706904488198596
+  ],
+  "agree_good": 1,
+  "votes": 3,
+  "cons_err": 20.80746088752712,
+  "within_margin": 0.16422639253736865,
+  "truth_fails": [],
+  "selects_against_truth": [],
+  "truth_would_pass": true,
+  "verdict": "TRUTH REACHED ONCE - needs a second good frame"
+ }
+]

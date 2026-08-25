@@ -1,0 +1,102 @@
+[
+ {
+  "clip": "A7vXlWIlyrI",
+  "behind": 0.0,
+  "seen_shipped": 10.0,
+  "seen_front": 10.0,
+  "g_shipped": 0.3028322440087146,
+  "g_front": 0.3028322440087146,
+  "margin_shipped": 0.07094818603770012,
+  "margin_front": 0.07094818603770012
+ },
+ {
+  "clip": "am_hard_utr",
+  "behind": 0.0,
+  "seen_shipped": 10.0,
+  "seen_front": 10.0,
+  "g_shipped": 0.314410480349345,
+  "g_front": 0.314410480349345,
+  "margin_shipped": 0.024936796138818662,
+  "margin_front": 0.024936796138818662
+ },
+ {
+  "clip": "CYqapSq5llo",
+  "behind": 0.0,
+  "seen_shipped": 10.0,
+  "seen_front": 10.0,
+  "g_shipped": 0.5550561797752809,
+  "g_front": 0.5550561797752809,
+  "margin_shipped": 0.27275952905757755,
+  "margin_front": 0.27275952905757755
+ },
+ {
+  "clip": "e8T34KoJzOw_s2",
+  "behind": 0.0,
+  "seen_shipped": 10.0,
+  "seen_front": 10.0,
+  "g_shipped": 0.4856512141280353,
+  "g_front": 0.4856512141280353,
+  "margin_shipped": 0.27512489833856163,
+  "margin_front": 0.27512489833856163
+ },
+ {
+  "clip": "HoHxFSX_gLk_s1",
+  "behind": 0.0,
+  "seen_shipped": 10.0,
+  "seen_front": 10.0,
+  "g_shipped": 0.20346320346320346,
+  "g_front": 0.20346320346320346,
+  "margin_shipped": -0.06915014809751649,
+  "margin_front": -0.06915014809751649
+ },
+ {
+  "clip": "HoHxFSX_gLk_s2",
+  "behind": 0.0,
+  "seen_shipped": 10.0,
+  "seen_front": 10.0,
+  "g_shipped": 0.6082251082251082,
+  "g_front": 0.6082251082251082,
+  "margin_shipped": 0.2851119006779384,
+  "margin_front": 0.2851119006779384
+ },
+ {
+  "clip": "sAjkpeRq4P4",
+  "behind": 0.0,
+  "seen_shipped": 10.0,
+  "seen_front": 10.0,
+  "g_shipped": 0.3197424892703863,
+  "g_front": 0.3197424892703863,
+  "margin_shipped": 0.059938567701758816,
+  "margin_front": 0.059938567701758816
+ },
+ {
+  "clip": "tc8CGFxyRE8",
+  "behind": 0.0,
+  "seen_shipped": 10.0,
+  "seen_front": 10.0,
+  "g_shipped": 0.4398148148148148,
+  "g_front": 0.4398148148148148,
+  "margin_shipped": 0.18102084496556858,
+  "margin_front": 0.18102084496556858
+ },
+ {
+  "clip": "UHf0LeMU2pg",
+  "behind": 0.0,
+  "seen_shipped": 10.0,
+  "seen_front": 10.0,
+  "g_shipped": 0.21951219512195122,
+  "g_front": 0.21951219512195122,
+  "margin_shipped": -0.07402014318650649,
+  "margin_front": -0.07402014318650649
+ },
+ {
+  "clip": "uR5q2cSM6AY",
+  "behind": 0.0,
+  "seen_shipped": 10.0,
+  "seen_front": 10.0,
+  "g_shipped": 0.648068669527897,
+  "g_front": 0.648068669527897,
+  "margin_shipped": 0.37419932279422863,
+  "margin_front": 0.37419932279422863
+ }
+]

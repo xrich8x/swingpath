@@ -1,0 +1,230 @@
+[
+ {
+  "clip": "flexi_franz_p01",
+  "w": 3840,
+  "h": 2160,
+  "frames": 8,
+  "locked": 7,
+  "n_good": 6,
+  "best_err": 7.823082491743088,
+  "errs": [
+   7.823082491743088,
+   7.947489804720488,
+   9.6683857994736,
+   10.561861422626269,
+   11.022969528096136,
+   12.184473993168973,
+   30.90253301199788
+  ],
+  "agree_good": 3,
+  "votes": 3,
+  "cons_err": 9.783711210871923,
+  "within_margin": 0.08071001755356239,
+  "truth_fails": [],
+  "selects_against_truth": [],
+  "truth_would_pass": true,
+  "verdict": "TRUTH REACHED x6, AGREEING - gating can convert"
+ },
+ {
+  "clip": "flexi_franz_p07",
+  "w": 3840,
+  "h": 2160,
+  "frames": 8,
+  "locked": 8,
+  "n_good": 5,
+  "best_err": 4.793129021695661,
+  "errs": [
+   4.793129021695661,
+   8.23454140161832,
+   15.804331150900476,
+   18.836619870952866,
+   19.26980378629016,
+   32.45491434531755,
+   39.65598617440534,
+   39.68883258866853
+  ],
+  "agree_good": 1,
+  "votes": 2,
+  "cons_err": 39.14833778878706,
+  "within_margin": 0.1319761461005954,
+  "truth_fails": [],
+  "selects_against_truth": [],
+  "truth_would_pass": true,
+  "verdict": "TRUTH REACHED x5 but they disagree"
+ },
+ {
+  "clip": "flexi_joy_p01",
+  "w": 3840,
+  "h": 2160,
+  "frames": 8,
+  "locked": 0,
+  "n_good": 0,
+  "best_err": null,
+  "errs": [],
+  "agree_good": 0,
+  "votes": 0,
+  "cons_err": null,
+  "within_margin": null,
+  "truth_fails": [],
+  "selects_against_truth": [],
+  "truth_would_pass": true,
+  "verdict": "NO LOCK - the search produces nothing"
+ },
+ {
+  "clip": "flexi_joy_p07",
+  "w": 3840,
+  "h": 2160,
+  "frames": 8,
+  "locked": 3,
+  "n_good": 0,
+  "best_err": 33.64545032243494,
+  "errs": [
+   33.64545032243494,
+   35.364644229500215,
+   57.159795885241614
+  ],
+  "agree_good": 0,
+  "votes": 1,
+  "cons_err": null,
+  "within_margin": 0.16307639819957861,
+  "truth_fails": [],
+  "selects_against_truth": [],
+  "truth_would_pass": true,
+  "verdict": "TRUTH NEVER REACHED - a refuse-only gate cannot help; truth OUTRANKS the locks (search/gate lost it)"
+ },
+ {
+  "clip": "hillsborough_p02",
+  "w": 3840,
+  "h": 2160,
+  "frames": 8,
+  "locked": 3,
+  "n_good": 0,
+  "best_err": 33.65152017790988,
+  "errs": [
+   33.65152017790988,
+   38.06782666157083,
+   56.768956927113706
+  ],
+  "agree_good": 0,
+  "votes": 1,
+  "cons_err": null,
+  "within_margin": 0.05085103758390508,
+  "truth_fails": [
+   "g>=.33"
+  ],
+  "selects_against_truth": [
+   "g>=.33"
+  ],
+  "truth_would_pass": false,
+  "verdict": "TRUTH NEVER REACHED - a refuse-only gate cannot help; truth OUTRANKS the locks (search/gate lost it)"
+ },
+ {
+  "clip": "hillsborough_p08",
+  "w": 3840,
+  "h": 2160,
+  "frames": 8,
+  "locked": 4,
+  "n_good": 2,
+  "best_err": 17.230012299088546,
+  "errs": [
+   17.230012299088546,
+   19.705405023862244,
+   21.873295119011857,
+   27.495754095394307
+  ],
+  "agree_good": 1,
+  "votes": 1,
+  "cons_err": null,
+  "within_margin": 0.05512339055793991,
+  "truth_fails": [],
+  "selects_against_truth": [],
+  "truth_would_pass": true,
+  "verdict": "TRUTH REACHED x2 but they disagree"
+ },
+ {
+  "clip": "mpc_mixed_p02",
+  "w": 3840,
+  "h": 2160,
+  "frames": 8,
+  "locked": 0,
+  "n_good": 0,
+  "best_err": null,
+  "errs": [],
+  "agree_good": 0,
+  "votes": 0,
+  "cons_err": null,
+  "within_margin": null,
+  "truth_fails": [
+   "g>=.33"
+  ],
+  "selects_against_truth": [],
+  "truth_would_pass": false,
+  "verdict": "NO LOCK - the search produces nothing"
+ },
+ {
+  "clip": "mpc_mixed_p08",
+  "w": 3840,
+  "h": 2160,
+  "frames": 8,
+  "locked": 3,
+  "n_good": 0,
+  "best_err": 23.201573497188292,
+  "errs": [
+   23.201573497188292,
+   27.420489114800834,
+   47.732530408610785
+  ],
+  "agree_good": 0,
+  "votes": 1,
+  "cons_err": null,
+  "within_margin": 0.04063841201716739,
+  "truth_fails": [
+   "g>=.33"
+  ],
+  "selects_against_truth": [
+   "g>=.33"
+  ],
+  "truth_would_pass": false,
+  "verdict": "TRUTH NEVER REACHED - a refuse-only gate cannot help; truth OUTRANKS the locks (search/gate lost it)"
+ },
+ {
+  "clip": "mpc_tuesday_p01",
+  "w": 3840,
+  "h": 2160,
+  "frames": 8,
+  "locked": 3,
+  "n_good": 0,
+  "best_err": 60.259811675963235,
+  "errs": [
+   60.259811675963235,
+   67.84216997560998,
+   68.26168976025443
+  ],
+  "agree_good": 0,
+  "votes": 1,
+  "cons_err": null,
+  "within_margin": 0.3551675707090275,
+  "truth_fails": [],
+  "selects_against_truth": [],
+  "truth_would_pass": true,
+  "verdict": "TRUTH NEVER REACHED - a refuse-only gate cannot help; truth OUTRANKS the locks (search/gate lost it)"
+ },
+ {
+  "clip": "mpc_tuesday_p07",
+  "w": 3840,
+  "h": 2160,
+  "frames": 8,
+  "locked": 0,
+  "n_good": 0,
+  "best_err": null,
+  "errs": [],
+  "agree_good": 0,
+  "votes": 0,
+  "cons_err": null,
+  "within_margin": null,
+  "truth_fails": [],
+  "selects_against_truth": [],
+  "truth_would_pass": true,
+  "verdict": "NO LOCK - the search produces nothing"
+ }
+]
