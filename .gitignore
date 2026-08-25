@@ -180,3 +180,12 @@ eval/verdicts/
 # deterministic: uniform positions, then the dominant-view cluster). The README
 # and eval/clip_classes.json - the human court-in-view verdicts - stay tracked.
 eval/frames/*/
+
+# Derived scratch from the eval harness. The `_` prefix is this repo's existing
+# convention for "regenerable, do not commit": extracted frame sets, clean-plate
+# galleries, fit caches, traces. eval/_shell_gallery alone is 22 MB of 4K JPEGs
+# that `tools/make_label_plates.py` rebuilds in one command, and eval/_candidates
+# is 25 MB of extracted frames. The evidence they produce (data/output/*.json,
+# *.md) IS committed - the intermediates are not.
+eval/_*
+data/output/_*
