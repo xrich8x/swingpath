@@ -674,8 +674,17 @@ def autodetect(frame, calibration, court, *, topk=12,
             break
         tried += 1
         try:
+            # 55 px was tuned on the 640-wide gold clips and was ABSOLUTE, so the
+            # refiner's reach shrank as resolution grew: 55 px@640-equivalent on the
+            # gold set, 18.3 on a 1920 reference, 9.2 on 4K. Measured (Session P,
+            # data/output/seed_reach.log): on 7 of 38 human-labelled clips the seed
+            # nearest the true court sat FARTHER away than the refiner could travel,
+            # and all 7 come back into range once the bound scales. Same defect the
+            # ball stack hit at 1080p and the same fix - scale it, and keep it an
+            # EXACT no-op at the resolution it was tuned at.
+            # (w == 640 -> 55.0 exactly; pinned by tests/test_refine_reach_scaling.py)
             Hs, ref, _ = calibration.refine_homography_bounded(
-                frame, _corners(*p), max_move_px=55.0, mask_fn=mf)
+                frame, _corners(*p), max_move_px=55.0 * (w / 640.0), mask_fn=mf)
         except Exception:
             continue
         # DEGENERACY FLOOR (the "not even remotely a court" rule applied to
