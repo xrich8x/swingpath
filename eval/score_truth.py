@@ -19,6 +19,23 @@ wrong courts rise with it. So the headline here is the MARGIN:
 The distractor pool is the shipped coarse grid, which is what `autodetect`
 actually ranks, so a negative margin here is a live failure and not a contrived one.
 
+READ THIS BEFORE QUOTING ANY NUMBER FROM HERE. This harness scores the criteria at
+the human's four clicked corners, EXACTLY. The gate does not define "correct" that
+way - it defines correct as within 20 px at 640 wide, and the clicks are one sample
+from that neighbourhood, measured NOT to be the best-registered one. So every g and
+every margin printed here is a LOWER BOUND on what the criteria can do.
+
+Measured 2026-08-24 (`eval/truth_neighbourhood.py`): at a median 5.8 px from the
+clicks - still well inside the gate's own tolerance - the true court clears the 0.33
+accept gate on 9 of 10 reference clips rather than 5, and the median margin rises
+from +0.126 to +0.210. A claim this file's output had already put into the record,
+"the criteria reject the correct answer even when handed it", was withdrawn on that
+evidence.
+
+Use `truth_neighbourhood.py` when the question is "can the criteria recognise this
+court". Use this file only when the question is specifically about the clicked
+corners themselves.
+
 Ground truth is human only: per-frame clicks for the 20 court gold clips, and the
 `"_exact": true` hand placements for the reference clips. `eala_pts_auto.json` is
 excluded - scoring against a detector's own output is self-grading.

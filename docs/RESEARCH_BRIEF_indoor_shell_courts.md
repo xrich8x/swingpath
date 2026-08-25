@@ -107,10 +107,20 @@ Each was built, run against the gold set under a pre-registered gate, and reject
 CLAHE/no-saturation-gate mask, everything else untouched). 11/20 → 12/20, nothing lost,
 zero wrong courts. It helps clay and does nothing for the indoor-clutter case.
 
-Also relevant: a search-free diagnostic that scores the criteria **at the human-placed
+> **⚠ CORRECTION 2026-08-24, after this brief was sent.** The paragraph below is
+> **withdrawn**. It scored the criteria at the human's four clicked corners exactly,
+> but the gate defines "correct" as anything within **20 px at 640 wide**. Sweeping
+> that neighbourhood (`eval/truth_neighbourhood.py`), a court a median **5.8 px** from
+> the clicks clears the 0.33 gate on **9 of 10** clips, not 5, and has a positive
+> margin on 9 of 10. The criteria do recognise the correct court; they were handed a
+> mis-registered version of it. Only `UHf0LeMU2pg` survives as a genuine scoring
+> failure. **Any recommendation that ranked "the scoring function is mis-specified"
+> on the strength of this paragraph should be re-weighted accordingly.**
+
+~~Also relevant: a search-free diagnostic that scores the criteria **at the human-placed
 court** shows that on 5 of 10 hand-calibrated clips the true court scores **0.18–0.31
 against a 0.33 accept gate** — the criteria reject the correct answer even when handed
-it. And on broadcast frames the agreement score's **global maximum over the entire
+it.~~ And on broadcast frames the agreement score's **global maximum over the entire
 parameter space sits on a wrong court**, so no amount of better searching helps there.
 
 ---

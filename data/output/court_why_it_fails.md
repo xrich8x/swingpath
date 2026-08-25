@@ -62,14 +62,45 @@ UHf0LeMU2pg             vote<6     0.220  FAIL |   0.50     4   2   2   yes | g<
 uR5q2cSM6AY             vote<6     0.648    OK |   0.88     7   3   4   yes | nothing
 ```
 
+> ### ⚠ FINDING A BELOW IS WITHDRAWN — corrected 2026-08-24
+>
+> **It measured our labelling, not the criteria.** Every number in it scores the
+> scorer at the human's four clicked corners, *exactly*. But the gate does not define
+> "correct" as those exact corners — it defines correct as **within 20 px at 640
+> wide**, the empty band between accepted courts (3.4–13.9 px) and refused ones
+> (25.5–111 px). The clicks are one sample from that neighbourhood and, measured, not
+> the best-registered one.
+>
+> `eval/truth_neighbourhood.py` swept the courts still inside the gate's own 20 px
+> definition. At a median **5.8 px** from the human clicks:
+>
+> | | at the clicks | best court the gate still calls correct |
+> |---|---|---|
+> | clears the 0.33 accept gate | 5/10 | **9/10** |
+> | margin over the best wrong court positive | 8/10 | **9/10** |
+> | median margin | +0.126 | **+0.210** |
+>
+> So "the criteria refuse the right answer" is **false on 9 of 10 clips**. The
+> criteria recognise the correct court; they were being handed a slightly
+> mis-registered version of it. `am_hard_utr` is the sharpest case *in reverse*: its
+> three per-frame locks all land within 20 px of the human court **and outrank it**,
+> so the detector's snap is better registered to the paint than the clicks are.
+>
+> One clip survives the correction: **`UHf0LeMU2pg`** (best 0.279, margin −0.014).
+>
+> Read finding B, and the search, as the live problem. Evidence:
+> `data/output/truth_neighbourhood.{log,json}`, `candidate_audit.log`.
+
 **There are two different failures, five clips each.**
 
-**A. The accept gate rejects the correct court (5 of 10).** g at the human's own court is
+**A. The accept gate rejects the correct court (5 of 10).** ~~g at the human's own court is
 **0.18–0.31 against a 0.33 bar**. No amount of better searching fixes this — the criteria
-refuse the right answer. `am_hard_utr` is the sharpest case: the true court scores 0.314
-and *fails*, yet the clip is ACCEPTED, so what shipped is a court scoring higher than the
-truth. That is the accept rule preferring a near-miss to the correct answer, and it is why
-its measured error is 14.3 px rather than ~0.
+refuse the right answer.~~ **WITHDRAWN — see the box above.** `am_hard_utr` is the sharpest
+case: the true court scores 0.314 and *fails*, yet the clip is ACCEPTED, so what shipped is
+a court scoring higher than the truth. ~~That is the accept rule preferring a near-miss to
+the correct answer~~ — corrected: the "near-miss" is inside the gate's own tolerance and is
+*better* registered than the clicks, which is why its measured error is 14.3 px rather
+than ~0.
 
 **B. The correct court passes every gate and still is not found (5 of 10).** g = 0.44–0.65,
 structure 0.88, sufficiency satisfied — and the clip reaches only 2–4 of 8 votes. Here the
