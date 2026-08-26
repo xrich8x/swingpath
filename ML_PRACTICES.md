@@ -7,11 +7,11 @@
 
 Read this before creating, training, tuning, or evaluating ANY model in this
 project. It sits alongside CLAUDE.md (architecture + hard rules), ML_PLAYBOOK.md
-(ML technique), and HANDOFF.md (historical evidence log). CLAUDE.md governs how we
+(ML technique), and docs/archive/HANDOFF.md (historical evidence log). CLAUDE.md governs how we
 work; this file governs how we do machine learning specifically.
 
 The rules below are not generic ML advice. Every one of them is here because
-this project already got burned by breaking it — see the pointers to HANDOFF.md.
+this project already got burned by breaking it — see the pointers to docs/archive/HANDOFF.md.
 
 The person running this project is not a developer (SQL only) and cannot read
 code or audit a training run. That means a number they can't verify is worse
@@ -52,7 +52,7 @@ Rules:
 
 The person cannot check your work, so these are load-bearing:
 
-- Tag every claim MEASURED / VISUAL / INFERRED / UNKNOWN, exactly like HANDOFF.md
+- Tag every claim MEASURED / VISUAL / INFERRED / UNKNOWN, exactly like docs/archive/HANDOFF.md
   does. A number with no evidence tag is not trustworthy.
 - "It should work" is not a result. Run it, show the actual output. (This is also
   CLAUDE.md's verify-don't-claim rule — it applies doubly to training, where
@@ -254,4 +254,4 @@ Before ending a session that trained, tuned, or evaluated a model:
 - [ ] New artifacts carry provenance stamps (model, device, params, commit).
 - [ ] A plain-English verdict: did it get better, yes/no, on what evidence.
 - [ ] Any earlier claim proven false this session is explicitly retracted.
-- [ ] CLAUDE.md current-state and HANDOFF.md updated; committed to git.
+- [ ] CLAUDE.md current-state and docs/archive/HANDOFF.md updated; committed to git.

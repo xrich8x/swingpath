@@ -2,11 +2,11 @@
 > Its frame-rate finding constrains what footage to record. Largely superseded by SCOREBOARD.
 > This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
 > For what actually happened and the current state of play, read
-> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+> [SCOREBOARD.md](../../../SCOREBOARD.md) — not this file.
 
 # Session E (multi-session arc) — The ball stack: tracking → trajectory → arc → speed + spin
 
-**Kickoff prompt:** `Start Session E<n> (docs/sessions/SESSION_E_ball_push.md)`
+**Kickoff prompt:** `Start Session E<n> (docs/archive/sessions/SESSION_E_ball_push.md)`
 **User brings:** footage recorded at **60 fps minimum** (see the frame-rate
 finding below — this is not a nice-to-have), plus ~15 min of blind labeling per
 new gold clip. Gold labels are TEST data — the NEVER-train-on-gold rule is

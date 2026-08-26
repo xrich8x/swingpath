@@ -24,7 +24,7 @@ Do this fresh every time; do not rely on memory of a previous review.
   "What has not worked" and "Open", plus TRAPS.md. This project's single biggest
   risk is re-proposing an idea that was already measured and killed; you
   cannot judge that without reading the table.
-- If the session's work matches one of docs/sessions/*.md, read that brief
+- If the session's work matches one of docs/archive/sessions/*.md, read that brief
   too — it has the pre-registered gate for that specific piece of work.
 - Read ML_PRACTICES.md and ML_PLAYBOOK.md if the session touched any model
   (ball, court, pose) — CLAUDE.md requires this for any ML work, and you

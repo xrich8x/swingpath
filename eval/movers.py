@@ -1,7 +1,7 @@
 """eval/movers.py - where the PLAYERS are, with no model and no torch.
 
 UNRUN. Written 2026-08-24 as preparation for Session O; no number in this repo has
-been measured with it yet. See docs/sessions/SESSION_O_shell_courts.md.
+been measured with it yet. See docs/archive/sessions/SESSION_O_shell_courts.md.
 
 WHY THIS EXISTS
 ---------------

@@ -4,7 +4,7 @@ WHY THIS EXISTS
 ---------------
 Labelling and training only ever happened when someone ran a script by hand,
 so the data that would fix far-court ball recall never accumulated.
-docs/sessions/SESSION_E_ball_push.md §E3j is explicit that the last ~20% of the
+docs/archive/sessions/SESSION_E_ball_push.md §E3j is explicit that the last ~20% of the
 ball — the 2 px far/blurred one — cannot be taught by pseudo-labels, because the
 teacher cannot see it either, and that the only way past ~80% far court is
 synthetic blur or a few hundred HUMAN far-court labels. This is the tool that

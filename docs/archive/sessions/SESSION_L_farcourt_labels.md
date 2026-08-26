@@ -2,7 +2,7 @@
 > Nothing predicts a findable gap (null control confirms the signal is real but far too weak). BALL-DETECTOR WORK IS CLOSED.
 > This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
 > For what actually happened and the current state of play, read
-> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+> [SCOREBOARD.md](../../../SCOREBOARD.md) — not this file.
 
 # Session L — far-court labels: the last untried input, and a stopping rule
 

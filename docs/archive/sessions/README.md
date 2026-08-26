@@ -7,7 +7,7 @@
 > run stages are stamped, and any live lead they named belongs to SCOREBOARD, not
 > to this table.
 >
-> **For the current state of play read [SCOREBOARD.md](../../SCOREBOARD.md)**, not
+> **For the current state of play read [SCOREBOARD.md](../../../SCOREBOARD.md)**, not
 > this directory. These files are kept for their PRE-REGISTERED GATES — the value
 > is seeing what bar was set before the experiment ran.
 

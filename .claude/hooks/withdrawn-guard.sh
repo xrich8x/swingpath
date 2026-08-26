@@ -19,7 +19,7 @@
 # lines; a table row (starts with '|') is its own block, so one row's withdrawal
 # note cannot excuse the row beneath it.
 #
-# Historical records are skipped by design — HANDOFF.md, docs/sessions/,
+# Historical records are skipped by design — docs/archive/HANDOFF.md, docs/archive/sessions/,
 # docs/REVIEW-* and data/output/* are SUPPOSED to still contain the old number.
 #
 # Test by hand:

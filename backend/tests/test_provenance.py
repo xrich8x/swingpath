@@ -1,7 +1,7 @@
 """Perception-cache provenance (pipeline._build_provenance /
 _provenance_mismatches): every new cache must record how it was built, and
 loading a cache under different settings must be detected — this is the guard
-against untraceable caches like the archived demo30 one (HANDOFF.md §6)."""
+against untraceable caches like the archived demo30 one (docs/archive/HANDOFF.md §6)."""
 
 import numpy as np
 

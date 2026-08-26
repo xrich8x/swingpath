@@ -1,6 +1,6 @@
 """eval/evid_band_sweep.py - does the evidence gate cost us the MARGIN?
 
-Step O2 of docs/sessions/SESSION_O_shell_courts.md. Search-free, so it needs no
+Step O2 of docs/archive/sessions/SESSION_O_shell_courts.md. Search-free, so it needs no
 shell ground truth and can run while the shell clips are being labelled.
 
 THE HYPOTHESIS

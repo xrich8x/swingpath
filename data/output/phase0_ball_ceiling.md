@@ -273,4 +273,4 @@ needs no human time, works on all 26,293 labelled frames rather than only the
 miner structurally cannot, and sidesteps the base-rate problem entirely because
 it never asks whether the frame contains a ball — only whether the ball is HERE.
 
-Written up as docs/sessions/SESSION_I_localised_negatives.md.
+Written up as docs/archive/sessions/SESSION_I_localised_negatives.md.

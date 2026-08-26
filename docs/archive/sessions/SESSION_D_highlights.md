@@ -2,11 +2,11 @@
 > Per-rally clips + top-3 reel, ffmpeg stream copy.
 > This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
 > For what actually happened and the current state of play, read
-> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+> [SCOREBOARD.md](../../../SCOREBOARD.md) — not this file.
 
 # Session D — Auto-highlights / per-rally clips
 
-**Kickoff prompt:** `Do Session D (docs/sessions/SESSION_D_highlights.md)`
+**Kickoff prompt:** `Do Session D (docs/archive/sessions/SESSION_D_highlights.md)`
 **User brings:** nothing required. `data/yt_match40.mp4` (6 min, calibrated at
 0.9 px — the best residual in the repo) is long enough for highlight selection to
 be meaningful; a longer personal clip would be better still.

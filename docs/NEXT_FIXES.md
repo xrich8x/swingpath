@@ -8,7 +8,7 @@
 # Next fixes — the maintenance list
 
 Small, bounded corrections. Distinct from
-[SESSION_G_pose_proximity.md](sessions/SESSION_G_pose_proximity.md), which is the
+[SESSION_G_pose_proximity.md](archive/sessions/SESSION_G_pose_proximity.md), which is the
 research work. Nothing here is a test failure: **209 tests pass in 23 s** as of
 2026-08-01.
 

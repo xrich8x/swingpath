@@ -2,11 +2,11 @@
 > HUD diagnosis RETRACTED; the real blocker was false-lock anchors.
 > This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
 > For what actually happened and the current state of play, read
-> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+> [SCOREBOARD.md](../../../SCOREBOARD.md) — not this file.
 
 # Session J — make far-court labelling actually usable
 
-**Kickoff prompt:** `Do Session J (docs/sessions/SESSION_J_farcourt_labelling.md)`
+**Kickoff prompt:** `Do Session J (docs/archive/sessions/SESSION_J_farcourt_labelling.md)`
 **User brings:** nothing for steps 1-3. Step 4 needs ~30 minutes of their clicking.
 
 ## Why this exists
@@ -21,7 +21,7 @@ labels are the lever that is left.
 
 Session I built the queue and ran a pilot. **The pilot half-failed, for a reason
 that is fixable, and it exposed two plumbing gaps.** Evidence:
-[data/output/farcourt_label_yield.md](../../data/output/farcourt_label_yield.md).
+[data/output/farcourt_label_yield.md](../../../data/output/farcourt_label_yield.md).
 
 Established, do not re-derive:
 
@@ -152,10 +152,10 @@ not rise" therefore means "nothing catastrophic happened", not "nothing happened
 
 # Results (2026-08-10) — steps 1-3 done, and blocker 1 was mis-diagnosed
 
-Full evidence: [farcourt_anchor_audit.md](../../data/output/farcourt_anchor_audit.md),
-[farcourt_hud_mask.md](../../data/output/farcourt_hud_mask.md),
-[farcourt_pilot_clicks.jpg](../../data/output/farcourt_pilot_clicks.jpg),
-[hud_mask_verify.jpg](../../data/output/hud_mask_verify.jpg).
+Full evidence: [farcourt_anchor_audit.md](../../../data/output/farcourt_anchor_audit.md),
+[farcourt_hud_mask.md](../../../data/output/farcourt_hud_mask.md),
+[farcourt_pilot_clicks.jpg](../../../data/output/farcourt_pilot_clicks.jpg),
+[hud_mask_verify.jpg](../../../data/output/hud_mask_verify.jpg).
 
 ## The correction, first
 
@@ -253,7 +253,7 @@ round-robin**, the selector's existing behaviour.
 ## Step 4 — RUN. The mask works; the anchor control has a hole.
 
 90 of 90 labelled. Full read-out in
-[farcourt_anchor_audit.md](../../data/output/farcourt_anchor_audit.md) §6.
+[farcourt_anchor_audit.md](../../../data/output/farcourt_anchor_audit.md) §6.
 
 **The prediction was half right.** `yt_6jp23ghDY9Q` went from clicking inside the
 scoreboard to clicking **1 px from the tracker's own anchor** once the panel was

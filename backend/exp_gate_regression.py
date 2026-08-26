@@ -1,4 +1,4 @@
-"""Experiment 3a (HANDOFF.md §6 suspect 1): try to reproduce the archived
+"""Experiment 3a (docs/archive/HANDOFF.md §6 suspect 1): try to reproduce the archived
 demo30 perception cache (968/1108 ball locks) by forcing the conditions it
 was suspected to have been built under: camera hfov 70 deg (the pre-session
 default, before focal self-calibration) and court-gate camera-height

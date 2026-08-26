@@ -743,7 +743,7 @@ def _estimate_cam_step(prev_gray, gray, boxes, scale: float = 0.25):
 
 
 # --- Perception-cache provenance --------------------------------------------
-# The archived demo30 cache (HANDOFF.md §6) could not be traced back to the
+# The archived demo30 cache (docs/archive/HANDOFF.md §6) could not be traced back to the
 # model/device/calibration that built it. Every cache written from now on
 # records how it was built; loading one under different settings warns out loud
 # instead of silently reusing a track the current settings would not reproduce.

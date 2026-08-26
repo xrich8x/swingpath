@@ -12,7 +12,7 @@
 
 ## Where this sits
 
-[docs/RESEARCH_BRIEF_indoor_shell_courts.md](../RESEARCH_BRIEF_indoor_shell_courts.md) asked
+[docs/RESEARCH_BRIEF_indoor_shell_courts.md](../../RESEARCH_BRIEF_indoor_shell_courts.md) asked
 six questions. The reply ranked five recommendations. Before building any of them the reply
 was checked line-by-line against `backend/swingvision/courtfit.py`. **Three of its five
 load-bearing claims are wrong about this codebase**, and a fourth rests on ground truth that

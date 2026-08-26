@@ -2,11 +2,11 @@
 > Lens k1 shipped behind a cross-frame honesty gate; roll only on the trusted path.
 > This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
 > For what actually happened and the current state of play, read
-> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+> [SCOREBOARD.md](../../../SCOREBOARD.md) — not this file.
 
 # Session A — Finish the camera story: lens undistortion + watchdog validation
 
-**Kickoff prompt:** `Do Session A (docs/sessions/SESSION_A_lens_and_watchdog.md)`
+**Kickoff prompt:** `Do Session A (docs/archive/sessions/SESSION_A_lens_and_watchdog.md)`
 **User brings:** nothing required. A real phone clip (any) is a bonus; a clip where
 the phone gets bumped mid-recording upgrades step 4 from synthetic to real.
 

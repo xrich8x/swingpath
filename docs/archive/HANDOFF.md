@@ -11,7 +11,7 @@ hallucinated/overclaimed results. **Trust the artifacts, not the narrative.**
 > line-fit court auto-calibration + physical shape lock + camera-change watchdog,
 > clay-aware snap, lens/roll correction, serve analytics, and a big refactor. For
 > where the project is *now*, read CLAUDE.md's Status section and
-> [SCOREBOARD.md](SCOREBOARD.md). This file is the paper trail, not the roadmap.
+> [SCOREBOARD.md](../../SCOREBOARD.md). This file is the paper trail, not the roadmap.
 
 Evidence levels used below:
 - **[MEASURED]** — command output produced in-session; log/artifact exists on disk
@@ -217,7 +217,7 @@ value:
    `C:\Users\richm\.claude\projects\E--Claude-Outputs-Cowork-Tasks-Swing-Vision\memory\`.
 
 ## 8. Agreed roadmap (user-approved framing: self-reliant ML, no SwingVision
-labels as training data) — HISTORICAL; the live list is now [SCOREBOARD.md](SCOREBOARD.md)
+labels as training data) — HISTORICAL; the live list is now [SCOREBOARD.md](../../SCOREBOARD.md)
 
 R1 "Trust what you see": (1.1) solve §6 regression; (1.2) BallNet v2 with
 hard negatives (adjacent-court balls, HUD logos); (1.4) gold-label tool
@@ -451,7 +451,7 @@ hit-anchored arc, TODO.md) unchanged; the filter is the offline first half.
 
 ## 13. Session E1 (2026-07-20) — fps priced; the arc gate found to be no gate
 
-Goal was to price frame rate (docs/sessions/SESSION_E_ball_push.md). Frame rate
+Goal was to price frame rate (docs/archive/sessions/SESSION_E_ball_push.md). Frame rate
 priced out as second-order, and the experiment built to test it exposed the
 first-order problem. Full tables in the session doc's Results; headlines:
 

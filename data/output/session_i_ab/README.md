@@ -22,4 +22,4 @@ comparison is arm-to-arm only: `ballnet_v21.pt` carries no recipe, so an A/B aga
 it would confound this change with whatever drifted since.
 
 The verdict and its caveats are written up in
-[`docs/sessions/SESSION_I_localised_negatives.md`](../../../docs/sessions/SESSION_I_localised_negatives.md).
+[`docs/archive/sessions/SESSION_I_localised_negatives.md`](../../../docs/archive/sessions/SESSION_I_localised_negatives.md).

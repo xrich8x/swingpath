@@ -2,7 +2,7 @@
 
 Session O's diagnostic pass. **Five hypotheses tested, five negatives, and one published
 claim withdrawn.** No shipped code changed. Pre-registered brief:
-[docs/sessions/SESSION_O_shell_courts.md](../../docs/sessions/SESSION_O_shell_courts.md).
+[docs/archive/sessions/SESSION_O_shell_courts.md](../../docs/archive/sessions/SESSION_O_shell_courts.md).
 
 Every number here is search-free unless stated: the scorer is handed a court and asked
 what it thinks, so "can the criteria recognise the right answer" is separated from "can

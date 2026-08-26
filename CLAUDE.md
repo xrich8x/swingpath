@@ -21,7 +21,7 @@ Project context for Claude Code. Read this before editing.
   tags, ground-truth-before-metrics, reproducibility, the session-end checklist.
 - **[ML_PLAYBOOK.md](ML_PLAYBOOK.md)** — how to *think about* the ML: diagnosis buckets,
   per-area technique (ball/court/pose/physics), and the 2024-26 SOTA survey.
-- **[HANDOFF.md](HANDOFF.md)** — historical evidence log (from 2026-07-05); the ML docs
+- **[docs/archive/HANDOFF.md](docs/archive/HANDOFF.md)** — historical evidence log (from 2026-07-05); the ML docs
   cite its `§` numbers. For *current* state use this file's Status + [SCOREBOARD.md](SCOREBOARD.md).
 
 ## REQUIRED READING before any ML work
@@ -163,7 +163,7 @@ time — see also the second principle above.
 One entry per session: the finding and its number. **The detail lives elsewhere
 on purpose** — [SCOREBOARD.md](SCOREBOARD.md) holds the consolidated wins, the
 dead-end table and the traps; `data/output/*.md` holds the evidence with its
-denominators; [docs/sessions/](docs/sessions/) holds the pre-registered briefs.
+denominators; [docs/archive/sessions/](docs/archive/sessions/) holds the pre-registered briefs.
 Read those before re-proposing anything here.
 
 - **2026-07-05 setup.** Git initialised; perception caches carry a provenance stamp
@@ -334,9 +334,9 @@ contradicting each other:
 - **CLAUDE.md** (this file) is orientation: architecture, hard rules, conventions,
   a condensed session log. Not a status board.
 - **README.md / USER_GUIDE.md** are how to run it. They must match the CLI exactly.
-- **docs/sessions/** are pre-registered briefs. **All have run**; they are kept for
+- **docs/archive/sessions/** are pre-registered briefs. **All have run**; they are kept for
   their gates, not as a queue. Never read them as the forward plan.
-- **HANDOFF.md** is a point-in-time evidence log from 2026-07-05, cited by `§`
+- **docs/archive/HANDOFF.md** is a point-in-time evidence log from 2026-07-05, cited by `§`
   number from the ML docs. Historical by design — do not update it, and do not
   renumber its sections.
 - **ML_PRACTICES.md / ML_PLAYBOOK.md** are discipline and technique. When a

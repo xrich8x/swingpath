@@ -1,6 +1,6 @@
 """eval/candidate_audit.py - is the RIGHT ANSWER even in the candidate set?
 
-UNRUN. Written 2026-08-24 as step O1 of docs/sessions/SESSION_O_shell_courts.md.
+UNRUN. Written 2026-08-24 as step O1 of docs/archive/sessions/SESSION_O_shell_courts.md.
 No number in this repo has been produced by it yet.
 
 THE QUESTION IT SETTLES

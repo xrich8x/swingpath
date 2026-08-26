@@ -2,7 +2,7 @@
 > 11.4% catch vs a 60% gate. The racquet is 2.12 body heights from the skeleton.
 > This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
 > For what actually happened and the current state of play, read
-> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+> [SCOREBOARD.md](../../../SCOREBOARD.md) — not this file.
 
 # Session G — pose-proximity hard negatives: the last lever the evidence supports
 
@@ -189,7 +189,7 @@ negatives, depth-aware Kalman noise, `seg_gap_s`). Session F added three more:
 ## Kickoff prompt
 
 > Read CLAUDE.md, ML_PRACTICES.md and ML_PLAYBOOK.md, then
-> docs/sessions/SESSION_G_pose_proximity.md. Start at Step 0, then do Step 1 and show
+> docs/archive/sessions/SESSION_G_pose_proximity.md. Start at Step 0, then do Step 1 and show
 > me the gate table before writing any mining code. If Step 1 fails its gate, stop and
 > tell me — do not proceed to Step 2.
 

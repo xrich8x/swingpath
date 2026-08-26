@@ -2,11 +2,11 @@
 > Detector improved on 6/6 clips; solid ghosts 14 -> 15. Unattributable (no seed at the time).
 > This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
 > For what actually happened and the current state of play, read
-> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+> [SCOREBOARD.md](../../../SCOREBOARD.md) — not this file.
 
 # Session I — localised hard negatives: stop asking about the frame
 
-**Kickoff prompt:** `Do Session I (docs/sessions/SESSION_I_localised_negatives.md)`
+**Kickoff prompt:** `Do Session I (docs/archive/sessions/SESSION_I_localised_negatives.md)`
 **User brings:** nothing. No labelling, no new footage.
 
 ## Why this exists
@@ -15,7 +15,7 @@ The 9 solid ghost balls have now survived **eight** independent attempts: detect
 threshold, smoother gap, input resolution, motion attention, pose proximity,
 racquet-box negation, suppression-rejection mining (catch/collateral), and
 suppression-rejection mining (purity). Evidence:
-[data/output/phase0_ball_ceiling.md](../../data/output/phase0_ball_ceiling.md).
+[data/output/phase0_ball_ceiling.md](../../../data/output/phase0_ball_ceiling.md).
 
 They all failed for one structural reason, which Phase 0 finally isolated.
 
@@ -114,7 +114,7 @@ clips, or a larger backbone.
 
 ## RESULTS (2026-08-09) — gate FAILS at the product, detector improves 6/6
 
-Full numbers and method: **[data/output/session_i_ab/results.md](../../data/output/session_i_ab/results.md)**.
+Full numbers and method: **[data/output/session_i_ab/results.md](../../../data/output/session_i_ab/results.md)**.
 Both arms trained (1h13m + 1h09m — faster than the 4h30m budgeted below, the JPEG
 cache stayed warm on the second pass).
 

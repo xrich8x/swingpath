@@ -1,7 +1,7 @@
 """eval/crop_safety.py - does the horizon crop ever delete a court line a human clicked?
 
 The check that protects the precision record, and the reason it exists is that the
-crop (B2, docs/sessions/SESSION_O_shell_courts.md) is the one change in that session
+crop (B2, docs/archive/sessions/SESSION_O_shell_courts.md) is the one change in that session
 whose failure mode is a WRONG COURT rather than a refusal.
 
 THE ASYMMETRY, RESTATED SO THIS FILE STANDS ALONE

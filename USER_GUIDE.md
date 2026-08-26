@@ -147,7 +147,7 @@ heuristic; vision scoring is best-effort (correct points by hand when it matters
 1. claude from the repo root (it auto-reads CLAUDE.md).
 2. First time on a fresh machine, paste SETUP_PROMPT.md → get it installed,
    tested, and running.
-3. **All the session briefs in [docs/sessions/](docs/sessions/) have now run** —
+3. **All the session briefs in [docs/archive/sessions/](docs/archive/sessions/) have now run** —
    each is stamped at the top with what happened to it (SHIPPED / GATE FAILED /
    STOPPING RULE FIRED). They are kept for their pre-registered gates, not as a
    queue. **For what to work on next, read [SCOREBOARD.md](SCOREBOARD.md)** —
@@ -163,7 +163,7 @@ Keep these rules in front of the agent (they're in CLAUDE.md):
   (CLAUDE.md requires it) — measure honestly, never let a model grade itself.
 
 What's next, highest value first, lives in **SCOREBOARD.md** — not here and not in
-docs/sessions/, both of which go stale. As of 2026-08-15 the headline is that the
+docs/archive/sessions/, both of which go stale. As of 2026-08-15 the headline is that the
 **ball detector is closed** (Session L's pre-registered stopping rule fired), and the
 open target is that the processing chain discards ball the detector already found:
 on the amateur test clip the detector clears the coverage bar needed for a trusted
@@ -187,10 +187,10 @@ SCOREBOARD.md     THE LIVING RECORD — what has and has not worked, and what is
                   open. Read this for current state; everything else goes stale.
 README.md         architecture overview + quickstart
 SETUP_PROMPT.md   paste-in prompt to install + run (fresh machine)
-docs/sessions/    session briefs — ALL RUN; kept for their pre-registered gates
+docs/archive/sessions/    session briefs — ALL RUN; kept for their pre-registered gates
 ML_PRACTICES.md   how to conduct ML work honestly (required before model work)
 ML_PLAYBOOK.md    how to diagnose/technique the ML (required before model work)
-HANDOFF.md        historical evidence log (paper trail, not current state)
+docs/archive/HANDOFF.md        historical evidence log (paper trail, not current state)
 backend/          Python: video -> match.json  (+ tests)
 frontend/         React dashboard
 data/             your videos and analysis output

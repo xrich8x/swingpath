@@ -2,7 +2,7 @@
 > Steps 1-3 run, 4-5 gated and not run. Key result: the confusers MOVE (59.2% with a person).
 > This file is the PRE-REGISTERED BRIEF, kept for its gate and reasoning.
 > For what actually happened and the current state of play, read
-> [SCOREBOARD.md](../../SCOREBOARD.md) — not this file.
+> [SCOREBOARD.md](../../../SCOREBOARD.md) — not this file.
 
 # Session F — false fire: fix the precision we just spent
 
@@ -199,7 +199,7 @@ Two traps this project has already fallen into — avoid both:
 ## Kickoff prompt
 
 > Read CLAUDE.md, ML_PRACTICES.md and ML_PLAYBOOK.md, then
-> docs/sessions/SESSION_F_false_fire.md. We are cutting ball false-fire without
+> docs/archive/sessions/SESSION_F_false_fire.md. We are cutting ball false-fire without
 > giving back the recall E6 bought. Do Step 1 and Step 2 first and show me the
 > tally before proposing a fix — the per-gate counters say the static-lock gate
 > never fires on am_hard_utr, so I do not want to assume the confusers are

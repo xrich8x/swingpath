@@ -1,6 +1,6 @@
 """eval/seed_reach.py - P1: where does the TRUE court die inside autodetect?
 
-Session P step 1 (docs/sessions/SESSION_P_search_reach.md). Session O established
+Session P step 1 (docs/archive/sessions/SESSION_P_search_reach.md). Session O established
 that the scoring criteria recognise the correct court on 19 of 20 clips and the
 search produces it on only 10 - so the failure is upstream of scoring. This finds
 out where.
