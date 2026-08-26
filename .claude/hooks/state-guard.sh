@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scoreboard-guard.sh — keep docs/STATE.md honest, in every session.
+# state-guard.sh — keep docs/STATE.md honest, in every session.
 # (Name kept: it is wired into .claude/settings.json by path.)
 #
 # docs/STATE.md is the living record: the stack, the method, and flat lists of
@@ -15,11 +15,11 @@
 #
 # Deliberately narrow, so it nags only when it is right to:
 #   - code only. Doc-only, data-only and config-only commits pass untouched.
-#   - an explicit opt-out. Put [no-scoreboard] in the commit message for a change
+#   - an explicit opt-out. Put [no-state] in the commit message for a change
 #     that genuinely moves no number — a typo, a rename, a revert.
 #
 # Test it by hand:
-#   echo '{"tool_input":{"command":"git commit -m x"}}' | .claude/hooks/scoreboard-guard.sh
+#   echo '{"tool_input":{"command":"git commit -m x"}}' | .claude/hooks/state-guard.sh
 
 set -uo pipefail
 
@@ -33,7 +33,7 @@ allow() { exit 0; }
 input=$(cat)
 
 # Explicit opt-out for changes that genuinely move no number.
-printf '%s' "$input" | grep -qF '[no-scoreboard]' && allow
+printf '%s' "$input" | grep -qF '[no-state]' && allow
 
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || allow
 cd "$repo_root" 2>/dev/null || allow
@@ -58,7 +58,7 @@ cat <<JSON
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "deny",
-    "permissionDecisionReason": "docs/STATE.md is not staged, but this commit changes code ($changed). docs/STATE.md is the living record and CLAUDE.md requires it to be updated in the same commit as the work it describes. Add the entry this change earns: a shipped win with the number it moved, a measured negative with the reason it failed, a stack change, or a trap hit twice. Then 'git add docs/STATE.md' and commit again. If this change genuinely moves no number - a typo, a rename, a revert - put [no-scoreboard] in the commit message and this check will pass."
+    "permissionDecisionReason": "docs/STATE.md is not staged, but this commit changes code ($changed). docs/STATE.md is the living record and CLAUDE.md requires it to be updated in the same commit as the work it describes. Add the entry this change earns: a shipped win with the number it moved, a measured negative with the reason it failed, a stack change, or a trap hit twice. Then 'git add docs/STATE.md' and commit again. If this change genuinely moves no number - a typo, a rename, a revert - put [no-state] in the commit message and this check will pass."
   }
 }
 JSON

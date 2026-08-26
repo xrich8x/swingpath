@@ -13,8 +13,9 @@ failed was that COCO found the *near* player's racket while the detector fired
 on the *far* player's. A prompt that encodes a wrong cause hands it to every
 future review, which is Trap T19 in [docs/TRAPS.md](docs/TRAPS.md) — the same incident, named
 there as reading a detection RATE as evidence the detector found the right thing.
-(Traps moved out of docs/STATE.md into docs/TRAPS.md on 2026-08-17, after this note was
-written; the numbering did not change.)
+(Traps moved out of SCOREBOARD.md into docs/TRAPS.md on 2026-08-17, after this note
+was written, and were re-keyed to stable IDs T01-T22 on 2026-08-26; T19 is the same
+trap it always was.)
 
 ---
 

@@ -9,11 +9,11 @@ a file in evidence/. If you are about to write NOTES.md, FINDINGS.md, SESSION_N.
 or SUMMARY.md, you want one of those two places. New top-level docs require a line
 in CLAUDE.md's doc map, and that file has a hard cap - so a new doc costs an old one.
 
-**This is enforced, not remembered.** `.claude/hooks/scoreboard-guard.sh` runs before
+**This is enforced, not remembered.** `.claude/hooks/state-guard.sh` runs before
 every `git commit`: if the commit changes code (`backend/`, `tools/`, `frontend/src/`,
 `mobile/`, `ball_physics/`) and this file is not also modified, the commit is refused.
 Doc-only, data-only and config-only commits pass. For a change that genuinely moves no
-number, put `[no-scoreboard]` in the commit message.
+number, put `[no-state]` in the commit message.
 
 **When to update:** shipped something that moved a number -> a row in *What has worked*.
 Measured something that did not -> a row in *What has not worked*, with the number and

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # docs-guard.sh — keep the USER-FACING docs honest when the user-facing surface moves.
 #
-# docs/STATE.md is already enforced by scoreboard-guard.sh (any code change must
+# docs/STATE.md is already enforced by state-guard.sh (any code change must
 # record what it moved). This is the second half of the same idea, and it exists
 # because of a measured failure: for weeks every install instruction in the repo
 # told the reader to run `python`, which on this machine prints "Python was not

@@ -29,7 +29,7 @@ set -uo pipefail
 
 allow() { exit 0; }
 
-# Same no-jq reasoning as scoreboard-guard.sh: a fixed-string grep over the whole
+# Same no-jq reasoning as state-guard.sh: a fixed-string grep over the whole
 # payload is all that is needed, and it cannot silently fail open on a parse error.
 input=$(cat)
 printf '%s' "$input" | grep -qF '[no-withdrawn-check]' && allow
