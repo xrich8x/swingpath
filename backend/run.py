@@ -40,7 +40,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
     # --full-rate is frame_step=1, stated as a product mode rather than as an
     # integer nobody could interpret. NOTE FOR ANYONE QUOTING A NUMBER LATER:
     # this makes step 1 a legitimate SHIPPED configuration on 60fps footage,
-    # which Trap 1 predates. The rule is unchanged in substance — the DEFAULT is
+    # which Trap T01 predates. The rule is unchanged in substance — the DEFAULT is
     # still 'auto', so "shipped behaviour" with no qualifier still means auto,
     # and any figure from a full-rate run has to say so. The perception cache
     # already stamps frame_step and refuses a cache built at another rate
@@ -84,7 +84,7 @@ def _cmd_check(args: argparse.Namespace) -> int:
 
     Two rules shape this command.
 
-    PREDICT BY INVOKING, NEVER BY RE-DERIVING (trap 15). This used to read ONE
+    PREDICT BY INVOKING, NEVER BY RE-DERIVING (trap T15). This used to read ONE
     frame and run detect_court_learned -> detect_court, while `analyze` runs
     `courtfit.fit_video_frames` consensus over 8 frames and only accepts >=6
     agreeing. A pre-flight on a different, weaker path can refuse a clip that

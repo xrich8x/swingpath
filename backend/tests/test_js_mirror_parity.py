@@ -8,7 +8,7 @@ without a backend call:
 
 Until now BOTH were guarded by a comment saying "keep these in sync" and by
 nothing else. The frontend has no test runner, so there was no side this could
-be checked from - which is exactly the shape of Trap 6: a discipline enforced in
+be checked from - which is exactly the shape of Trap T06: a discipline enforced in
 one place is not enforced across the project. The failure is silent and ugly:
 someone corrects a number in Python, every backend test passes, and the
 dashboard quietly keeps showing last month's value to the user.

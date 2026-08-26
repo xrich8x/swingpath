@@ -45,7 +45,7 @@ ACCEPTED 11/20   median 8.3 px (range 3.4-13.9)   WRONG (>20px) 0
 (`tools/eval_court_consensus.py`). Two clips differ by 1–2 px because that tool medians
 error over *all* labelled frames while this one uses the 8 it sampled. **The agreement is
 the point**: this is a second scorer that does not disagree with the first, which is the
-failure this project has hit before (trap 15).
+failure this project has hit before (trap T15).
 
 `WRONG_PX = 20.0` is not a taste call — accepted courts occupy 3.4–13.9 px and refused
 ones 24.9–111.0 px, with nothing between. The line sits in the empty gap. **Zero accepted

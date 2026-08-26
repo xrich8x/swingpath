@@ -2,7 +2,7 @@
 
 The eval harness needs the detector's ranking score per frame, and the only two ways
 to get it were to re-implement `auto_fit_frame`'s three-step chain in the harness
-(the duplicate-scorer failure this project has already paid for — trap 15) or to
+(the duplicate-scorer failure this project has already paid for — trap T15) or to
 return it from the real thing. This pins the promise made when it was added:
 
   * with_score=False (the default, and every shipped caller) returns EXACTLY what it

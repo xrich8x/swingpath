@@ -81,7 +81,7 @@ close-ups of a face in the 140 px context tiles — apparently commentary cutawa
 would have meant the old gold clips need trimming. **Wrong.** The full frames are
 ordinary wide tennis shots with a player walking past the near corner; a head fills a
 140 px tile taken from 1920×1080. The shipped face test agrees — 0 frames with a face
-above `FACE_FRAC` across all 308. Recorded as Trap 18.
+above `FACE_FRAC` across all 308. Recorded as Trap T18.
 
 **"They're landing on the burned-in scoreboards."** Several gold clips do carry one
 (`am_hard_utr` has a UTR score panel, `yt_rally2` the SwingVision HUD). Measured: **1 of

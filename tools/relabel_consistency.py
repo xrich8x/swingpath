@@ -200,7 +200,7 @@ def score(markdown: str | None) -> None:
         "308 frames pooled, so a handful of flips moves a false-fire rate "
         "visibly.",
         "- A high number here does NOT mean the labels are correct. It means they "
-        "are repeatable. Trap 12 already records that agreement can rise while "
+        "are repeatable. Trap T12 already records that agreement can rise while "
         "truth does not.",
     ]
 

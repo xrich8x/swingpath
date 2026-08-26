@@ -417,7 +417,7 @@ am_ntrp30            == drop 'deNCnfQjfoU'      am_usta45            == drop 'ih
 am_ntrp40            == drop '4apx6gd5Uxs'
 ```
 
-**This is trap 17 recurring** - a clip renamed on the way into the gold set, and identity
+**This is trap T17 recurring** - a clip renamed on the way into the gold set, and identity
 matched on filename. `eval/collect_frames.py` deduped by filename and YouTube id, which
 correctly merged trims within the drop set but could not see that a gold clip called
 `am_rally32short` is a file called `yt_tnxkujogch4.mp4`. The gold manifests record the

@@ -271,7 +271,7 @@ This is how work gets decided here, and it is the reason the numbers in
    with a matching zoom, because the two questions need opposite crops: *what object is
    this attached to* needs 140 px of context, *is this literally a tennis ball* needs
    44 px blown up. Judging either from the wrong one produces confident nonsense — see
-   Trap 18.
+   Trap T18.
 9. **And look at them MOVING.** `tools/false_fire_reel.py` renders ±0.5 s around each
    false fire with the detector run continuously and its lock drawn every frame. A still
    cannot separate a racquet head from a ball — both are ball-sized, ball-coloured blobs

@@ -13,7 +13,7 @@ VIDEO PATHS UPDATED 2026-08-20: source videos were reorganised into
 data/incoming/<surface>/. The FILES are byte-identical and their BASENAMES are
 unchanged - which is what matters, because the ball gold-leak guard
 (train_ballnet.gold_source_videos) and data/train_clips/lineage.json both key on
-basename, and a rename would silently defeat both (trap 17). Only the directory
+basename, and a rename would silently defeat both (trap T17). Only the directory
 moved, so every historical number remains reproducible from the same bytes; these
 literals track the move rather than pinning a folder that no longer exists.
 """

@@ -92,7 +92,7 @@ than "far-court recall".
 ## 7. What this implies for order of work
 
 Building the score reference comes **before** touching `gap_s`. Tuning a threshold against
-no reference is the failure this project has already recorded twice (Session J trap 12,
+no reference is the failure this project has already recorded twice (Session J trap T12,
 and the standing rule that a model must never grade its own homework). The reference is
 cheap, the technique already exists in the repo, and it converts rally segmentation,
 scoring, serve detection and point-winner attribution from unmeasured to measured in one

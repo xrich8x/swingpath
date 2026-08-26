@@ -3,7 +3,7 @@
 Every source video in the repo lives here. Filenames are **never** changed:
 the ball gold-leak guard (`train_ballnet.gold_source_videos`) and
 `data/train_clips/lineage.json` both key on **basename**, so a rename silently
-defeats both. That is trap 17. Moving a file between these folders is safe;
+defeats both. That is trap T17. Moving a file between these folders is safe;
 renaming it is not.
 
 The surface folder is organisational only — the detector calls

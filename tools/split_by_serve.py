@@ -163,7 +163,7 @@ def record_lineage(entries: dict[str, str]) -> None:
         "Which recording each cut clip came from. N cuts of one video are ONE",
         "court, not N: counting them separately inflates any pass-rate, which is",
         "the double-count eval/recordings.py exists to stop. Keyed on basename",
-        "because that is what the gold-leak guard keys on too (trap 17)."],
+        "because that is what the gold-leak guard keys on too (trap T17)."],
         "clips": {}}
     if LINEAGE.exists():
         try:

@@ -3,7 +3,7 @@
 **Date:** 2026-08-15 · **Measured against:** the committed `yt_match40` and `yt_rally2`
 perception caches + `match.json`, and 300 human gold labels per clip (never trained on).
 **Evidence tag: MEASURED.** Chain stages are *invoked*, not re-derived — same functions,
-same order, same parameters as `pipeline.analyze_video` (trap 15).
+same order, same parameters as `pipeline.analyze_video` (trap T15).
 
 ## 1. The diagnosis stands: it is the SMOOTHER
 
@@ -80,7 +80,7 @@ the other.
 ## 4. Power caveat, stated rather than buried
 
 The ghost guard rests on **24 and 26 no-ball frames**. That is smaller than the 74 the
-standing product gate uses, where sampling alone moves the count ±3.4 (trap 9). The +1 ghost
+standing product gate uses, where sampling alone moves the count ±3.4 (trap T09). The +1 ghost
 on yt_rally2 is **well inside noise**, so the honest reading is *"failed to replicate the
 win"*, not *"proved to make ghosting worse"*. Both clips' `real_landing` columns are the
 stronger signal, and they disagree decisively (+6.1 vs +0.0).
@@ -146,11 +146,11 @@ into a product gain, and the third clip says why it would not have paid much the
 
 ## Method notes
 
-- **Trap 4 handled explicitly**: `am_hard_utr`'s gold is 50% odd frames and the cache is
+- **Trap T04 handled explicitly**: `am_hard_utr`'s gold is 50% odd frames and the cache is
   `frame_step 2`, so **125 of 250 labels land on a processed frame** and the rest are
   dropped rather than compared against a neighbour. Scoreable: 90 ball clicks, 24 no-ball.
 - Ghost counts rest on 24–26 no-ball frames per clip, under the 74 the product gate uses
-  (trap 9). The ±1 movements are inside sampling noise; the `real_landing` columns carry the
+  (trap T09). The ±1 movements are inside sampling noise; the `real_landing` columns carry the
   verdict.
 - `bounce_reset=False` is verified **byte-identical** to the default path, and the flag is
   proven non-inert (3,732 frames differ on real data). 4 tests pin both.

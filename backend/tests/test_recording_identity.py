@@ -6,7 +6,7 @@ drop recordings under another name. `am_rally32short` IS `yt_tnxkujogch4.mp4`.
 A gate gain and a breadth gain were counted as separate evidence when they were the
 same file.
 
-That is trap 17 on the evaluation side - "trimming a clip renames it, and the guard
+That is trap T17 on the evaluation side - "trimming a clip renames it, and the guard
 matches on the NAME". The gold manifests record `video`; nothing read it.
 
 These tests fail if anyone reintroduces name-based identity, or quietly drops the

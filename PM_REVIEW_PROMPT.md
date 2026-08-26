@@ -11,9 +11,9 @@ out at 55% because ball and racket "are genuinely close in apparent size". Both
 halves were wrong — a racket is 10x a ball, and the measured reason negation
 failed was that COCO found the *near* player's racket while the detector fired
 on the *far* player's. A prompt that encodes a wrong cause hands it to every
-future review, which is Trap 19 in [TRAPS.md](TRAPS.md) — the same incident, named
+future review, which is Trap T19 in [docs/TRAPS.md](docs/TRAPS.md) — the same incident, named
 there as reading a detection RATE as evidence the detector found the right thing.
-(Traps moved out of docs/STATE.md into TRAPS.md on 2026-08-17, after this note was
+(Traps moved out of docs/STATE.md into docs/TRAPS.md on 2026-08-17, after this note was
 written; the numbering did not change.)
 
 ---
@@ -26,7 +26,7 @@ dashboard). I cannot read code. Ground yourself before judging anything:
    --oneline -15` and `git diff` / `git status`) for what was actually done
    recently — files touched, decisions made, walls hit, numbers reported.
 2. Read CLAUDE.md's most recent Status entries and Gotchas section, and all
-   of docs/STATE.md — especially "What has not worked" — and of TRAPS.md. Do not
+   of docs/STATE.md — especially "What has not worked" — and of docs/TRAPS.md. Do not
    evaluate anything without checking it against that table first; this
    project's biggest recurring risk is re-proposing an idea already measured
    and killed.

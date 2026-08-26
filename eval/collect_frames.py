@@ -5,7 +5,7 @@ and drops N frames per recording into eval/frames/<group>/ for eval/run_eval.py.
 
 Why grouping matters. `data/train_clips/*.mp4` were cut from `data/incoming/*.mp4`
 (recorded in data/train_clips/lineage.json, written because a trim renames the
-footage and defeated the gold guard once - trap 17). A trimmed clip and the
+footage and defeated the gold guard once - trap T17). A trimmed clip and the
 recording it came from are the SAME COURT. Counting both would inflate any
 pass-rate by duplicating the easy cases, so one recording contributes one entry
 and its frames are spread across whichever files it has.

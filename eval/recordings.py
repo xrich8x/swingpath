@@ -10,7 +10,7 @@ The root cause is identity by FILENAME. `collect_frames.py` grouped by filename 
 YouTube id, which correctly merges a trim with its source inside the drop set, but
 cannot see that a gold clip called `am_rally32short` is a file called
 `yt_tnxkujogch4.mp4`. **The gold manifests record the source video in their `video`
-field and nothing read it.** This is trap 17 again - "trimming a clip renames it, and
+field and nothing read it.** This is trap T17 again - "trimming a clip renames it, and
 the guard matches on the NAME" - now hit on the evaluation side rather than the
 training side.
 

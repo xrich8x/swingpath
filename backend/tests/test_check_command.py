@@ -11,7 +11,7 @@ of thing that silently regresses.
    outright ("2 of 8 frames (needs 6)"). A pre-flight that blesses a clip the
    product rejects is worse than no pre-flight. `check` now calls
    `pipeline.calibrate_video` — the same entry point — so the two cannot drift.
-   This is trap 15: predict a behaviour by invoking it, never by re-deriving it.
+   This is trap T15: predict a behaviour by invoking it, never by re-deriving it.
 
 2. THE CALL-ACCURACY NUMBER REACHES THE USER. `calibration.expected_call_accuracy`
    and `CALL_MAJORITY_FLOOR_PCT` were computed, documented and test-pinned, and
@@ -88,7 +88,7 @@ def test_check_calls_the_same_calibration_entry_point_as_analyze(monkeypatch, tm
     assert rc == 0
     assert seen.get("video") == str(vid), (
         "check did not call pipeline.calibrate_video - it is predicting analyze "
-        "by re-deriving it again (trap 15)"
+        "by re-deriving it again (trap T15)"
     )
     assert seen.get("keypoints") == "corners.json", (
         "check must pass --keypoints through, or it grades a different court "

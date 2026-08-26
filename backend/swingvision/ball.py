@@ -712,7 +712,7 @@ def smooth_forecast(
     they are dense - the same density dependence the `reset_after` sweep and the
     `max_gap_s` sweep both hit. NOTE the ghost counts rest on 24/26 no-ball frames,
     well under the 74 the product gate uses, so +1 is inside sampling noise
-    (trap 9); the real_landing columns are the load-bearing ones.
+    (trap T09); the real_landing columns are the load-bearing ones.
     Evidence: data/output/post_bounce_chain.md.
 
     Tuned on 1280x720@30fps gold + demo footage (meas_var=25 -> ~5px detector

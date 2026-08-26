@@ -23,7 +23,7 @@ unrelated to the new venues?
 Same recipe, same seed, one variable: the eight directories. Scoring both took 13 min on CUDA.
 
 **Gold guard verified before believing any of this.** `train_ballnet.gold_source_videos()` knows 11
-gold source videos — including the lineage alias `7 utr vs 8 utr [uhf0lemu2pg].mp4` that trap 17 was
+gold source videos — including the lineage alias `7 utr vs 8 utr [uhf0lemu2pg].mp4` that trap T17 was
 about — and `assert_no_gold_leak` confirms none of them appear in the 22 dataset dirs. The four clips
 promoted to gold on 2026-08-11 are absent from the training pool entirely, so the gain is not a leak.
 

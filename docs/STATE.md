@@ -18,7 +18,7 @@ number, put `[no-scoreboard]` in the commit message.
 **When to update:** shipped something that moved a number -> a row in *What has worked*.
 Measured something that did not -> a row in *What has not worked*, with the number and
 the reason. Changed a model/runtime/hardware -> *The stack*. Got burned by a process
-mistake twice -> [TRAPS.md](../TRAPS.md).
+mistake twice -> [TRAPS.md](TRAPS.md).
 
 **The one formatting rule**, and it exists because ignoring it cost three corrections:
 an **Open** row may NOT restate a number another table owns - it cites the row instead.
@@ -59,7 +59,7 @@ One number, one home.
 folders; the eval skips it by rule, because sweeping both counts the same court twice).
 `data/amateur_clips`, `data/train_clips`, `data/gold_clips` and `data/highlights` are gone.
 **FILENAMES ARE NEVER CHANGED** - the ball gold-leak guard and `lineage.json` key on
-basename, so a rename silently defeats both (trap 17); only directories moved.
+basename, so a rename silently defeats both (trap T17); only directories moved.
 `tools/backup_offmachine.py` TARGETS moved with the footage - a backup target pointing at
 an emptied directory reports a clean backup while covering nothing. **One safety cue was
 traded for documentation:** `data/gold_clips` used to keep gold videos out of the training
@@ -104,12 +104,12 @@ Ordered roughly by how much it moved.
 | **Per-rally clips + highlights reel** (`run.py highlights`) | ffmpeg **stream copy**; deterministic ranking; the manifest records requested vs actual start | [evidence/per-rally-clips-highlights-reel.md](evidence/per-rally-clips-highlights-reel.md) |
 | **Far court measured in METRES, not frame rows** | the `FAR_FRAC` proxy was wrong by **5-26x**; far-court queue **1,393 -> 2,677 gaps** off the same footage | [evidence/far-court-measured-in-metres-not-frame.md](evidence/far-court-measured-in-metres-not-frame.md) |
 | **More labelled data, from more venues** | +57% frames buys **+5.6 pts** pooled recall (74.8 -> **80.4%**, 4.1 sigma), up on 9 of 10 clips. **False fire did not move. NOT shipped** - the chain test later failed | [evidence/more-labelled-data-from-more-venues.md](evidence/more-labelled-data-from-more-venues.md) |
-| **The height guidance actually reaches the user** | `run.py check` + Court Setup tab now surface it; `check` calls `pipeline.calibrate_video` so it can no longer disagree with `analyze` (trap 15) | [evidence/the-height-guidance-actually-reaches-the-user.md](evidence/the-height-guidance-actually-reaches-the-user.md) |
+| **The height guidance actually reaches the user** | `run.py check` + Court Setup tab now surface it; `check` calls `pipeline.calibrate_video` so it can no longer disagree with `analyze` (trap T15) | [evidence/the-height-guidance-actually-reaches-the-user.md](evidence/the-height-guidance-actually-reaches-the-user.md) |
 | **Manual-correction UI** (Review tab + `run.py correct`) | edits FACTS only; score replayed through the one state machine. demo 2-5 -> 3-4; re-applying is a no-op | [evidence/manual-correction-ui.md](evidence/manual-correction-ui.md) |
 | **Score and rally count stop pretending to be measured** | that layer has **no ground truth of any kind**; it now reports which rule split it - yt_rally2 **5 timeout / 0 tennis-rule** | [evidence/the-score-and-rally-count-stop-pretending.md](evidence/the-score-and-rally-count-stop-pretending.md) |
 | **P/R/F1 at the field's threshold** | **reverses a verdict shipped hours earlier**: F1@4 **tracknet 57.8 / ours 48.5 / wasb 47.5**, TrackNet wins **9 of 10** clips. Ours is a recall-first detector, not a better one | [evidence/p-r-f1-at-the-field-s.md](evidence/p-r-f1-at-the-field-s.md) |
 | **The environment that produced the numbers is written down** (`tools/freeze_env.py`) | exposed that the two venvs are an **opencv MAJOR version apart** - no experiment here has ever separated device from libraries | [evidence/the-environment-that-produced-the-numbers-is.md](evidence/the-environment-that-produced-the-numbers-is.md) |
-| **CourtNet training seeded** | **no number moved**; removes a confound from the *next* A/B (trap 10) | [evidence/courtnet-training-seeded.md](evidence/courtnet-training-seeded.md) |
+| **CourtNet training seeded** | **no number moved**; removes a confound from the *next* A/B (trap T10) | [evidence/courtnet-training-seeded.md](evidence/courtnet-training-seeded.md) |
 | **`distance_run_m` stops inventing a number** | the dashboard read a confident **0.0 m** for player B integrated over **0.0%** coverage. Now **None below the >=50% bar, never 0.0**, and refused outright in doubles | [evidence/player-movement-stats-stop-inventing-a-number.md](evidence/player-movement-stats-stop-inventing-a-number.md) |
 | **BallNet v21 vs TrackNet vs WASB, re-dated** | pooled hit@10 **60.8 / 57.9 / 49.3** - **+2.9 pts, not the +10.5** an undated comment claimed; TrackNet wins outright on 2 of 10 | [evidence/ballnet-v21-vs-tracknet-vs-wasb-finally.md](evidence/ballnet-v21-vs-tracknet-vs-wasb-finally.md) |
 
@@ -183,7 +183,7 @@ somewhere else, which has now happened three times.
 | Figure | What it claimed | Withdrawn because | Date |
 |---|---|---|---|
 | `1.47x` | rally segmentation over-split vs real points | read off a burned-in scoreboard; the user rejected that premise and the tool was reverted (`afffb5a`) | 2026-08-15 |
-| `1.6x` | the same over-split, re-counted | same source, same rejected premise — it should have gone with the 1.47x and did not, surviving in the Open table and in Trap 20 | 2026-08-17 |
+| `1.6x` | the same over-split, re-counted | same source, same rejected premise — it should have gone with the 1.47x and did not, surviving in the Open table and in Trap T20 | 2026-08-17 |
 | `1.6×` | as above, unicode-multiplication-sign spelling | registered separately because a literal-string check cannot see it otherwise | 2026-08-17 |
 | `0.18–0.31` | the true court's agreement score, said to fall below the 0.33 accept gate on 5 of 10 calibrated clips — cited as proof that "the criteria reject the correct answer even when handed it" | it scored the human's four clicked corners **exactly**, but the gate defines correct as anything within 20 px @640. A court a median **5.8 px** from the clicks clears the gate on **9 of 10** clips, not 5 (`eval/truth_neighbourhood.py`). It measured our labelling, not the criteria — and it had already gone out in an external research brief, which ranked its recommendations on the strength of it | 2026-08-24 |
 | `0.18-0.31` | as above, ASCII-hyphen spelling | registered separately because a literal-string check cannot see it otherwise | 2026-08-24 |

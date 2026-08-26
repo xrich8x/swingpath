@@ -15,9 +15,10 @@ Project context for Claude Code. Read this before editing.
 - **[docs/evidence/](docs/evidence/)** — one file per result: the mechanism, the war
   story, the caveats, the retraction narrative. **Never create a new top-level markdown
   file to record a result** — a result is a row in STATE plus a file here.
-- **[TRAPS.md](TRAPS.md)** — 21 process failures this project hit **twice**, split
-  out of SCOREBOARD on 2026-08-17. Append-only history, unlike STATE's mutable
-  state. **Never renumber** — cited by number from 13 files including code.
+- **[docs/TRAPS.md](docs/TRAPS.md)** — **22** process failures this project hit **twice**,
+  split out of SCOREBOARD on 2026-08-17 and re-keyed to stable IDs `T01`-`T22` on
+  2026-08-26. Append-only history, unlike STATE's mutable state. **IDs are never
+  reused and never renumbered** — cited from 13 files including code.
 - **[docs/archive/](docs/archive/)** — frozen records: `HANDOFF.md`, the session briefs
   (all run), and `resolved/` for Open rows that have been answered. Never a work queue.
 - **[README.md](README.md)** — what the project is + how to run it (quickstart, layout).
@@ -270,7 +271,7 @@ Read those before re-proposing anything here.
 - **Session M (2026-08-15).** DELIVERY, not accuracy — no model touched, no gold number
   moved. The height guidance finally reaches users (`run.py check` + the Court Setup tab);
   `check` now invokes `pipeline.calibrate_video` so it can no longer disagree with `analyze`
-  (**trap 15 recurrence** — the audit tool got the same fix a session earlier and nobody
+  (**trap T15 recurrence** — the audit tool got the same fix a session earlier and nobody
   grepped the other callers); both JS mirrors are enforced by tests proved to fail; 60 fps
   shipped opt-in as `--full-rate`. **Scoreboard-derived score truth was BUILT THEN REJECTED
   ON ITS PREMISE — do not rebuild it** (a burned-in scoreboard is manual data entry;
@@ -312,7 +313,7 @@ Read those before re-proposing anything here.
   its Open row told the next session to build score truth from burned-in scoreboards
   while its own dead-end table recorded that as built-then-rejected-on-premise and
   reverted; the `~1.6x` over-split came from that same withdrawn source and is now
-  WITHDRAWN too (trap 20 fired twice — the second time on its own correction).
+  WITHDRAWN too (trap T20 fired twice — the second time on its own correction).
   400 tests.
 
 ## Keeping the docs true — which file moves with which change
@@ -328,7 +329,7 @@ a rule that gets forgotten** — that is why both are hooks, not paragraphs.
 | Court constants in `court.py` | `frontend/src/lib/court.js` | `tests/test_js_mirror_parity.py` |
 | `calibration.py`'s call-accuracy table | `frontend/src/lib/calls.js` | `tests/test_js_mirror_parity.py` |
 | A model, weight file, or runtime | **docs/STATE.md** "The stack" | judgement |
-| A process mistake hit **twice** | **[TRAPS.md](TRAPS.md)** (split out of SCOREBOARD 2026-08-17; never renumber — cited by number from code) | judgement |
+| A process mistake hit **twice** | **[docs/TRAPS.md](docs/TRAPS.md)** (split out of SCOREBOARD 2026-08-17; never renumber — cited by number from code) | judgement |
 
 **Which doc is authoritative for what**, so they can go stale gracefully instead of
 contradicting each other:

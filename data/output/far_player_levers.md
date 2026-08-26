@@ -75,7 +75,7 @@ metres of real running map to a handful of image pixels and sit *inside* the
 fixture radius. It drops **304 of 412** frames as static, then bins the 108
 remnants under its own <15% rule.
 
-This is the **same family as the resolution-scaling trap** already in TRAPS.md,
+This is the **same family as the resolution-scaling trap** already in docs/TRAPS.md,
 on the DEPTH axis rather than the resolution axis: a constant that is correct for
 one part of the frame is wrong everywhere else in it.
 

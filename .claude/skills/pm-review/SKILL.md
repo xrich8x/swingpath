@@ -21,7 +21,7 @@ Do this fresh every time; do not rely on memory of a previous review.
   incomplete.
 - Read CLAUDE.md's most recent Status entries (the tail of the file) and
   docs/STATE.md in full — "The stack", "The method", "What has worked",
-  "What has not worked" and "Open", plus TRAPS.md. This project's single biggest
+  "What has not worked" and "Open", plus docs/TRAPS.md. This project's single biggest
   risk is re-proposing an idea that was already measured and killed; you
   cannot judge that without reading the table.
 - If the session's work matches one of docs/archive/sessions/*.md, read that brief

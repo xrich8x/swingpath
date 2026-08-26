@@ -7,14 +7,23 @@ correction). Keeping them in one file made SCOREBOARD 430 lines, of which 202 we
 these, and the mixture is what let a correction in one section rot a copy in
 another.
 
-**Do not renumber.** These are cited by number from 13 files including code
-(`backend/run.py`, `backend/swingvision/ball.py`, two test files) and from
-CLAUDE.md, PM_REVIEW_PROMPT.md and the pm-review skill. The numbers are not in
-file order and that is fine — they are identifiers, not an ordering.
+**APPEND-ONLY. IDs are never reused and never renumbered.** `T01`-`T22` are
+permanent identifiers, cited from 13 files including code (`backend/run.py`,
+`backend/swingvision/ball.py`, two test files) and from CLAUDE.md,
+PM_REVIEW_PROMPT.md and the pm-review skill. They are not in file order and that
+is fine — they are identifiers, not an ordering. A withdrawn or superseded trap
+keeps its ID and gets a correction note; its ID does not pass to anything else.
+
+**Re-keyed 2026-08-26** from bare numbers to `T##`. The old numbering had run out
+of shape: it carried a `5b`, so a "21 traps" count was wrong, and a bare `15` was
+ambiguous with the many other numbers in this file. The mapping preserved every
+old number's identity — old `n` became `T0n`/`T{n}` — with the single exception
+of `5b`, which took the new id **T22** rather than shifting 16 other IDs and
+silently changing what every existing citation pointed at.
 
 **Adding one:** a mistake earns a trap the SECOND time it happens, not the first.
 The first time is bad luck; the second is a pattern the process failed to catch.
-Append with the next free number and say what it cost.
+Append with the next free ID (**T23**) and say what it cost.
 
 Covered by `.claude/hooks/withdrawn-guard.sh` like every other live doc: a figure
 listed in docs/STATE.md's "Withdrawn figures" table may not appear here without a
@@ -22,28 +31,28 @@ withdrawal marker in the same block.
 
 ---
 
-1. **Quoting a `--frame-step 1` number as shipped behaviour.** It doubles `fps_eff` and
+T01. **Quoting a `--frame-step 1` number as shipped behaviour.** It doubles `fps_eff` and
    every time-threshold's frame count. Two wrong mechanism conclusions came from this —
    the second *after* the rule was written down. Use step 1 only for A/B deltas and for
    clips whose gold parity demands it.
-2. **Trusting a stale cache.** Perception caches are calibration- and
+T02. **Trusting a stale cache.** Perception caches are calibration- and
    settings-dependent. A whole set of published figures was withdrawn over this.
    Re-perceive; the provenance stamp exists to catch it.
-3. **Unscaled pixel constants.** Anything tuned at 720p silently deletes real balls at
+T03. **Unscaled pixel constants.** Anything tuned at 720p silently deletes real balls at
    1080p. Scale by `frame_height/720` — except the fixture radius, where measurement
    says otherwise.
-4. **A scorer that mis-aligns frames.** Gold frame `f` compared against track index
+T04. **A scorer that mis-aligns frames.** Gold frame `f` compared against track index
    `f//step` without checking `f` was processed understated the tracker for a whole
    session and forced a retraction.
-5. **Measuring against a model instead of a human.** Every leaderboard this project
+T05. **Measuring against a model instead of a human.** Every leaderboard this project
    built before the gold set was measuring its own reflection.
-5b. **Trusting the flat z=0 projection for an AIRBORNE ball.** Measured against
+T22. **Trusting the flat z=0 projection for an AIRBORNE ball.** Measured against
    simulated truth: back-projecting the whole arc onto the court plane and
    integrating path length reads **+72% median, p90 +25,000%** — a near-grazing ray
    runs to infinity. Under 1 m of height it is +15% bias. This is precisely why
    `gate_ball_to_court` and the physics arc fit exist, and why the `approx` speed
    path is a floor rather than a measurement.
-6. **Letting the test set into the training set.** The ball side has enforced a one-way
+T06. **Letting the test set into the training set.** The ball side has enforced a one-way
    gold/train split since Session 2. The COURT side never did: **17 of the 20
    hand-labelled court gold clips were also in `data/court_dataset/`**, and
    `train_courtnet.py` had no guard at all, so every figure in
@@ -51,10 +60,10 @@ withdrawal marker in the same block.
    2026-08-06 with `data/gold/court_split.json` + `assert_no_court_gold_leak()`. The
    lesson generalises: a discipline enforced on one model is not enforced on the
    project. Check each new model for its own guard.
-7. **Fanning out to parallel agents.** The bottleneck here is one GPU and one gold set,
+T07. **Fanning out to parallel agents.** The bottleneck here is one GPU and one gold set,
    not context. Two multi-agent research runs burned ~971k tokens and returned **zero**
    results; the same research done inline took two searches and four fetches.
-8. **Scoring on a population where the decision is easy.** Pooled line-call agreement
+T08. **Scoring on a population where the decision is easy.** Pooled line-call agreement
    reads **87–99%** across camera heights from 1 m to 12 m — it cannot tell a worthless
    mount from a good one, because most simulated bounces land nowhere near a line and
    metres of error still call them correctly. Restricted to bounces within 0.5 m of a
@@ -63,7 +72,7 @@ withdrawal marker in the same block.
    the answer is actually in doubt.* And **always state the majority-class floor** — on
    that population, answering "in" every time scores 56.2%, so the 1 m camera's 54% is
    not "slightly better than chance", it is worse than a constant.
-9. **Calling "no effect" without checking the test could have seen one.** The solid-ghost
+T09. **Calling "no effect" without checking the test could have seen one.** The solid-ghost
    gate has been run **nine times** and never once alongside its own resolution. It is a
    count of ~14 out of **74** no-ball frames, where sampling alone moves the count by
    **±3.4**: near-elimination is detectable (needs 62 frames), but *halving* the ghost
@@ -73,7 +82,7 @@ withdrawal marker in the same block.
    the claim can never again outrun the evidence. Contrast the detector table, where 204
    no-ball frames over six clips resolved an 11.7-point effect comfortably: the method
    is fine, the *chain* metric is just restricted to three calibrated clips.
-10. **Running an A/B with more than one variable.** `train_ballnet.py` had **no seed** —
+T10. **Running an A/B with more than one variable.** `train_ballnet.py` had **no seed** —
    no `manual_seed`, no `random.seed` — so Session I's two arms differed by weight
    initialisation, batch order and augmentation draws as well as by the flag under test.
    The tell was the three clips disagreeing in **sign** on every axis. Same family as the
@@ -81,7 +90,7 @@ withdrawal marker in the same block.
    own control. Fixed with `--seed` and `recipe_stamp`; the standing rule is that a
    checkpoint must say how it was made, and an arm must differ from its control in
    exactly one recorded way.
-11. **Reading a clip-level correlation as the cause.** The far-court pilot's clips split
+T11. **Reading a clip-level correlation as the cause.** The far-court pilot's clips split
    cleanly into "human agreed with the tracker to 0.6–7.2 px" and "human was 112–645 px
    out", and the split was attributed to the four clips carrying a burned-in scoreboard.
    It was really the four clips where the tracker had been tracking a **ball** rather
@@ -90,7 +99,7 @@ withdrawal marker in the same block.
    from the right one is worth 21. **When a per-clip split explains a result, check the
    per-FRAME pixels before naming the variable** — clips differ in many ways at once, and
    n=12 clips is one observation of each.
-17. **Trimming a clip renames it, and the gold guard matches on the NAME.** Caught
+T17. **Trimming a clip renames it, and the gold guard matches on the NAME.** Caught
    live, not hypothetically: gold clip `hd_shortcourt_1` is `7 UTR vs 8 UTR
    [UHf0LeMU2pg].mp4`, a training set had been built from `UHf0LeMU2pg.mp4` — the same
    match, cut shorter — and `assert_no_gold_leak` reported **no leak**, because the
@@ -102,7 +111,7 @@ withdrawal marker in the same block.
    and expanding gold through it. **A provenance check keyed on a name breaks the moment
    the pipeline gains a step that renames things** — and the new step will not know it
    is supposed to tell the old check.
-16. **A default that is silently wrong for a whole new pool.** `validate_new_clip`
+T16. **A default that is silently wrong for a whole new pool.** `validate_new_clip`
    looked for a clip's video at `data/<tag>.mp4` only, and fell back to "assume 1280x720"
    when it missed. The new training footage lives in `data/train_clips/` and is all
    1080p, so every calibration the user hand-placed audited at the wrong resolution and
@@ -114,7 +123,7 @@ withdrawal marker in the same block.
    actually live in. **A fallback that cannot tell "not found" from "found and fine" will
    eventually indict good work** — and the tell was that ALL of them failed, which is
    almost never what a real quality problem looks like.
-15. **Re-implementing the thing you are trying to predict.** `audit_new_clips.py` was
+T15. **Re-implementing the thing you are trying to predict.** `audit_new_clips.py` was
    written to tell a user which new clips will auto-calibrate. Its first version drove
    `auto_fit_frame`/`consensus` by hand instead of calling `pipeline._sample_calib_frames`
    + `courtfit.fit_video_frames`, and sampled 15-85% of the clip where the pipeline
@@ -136,7 +145,7 @@ withdrawal marker in the same block.
    this exact fix a session earlier and the CLI was never checked for the same shape** —
    when a trap is found in one caller, grep for the other callers of the thing it was
    re-deriving, because the pattern is a habit, not an incident.
-14. **Judging a filter by what it KEPT.** Three versions of the play-segment finder
+T14. **Judging a filter by what it KEPT.** Three versions of the play-segment finder
    were written for the nine new match uploads. Each reported a plausible kept-percentage
    and each was wrong in a way the percentage could not show: version 1 discarded real
    tennis on 6 of 9 clips, version 2 on 5 of 9 — including **ten minutes of rallies from
@@ -147,7 +156,7 @@ withdrawal marker in the same block.
    face filling the frame) so the failure mode flips to keeping too much. Even that has
    blind spots the count cannot reveal — a face in profile, and a sponsor read that cuts
    to close-ups of a book with no face in it at all. **Always inspect the rejects.**
-12. **Scoring a HUMAN against a model, which is self-grading wearing a disguise.** The
+T12. **Scoring a HUMAN against a model, which is self-grading wearing a disguise.** The
    far-court queue accepts a labelled gap when the human's click on an anchor agrees
    with the tracker's position there. On the masked re-run that agreement rate went
    **42% → 75% on the same twelve gaps** — and inspection showed at least two of the
@@ -158,7 +167,7 @@ withdrawal marker in the same block.
    motion: human clicks moved **1–8 px** across a gap where the tracker's own prior moved
    **60–583 px**. Rule 1 of ML_PRACTICES applies to human graders too — *what independent
    ground truth is this measured against?*
-13. **Reusing a verification method across a change of scale.** The round-trip check for
+T13. **Reusing a verification method across a change of scale.** The round-trip check for
    "is this built sample the frame the human labelled?" reached for the dHash that
    verified the window mapping in Session I. That question was ±1600 frames and a
    different scene; this one is ±1 frame on a 60 fps static court, where **every
@@ -167,7 +176,7 @@ withdrawal marker in the same block.
    wrong. Replaced with an argmin of mean-abs-diff over ±3 frames, which resolves it —
    and which reports its margin, so a frozen scene declares itself unresolvable instead
    of quietly passing.
-18. **Reading a crop as if it were the frame.** Reviewing arm B's 166 false fires from
+T18. **Reading a crop as if it were the frame.** Reviewing arm B's 166 false fires from
    140 px context tiles, four `am_hard_utr` locks looked like close-ups of a face and
    were written up as "the clip cuts to commentary — footage no ball detector can be
    scored on", with a follow-on recommendation to trim the old gold clips. Pulling the
@@ -182,7 +191,7 @@ withdrawal marker in the same block.
    than by eye: several gold clips do carry a burned-in scoreboard, but only **1 of 166**
    locks lands in the top-left corner where they sit, and 17 anywhere in the outer 12%
    band. Burned-in graphics are not where these false fires come from.)
-19. **Reading a detection RATE as evidence the detector found the right thing.** Session G
+T19. **Reading a detection RATE as evidence the detector found the right thing.** Session G
    part 4 reported "stock racket detection genuinely works on this footage — a racket is
    found on 64–100% of sampled frames per clip, so the ceiling here is the CRITERION, not
    the detector", and that sentence shaped two sessions of follow-up. Re-measured: on the
@@ -192,7 +201,7 @@ withdrawal marker in the same block.
    model output something*, never *did it output the thing this argument needs*. **Score
    the association, not the presence** — distance from the lock to the nearest box was one
    line of code and reverses the conclusion.
-20. **Inferring a defect's SIZE from an assumption about the footage.** Rally
+T20. **Inferring a defect's SIZE from an assumption about the footage.** Rally
    segmentation was written up as "63 rallies where reality is 8–15 points, the score is
    badly wrong" — from a real symptom (0 of 62 inter-rally gaps ≥10 s) plus an unstated
    assumption that the clip contained unedited between-point dead time. It does not: only
@@ -207,7 +216,7 @@ withdrawal marker in the same block.
    the same defect, the second time on its own correction. The closing advice used to
    read *"it was sitting in the pixels of three clips, free"*; it was free because it
    was somebody's **data entry**, not the court.
-21. **Re-deriving a rule instead of sharing it — then trusting the copy over the pixels.**
+T21. **Re-deriving a rule instead of sharing it — then trusting the copy over the pixels.**
    `build()` numbers each training triplet by its POSITION in the usable-frame list and drops
    `unsure` labels; the round-trip gate re-derived that list and KEPT them, so on any clip
    with an unsure label every later sample was checked against the wrong source frame. It
