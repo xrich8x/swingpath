@@ -44,7 +44,7 @@ def test_coverage_of_complete_track_is_one():
 
 def test_the_bar_is_the_projects_existing_seen_fraction_bar():
     """Not an invented threshold: the >=50% seen-fraction bar the project already
-    uses to call a speed trusted (SCOREBOARD, Session M part 2). If this changes,
+    uses to call a speed trusted (docs/STATE.md, Session M part 2). If this changes,
     it should change deliberately and for a stated reason."""
     assert pipeline.MIN_TRACK_COVERAGE == 0.50
 

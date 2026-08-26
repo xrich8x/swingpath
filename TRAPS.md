@@ -1,7 +1,7 @@
 # TRAPS.md — process failures this project has hit more than once
 
-Each one cost real work. They live here rather than in SCOREBOARD.md because they
-have a different lifecycle: SCOREBOARD is *state* (what is true now, rewritten as
+Each one cost real work. They live here rather than in docs/STATE.md because they
+have a different lifecycle: STATE is *state* (what is true now, rewritten as
 it changes) while this is *history* (append-only, corrected only by marking a
 correction). Keeping them in one file made SCOREBOARD 430 lines, of which 202 were
 these, and the mixture is what let a correction in one section rot a copy in
@@ -17,7 +17,7 @@ The first time is bad luck; the second is a pattern the process failed to catch.
 Append with the next free number and say what it cost.
 
 Covered by `.claude/hooks/withdrawn-guard.sh` like every other live doc: a figure
-listed in SCOREBOARD.md's "Withdrawn figures" table may not appear here without a
+listed in docs/STATE.md's "Withdrawn figures" table may not appear here without a
 withdrawal marker in the same block.
 
 ---

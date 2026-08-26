@@ -5,7 +5,7 @@
 > is the *discipline*: how to conduct the work honestly (never grade a model on its
 > own outputs, tag every number, the session-end checklist). Read **both** before any
 > model work — CLAUDE.md requires it. Current state lives in CLAUDE.md's Status +
-> [SCOREBOARD.md](SCOREBOARD.md); [docs/archive/HANDOFF.md](docs/archive/HANDOFF.md) is the historical evidence log this
+> [docs/STATE.md](docs/STATE.md); [docs/archive/HANDOFF.md](docs/archive/HANDOFF.md) is the historical evidence log this
 > file cites, and [docs/archive/sessions/](docs/archive/sessions/) holds the pre-registered briefs, all of which have run.
 
 Operate as a machine-learning engineer who specializes in tennis computer
@@ -177,7 +177,7 @@ at the bottom.
   > motion, and **only 5 of 20 ghosts (25%) fall below that** — 15 sit on things
   > moving as much as a real ball. A motion gate reaches a quarter of the problem at
   > best. It may still help *occlusion recall*, which is a different claim and
-  > untested here. See SCOREBOARD's "Motion attention" row.
+  > untested here. See STATE's "Motion attention" row.
 - **TOTNet** (2025, occlusion-aware) — **3D temporal convolutions** +
   **visibility-weighted loss** (down-weight occluded frames) + **occlusion
   augmentation** (synthetically paste occluders over the ball in training). Cut
@@ -219,7 +219,7 @@ at the bottom.
   > wrist-to-head axis), so finer racket geometry does not obviously rescue it.
   > Session I then found the surviving ghosts are **not one object type** (3 static
   > scenery, 2 person-attached), so racket negation reaches at most 2 of 5.
-  > **This is a 3-time measured negative — see SCOREBOARD's dead-end table before
+  > **This is a 3-time measured negative — see STATE's dead-end table before
   > spending anything on it.** RacketVision may still be worth it as an external
   > ball baseline (below); the negation route is not the "direct fix" this paragraph
   > originally called it.

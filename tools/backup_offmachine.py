@@ -2,7 +2,7 @@
 
 WHY THIS EXISTS
 ---------------
-SCOREBOARD's Open table: `data/train_clips/` (20 videos, 2.73 GB) and
+docs/STATE.md's Open table: `data/train_clips/` (20 videos, 2.73 GB) and
 `data/ball_dataset/` (73,098 files, 3.45 GB) are gitignored and tracked by
 nothing. The dataset is nominally regenerable from the videos, but re-processing
 yields DIFFERENT pseudo-labels, so treat it as semi-irreplaceable too.
@@ -23,7 +23,7 @@ THE GOTCHA THIS ALREADY COST SOMEONE
 ------------------------------------
 `robocopy` exits **1 on a SUCCESSFUL copy** (and 0 only when nothing needed
 copying). A wrapper that checks `returncode != 0` reports a false failure —
-SCOREBOARD records that happening. Exit codes >= 8 are the real failures. This
+docs/STATE.md records that happening. Exit codes >= 8 are the real failures. This
 uses Python's own copy instead, so the question does not arise, and verifies by
 content rather than by trusting any exit code at all.
 

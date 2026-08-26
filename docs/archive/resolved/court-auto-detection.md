@@ -1,0 +1,6 @@
+# Court auto-detection — CLOSED AGAIN 2026-08-25, with a sharper characterisation than either prior closure
+
+> Evidence for the `court-auto-detection` row in [docs/STATE.md](../../STATE.md) (Open).
+> Text preserved verbatim from SCOREBOARD.md at the 2026-08-26 split.
+
+**Five branches measured, none survives** (reach, the prior weight, `topk`, line-construction, line-snapping — all in What has not worked). The finding: **the detector FINDS the court's lines** — the four outer lines sit a median 1.3–4.1 px@640 from a detected line, present on 27–38 of 40 clips — **but it cannot assemble them into the court.** Every candidate it can construct comes off a 5-parameter lattice whose nearest point is 7–20 px from truth, and its refiner moves AWAY from truth on 17 of 38 clips (median landing 14.1 px out, worst 9.8 → 42.6). Scoring is not implicated: Session O measured the criteria recognising the correct court on 19 of 20 clips. The correct next build is **joint line-to-model correspondence** (assignment solved together with the homography — Farin-style, and the setting cross-ratio screening was deferred for); it is a real build and was NOT tested here. Output for now is the documented refusal path plus camera guidance. `docs/archive/sessions/SESSION_P_search_reach.md`.

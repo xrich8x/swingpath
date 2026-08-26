@@ -10,7 +10,7 @@
 #   where the withdrawn figure was being used as the CORRECTIVE. Each was caught by
 #   a human reading carefully. This turns that into a check.
 #
-# Source of truth is SCOREBOARD.md's "## Withdrawn figures" table: every row's
+# Source of truth is docs/STATE.md's "## Withdrawn figures" table: every row's
 # backticked Figure is a literal string that may only appear in a block that also
 # carries a withdrawal marker.
 #
@@ -36,14 +36,18 @@ printf '%s' "$input" | grep -qF '[no-withdrawn-check]' && allow
 
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || allow
 cd "$repo_root" 2>/dev/null || allow
-[ -f SCOREBOARD.md ] || allow
+[ -f docs/STATE.md ] || allow
 
 # Live docs only. Everything else is a dated record and legitimately keeps the
 # old number.
-LIVE="CLAUDE.md SCOREBOARD.md TRAPS.md ML_PRACTICES.md ML_PLAYBOOK.md README.md USER_GUIDE.md SETUP_PROMPT.md PM_REVIEW_PROMPT.md"
+LIVE="CLAUDE.md docs/STATE.md TRAPS.md ML_PRACTICES.md ML_PLAYBOOK.md README.md USER_GUIDE.md SETUP_PROMPT.md PM_REVIEW_PROMPT.md"
+# docs/evidence/ is LIVE too. A result now lives half there, so a withdrawn
+# figure can survive in an evidence file exactly the way it used to survive
+# in the Open table - which is the failure this guard exists for.
+LIVE="$LIVE $(ls docs/evidence/*.md 2>/dev/null)"
 
 # Pull the registered figures into a shell array (one per line).
-figures=$(sed -n '/^## Withdrawn figures/,/^## Open/p' SCOREBOARD.md \
+figures=$(sed -n '/^## Withdrawn figures/,/^## Open/p' docs/STATE.md \
           | grep -E '^\| `' \
           | sed -E 's/^\| `([^`]+)`.*/\1/')
 
@@ -101,7 +105,7 @@ cat <<JSON
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "deny",
-    "permissionDecisionReason": "A figure listed in SCOREBOARD.md's 'Withdrawn figures' table still appears in a live doc without a withdrawal marker:\n\n$report\n\nThis is the exact failure this project hit three times: a number is retracted in one table and a stale copy survives in another - usually the Open table, which the next session reads as the plan. Fix it by deleting the stale figure, or by marking it withdrawn in the same block (a paragraph, or a single table row). If the file is a dated historical record it should not be in the live list at all. Genuine exception: put [no-withdrawn-check] in the commit message."
+    "permissionDecisionReason": "A figure listed in docs/STATE.md's 'Withdrawn figures' table still appears in a live doc without a withdrawal marker:\n\n$report\n\nThis is the exact failure this project hit three times: a number is retracted in one table and a stale copy survives in another - usually the Open table, which the next session reads as the plan. Fix it by deleting the stale figure, or by marking it withdrawn in the same block (a paragraph, or a single table row). If the file is a dated historical record it should not be in the live list at all. Genuine exception: put [no-withdrawn-check] in the commit message."
   }
 }
 JSON

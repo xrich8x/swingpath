@@ -1,0 +1,6 @@
+# SwingVision scrub + trainer guard
+
+> Evidence for the `swingvision-scrub-trainer-guard` row in [docs/STATE.md](../STATE.md) (What has worked).
+> Text preserved verbatim from SCOREBOARD.md at the 2026-08-26 split.
+
+**A standing user rule turned into something the trainer enforces.** Five training clips (27% of the pool, 11,187 labels) carry a burned-in SwingVision overlay — mini-court radar, stroke/speed readout, score panel, and a watermark that is **a literal yellow tennis ball**. **83 pseudo-labels landed inside one of those graphics**: the labeller locking onto the watermark, and us teaching that it is a ball. `tools/scrub_swingvision.py` writes a per-dir mask; `BallWindows` paints the boxes **at load** (non-destructive — no JPEG is rewritten, so the scrub is re-applied every run and stays visible in the code) and drops the in-box labels; `assert_no_swingvision_leak` **refuses to train** on an unscrubbed overlay clip, same shape as the gold guard. Keeps the 11,104 good labels instead of binning a quarter of the pool. 6 tests, incl. proving the guard fires and that boxes are stored in FRAME space not source space (the unscaled-pixel bug this repo has hit repeatedly). | 2026-08-13

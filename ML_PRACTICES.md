@@ -242,6 +242,80 @@ math or rules belong.
   principles (e.g. gravity + a known frame rate), not by copying another
   product's output numbers. (HANDOFF §5, §8-R2.)
 
+## The working summary — 11 rules, moved here from SCOREBOARD 2026-08-26
+
+This is how work gets decided here, and it is the reason the numbers in
+[docs/STATE.md](docs/STATE.md) can be trusted. It lived in docs/STATE.md until the
+2026-08-26 split, which separated *state* (what is true now) from *discipline*
+(how we decide). The sections above expand these; this is the checklist form.
+
+1. **Score only against independent human labels.** 1851 human ball clicks and 308
+   no-ball frames across 10 clips (the legacy six, 1201/204, is kept as a named subset
+   so historical figures stay reproducible). Test-only, never trained on. A model never
+   grades its own homework.
+2. **Pre-register the gate before running the experiment.** Write the threshold down
+   first, then measure. Do not move the gate to fit the result — Session G part 4 fails
+   at 54.5% against a 60% gate and stays failed.
+3. **Order the gates so the expensive one is checked first.** Recall before ghost-ball.
+   In Session F the ghost-ball gate would have *passed* at threshold 0.6; only the
+   recall gate, deliberately ordered first, caught it.
+4. **Diagnose before adjusting.** Per-gate miss counters, not just success counts. That
+   is what showed far-court was detector-shaped rather than gate-shaped.
+5. **State what every number was measured against, in one sentence.** Every eval tool
+   emits a `measured_against` field.
+6. **A refactor must prove it changed nothing.** Re-run and diff, or pin with a test.
+7. **Record negatives with their reason.** A dead end nobody wrote down gets
+   re-proposed.
+8. **Look at the errors, at the right zoom, before theorising about them.**
+   `tools/false_fire_viewer.py` renders every false lock as a clickable context tile
+   with a matching zoom, because the two questions need opposite crops: *what object is
+   this attached to* needs 140 px of context, *is this literally a tennis ball* needs
+   44 px blown up. Judging either from the wrong one produces confident nonsense — see
+   Trap 18.
+9. **And look at them MOVING.** `tools/false_fire_reel.py` renders ±0.5 s around each
+   false fire with the detector run continuously and its lock drawn every frame. A still
+   cannot separate a racquet head from a ball — both are ball-sized, ball-coloured blobs
+   — and the thing that separates them is that one is on a short arc pinned to a person.
+   Two sessions were spent proving the pipeline cannot make that call from geometry while
+   the discriminator was motion, which no contact sheet shows. Annotation colour is
+   **magenta on purpose**: the subject and every confuser are yellow-green, so a yellow
+   marker hides inside the object it points at.
+10. **A test set that PICKS a hyperparameter is a validation set wearing a test set's
+    reputation, even if pre-registered.** External review (2026-08-16, P0-1): rule 1 says
+    the gold set is never trained on, but `tools/tune_smoother.py` and
+    `tools/tune_suppress.py` had both been sweeping `max_gap_s`, suppression segment
+    thresholds, `score_thresh` and more directly against the same 1851 clicks that also
+    produce every headline recall/false-fire number — over a dozen sweeps across six
+    weeks. Pre-registering each individual gate (rule 2) limits cherry-picking within one
+    sweep; it does not stop the cumulative drift of many sweeps against one fixed set.
+    Two clips are now a permanent, ONE-WAY blind holdout (`tools/_goldset.py`'s
+    `HOLDOUT`), structurally withdrawn from both tools' `--clip` choices — see the
+    matching row below. They stay fully visible to `eval_gold.py` / `eval_detector_gold.py`
+    / `eval_model_filters.py` for reporting; the rule is about what CHOSE a value, not
+    about what gets measured.
+11. **Truth comes from the GAME, not from the VIDEO.** The court, the ball, the
+    players, the bounces, the physics — never a scoreboard, HUD or graphic somebody
+    burned into the frame. Those are *data entry about* the game, and they are out of
+    bounds as a training target, a ground-truth reference AND a tuning signal. This is
+    the generalisation of three separate incidents here: the burned-in scoreboard built
+    and rejected on its premise (`afffb5a`), the `~1.6x`/`1.47x` over-split figures
+    withdrawn with it, and 83 pseudo-labels landing inside a SwingVision overlay whose
+    watermark is a literal yellow tennis ball. Independence is not truth — a
+    diligently-kept WRONG board is perfectly self-consistent; and nothing that leans on
+    an overlay generalises to the user's own phone clip, which has neither. **Compliant
+    references: human clicks, `tools/synth_truth.py`, and geometry we derive ourselves.**
+    **THE ONE LIVE EXCEPTION, stated rather than buried:** `tools/hud_ocr.py` reads
+    SwingVision's burned-in MPH panel, and the speed figures in this file that cite a
+    "HUD MAE" or "HUD speed error" (the `--full-rate` row, the frame-rate row,
+    `speed_err_pct`) are measured against it. Those are **agreement with another
+    estimator, not accuracy** — SwingVision's own error is inside every one of them, so
+    they bound how well we MATCH SwingVision, not how right we are. `synth_truth` is the
+    compliant speed reference and is the one that produced this project's only absolute
+    accuracy figures. Do not add new HUD-referenced numbers; re-reference the existing
+    ones to `synth_truth` when they next matter.
+
+---
+
 ## Session-end checklist for any ML work
 
 Before ending a session that trained, tuned, or evaluated a model:

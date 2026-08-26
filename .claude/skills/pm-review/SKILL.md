@@ -1,5 +1,5 @@
 ---
-description: On-demand deep PM review of recent SwingVision work for a non-technical PM — plain English, grounded in this project's real ML/CV technique and physical tennis facts, cross-checked against SCOREBOARD.md's measured history. Invoke with /pm-review.
+description: On-demand deep PM review of recent SwingVision work for a non-technical PM — plain English, grounded in this project's real ML/CV technique and physical tennis facts, cross-checked against docs/STATE.md's measured history. Invoke with /pm-review.
 disable-model-invocation: true
 ---
 
@@ -20,7 +20,7 @@ Do this fresh every time; do not rely on memory of a previous review.
   committed and what's still pending, in case the conversation summary is
   incomplete.
 - Read CLAUDE.md's most recent Status entries (the tail of the file) and
-  SCOREBOARD.md in full — "The stack", "The method", "What has worked",
+  docs/STATE.md in full — "The stack", "The method", "What has worked",
   "What has not worked" and "Open", plus TRAPS.md. This project's single biggest
   risk is re-proposing an idea that was already measured and killed; you
   cannot judge that without reading the table.
@@ -65,7 +65,7 @@ Diagnose, don't vibe-check. For any model-related work this session:
   accepting any fix: evaluation/leakage, data, domain shift,
   architecture/representation, or optimization. A fix aimed at the wrong
   bucket wastes a training run.
-- Check the fix against SCOREBOARD's "What has not worked" table BEFORE
+- Check the fix against docs/STATE.md's "What has not worked" table BEFORE
   recommending it. If it's a variant of something already killed (raise the
   score threshold, lower the court-consensus bar, negate on a racket/COCO
   box, add more training data alone, tighten a gate radius), say so plainly
@@ -102,7 +102,7 @@ Five sections, plain English, specific to this session (no generic advice):
    really independent evidence. Name the file/decision, not just the vibe.
 4. **Recommended next steps** — concrete, prioritized, and checked against
    Step 3 so nothing on the list is a re-run of a dead end. Say what each
-   would cost (roughly) and what it's waiting on, the way SCOREBOARD's
+   would cost (roughly) and what it's waiting on, the way docs/STATE.md's
    "Open" table does.
 5. **Cut-or-keep call** — if something this session touched genuinely isn't
    worth its cost (complexity, GPU time, accuracy bought) relative to what

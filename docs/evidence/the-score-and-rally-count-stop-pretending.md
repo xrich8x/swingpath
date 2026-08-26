@@ -1,0 +1,6 @@
+# The score and rally count stop pretending to be measured
+
+> Evidence for the `the-score-and-rally-count-stop-pretending` row in [docs/STATE.md](../STATE.md) (What has worked).
+> Text preserved verbatim from SCOREBOARD.md at the 2026-08-26 split.
+
+**The last known instance of the pattern that produced the `0.0 m` bug.** The dashboard rendered `match.score.final` and a *Rallies* tile with no caveat, while that layer has **no ground truth of any kind** — no point boundary has ever been labelled, so unlike the ball (1851 clicks) or the court (20 clips) it cannot be scored at all. It cannot be scored, but it CAN report **which rule split it**: `segment_rallies` breaks on the tennis second-bounce rule or on a bare 2.0 s gap timer, and `with_reasons=True` now counts each. Measured on yt_rally2: **5 timeout / 0 tennis-rule** — reproducing the 62/0 already recorded on yt_match40 on a second clip. So segmentation is a stopwatch wearing a rule's clothes, and `stats.score_validation_note` says exactly that in the match.json while the UI shows *unvalidated* on both the scoreline and the tile. **No ground truth was invented and none is implied** — this is the layer describing its own mechanism, which needs no labels. Default return shape of `segment_rallies` is unchanged, pinned by a test, so every existing caller is untouched. 7 tests | 2026-08-17

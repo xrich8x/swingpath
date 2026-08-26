@@ -13,7 +13,7 @@ failed was that COCO found the *near* player's racket while the detector fired
 on the *far* player's. A prompt that encodes a wrong cause hands it to every
 future review, which is Trap 19 in [TRAPS.md](TRAPS.md) — the same incident, named
 there as reading a detection RATE as evidence the detector found the right thing.
-(Traps moved out of SCOREBOARD.md into TRAPS.md on 2026-08-17, after this note was
+(Traps moved out of docs/STATE.md into TRAPS.md on 2026-08-17, after this note was
 written; the numbering did not change.)
 
 ---
@@ -26,7 +26,7 @@ dashboard). I cannot read code. Ground yourself before judging anything:
    --oneline -15` and `git diff` / `git status`) for what was actually done
    recently — files touched, decisions made, walls hit, numbers reported.
 2. Read CLAUDE.md's most recent Status entries and Gotchas section, and all
-   of SCOREBOARD.md — especially "What has not worked" — and of TRAPS.md. Do not
+   of docs/STATE.md — especially "What has not worked" — and of TRAPS.md. Do not
    evaluate anything without checking it against that table first; this
    project's biggest recurring risk is re-proposing an idea already measured
    and killed.
@@ -45,7 +45,7 @@ racket detection kept finding the NEAR player's racket while the detector was
 firing on the FAR player's (locks sat 737-869px from the nearest box), and
 racket-head position is statistically indistinguishable from a real ball
 (0.57 vs 0.55 on the wrist-to-head axis). Its catch rate also re-scored to
-23.3% on the current detector, not the 55% first reported — cite SCOREBOARD's
+23.3% on the current detector, not the 55% first reported — cite STATE's
 "Racquet-box negation" row, not the size argument.
 
 Also true of the physical world here: a ball in flight obeys gravity, drag and
@@ -58,7 +58,7 @@ And hold it against real ML/CV technique, not a vibe check: diagnose any
 model weakness into one of five buckets before accepting a fix —
 evaluation/leakage, data, domain shift, architecture/representation, or
 optimization (a fix aimed at the wrong bucket wastes a training run). Check
-any proposed fix against SCOREBOARD's "What has not worked" table BEFORE
+any proposed fix against STATE's "What has not worked" table BEFORE
 recommending it — if it's a variant of something already killed (raise the
 score threshold, lower the court-consensus vote bar, negate on a racket
 box, add training data alone, tighten a gate radius), say so and cite the

@@ -4,7 +4,7 @@ WHY
 ---
 Review finding P2-2: `requirements.txt` / `requirements-ml.txt` carry only `>=`
 bounds, so a fresh install a year from now resolves a different stack than the one
-every figure in SCOREBOARD.md was measured against. ML_PRACTICES already records
+every figure in docs/STATE.md was measured against. ML_PRACTICES already records
 that CPU vs GPU can flip a near-threshold detection; an unpinned library stack is
 the same hazard by a second route.
 
@@ -44,7 +44,7 @@ HEADER = """\
 #
 # WHY THIS FILE EXISTS (review finding P2-2)
 # requirements*.txt use only >= bounds, so `pip install -r` a year from now
-# resolves a different stack than the one every figure in SCOREBOARD.md was
+# resolves a different stack than the one every figure in docs/STATE.md was
 # measured on. ML_PRACTICES already records that CPU vs GPU can flip a
 # near-threshold detection; an unpinned library stack is the same hazard by a
 # second route. This RECORDS rather than pins: hard-pinning this stack is a good

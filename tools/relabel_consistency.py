@@ -2,7 +2,7 @@
 
 WHY THIS EXISTS (review finding P0-2)
 -------------------------------------
-Every number in SCOREBOARD.md is a comparison against 1,851 human ball clicks and
+Every number in docs/STATE.md is a comparison against 1,851 human ball clicks and
 308 no-ball frames. All 2,159 came from **one person, one pass, with no second
 pass and no second labeller**, so the reliability of the ground truth itself has
 never been measured. There is currently no way to separate "the model got worse"
@@ -194,7 +194,7 @@ def score(markdown: str | None) -> None:
     lines += [
         "", "## How to read this", "",
         f"- If click distance p90 approaches the {EVAL_RADIUS_PX:g} px eval "
-        "radius, every hit@10px figure in SCOREBOARD.md carries that much slack "
+        "radius, every hit@10px figure in docs/STATE.md carries that much slack "
         "and should be quoted with it.",
         "- If class agreement is below ~95%, note the no-ball population is only "
         "308 frames pooled, so a handful of flips moves a false-fire rate "

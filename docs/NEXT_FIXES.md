@@ -3,7 +3,7 @@
 > detector string, the "NOT yet committed" note, the README pointing at a
 > degenerate calibration, and the untracked evidence .txt files.
 > Kept as a record of what was fixed and why.
-> **For open work read [SCOREBOARD.md](../SCOREBOARD.md).**
+> **For open work read [STATE.md](STATE.md).**
 
 # Next fixes — the maintenance list
 

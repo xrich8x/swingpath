@@ -1,0 +1,6 @@
+# Racquet-box negation (COCO class 38)
+
+> Evidence for the `racquet-box-negation` row in [docs/STATE.md](../STATE.md) (What has not worked).
+> Text preserved verbatim from SCOREBOARD.md at the 2026-08-26 split.
+
+**Failed twice, and the second run found the reason.** Session G part 4: 54.5% catch at 4.5% collateral, 5.5 pts under gate. Re-scored on the Session K detector: **23.3% at 4.6%** — now 36.7 pts under. The control reproduces Session G digit for digit, so the harness is sound. **But the numerator is what matters**: the box catches ~12 locks in every population (12/22 → 12/32 → 7/30); the rate collapsed because 10 racquet locks were added when `gold_uR5q2cSM6AY` was classified and the box catches **0** of them. On all 10, the lock sits **737–869 px** from the nearest racket box — YOLO found the **near** player's racket (80–150 px, conf 0.46–0.83, low in frame) and missed the **far** player's, which the ball detector was firing on (high in frame; where a far racket *is* found it is 37×56 px at conf **0.12**). So *"a racket is found on 64–100% of frames"* — quoted in G part 4 as evidence the ceiling was the criterion — was true and useless: **it was finding the wrong racket.** COCO's racket class is trained on large sharp rackets, so racquet negation is structurally blind exactly where the confuser lives. Evidence: data/output/racquet_negation_k.md

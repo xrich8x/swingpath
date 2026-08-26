@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# scoreboard-guard.sh — keep SCOREBOARD.md honest, in every session.
+# scoreboard-guard.sh — keep docs/STATE.md honest, in every session.
+# (Name kept: it is wired into .claude/settings.json by path.)
 #
-# SCOREBOARD.md is the living record: the stack, the method, and flat lists of
+# docs/STATE.md is the living record: the stack, the method, and flat lists of
 # what has and has not moved a number. A living document that is updated only
 # when someone remembers is a stale document, and a stale scoreboard is worse
 # than none — it is a confident-looking list of things that may no longer be true.
 #
 # So the rule is enforced by the harness rather than by anyone's memory: a commit
-# that changes CODE must also stage SCOREBOARD.md. Runs as a PreToolUse hook on
+# that changes CODE must also stage docs/STATE.md. Runs as a PreToolUse hook on
 # `git commit`, reads the hook JSON on stdin, and denies the commit with a reason
 # if the scoreboard was left behind. Nothing is blocked for the USER — the denial
 # goes back to Claude, which updates the file and commits again.
@@ -41,7 +42,7 @@ staged=$(git diff --cached --name-only 2>/dev/null) || allow
 [ -n "$staged" ] || allow          # nothing staged: `git commit -a`, amend, or a no-op
 
 # Already doing the right thing.
-printf '%s\n' "$staged" | grep -qx 'SCOREBOARD.md' && allow
+printf '%s\n' "$staged" | grep -qx 'docs/STATE.md' && allow
 
 # Only CODE changes are gated. A doc, a dataset or a config on its own can ship
 # without a scoreboard entry.
@@ -57,7 +58,7 @@ cat <<JSON
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "deny",
-    "permissionDecisionReason": "SCOREBOARD.md is not staged, but this commit changes code ($changed). SCOREBOARD.md is the living record and CLAUDE.md requires it to be updated in the same commit as the work it describes. Add the entry this change earns: a shipped win with the number it moved, a measured negative with the reason it failed, a stack change, or a trap hit twice. Then 'git add SCOREBOARD.md' and commit again. If this change genuinely moves no number - a typo, a rename, a revert - put [no-scoreboard] in the commit message and this check will pass."
+    "permissionDecisionReason": "docs/STATE.md is not staged, but this commit changes code ($changed). docs/STATE.md is the living record and CLAUDE.md requires it to be updated in the same commit as the work it describes. Add the entry this change earns: a shipped win with the number it moved, a measured negative with the reason it failed, a stack change, or a trap hit twice. Then 'git add docs/STATE.md' and commit again. If this change genuinely moves no number - a typo, a rename, a revert - put [no-scoreboard] in the commit message and this check will pass."
   }
 }
 JSON

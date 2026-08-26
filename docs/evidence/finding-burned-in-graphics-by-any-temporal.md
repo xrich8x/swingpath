@@ -1,0 +1,6 @@
+# Finding burned-in graphics by any temporal statistic
+
+> Evidence for the `finding-burned-in-graphics-by-any-temporal` row in [docs/STATE.md](../STATE.md) (What has not worked).
+> Text preserved verbatim from SCOREBOARD.md at the 2026-08-26 split.
+
+**All three fail on this footage, in both directions.** These clips are edited compilations with cuts and auto-exposure, so per-pixel std has *nothing* below 6/255 on 3 of 12 clips (two of which carry an obvious scoreboard) while on the locked-off-camera clips **45–57% of the frame** is below it and a variance mask paints the COURT. Median-agreement is better and still splits the same way; correlation with global exposure — the principled version, since a composited graphic should not track auto-exposure — flags **26–65%** of the frame on 7 of 12, because any pixel a player walks through is dominated by the player. Adding geometry (small, border-flush, rigid-against-a-non-rigid-surround, structured) makes the rule *safe* but not *complete*: it finds the SwingVision watermark on every clip that has one and **none of the six score panels**, which sit over sky or dark stands. Twelve fixed clips, so the rest are hand-authored and verified by eye. Evidence: data/output/farcourt_hud_mask.md

@@ -15,7 +15,7 @@ It runs two ways: on synthetic demo data with no AI models (instant, for trying
 the dashboard), and on real footage through the full pipeline — court
 auto-calibration, ball tracking (TrackNet/WASB), and player pose (YOLO-pose) are
 all real and wired end to end (see §5). What to work on next lives in
-[SCOREBOARD.md](SCOREBOARD.md).
+[docs/STATE.md](docs/STATE.md).
 
 ## 2. Before you start
 
@@ -150,7 +150,7 @@ heuristic; vision scoring is best-effort (correct points by hand when it matters
 3. **All the session briefs in [docs/archive/sessions/](docs/archive/sessions/) have now run** —
    each is stamped at the top with what happened to it (SHIPPED / GATE FAILED /
    STOPPING RULE FIRED). They are kept for their pre-registered gates, not as a
-   queue. **For what to work on next, read [SCOREBOARD.md](SCOREBOARD.md)** —
+   queue. **For what to work on next, read [docs/STATE.md](docs/STATE.md)** —
    "Open, and what each is waiting on" is the live list.
 
 Keep these rules in front of the agent (they're in CLAUDE.md):
@@ -162,7 +162,7 @@ Keep these rules in front of the agent (they're in CLAUDE.md):
 - Before any model work, the agent must read ML_PRACTICES.md + ML_PLAYBOOK.md
   (CLAUDE.md requires it) — measure honestly, never let a model grade itself.
 
-What's next, highest value first, lives in **SCOREBOARD.md** — not here and not in
+What's next, highest value first, lives in **docs/STATE.md** — not here and not in
 docs/archive/sessions/, both of which go stale. As of 2026-08-15 the headline is that the
 **ball detector is closed** (Session L's pre-registered stopping rule fired), and the
 open target is that the processing chain discards ball the detector already found:
@@ -183,7 +183,7 @@ speed on 106 of 120 shots and only 69 survive. Three attempts at that have faile
 ## 8. Project map
 
 CLAUDE.md         agent context + doc map (auto-loaded by Claude Code)
-SCOREBOARD.md     THE LIVING RECORD — what has and has not worked, and what is
+docs/STATE.md     THE LIVING RECORD — what has and has not worked, and what is
                   open. Read this for current state; everything else goes stale.
 README.md         architecture overview + quickstart
 SETUP_PROMPT.md   paste-in prompt to install + run (fresh machine)

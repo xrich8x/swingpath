@@ -1,0 +1,6 @@
+# Using a burned-in SCOREBOARD as ground truth for points/rallies
+
+> Evidence for the `using-a-burned-in-scoreboard-as-ground` row in [docs/STATE.md](../STATE.md) (What has not worked).
+> Text preserved verbatim from SCOREBOARD.md at the 2026-08-26 split.
+
+**BUILT, THEN REJECTED ON THE PREMISE — do not rebuild it.** A tool read the point-by-point boards on am_hard_utr and yt_match40 by per-field state clustering, every state labelled by eye, giving 36 and 43 points with **all 79 transitions legal tennis**, and put the rally over-split at 1.47x. **The user rejected the premise and it was reverted (afffb5a); the 1.47x is WITHDRAWN.** A burned-in scoreboard is **manual data entry** by a player, editor or app operator. It is genuinely INDEPENDENT of anything this project computes — and **independence is not truth**. The 79/79 check proves the scoreline is **self-consistent**, not that it matches the court: a diligently-kept *wrong* board passes it perfectly. That is internal consistency mistaken for external validity, a cousin of Trap 12. Worse, the intended use was tuning `gap_s` against point-BOUNDARY timestamps — i.e. **calibrating a rally threshold against when somebody pressed a button**, reaction lag included. Anything scoring this layer must take truth from the COURT (ball, players, bounces).

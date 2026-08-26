@@ -2044,7 +2044,7 @@ def _build_match_from_events(
 #: Minimum fraction of processed frames a player must actually be located on
 #: before their path length is reportable. NOT a new invented threshold: this is
 #: the same >=50% seen-fraction bar the project already uses to decide a speed is
-#: trusted (SCOREBOARD, Session M part 2), because it is the same question — is
+#: trusted (docs/STATE.md, Session M part 2), because it is the same question — is
 #: this track dense enough to integrate over. Below it `_distance_run_m` would
 #: forward-fill mostly-stale positions into a flat path and systematically
 #: UNDERSTATE the distance, which is worse than silence because it looks precise.

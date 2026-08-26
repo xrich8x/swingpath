@@ -162,7 +162,7 @@ any single model choice.
 ## Docs
 
 - **CLAUDE.md** — architecture, hard rules, current status (start here to work on it).
-- **[SCOREBOARD.md](SCOREBOARD.md)** — the stack, the method, and what has and hasn't
+- **[docs/STATE.md](docs/STATE.md)** — the stack, the method, and what has and hasn't
   worked, in flat lists. Kept live; updated alongside the work.
 - **[docs/STATE.md](docs/STATE.md)** — the current state of play: what is shipped, what is open,
   and what has been measured and ruled out.

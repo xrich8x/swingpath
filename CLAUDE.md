@@ -5,24 +5,28 @@ Project context for Claude Code. Read this before editing.
 ## Project docs — read the right one for the task
 
 - **CLAUDE.md** (this file) — architecture, hard rules, current status. Read before editing.
-- **[SCOREBOARD.md](SCOREBOARD.md)** — the LIVING record: the stack, the working method,
-  and flat lists of what has and has not moved a number. This file's Status section is
-  chronological; SCOREBOARD is the consolidated state of play. **Update it in the same
-  commit as the work it describes** — a shipped win, a measured negative, a stack change,
-  or a process trap hit twice. This is ENFORCED, not remembered:
-  `.claude/hooks/scoreboard-guard.sh` refuses any commit that touches code without also
-  modifying SCOREBOARD.md. Doc-, data- and config-only commits pass; put
+- **[docs/STATE.md](docs/STATE.md)** — the LIVING record: the stack, and flat lists of
+  what has and has not moved a number, what is open. One row per result, each naming its
+  evidence file. This file's Status section is chronological; STATE is the consolidated
+  state of play. **Update it in the same commit as the work it describes.** ENFORCED, not
+  remembered: `.claude/hooks/scoreboard-guard.sh` refuses any commit that touches code
+  without also modifying `docs/STATE.md`. Doc-, data- and config-only commits pass; put
   `[no-scoreboard]` in the message for a change that genuinely moves no number.
+- **[docs/evidence/](docs/evidence/)** — one file per result: the mechanism, the war
+  story, the caveats, the retraction narrative. **Never create a new top-level markdown
+  file to record a result** — a result is a row in STATE plus a file here.
 - **[TRAPS.md](TRAPS.md)** — 21 process failures this project hit **twice**, split
-  out of SCOREBOARD on 2026-08-17. Append-only history, unlike SCOREBOARD's mutable
+  out of SCOREBOARD on 2026-08-17. Append-only history, unlike STATE's mutable
   state. **Never renumber** — cited by number from 13 files including code.
+- **[docs/archive/](docs/archive/)** — frozen records: `HANDOFF.md`, the session briefs
+  (all run), and `resolved/` for Open rows that have been answered. Never a work queue.
 - **[README.md](README.md)** — what the project is + how to run it (quickstart, layout).
 - **[ML_PRACTICES.md](ML_PRACTICES.md)** — how to *conduct* ML work: honesty, evidence
   tags, ground-truth-before-metrics, reproducibility, the session-end checklist.
 - **[ML_PLAYBOOK.md](ML_PLAYBOOK.md)** — how to *think about* the ML: diagnosis buckets,
   per-area technique (ball/court/pose/physics), and the 2024-26 SOTA survey.
 - **[docs/archive/HANDOFF.md](docs/archive/HANDOFF.md)** — historical evidence log (from 2026-07-05); the ML docs
-  cite its `§` numbers. For *current* state use this file's Status + [SCOREBOARD.md](SCOREBOARD.md).
+  cite its `§` numbers. For *current* state use this file's Status + [docs/STATE.md](docs/STATE.md).
 
 ## REQUIRED READING before any ML work
 
@@ -104,7 +108,7 @@ number's provenance is "read off the video", it is not ground truth.
 
 **Known live exception, flagged not hidden:** `tools/hud_ocr.py` reads
 SwingVision's burned-in MPH panel and several shipped speed figures are measured
-against it (see SCOREBOARD method rule 11). Those numbers are *agreement with
+against it (ML_PRACTICES.md working-summary rule 11). Those numbers are *agreement with
 another estimator*, not accuracy, and must be labelled that way; `synth_truth`
 is the compliant reference for speed.
 
@@ -125,7 +129,7 @@ measurement.
 
 One thing that stays on the record: deriving score truth from a burned-in
 scoreboard was built, rejected on its premise and reverted (`afffb5a`). That
-entry stays in SCOREBOARD's dead-end table so the idea cannot return a third
+entry stays in STATE's dead-end table so the idea cannot return a third
 time — see also the second principle above.
 
 ## Status: real vs stubbed
@@ -161,7 +165,7 @@ time — see also the second principle above.
 ### Session log — condensed
 
 One entry per session: the finding and its number. **The detail lives elsewhere
-on purpose** — [SCOREBOARD.md](SCOREBOARD.md) holds the consolidated wins, the
+on purpose** — [docs/STATE.md](docs/STATE.md) holds the consolidated wins, the
 dead-end table and the traps; `data/output/*.md` holds the evidence with its
 denominators; [docs/archive/sessions/](docs/archive/sessions/) holds the pre-registered briefs.
 Read those before re-proposing anything here.
@@ -318,18 +322,18 @@ a rule that gets forgotten** — that is why both are hooks, not paragraphs.
 
 | You changed | Update | Enforced by |
 |---|---|---|
-| Any code (`backend/`, `tools/`, `frontend/src/`, `mobile/`, `ball_physics/`) | **SCOREBOARD.md** — the number it moved, or the negative and why | `.claude/hooks/scoreboard-guard.sh` (`[no-scoreboard]` opts out) |
+| Any code (`backend/`, `tools/`, `frontend/src/`, `mobile/`, `ball_physics/`) | **docs/STATE.md** — the number it moved, or the negative and why, plus its `docs/evidence/` file | `.claude/hooks/scoreboard-guard.sh` (`[no-scoreboard]` opts out) |
 | `run.py`'s argument parser — a new flag, a removed one, a changed default | **README.md / USER_GUIDE.md / SETUP_PROMPT.md / CLAUDE.md** — whichever now lies | `.claude/hooks/docs-guard.sh` (`[no-docs]` opts out) |
 | `schema.py` (the match.json contract) | **README.md** layout note + the frontend that reads it | judgement |
 | Court constants in `court.py` | `frontend/src/lib/court.js` | `tests/test_js_mirror_parity.py` |
 | `calibration.py`'s call-accuracy table | `frontend/src/lib/calls.js` | `tests/test_js_mirror_parity.py` |
-| A model, weight file, or runtime | **SCOREBOARD.md** "The stack" | judgement |
+| A model, weight file, or runtime | **docs/STATE.md** "The stack" | judgement |
 | A process mistake hit **twice** | **[TRAPS.md](TRAPS.md)** (split out of SCOREBOARD 2026-08-17; never renumber — cited by number from code) | judgement |
 
 **Which doc is authoritative for what**, so they can go stale gracefully instead of
 contradicting each other:
 
-- **SCOREBOARD.md is the only live record of state.** What worked, what failed with
+- **docs/STATE.md is the only live record of state.** What worked, what failed with
   its number, what is open. If another doc disagrees with it, that doc is wrong.
 - **CLAUDE.md** (this file) is orientation: architecture, hard rules, conventions,
   a condensed session log. Not a status board.
