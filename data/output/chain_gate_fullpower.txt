@@ -1,0 +1,20 @@
+
+clip                 cal  ball hit_off hit_on    d  wrong   d   nb fp_off fp_on   d
+-----------------------------------------------------------------------------------
+am_hard_utr            Y    90      31     36   +5     21  +0   24     11    11  +0
+gold_shell             n   184      99    100   +1     25  +2   55     20    18  -2
+gold_clay              n   111      47     48   +1     15  +1    7      2     2  +0
+gold_am                n   181      95     97   +2     21  +1   32     10    11  +1
+yt_rally2              Y   258     109    110   +1     38  -1   26      4     5  +1
+yt_match40             Y   184      97    100   +3     29  +0   24      5     6  +1
+gold_UHf0LeMU2pg       Y   168      82     79   -3     36  +5    9      4     5  +1
+gold_sAjkpeRq4P4       Y   151      55     57   +2     39  -1   33      4     5  +1
+gold_uR5q2cSM6AY       Y   163      85     85   +0     34  +3   32     21    20  -1
+gold_L73ep7JHiJ4       Y   168      79     85   +6     27  -3   30      5     5  +0
+-----------------------------------------------------------------------------------
+POOLED                    1658     779    797  +18    285  +7  272     86    88  +2
+
+P1 recall     47.0% -> 48.1%   (+18 hits on 1658 clicks)
+P2 ghosts     86 -> 88 (+2) pooled; per-clip rises: 5 of 10
+P4 separation 18 real hits / 2 ghosts = 9.00 : 1      GATE REQUIRES > 7
+P5 power      272 no-ball frames      GATE REQUIRES >= 74
