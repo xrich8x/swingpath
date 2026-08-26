@@ -163,11 +163,13 @@ Keep these rules in front of the agent (they're in CLAUDE.md):
   (CLAUDE.md requires it) — measure honestly, never let a model grade itself.
 
 What's next, highest value first, lives in **docs/STATE.md** — not here and not in
-docs/archive/sessions/, both of which go stale. As of 2026-08-15 the headline is that the
-**ball detector is closed** (Session L's pre-registered stopping rule fired), and the
-open target is that the processing chain discards ball the detector already found:
-on the amateur test clip the detector clears the coverage bar needed for a trusted
-speed on 106 of 120 shots and only 69 survive. Three attempts at that have failed.
+docs/archive/sessions/, both of which go stale. As of 2026-08-26 two things are closed
+and one is open. **The ball detector is closed** (Session L's stopping rule fired) and
+so is **court auto-detection** (closed again 2026-08-25 after five branches were
+measured and none survived). The open target is that the processing chain discards
+ball the detector already found: on the amateur test clip the detector clears the
+coverage bar needed for a trusted speed on 106 of 120 shots and only 69 survive.
+Three attempts at that have failed.
 
 ## 7. Troubleshooting
 

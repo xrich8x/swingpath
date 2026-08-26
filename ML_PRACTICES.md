@@ -245,7 +245,7 @@ math or rules belong.
 ## The working summary — 11 rules, moved here from SCOREBOARD 2026-08-26
 
 This is how work gets decided here, and it is the reason the numbers in
-[docs/STATE.md](docs/STATE.md) can be trusted. It lived in docs/STATE.md until the
+[docs/STATE.md](docs/STATE.md) can be trusted. It lived in SCOREBOARD.md until the
 2026-08-26 split, which separated *state* (what is true now) from *discipline*
 (how we decide). The sections above expand these; this is the checklist form.
 
