@@ -1,0 +1,105 @@
+# Joint line-to-model correspondence — the pre-registered gate
+
+> Evidence for the `court-correspondence-gate` row in [docs/STATE.md](../STATE.md) (Open).
+> **Written 2026-08-27, BEFORE any code.** Nothing here may be loosened after a
+> result is seen (hard rule 2). A failed gate stays failed.
+
+## What is being built, and why this one is not a sixth re-tune
+
+Session P closed court auto-detection with an unusually specific characterisation:
+
+> **The detector FINDS the court's lines** — the four outer lines sit a median
+> **1.3–4.1 px@640** from a detected line and are present on **27–38 of 40**
+> clips — **but it cannot assemble them into the court.**
+
+Five branches have been measured and none survives: reach, the prior weight,
+`topk`, line-construction, line-snapping. All five share one assumption — that
+the assignment of *which detected line is which model line* can be settled
+**before** the homography is solved. Every one of them guesses the assignment
+first and then optimises, and the guess is what fails:
+
+- **Line-construction** picked 2 baselines + 2 sidelines by direction family.
+  Wrong in principle: under perspective the two doubles sidelines converge, so
+  they form no angular cluster. 24 of 26 lines landed in one family on
+  `am_hard_utr` while both true sidelines sat in the detected set at 0.1 and 2.2 px.
+- **Line-snapping** matched the four model lines independently, which lets them
+  pick a mutually inconsistent set. Median distance from truth: seed 9.8 →
+  refiner 8.4 → **snap 70.5**.
+
+**Joint correspondence solves assignment and homography together** — the
+Farin-style formulation the cross-ratio screening was originally deferred for.
+It is a different algorithm, not a re-tune of the lattice, and it is the one
+thing Session P explicitly said was **NOT tested**.
+
+## Baseline, so the bars mean something
+
+| quantity | current |
+|---|---|
+| gold clips auto-accepted (Tier 1 consensus, ≥6 of 8) | **12 of 20** |
+| precision record of those accepts | **zero wrong courts ever accepted** |
+| median error on accepted clips | **8.1 px** |
+| nearest lattice point to truth | **7–20 px** |
+| refiner moves AWAY from truth | **17 of 38** clips, median landing 14.1 px |
+| criteria recognise the correct court when handed it | **19 of 20** (Session O) |
+| reference clips (1920) auto-accepted | **2 of 20** |
+| shell clips (3840) auto-accepted | **0 of 10** |
+
+Scoring is **not** implicated — Session O measured that. Do not spend on the
+criteria.
+
+## The gate
+
+Measured on the **20-clip court gold set** with `court_split.json` enforced
+(`assert_no_court_gold_leak`), plus the 10 shell calibrations and the reference
+clips. Report all three pools separately; never pool them into one percentage.
+
+**C1 — precision is inviolable.** **Zero wrong courts accepted**, on every pool.
+The current accept path has never once accepted a wrong court, and that record is
+worth more than any recall gain. One wrong accept fails the gate outright,
+whatever C2 says.
+
+**C2 — accepts must rise.** Gold **12 of 20 → ≥15**. This is the headline and it
+is deliberately not "improves": three clips is roughly the number the lattice
+gap could plausibly be costing, given the true lines are 1.3–4.1 px from a
+detected line on nearly every clip.
+
+**C3 — accuracy must not degrade on clips that already work.** Median error on
+the currently-accepted 12 must stay **≤ 8.1 px**, and no individual clip may get
+worse by more than **3 px**. A method that trades existing accuracy for new
+accepts is not an improvement.
+
+**C4 — it must reach the pools the lattice cannot.** At least **one** of:
+references 2/20 → ≥4, or shell 0/10 → ≥2. Gold alone is 640-wide and the
+resolution-dependent failures live in the other two pools.
+
+**C5 — the mechanism must be shown, not inferred.** On at least 3 clips where the
+lattice's nearest point is >10 px from truth, report the correspondence the
+solver chose and confirm it matches the true assignment. *"It got closer"* is not
+evidence the assignment was solved — that is trap **T19**'s shape (a rate is not
+an association).
+
+**C6 — cost.** No worse than **5× per-clip** wall clock against the current
+consensus path. `topk` was killed for 7× at zero gain; a correctness win may
+fairly cost more than a null one, but it has to be stated and bounded.
+
+## Stopping rule
+
+**If joint correspondence lands the true assignment (C5) and accepts still do not
+reach 15 of 20, then assembly is not the binding constraint either, and court
+auto-detection closes for the third and final time** — with the honest conclusion
+that single-camera amateur court detection is a manual-calibration problem, and
+the effort moves to making that path fast rather than making detection work.
+
+This is the sixth branch. It is not open-ended.
+
+## What must not happen
+
+- **No new scorer.** Session O settled that the criteria recognise the right
+  court on 19 of 20. Use the shipped ones (T15, T04).
+- **No lowering the 6-of-8 consensus bar.** Measured, failed: the single 5-vote
+  clip is wrong by 68.7 px.
+- **No CourtNet.** It is Tier 2 and `courtfit` consensus beats it; that is a
+  recorded dead end.
+- **No touching `AGREE_PX`** as part of this. It is 6× tighter on 4K than on the
+  gate and is doing a second job — a real issue, but it cannot ship before the
+  search problem and must not be folded into this experiment as a second variable.

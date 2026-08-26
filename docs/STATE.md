@@ -201,6 +201,8 @@ number — that is what a dated record is. The guard skips them.
 
 | Item | Waiting on | Evidence |
 |---|---|---|
+| **Joint line-to-model correspondence - GATE PRE-REGISTERED 2026-08-27** | Nothing. Unblocked. The one build Session P named and did **not** test. All five failed branches assumed the line-to-model assignment can be settled BEFORE the homography; this solves both together. Bars: zero wrong accepts, gold **12/20 -> >=15**, no accuracy loss on the 12 that work, and the chosen correspondence shown rather than inferred. Carries a stopping rule. | [evidence/court-correspondence-gate.md](evidence/court-correspondence-gate.md) |
+| **`bounce_hypothesis` v2 - GATE PRE-REGISTERED 2026-08-27** | Nothing. Unblocked. v1's defect is NAMED: `wrong` rises on ball frames (+5 on `gold_UHf0LeMU2pg`), so the reflected state is accepted at the wrong POSITION - a loosening hiding inside the `restitution_band` variance inflation. Adds **P7: `wrong` must not rise on any clip**. Carries a stopping rule. | [evidence/bounce-hypothesis-v2-gate.md](evidence/bounce-hypothesis-v2-gate.md) |
 | **Court detection: frames that find the RIGHT court disagree about its WIDTH** | Nothing. Unblocked and unaddressed. Subordinate to the search problem | [evidence/court-detection-frames-that-each-find-the.md](evidence/court-detection-frames-that-each-find-the.md) |
 | **Indoor shell courts** - ground truth exists; the failure is the SEARCH | Nothing. Unblocked. 10 human calibrations arrived and are good | [evidence/indoor-shell-courts.md](evidence/indoor-shell-courts.md) |
 | **`AGREE_PX` is 6x tighter on 4K than on the gate** | The wrong-court / search problem - it cannot ship before that | [evidence/agree-px-is-6-tighter-on-4k.md](evidence/agree-px-is-6-tighter-on-4k.md) |

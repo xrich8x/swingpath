@@ -1,6 +1,6 @@
 # A second bounce hypothesis in the smoother
 
-> Evidence for the `bounce-hypothesis` row in [docs/STATE.md](../STATE.md) (What has not worked).
+> Evidence for the `bounce-hypothesis` row in [docs/STATE.md](../../docs/STATE.md) (What has not worked).
 > Full write-up mirrored from `data/output/bounce_hypothesis.md`.
 
 **Date:** 2026-08-27 · **Measured against:** 532 human ball clicks and 74 no-ball frames
