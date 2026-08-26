@@ -14,8 +14,8 @@ Two halves that meet at one file, match.json:
 It runs two ways: on synthetic demo data with no AI models (instant, for trying
 the dashboard), and on real footage through the full pipeline — court
 auto-calibration, ball tracking (TrackNet/WASB), and player pose (YOLO-pose) are
-all real and wired end to end (see §5). The forward plan lives in
-[docs/sessions/](docs/sessions/).
+all real and wired end to end (see §5). What to work on next lives in
+[SCOREBOARD.md](SCOREBOARD.md).
 
 ## 2. Before you start
 

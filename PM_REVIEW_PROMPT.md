@@ -11,7 +11,10 @@ out at 55% because ball and racket "are genuinely close in apparent size". Both
 halves were wrong — a racket is 10x a ball, and the measured reason negation
 failed was that COCO found the *near* player's racket while the detector fired
 on the *far* player's. A prompt that encodes a wrong cause hands it to every
-future review, which is Trap 19 in the file it tells you to read.
+future review, which is Trap 19 in [TRAPS.md](TRAPS.md) — the same incident, named
+there as reading a detection RATE as evidence the detector found the right thing.
+(Traps moved out of SCOREBOARD.md into TRAPS.md on 2026-08-17, after this note was
+written; the numbering did not change.)
 
 ---
 

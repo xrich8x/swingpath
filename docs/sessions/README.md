@@ -1,34 +1,38 @@
 # Session plans
 
-> **ALL BRIEFS HERE HAVE RUN.** As of 2026-08-15 there is no "next" brief — every
+> **EVERY BRIEF HERE HAS RUN.** As of 2026-08-26 there is no "next" brief — every
 > file is stamped at the top with what happened to it. **Session L's stopping rule
 > fired, which closed ball-detector work**, so the table below is history rather
-> than a queue.
+> than a queue. The most recent briefs (O, P) are court-side and multi-stage: their
+> run stages are stamped, and any live lead they named belongs to SCOREBOARD, not
+> to this table.
 >
 > **For the current state of play read [SCOREBOARD.md](../../SCOREBOARD.md)**, not
 > this directory. These files are kept for their PRE-REGISTERED GATES — the value
 > is seeing what bar was set before the experiment ran.
 
-One file per planned Claude Code session. Each is self-contained: goal, what
-the user brings, the RESEARCHED technical approach with sources, a step plan
-with measurement gates, and a kickoff prompt. Start a session by pasting its
-kickoff prompt; finish one by filling in its Results section.
+One file per Claude Code session. Each is self-contained: goal, what the user
+brought, the RESEARCHED technical approach with sources, a step plan with
+measurement gates, and the kickoff prompt it was started from. They are read
+for the bar a brief set BEFORE its experiment ran, not to pick work from.
 
-Recommended order (B/C/D are independent and can be reordered):
+Listed in the order they were written, which is not the order they ran:
 
-| Session | File | One-liner | Size |
+| Session | File | One-liner | Status |
 |---|---|---|---|
-| A | SESSION_A_lens_and_watchdog.md | Lens un-bending (plumb-line k1) + watchdog on a moving camera | ~1 session |
-| B | SESSION_B_serve_stats.md | Serve placement (T/body/wide) + expanded match stats | ~1 session |
-| C | SESSION_C_flow_polish.md | Refuse→overlay handoff, camera events in UI, player heatmap | ~1 session |
-| D | SESSION_D_highlights.md | Per-rally clips + top-rallies reel. **SHIPPED 2026-08-08.** | done |
-| E | SESSION_E_ball_push.md | The ball stack: tracking → trajectory → arc → speed + spin (multi-session arc, E1-E4). **Read its frame-rate finding first — it constrains the footage the user records.** | multi |
-| F | SESSION_F_false_fire.md | Ball false-fire, without giving back the recall E6 bought. **Steps 1-2 are diagnosis and gate everything else — the static-lock gate never fires on the worst clip, so the confusers are not fixtures.** | ~1 session |
-| I | SESSION_I_localised_negatives.md | Localised hard negatives. **RUN 2026-08-09: product gate FAILED** (solid ghosts 14→15) but the detector improved on 6 of 6 clips — unattributable, because the trainer had no seed. Also found the universal ghost core is **5 frames**, all with `run_len=1`. | done |
-| G | SESSION_G_pose_proximity.md | Pose-proximity hard negatives — the only lever left after F proved nothing downstream removes a **solid** ghost. **Step 1 scores the criterion against the 71 human-classified false locks before any GPU time; if it fails its gate, stop.** | ~1 session |
-| J | SESSION_J_farcourt_labelling.md | Make far-court labelling usable. **RUN 2026-08-10: the HUD diagnosis was RETRACTED** — only 5 of 36 clicks were inside a graphic; the real blocker was that both anchors bracketing a gap were often false locks. Shipped the mask, the converter and the anchor control, then found the anchor control measures **agreement with the tracker, not correctness**. | done |
-| K | *(no brief — ran from SCOREBOARD)* | +57% training data. Detector recall **74.8 → 80.4%** pooled (4.1σ), best ever on the legacy six. **Product gate FAILED**: solid ghosts 9 → 13 at flat chain recall. First time a detector RECALL gain was tested at the product; it did not arrive either. | done |
-| L | SESSION_L_farcourt_labels.md | **NEXT UP.** Far-court human labels — the one input never exercised, and the first ball idea with a **chain-level mechanism**: denser far-court detections → longer runs → survive `suppress_false_locks`' min-segment test, which was measured to destroy **~7 real balls per ghost**. 173 labels are already collected and unconverted. **Carries a pre-registered STOPPING RULE**: if the mechanism gate fails, ball work is closed. | ~1 session |
+| A | SESSION_A_lens_and_watchdog.md | Lens un-bending (plumb-line k1) + watchdog on a moving camera | shipped |
+| B | SESSION_B_serve_stats.md | Serve placement (T/body/wide) + expanded match stats | shipped |
+| C | SESSION_C_flow_polish.md | Refuse→overlay handoff, camera events in UI, player heatmap | unconfirmed |
+| D | SESSION_D_highlights.md | Per-rally clips + top-rallies reel. **SHIPPED 2026-08-08.** | shipped |
+| E | SESSION_E_ball_push.md | The ball stack: tracking → trajectory → arc → speed + spin (multi-session arc, E1-E4). **Read its frame-rate finding first — it constrains the footage the user records.** | run |
+| F | SESSION_F_false_fire.md | Ball false-fire, without giving back the recall E6 bought. **Steps 1-2 are diagnosis and gate everything else — the static-lock gate never fires on the worst clip, so the confusers are not fixtures.** | run |
+| I | SESSION_I_localised_negatives.md | Localised hard negatives. **RUN 2026-08-09: product gate FAILED** (solid ghosts 14→15) but the detector improved on 6 of 6 clips — unattributable, because the trainer had no seed. Also found the universal ghost core is **5 frames**, all with `run_len=1`. | run |
+| G | SESSION_G_pose_proximity.md | Pose-proximity hard negatives — the only lever left after F proved nothing downstream removes a **solid** ghost. **Step 1 scores the criterion against the 71 human-classified false locks before any GPU time; if it fails its gate, stop.** | run |
+| J | SESSION_J_farcourt_labelling.md | Make far-court labelling usable. **RUN 2026-08-10: the HUD diagnosis was RETRACTED** — only 5 of 36 clicks were inside a graphic; the real blocker was that both anchors bracketing a gap were often false locks. Shipped the mask, the converter and the anchor control, then found the anchor control measures **agreement with the tracker, not correctness**. | run |
+| K | *(no brief — ran from SCOREBOARD)* | +57% training data. Detector recall **74.8 → 80.4%** pooled (4.1σ), best ever on the legacy six. **Product gate FAILED**: solid ghosts 9 → 13 at flat chain recall. First time a detector RECALL gain was tested at the product; it did not arrive either. | run |
+| L | SESSION_L_farcourt_labels.md | Far-court human labels — the one input never exercised, and the first ball idea with a **chain-level mechanism**: denser far-court detections → longer runs → survive `suppress_false_locks`' min-segment test, which was measured to destroy **~7 real balls per ghost**. 173 labels are already collected and unconverted. **Carries a pre-registered STOPPING RULE**: if the mechanism gate fails, ball work is closed. | run |
+| O | SESSION_O_shell_courts.md | Indoor shell courts. **O2 RUN 2026-08-24: THREE NEGATIVES, no shipped change.** The EVID_BAND hypothesis the brief was built around is refuted, and so are two follow-on hypotheses. Evidence in `data/output/evid_band_sweep.log`, `behind_camera.json`, `tol_sweep.log`, `truth_neighbourhood.log`. | run |
+| P | SESSION_P_search_reach.md | Does the court search reach the true court? **P1 RUN 2026-08-25: THE STOPPING RULE FIRED — the brief's mechanism is REFUTED.** Reachability is not the cause: on **31 of 38** clips the seed nearest the true court is already within refine reach. What P1 found instead is sharper; the live lead belongs to SCOREBOARD. | run |
 
 Standing rules for every session (from CLAUDE.md + project memory):
 - Measure after each step; show the user the numbers before continuing.

@@ -10,8 +10,8 @@ hallucinated/overclaimed results. **Trust the artifacts, not the narrative.**
 > renumbered). It does NOT reflect current state.** Much has shipped since:
 > line-fit court auto-calibration + physical shape lock + camera-change watchdog,
 > clay-aware snap, lens/roll correction, serve analytics, and a big refactor. For
-> where the project is *now*, read CLAUDE.md's Status section and the Results
-> blocks in [docs/sessions/](docs/sessions/). This file is the paper trail, not the roadmap.
+> where the project is *now*, read CLAUDE.md's Status section and
+> [SCOREBOARD.md](SCOREBOARD.md). This file is the paper trail, not the roadmap.
 
 Evidence levels used below:
 - **[MEASURED]** — command output produced in-session; log/artifact exists on disk
@@ -217,7 +217,7 @@ value:
    `C:\Users\richm\.claude\projects\E--Claude-Outputs-Cowork-Tasks-Swing-Vision\memory\`.
 
 ## 8. Agreed roadmap (user-approved framing: self-reliant ML, no SwingVision
-labels as training data) — HISTORICAL; the live plan is now [docs/sessions/](docs/sessions/)
+labels as training data) — HISTORICAL; the live list is now [SCOREBOARD.md](SCOREBOARD.md)
 
 R1 "Trust what you see": (1.1) solve §6 regression; (1.2) BallNet v2 with
 hard negatives (adjacent-court balls, HUD logos); (1.4) gold-label tool

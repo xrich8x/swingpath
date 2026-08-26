@@ -164,7 +164,8 @@ any single model choice.
 - **CLAUDE.md** — architecture, hard rules, current status (start here to work on it).
 - **[SCOREBOARD.md](SCOREBOARD.md)** — the stack, the method, and what has and hasn't
   worked, in flat lists. Kept live; updated alongside the work.
-- **[docs/sessions/](docs/sessions/README.md)** — the forward plan (one researched brief per session).
+- **[docs/STATE.md](docs/STATE.md)** — the current state of play: what is shipped, what is open,
+  and what has been measured and ruled out.
 - **ML_PRACTICES.md** / **ML_PLAYBOOK.md** — required reading before any model work
   (discipline + technique). **HANDOFF.md** — historical evidence log.
 - **USER_GUIDE.md** — running it and driving it with Claude Code, in plain language.

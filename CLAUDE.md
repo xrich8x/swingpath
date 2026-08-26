@@ -22,9 +22,7 @@ Project context for Claude Code. Read this before editing.
 - **[ML_PLAYBOOK.md](ML_PLAYBOOK.md)** — how to *think about* the ML: diagnosis buckets,
   per-area technique (ball/court/pose/physics), and the 2024-26 SOTA survey.
 - **[HANDOFF.md](HANDOFF.md)** — historical evidence log (from 2026-07-05); the ML docs
-  cite its `§` numbers. For *current* state use this file's Status + [docs/sessions/](docs/sessions/).
-- **[docs/sessions/](docs/sessions/README.md)** — the forward plan: one researched brief per
-  planned session (A-E), each with its Results filled in as it ships.
+  cite its `§` numbers. For *current* state use this file's Status + [SCOREBOARD.md](SCOREBOARD.md).
 
 ## REQUIRED READING before any ML work
 

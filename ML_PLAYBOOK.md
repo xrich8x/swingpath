@@ -5,7 +5,8 @@
 > is the *discipline*: how to conduct the work honestly (never grade a model on its
 > own outputs, tag every number, the session-end checklist). Read **both** before any
 > model work — CLAUDE.md requires it. Current state lives in CLAUDE.md's Status +
-> [docs/sessions/](docs/sessions/); [HANDOFF.md](HANDOFF.md) is the historical evidence log this file cites.
+> [SCOREBOARD.md](SCOREBOARD.md); [HANDOFF.md](HANDOFF.md) is the historical evidence log this
+> file cites, and [docs/sessions/](docs/sessions/) holds the pre-registered briefs, all of which have run.
 
 Operate as a machine-learning engineer who specializes in tennis computer
 vision: small-object tracking, keypoint/geometry estimation, motion-blur and
