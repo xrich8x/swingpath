@@ -633,6 +633,9 @@ def smooth_forecast(
     gate_chi2: float = 13.8,
     reset_after: int = 3,
     bounce_reset: bool = False,
+    bounce_hypothesis: bool = False,
+    restitution: float = 0.75,
+    restitution_band: float = 0.20,
     max_gap_s: float = 0.4,
     scale_m_per_px: Optional[Sequence[Optional[float]]] = None,
     max_jerk_ratio: float = 4.0,
@@ -698,6 +701,26 @@ def smooth_forecast(
     ABOVE the prediction while the model still descends (with horizontal
     continuity, so an overhead false lock cannot trigger it) is a reflection
     rather than an outlier, and resets on that frame.
+
+    `bounce_hypothesis` (UNMEASURED on real footage as of 2026-08-27 - off by
+    default and MUST NOT be turned on until it passes the pre-registered gate in
+    docs/evidence/ball-chain-gate.md). Fourth attempt on this stage, and the
+    first that does not move a threshold. `max_gap_s`, `reset_after` and
+    `bounce_reset` all widened what the single constant-acceleration model would
+    accept, and two independent routes - the `blocked` mask and the `max_gap_s`
+    sweep - measured the same ~7 real ball frames lost per ghost frame removed.
+    That exchange rate looks structural, so widening in the favourable direction
+    rides it rather than beating it.
+
+    This runs the SAME gate against a SECOND model. When a detection fails chi2
+    under "the ball kept doing what it was doing", it is tested against the
+    reflected state: vy negated and damped by `restitution`, vx carried through,
+    `gate_chi2` unchanged. A real post-bounce detection fits that tightly; a
+    ghost (all 19 chain false locks sit 208-829 px off the track, Session I)
+    fits neither, so ghosts cannot rise by construction. `restitution` is not
+    pinned - vy here is a PROJECTED pixel quantity, so the physical hard-court
+    COR only approximates it, and `restitution_band` is carried as extra
+    variance on the y innovation instead of guessing one value.
 
     Pre-registered gate: recall >= -2 pts, ghosts must not rise, real_landing
     >= +5 pts. Scored on human gold clicks through the shipped chain:
@@ -813,6 +836,53 @@ def smooth_forecast(
                     x_tol = max(3.0 * px_sd, 2.0 * abs(float(x[1])))
                     if float(x[4]) > 0.0 and dy < -2.0 * px_sd and dx <= x_tol:
                         rej = reset_after      # trip the reset on THIS frame
+                # A SECOND HYPOTHESIS, not a looser gate. The three previous
+                # attempts on this stage (max_gap_s, reset_after, bounce_reset)
+                # all widened what the single model would accept, and two
+                # independent routes measured the same ~7 real ball frames lost
+                # per ghost removed. Widening rides that exchange rate; having
+                # something ELSE to be tight against can beat it.
+                #
+                # `x` here is the PROPAGATED prior - it already took one step at
+                # the pre-bounce (descending) velocity, so reflecting it in place
+                # fixes the velocity and leaves the position a full step wrong.
+                # Undo the propagation first, reflect, then re-propagate:
+                #     vy_prev = x[4] - ay          (ay is x[5], dt = 1 frame)
+                #     y_prev  = x[3] - vy_prev - ay/2
+                # and predict y_prev + (-e * vy_prev) + ay/2.
+                # gate_chi2 is IDENTICAL for both hypotheses. Session I measured
+                # all 19 chain false locks sitting 208-829 px off the track, so a
+                # ghost fails both and this cannot buy coverage with junk.
+                #
+                # e is not pinned. The filter runs in IMAGE pixels where vy is a
+                # projected quantity, so the physical hard-court COR only
+                # approximates the pixel-space reflection; `restitution_band` is
+                # carried as extra variance on the y innovation rather than
+                # guessing one value, which keeps the x gate exactly as tight.
+                elif bounce_hypothesis and float(x[4]) > 0.0:
+                    ay = float(x[5])
+                    vy_prev = float(x[4]) - ay
+                    y_prev = float(x[3]) - vy_prev - 0.5 * ay
+                    if vy_prev > 0.0:
+                        vy_b = -float(restitution) * vy_prev
+                        xb = x.copy()
+                        xb[3] = y_prev + vy_b + 0.5 * ay
+                        xb[4] = vy_b + ay
+                        yb = np.array([z[0], z[1]]) - Hm @ xb
+                        Sb = S.copy()
+                        Sb[1, 1] += (float(restitution_band) * vy_prev) ** 2
+                        if float(yb @ np.linalg.solve(Sb, yb)) <= gate_chi2:
+                            # A bounce, not an outlier. Start a new segment from
+                            # this detection carrying the reflected velocity, so
+                            # the RTS pass cannot round the corner back off.
+                            x, P = seed(z)
+                            x[1] = float(xb[1])
+                            x[4] = float(xb[4])
+                            seg += 1
+                            accept = True
+                            rej = 0
+                            miss = 0
+                            xp[i], Pp[i] = x.copy(), P.copy()
         if not accept:
             miss += 1
         used[i] = accept
