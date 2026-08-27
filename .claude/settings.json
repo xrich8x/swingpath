@@ -1,4 +1,16 @@
 {
+    "env": {
+        "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    },
+    "permissions": {
+        "deny": [
+            "Bash(cd ..*)",
+            "Bash(cd /*)",
+            "Read(../**)",
+            "Edit(../**)",
+            "Write(../**)"
+        ]
+    },
     "hooks": {
         "PreToolUse": [
             {

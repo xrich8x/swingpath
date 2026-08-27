@@ -142,34 +142,29 @@ in the evidence file — if your row needs a paragraph, you are writing in the w
 - **Don't fan out to parallel agents.** The bottleneck is one GPU and one gold set.
   Two multi-agent runs burned ~971k tokens for zero results.
 
-## Feature workflow — do not skip, do not auto-chain
+## The team — `tennis-team`
 
-**Announce every subagent by name before you invoke it**, say what you are asking it
-for, and label its output with that name when you show me. Never run one silently, and
-never present its work as your own. For any new feature or significant change:
+Five teammates in `.claude/agents/`, all on opus, each with memory in
+`.claude/agent-memory/<name>/`. **Announce a teammate by name before invoking it** and
+label its output with that name — never present its work as your own.
 
-1. **pm-agent** → spec. STOP. Show me and wait for my express approval.
-2. **researcher-agent** with the approved spec, **in its own new chat session** — do
-   not run it as a subagent burning the planning session's context. Hand it the
-   approved spec and nothing else it would have to re-derive. STOP. Show me the
-   findings and wait again, under the same approval rule.
-3. Implement, **in its own new chat session**, handed the approved spec and the
-   approved findings — using the test loop rules already in this file.
-4. **qa-verifier** → independent check, **in its own new chat session**, separate from
-   the implementation session. STOP. Show me its report. Do not mark the feature
-   complete yourself, and do not let the coder's own claim of success stand in for
-   this. On FAIL, fix and re-verify from this step — never skip re-verification.
-5. Done only when qa-verifier reports PASS **and** I expressly approve that report.
+| Teammate | Owns | Writes code |
+| --- | --- | --- |
+| **pm** | Scope and sequencing across the team; the cut line; accuracy floors | no |
+| **researcher** | ML/CV for court, player, ball and shot detection; on-device iOS inference | no |
+| **backend-dev** | On-device logic: inference pipeline, the four detections, match storage, porting `backend/swingvision/` | yes |
+| **frontend-dev** | The iPhone app: UI/UX, camera capture, calling the pipeline, rendering results | yes |
+| **qa** | Independent verification of both layers. Runs gates, reports numbers, **never fixes** | no |
 
-**Why separate sessions:** each stage's context is the approved output of the one
-before it, not the full history of how it was reached. Running all four in one session
-accumulates tokens no later stage needs — the researcher does not need the PM
-back-and-forth, the coder does not need the research dead ends, and QA should read the
-diff fresh, not inherit the coder's framing of what it did.
+**They coordinate and move independently — no approval gate between phases.** pm sequences
+the work; it does not have to sign off each step. qa reports; it does not block by fiat.
 
-**What counts as approval:** a clear, standalone "ok" / "okay" / "approved" / "go" /
-"yes" / "sounds good" / "lgtm". Anything else — a question, a challenge, a request for
-changes, an alternative to consider, or an approval that still raises one concern — is
-NOT APPROVED. The whole thing waits: answer or revise, then stop and wait again. Never
-infer approval from silence, from a topic change, or from me moving on to something
-else. If you are unsure whether I approved, ask me directly rather than proceeding.
+**Two constraints bind every teammate.** **iOS/iPadOS only, A13+** (iPhone 11, SE 2nd gen,
+2020 iPad Pro and up), Core ML/ANE the only inference target — settled, not reopened. And
+**100% on-device, forever**: no server, no cloud, no API fallback. A proposed network
+dependency is a scope violation, not an optimisation.
+
+**Folder boundary.** Every teammate works only inside this project folder — never reads,
+writes or navigates outside it, never installs anything globally, never touches system or
+account settings. `tools:` in each agent file is what actually enforces this: pm,
+researcher and qa have no write access, and only backend-dev and frontend-dev can edit.

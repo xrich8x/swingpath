@@ -170,6 +170,7 @@ Ordered roughly by how much it moved.
 | Improving CourtNet for auto-calibration | wrong target - CourtNet is **Tier 2**; `courtfit` consensus is Tier 1 and beats it | - |
 | **Finding burned-in graphics by any temporal statistic** | **all three fail on this footage, in both directions** | [evidence/finding-burned-in-graphics-by-any-temporal.md](evidence/finding-burned-in-graphics-by-any-temporal.md) |
 | **Screening far-court gaps by lock kinematics** | **two measured negatives** - and they are why the anchor control exists | [evidence/screening-far-court-gaps-by-lock-kinematics.md](evidence/screening-far-court-gaps-by-lock-kinematics.md) |
+| **Downscaling the pose INPUT to afford it on an A13** (P0-2) | **GATE FAILS by ~11 pts.** Far player on `yt_match40` **11.0% @1280 -> 0.1% @640 -> 0.0% @384** against a 2-pt bar; `am_hard_utr` 1.0 -> 0.0 -> 0.0. Near player barely moves (80.3 -> 78.1 -> 72.5), so it is the distant player specifically, not the model. Crop-around-contact (P0-3) remains UNMEASURED - its first probe was invalidated on inspection | [evidence/pose-downscale-far-player.md](evidence/pose-downscale-far-player.md) |
 
 ---
 

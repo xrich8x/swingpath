@@ -988,8 +988,10 @@ def _perceive(video_path, H, ball_weights, pose_quality, pose_every, device,
                      if far_player_rescue else None)
     far_tile = None
     n_far_rescued = 0
-    pose_w, pose_imgsz = pose_mod.QUALITY_PRESETS.get(
-        pose_quality, pose_mod.QUALITY_PRESETS["fast"])
+    # Read the RESOLVED estimator, not the static preset table — POSE_IMGSZ
+    # (pose.py) overrides imgsz below the preset, and a provenance stamp that
+    # ignores it would mislabel a 640/384 cache as its preset's resolution.
+    pose_w, pose_imgsz = estimator.weights, estimator.imgsz
     pose_model = f"{pose_w}@{pose_imgsz}"
     weight_files["pose"] = pose_w  # auto-downloaded next to run.py on first use
     cap = cv2.VideoCapture(video_path)

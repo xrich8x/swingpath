@@ -85,7 +85,14 @@ class PoseEstimator:
     ) -> None:
         preset_weights, preset_imgsz = QUALITY_PRESETS.get(quality, QUALITY_PRESETS["fast"])
         self.weights = weights or preset_weights
-        self.imgsz = imgsz or preset_imgsz
+        # Same env-hook pattern as BALLNET_INPUT (ball.py): points a benchmark at
+        # a resolution no named preset covers (P0-2's 640/384 sweep) without
+        # threading a CLI flag through every construction site. Stamped into the
+        # perception-cache provenance via pose_model = f"{pose_w}@{pose_imgsz}"
+        # (pipeline.py), so a cache built at one size is not a cache for another.
+        import os
+        env_imgsz = os.environ.get("POSE_IMGSZ")
+        self.imgsz = int(env_imgsz) if env_imgsz else (imgsz or preset_imgsz)
         self.conf = conf
         self.device = device
         self._model = None
