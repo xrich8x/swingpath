@@ -2,6 +2,8 @@
     "env": {
         "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
     },
+    "autoContinueAtUsageLimit": true,
+    "askUserQuestionTimeout": "10m",
     "permissions": {
         "deny": [
             "Bash(cd ..*)",
