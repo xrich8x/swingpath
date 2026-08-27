@@ -1,0 +1,2551 @@
+{
+  "match": "p0_fresh_am_hard_utr.json",
+  "video": {
+    "filename": "am_hard_utr.mp4",
+    "fps": 29.97,
+    "width": 1920,
+    "height": 1080,
+    "duration_s": 483.7
+  },
+  "frame_step": 2,
+  "pose_model": "yolo11m-pose.pt@1280",
+  "criterion": "far-end hit = local MINIMUM of the ball's raw IMAGE y-track (least-squares slope over +/-5 processed frames, min |slope| 0.8 px/frame scaled by height/720, min 3 detections per side). No homography.",
+  "counts": {
+    "undecided": 75,
+    "far": 12,
+    "near": 33
+  },
+  "alternation_check": {
+    "decided_consecutive_pairs": 7,
+    "alternating": 2,
+    "alternating_pct": 28.6
+  },
+  "pipeline_player_agreement": {
+    "decided": 45,
+    "agree": 24,
+    "agree_pct": 53.3,
+    "pipeline_called_far": 23,
+    "pipeline_called_far_pct": 51.1
+  },
+  "records": [
+    {
+      "shot_id": 0,
+      "rally_id": 0,
+      "t_hit_s": 2.57,
+      "processed_index": 77,
+      "source_frame": 154,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.937,
+        16.183
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -6.00, post -0.35, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -6.0,
+      "slope_post_px_per_frame": -0.35,
+      "ball_px_at_contact": [
+        967.0,
+        565.0
+      ],
+      "ball_px_frame_used": 77
+    },
+    {
+      "shot_id": 1,
+      "rally_id": 1,
+      "t_hit_s": 5.11,
+      "processed_index": 153,
+      "source_frame": 306,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        6.953,
+        20.064
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -7.5,
+      "slope_post_px_per_frame": 3.525,
+      "ball_px_at_contact": [
+        1053.8,
+        543.8
+      ],
+      "ball_px_frame_used": 153
+    },
+    {
+      "shot_id": 2,
+      "rally_id": 2,
+      "t_hit_s": 7.47,
+      "processed_index": 224,
+      "source_frame": 448,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        0.827,
+        4.461
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 3,
+      "n_post": 4,
+      "slope_pre_px_per_frame": -56.673,
+      "slope_post_px_per_frame": 60.66,
+      "ball_px_at_contact": [
+        463.0,
+        554.0
+      ],
+      "ball_px_frame_used": 224
+    },
+    {
+      "shot_id": 3,
+      "rally_id": 3,
+      "t_hit_s": 10.11,
+      "processed_index": 303,
+      "source_frame": 606,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        8.382,
+        24.701
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 1.5,
+      "slope_post_px_per_frame": -3.3,
+      "ball_px_at_contact": [
+        1091.2,
+        543.8
+      ],
+      "ball_px_frame_used": 303
+    },
+    {
+      "shot_id": 4,
+      "rally_id": 4,
+      "t_hit_s": 16.02,
+      "processed_index": 480,
+      "source_frame": 960,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        2.741,
+        13.87
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 23.336,
+      "slope_post_px_per_frame": -3.375,
+      "ball_px_at_contact": [
+        963.8,
+        483.8
+      ],
+      "ball_px_frame_used": 480
+    },
+    {
+      "shot_id": 5,
+      "rally_id": 5,
+      "t_hit_s": 23.12,
+      "processed_index": 693,
+      "source_frame": 1386,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.606,
+        15.957
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 26.475,
+      "slope_post_px_per_frame": -41.925,
+      "ball_px_at_contact": [
+        945.0,
+        562.5
+      ],
+      "ball_px_frame_used": 693
+    },
+    {
+      "shot_id": 6,
+      "rally_id": 6,
+      "t_hit_s": 26.96,
+      "processed_index": 808,
+      "source_frame": 1616,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.935,
+        22.789
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +17.50, post +38.81, threshold 1.20 px/frame)",
+      "n_pre": 3,
+      "n_post": 3,
+      "slope_pre_px_per_frame": 17.5,
+      "slope_post_px_per_frame": 38.811,
+      "ball_px_at_contact": [
+        848.7,
+        580.7
+      ],
+      "ball_px_frame_used": 808
+    },
+    {
+      "shot_id": 7,
+      "rally_id": 6,
+      "t_hit_s": 28.6,
+      "processed_index": 857,
+      "source_frame": 1714,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        3.104,
+        17.952
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -15.75, post -12.00, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -15.75,
+      "slope_post_px_per_frame": -12.0,
+      "ball_px_at_contact": [
+        885.0,
+        510.0
+      ],
+      "ball_px_frame_used": 857
+    },
+    {
+      "shot_id": 8,
+      "rally_id": 6,
+      "t_hit_s": 30.4,
+      "processed_index": 911,
+      "source_frame": 1822,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        2.75,
+        13.777
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": 31.85,
+      "slope_post_px_per_frame": -46.736,
+      "ball_px_at_contact": [
+        761.0,
+        643.0
+      ],
+      "ball_px_frame_used": 911
+    },
+    {
+      "shot_id": 9,
+      "rally_id": 7,
+      "t_hit_s": 40.21,
+      "processed_index": 1205,
+      "source_frame": 2410,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        3.758,
+        25.999
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 9.125,
+      "slope_post_px_per_frame": -9.375,
+      "ball_px_at_contact": [
+        948.8,
+        547.5
+      ],
+      "ball_px_frame_used": 1205
+    },
+    {
+      "shot_id": 10,
+      "rally_id": 8,
+      "t_hit_s": 43.74,
+      "processed_index": 1311,
+      "source_frame": 2622,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        3.591,
+        9.08
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +0.28, post -0.11, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": 0.283,
+      "slope_post_px_per_frame": -0.113,
+      "ball_px_at_contact": [
+        877.0,
+        531.0
+      ],
+      "ball_px_frame_used": 1311
+    },
+    {
+      "shot_id": 11,
+      "rally_id": 9,
+      "t_hit_s": 50.78,
+      "processed_index": 1522,
+      "source_frame": 3044,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        2.144,
+        -0.402
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 2,
+      "n_post": 4
+    },
+    {
+      "shot_id": 12,
+      "rally_id": 10,
+      "t_hit_s": 54.45,
+      "processed_index": 1632,
+      "source_frame": 3264,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        11.119,
+        1.097
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 4,
+      "n_post": 2
+    },
+    {
+      "shot_id": 13,
+      "rally_id": 10,
+      "t_hit_s": 55.36,
+      "processed_index": 1659,
+      "source_frame": 3318,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.079,
+        18.939
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 0,
+      "n_post": 4
+    },
+    {
+      "shot_id": 14,
+      "rally_id": 10,
+      "t_hit_s": 55.76,
+      "processed_index": 1671,
+      "source_frame": 3342,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        3.542,
+        19.678
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 0,
+      "n_post": 5
+    },
+    {
+      "shot_id": 15,
+      "rally_id": 11,
+      "t_hit_s": 58.32,
+      "processed_index": 1748,
+      "source_frame": 3496,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.436,
+        19.063
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -5.25,
+      "slope_post_px_per_frame": 1.5,
+      "ball_px_at_contact": [
+        948.8,
+        558.8
+      ],
+      "ball_px_frame_used": 1748
+    },
+    {
+      "shot_id": 16,
+      "rally_id": 11,
+      "t_hit_s": 60.29,
+      "processed_index": 1807,
+      "source_frame": 3614,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        1.232,
+        2.805
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 2,
+      "n_post": 4
+    },
+    {
+      "shot_id": 17,
+      "rally_id": 12,
+      "t_hit_s": 63.23,
+      "processed_index": 1895,
+      "source_frame": 3790,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        -1.807,
+        12.396
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -6.38, post -0.80, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -6.375,
+      "slope_post_px_per_frame": -0.8,
+      "ball_px_at_contact": [
+        438.8,
+        573.8
+      ],
+      "ball_px_frame_used": 1895
+    },
+    {
+      "shot_id": 18,
+      "rally_id": 12,
+      "t_hit_s": 64.16,
+      "processed_index": 1923,
+      "source_frame": 3846,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        3.65,
+        23.921
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 5.25,
+      "slope_post_px_per_frame": -4.87,
+      "ball_px_at_contact": [
+        930.0,
+        536.2
+      ],
+      "ball_px_frame_used": 1923
+    },
+    {
+      "shot_id": 19,
+      "rally_id": 12,
+      "t_hit_s": 65.63,
+      "processed_index": 1967,
+      "source_frame": 3934,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        -1.764,
+        6.041
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 3,
+      "slope_pre_px_per_frame": -2.625,
+      "slope_post_px_per_frame": 52.394,
+      "ball_px_at_contact": [
+        330.0,
+        618.8
+      ],
+      "ball_px_frame_used": 1967
+    },
+    {
+      "shot_id": 20,
+      "rally_id": 13,
+      "t_hit_s": 70.87,
+      "processed_index": 2124,
+      "source_frame": 4248,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        0.787,
+        2.403
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 18.888,
+      "slope_post_px_per_frame": -25.4,
+      "ball_px_at_contact": [
+        341.2,
+        716.2
+      ],
+      "ball_px_frame_used": 2124
+    },
+    {
+      "shot_id": 21,
+      "rally_id": 13,
+      "t_hit_s": 72.67,
+      "processed_index": 2178,
+      "source_frame": 4356,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.382,
+        21.603
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -1.61, post -18.61, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -1.615,
+      "slope_post_px_per_frame": -18.608,
+      "ball_px_at_contact": [
+        931.0,
+        499.0
+      ],
+      "ball_px_frame_used": 2178
+    },
+    {
+      "shot_id": 22,
+      "rally_id": 14,
+      "t_hit_s": 76.18,
+      "processed_index": 2283,
+      "source_frame": 4566,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        12.496,
+        18.202
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 1,
+      "n_post": 5
+    },
+    {
+      "shot_id": 23,
+      "rally_id": 15,
+      "t_hit_s": 79.21,
+      "processed_index": 2374,
+      "source_frame": 4748,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        1.415,
+        4.761
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -13.88, post -29.85, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -13.875,
+      "slope_post_px_per_frame": -29.85,
+      "ball_px_at_contact": [
+        566.2,
+        641.2
+      ],
+      "ball_px_frame_used": 2374
+    },
+    {
+      "shot_id": 24,
+      "rally_id": 16,
+      "t_hit_s": 82.78,
+      "processed_index": 2481,
+      "source_frame": 4962,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        3.067,
+        2.213
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 2.25,
+      "slope_post_px_per_frame": -54.0,
+      "ball_px_at_contact": [
+        648.8,
+        705.0
+      ],
+      "ball_px_frame_used": 2481
+    },
+    {
+      "shot_id": 25,
+      "rally_id": 17,
+      "t_hit_s": 89.72,
+      "processed_index": 2689,
+      "source_frame": 5378,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        4.413,
+        0.677
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 3,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 68.058,
+      "slope_post_px_per_frame": -22.875,
+      "ball_px_at_contact": [
+        750.0,
+        806.2
+      ],
+      "ball_px_frame_used": 2689
+    },
+    {
+      "shot_id": 26,
+      "rally_id": 18,
+      "t_hit_s": 92.66,
+      "processed_index": 2777,
+      "source_frame": 5554,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        8.032,
+        18.695
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -11.768,
+      "slope_post_px_per_frame": 13.625,
+      "ball_px_at_contact": [
+        1102.5,
+        566.2
+      ],
+      "ball_px_frame_used": 2777
+    },
+    {
+      "shot_id": 27,
+      "rally_id": 19,
+      "t_hit_s": 104.1,
+      "processed_index": 3120,
+      "source_frame": 6240,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        7.772,
+        18.179
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 7.982,
+      "slope_post_px_per_frame": -9.35,
+      "ball_px_at_contact": [
+        1091.2,
+        558.8
+      ],
+      "ball_px_frame_used": 3120
+    },
+    {
+      "shot_id": 28,
+      "rally_id": 19,
+      "t_hit_s": 104.5,
+      "processed_index": 3132,
+      "source_frame": 6264,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        -0.462,
+        24.521
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +0.00, post -3.28, threshold 1.20 px/frame)",
+      "n_pre": 4,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 0.0,
+      "slope_post_px_per_frame": -3.28,
+      "ball_px_at_contact": [
+        873.8,
+        536.2
+      ],
+      "ball_px_frame_used": 3133
+    },
+    {
+      "shot_id": 29,
+      "rally_id": 19,
+      "t_hit_s": 105.0,
+      "processed_index": 3147,
+      "source_frame": 6294,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        5.277,
+        20.876
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -0.66, post -13.72, threshold 1.20 px/frame)",
+      "n_pre": 4,
+      "n_post": 4,
+      "slope_pre_px_per_frame": -0.662,
+      "slope_post_px_per_frame": -13.719,
+      "ball_px_at_contact": [
+        950.1,
+        550.1
+      ],
+      "ball_px_frame_used": 3147
+    },
+    {
+      "shot_id": 30,
+      "rally_id": 19,
+      "t_hit_s": 106.11,
+      "processed_index": 3180,
+      "source_frame": 6360,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        11.067,
+        7.232
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": 6.0,
+      "slope_post_px_per_frame": -45.375,
+      "ball_px_at_contact": [
+        1466.2,
+        641.2
+      ],
+      "ball_px_frame_used": 3180
+    },
+    {
+      "shot_id": 31,
+      "rally_id": 19,
+      "t_hit_s": 107.44,
+      "processed_index": 3220,
+      "source_frame": 6440,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        7.86,
+        21.77
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -2.00, post -0.12, threshold 1.20 px/frame)",
+      "n_pre": 3,
+      "n_post": 3,
+      "slope_pre_px_per_frame": -2.0,
+      "slope_post_px_per_frame": -0.125,
+      "ball_px_at_contact": null,
+      "ball_px_frame_used": null
+    },
+    {
+      "shot_id": 32,
+      "rally_id": 19,
+      "t_hit_s": 108.74,
+      "processed_index": 3259,
+      "source_frame": 6518,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        12.808,
+        20.683
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -15.88, post -116.83, threshold 1.20 px/frame)",
+      "n_pre": 3,
+      "n_post": 3,
+      "slope_pre_px_per_frame": -15.875,
+      "slope_post_px_per_frame": -116.833,
+      "ball_px_at_contact": [
+        1275.0,
+        483.8
+      ],
+      "ball_px_frame_used": 3259
+    },
+    {
+      "shot_id": 33,
+      "rally_id": 20,
+      "t_hit_s": 111.51,
+      "processed_index": 3342,
+      "source_frame": 6684,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        11.044,
+        3.539
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 4,
+      "n_post": 2
+    },
+    {
+      "shot_id": 34,
+      "rally_id": 21,
+      "t_hit_s": 118.08,
+      "processed_index": 3539,
+      "source_frame": 7078,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        12.252,
+        14.01
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 4,
+      "n_post": 3,
+      "slope_pre_px_per_frame": 19.27,
+      "slope_post_px_per_frame": -89.268,
+      "ball_px_at_contact": [
+        1458.8,
+        555.0
+      ],
+      "ball_px_frame_used": 3539
+    },
+    {
+      "shot_id": 35,
+      "rally_id": 22,
+      "t_hit_s": 125.96,
+      "processed_index": 3775,
+      "source_frame": 7550,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        3.591,
+        24.922
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -10.50, post -4.64, threshold 1.20 px/frame)",
+      "n_pre": 4,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -10.5,
+      "slope_post_px_per_frame": -4.643,
+      "ball_px_at_contact": [
+        866.2,
+        502.5
+      ],
+      "ball_px_frame_used": 3775
+    },
+    {
+      "shot_id": 36,
+      "rally_id": 23,
+      "t_hit_s": 129.66,
+      "processed_index": 3886,
+      "source_frame": 7772,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        7.548,
+        25.183
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -17.65,
+      "slope_post_px_per_frame": 3.794,
+      "ball_px_at_contact": [
+        1076.0,
+        521.0
+      ],
+      "ball_px_frame_used": 3886
+    },
+    {
+      "shot_id": 37,
+      "rally_id": 23,
+      "t_hit_s": 131.53,
+      "processed_index": 3942,
+      "source_frame": 7884,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        8.929,
+        11.472
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 4,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 14.781,
+      "slope_post_px_per_frame": -15.95,
+      "ball_px_at_contact": [
+        1196.2,
+        588.8
+      ],
+      "ball_px_frame_used": 3942
+    },
+    {
+      "shot_id": 38,
+      "rally_id": 24,
+      "t_hit_s": 136.54,
+      "processed_index": 4092,
+      "source_frame": 8184,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.707,
+        21.627
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 4,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 10.6,
+      "slope_post_px_per_frame": -7.775,
+      "ball_px_at_contact": [
+        957.0,
+        548.0
+      ],
+      "ball_px_frame_used": 4092
+    },
+    {
+      "shot_id": 39,
+      "rally_id": 24,
+      "t_hit_s": 137.0,
+      "processed_index": 4106,
+      "source_frame": 8212,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        3.939,
+        20.078
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 5,
+      "n_post": 0
+    },
+    {
+      "shot_id": 40,
+      "rally_id": 24,
+      "t_hit_s": 137.74,
+      "processed_index": 4128,
+      "source_frame": 8256,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        7.753,
+        3.117
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 28.5,
+      "slope_post_px_per_frame": -8.25,
+      "ball_px_at_contact": [
+        1263.8,
+        708.8
+      ],
+      "ball_px_frame_used": 4128
+    },
+    {
+      "shot_id": 41,
+      "rally_id": 24,
+      "t_hit_s": 138.2,
+      "processed_index": 4142,
+      "source_frame": 8284,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        11.981,
+        2.907
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +13.12, post -0.14, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": 13.125,
+      "slope_post_px_per_frame": -0.137,
+      "ball_px_at_contact": [
+        1886.2,
+        738.8
+      ],
+      "ball_px_frame_used": 4142
+    },
+    {
+      "shot_id": 42,
+      "rally_id": 25,
+      "t_hit_s": 144.54,
+      "processed_index": 4332,
+      "source_frame": 8664,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        5.904,
+        25.683
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 3,
+      "n_post": 0
+    },
+    {
+      "shot_id": 43,
+      "rally_id": 25,
+      "t_hit_s": 146.31,
+      "processed_index": 4385,
+      "source_frame": 8770,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        0.176,
+        0.131
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 4,
+      "n_post": 1
+    },
+    {
+      "shot_id": 44,
+      "rally_id": 25,
+      "t_hit_s": 147.91,
+      "processed_index": 4433,
+      "source_frame": 8866,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        -0.02,
+        25.249
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +0.00, post -7.88, threshold 1.20 px/frame)",
+      "n_pre": 4,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 0.0,
+      "slope_post_px_per_frame": -7.875,
+      "ball_px_at_contact": [
+        892.5,
+        483.8
+      ],
+      "ball_px_frame_used": 4433
+    },
+    {
+      "shot_id": 45,
+      "rally_id": 25,
+      "t_hit_s": 149.62,
+      "processed_index": 4484,
+      "source_frame": 8968,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        9.068,
+        0.185
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 2,
+      "n_post": 2
+    },
+    {
+      "shot_id": 46,
+      "rally_id": 25,
+      "t_hit_s": 151.02,
+      "processed_index": 4526,
+      "source_frame": 9052,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        4.825,
+        -0.107
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 3,
+      "n_post": 3,
+      "slope_pre_px_per_frame": 13.875,
+      "slope_post_px_per_frame": -84.202,
+      "ball_px_at_contact": [
+        845.0,
+        819.0
+      ],
+      "ball_px_frame_used": 4526
+    },
+    {
+      "shot_id": 47,
+      "rally_id": 25,
+      "t_hit_s": 151.89,
+      "processed_index": 4552,
+      "source_frame": 9104,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        3.846,
+        19.876
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 4,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 5.475,
+      "slope_post_px_per_frame": -59.775,
+      "ball_px_at_contact": [
+        924.0,
+        643.0
+      ],
+      "ball_px_frame_used": 4552
+    },
+    {
+      "shot_id": 48,
+      "rally_id": 26,
+      "t_hit_s": 164.16,
+      "processed_index": 4920,
+      "source_frame": 9840,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        0.103,
+        3.58
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 2,
+      "n_post": 2
+    },
+    {
+      "shot_id": 49,
+      "rally_id": 27,
+      "t_hit_s": 171.94,
+      "processed_index": 5153,
+      "source_frame": 10306,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        5.658,
+        22.176
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": 3.75,
+      "slope_post_px_per_frame": -3.107,
+      "ball_px_at_contact": [
+        1008.8,
+        528.8
+      ],
+      "ball_px_frame_used": 5153
+    },
+    {
+      "shot_id": 50,
+      "rally_id": 28,
+      "t_hit_s": 175.58,
+      "processed_index": 5262,
+      "source_frame": 10524,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        0.642,
+        9.484
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -15.75, post -13.88, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": -15.75,
+      "slope_post_px_per_frame": -13.875,
+      "ball_px_at_contact": [
+        626.2,
+        551.2
+      ],
+      "ball_px_frame_used": 5262
+    },
+    {
+      "shot_id": 51,
+      "rally_id": 29,
+      "t_hit_s": 178.28,
+      "processed_index": 5343,
+      "source_frame": 10686,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        4.345,
+        6.693
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 5.625,
+      "slope_post_px_per_frame": -25.412,
+      "ball_px_at_contact": [
+        881.2,
+        626.2
+      ],
+      "ball_px_frame_used": 5343
+    },
+    {
+      "shot_id": 52,
+      "rally_id": 30,
+      "t_hit_s": 185.19,
+      "processed_index": 5550,
+      "source_frame": 11100,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        6.849,
+        22.976
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +2.41, post +8.68, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": 2.41,
+      "slope_post_px_per_frame": 8.679,
+      "ball_px_at_contact": [
+        813.8,
+        528.8
+      ],
+      "ball_px_frame_used": 5550
+    },
+    {
+      "shot_id": 53,
+      "rally_id": 31,
+      "t_hit_s": 192.19,
+      "processed_index": 5760,
+      "source_frame": 11520,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        2.518,
+        4.251
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 5,
+      "n_post": 2
+    },
+    {
+      "shot_id": 54,
+      "rally_id": 32,
+      "t_hit_s": 207.51,
+      "processed_index": 6219,
+      "source_frame": 12438,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        -0.875,
+        7.985
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -7.50, post -18.38, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": -7.5,
+      "slope_post_px_per_frame": -18.375,
+      "ball_px_at_contact": [
+        236.2,
+        596.2
+      ],
+      "ball_px_frame_used": 6219
+    },
+    {
+      "shot_id": 55,
+      "rally_id": 33,
+      "t_hit_s": 211.54,
+      "processed_index": 6340,
+      "source_frame": 12680,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.979,
+        23.392
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +4.12, post +1.43, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 4.125,
+      "slope_post_px_per_frame": 1.425,
+      "ball_px_at_contact": [
+        993.8,
+        495.0
+      ],
+      "ball_px_frame_used": 6340
+    },
+    {
+      "shot_id": 56,
+      "rally_id": 33,
+      "t_hit_s": 212.01,
+      "processed_index": 6354,
+      "source_frame": 12708,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        3.332,
+        15.77
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +0.38, post +7.22, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 0.375,
+      "slope_post_px_per_frame": 7.225,
+      "ball_px_at_contact": [
+        956.2,
+        581.2
+      ],
+      "ball_px_frame_used": 6354
+    },
+    {
+      "shot_id": 57,
+      "rally_id": 34,
+      "t_hit_s": 214.85,
+      "processed_index": 6439,
+      "source_frame": 12878,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        12.192,
+        13.341
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -1.12, post -22.50, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -1.125,
+      "slope_post_px_per_frame": -22.5,
+      "ball_px_at_contact": [
+        1471.3,
+        585.7
+      ],
+      "ball_px_frame_used": 6439
+    },
+    {
+      "shot_id": 58,
+      "rally_id": 35,
+      "t_hit_s": 217.58,
+      "processed_index": 6521,
+      "source_frame": 13042,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        11.094,
+        1.279
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 4,
+      "n_post": 2
+    },
+    {
+      "shot_id": 59,
+      "rally_id": 36,
+      "t_hit_s": 233.13,
+      "processed_index": 6987,
+      "source_frame": 13974,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.938,
+        16.778
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 4.45,
+      "slope_post_px_per_frame": -2.625,
+      "ball_px_at_contact": [
+        975.0,
+        551.2
+      ],
+      "ball_px_frame_used": 6987
+    },
+    {
+      "shot_id": 60,
+      "rally_id": 36,
+      "t_hit_s": 234.7,
+      "processed_index": 7034,
+      "source_frame": 14068,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        2.867,
+        7.734
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 13.875,
+      "slope_post_px_per_frame": -3.45,
+      "ball_px_at_contact": [
+        776.2,
+        611.2
+      ],
+      "ball_px_frame_used": 7034
+    },
+    {
+      "shot_id": 61,
+      "rally_id": 37,
+      "t_hit_s": 237.5,
+      "processed_index": 7118,
+      "source_frame": 14236,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        -0.165,
+        3.953
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +20.25, post +2.25, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 20.25,
+      "slope_post_px_per_frame": 2.25,
+      "ball_px_at_contact": [
+        371.2,
+        656.2
+      ],
+      "ball_px_frame_used": 7118
+    },
+    {
+      "shot_id": 62,
+      "rally_id": 38,
+      "t_hit_s": 240.74,
+      "processed_index": 7215,
+      "source_frame": 14430,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        11.136,
+        5.281
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 3,
+      "slope_pre_px_per_frame": 4.1,
+      "slope_post_px_per_frame": -14.062,
+      "ball_px_at_contact": [
+        1563.0,
+        703.0
+      ],
+      "ball_px_frame_used": 7214
+    },
+    {
+      "shot_id": 63,
+      "rally_id": 39,
+      "t_hit_s": 243.58,
+      "processed_index": 7300,
+      "source_frame": 14600,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        7.831,
+        -1.764
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 1,
+      "n_post": 5
+    },
+    {
+      "shot_id": 64,
+      "rally_id": 40,
+      "t_hit_s": 247.55,
+      "processed_index": 7419,
+      "source_frame": 14838,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        5.318,
+        25.124
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 0,
+      "n_post": 5
+    },
+    {
+      "shot_id": 65,
+      "rally_id": 41,
+      "t_hit_s": 250.32,
+      "processed_index": 7502,
+      "source_frame": 15004,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        10.064,
+        3.354
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +3.38, post +13.50, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 3.375,
+      "slope_post_px_per_frame": 13.5,
+      "ball_px_at_contact": [
+        1593.8,
+        705.0
+      ],
+      "ball_px_frame_used": 7502
+    },
+    {
+      "shot_id": 66,
+      "rally_id": 42,
+      "t_hit_s": 256.66,
+      "processed_index": 7692,
+      "source_frame": 15384,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        2.828,
+        14.568
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -8.25, post -18.00, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": -8.25,
+      "slope_post_px_per_frame": -18.0,
+      "ball_px_at_contact": [
+        802.5,
+        558.8
+      ],
+      "ball_px_frame_used": 7692
+    },
+    {
+      "shot_id": 67,
+      "rally_id": 43,
+      "t_hit_s": 260.73,
+      "processed_index": 7814,
+      "source_frame": 15628,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        2.527,
+        16.701
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -5.62, post -58.92, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": -5.625,
+      "slope_post_px_per_frame": -58.925,
+      "ball_px_at_contact": [
+        855.0,
+        558.8
+      ],
+      "ball_px_frame_used": 7814
+    },
+    {
+      "shot_id": 68,
+      "rally_id": 43,
+      "t_hit_s": 261.43,
+      "processed_index": 7835,
+      "source_frame": 15670,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        0.411,
+        11.993
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 3,
+      "n_post": 3,
+      "slope_pre_px_per_frame": 31.625,
+      "slope_post_px_per_frame": -19.048,
+      "ball_px_at_contact": [
+        686.0,
+        577.0
+      ],
+      "ball_px_frame_used": 7835
+    },
+    {
+      "shot_id": 69,
+      "rally_id": 44,
+      "t_hit_s": 264.5,
+      "processed_index": 7927,
+      "source_frame": 15854,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        -2.111,
+        16.193
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -1.50, post -9.75, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -1.5,
+      "slope_post_px_per_frame": -9.75,
+      "ball_px_at_contact": [
+        581.2,
+        555.0
+      ],
+      "ball_px_frame_used": 7927
+    },
+    {
+      "shot_id": 70,
+      "rally_id": 44,
+      "t_hit_s": 265.43,
+      "processed_index": 7955,
+      "source_frame": 15910,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        5.288,
+        21.599
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +14.66, post -0.83, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 14.662,
+      "slope_post_px_per_frame": -0.833,
+      "ball_px_at_contact": [
+        986.2,
+        551.2
+      ],
+      "ball_px_frame_used": 7955
+    },
+    {
+      "shot_id": 71,
+      "rally_id": 45,
+      "t_hit_s": 267.5,
+      "processed_index": 8017,
+      "source_frame": 16034,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        0.187,
+        13.312
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -6.425,
+      "slope_post_px_per_frame": 10.671,
+      "ball_px_at_contact": [
+        491.2,
+        555.0
+      ],
+      "ball_px_frame_used": 8017
+    },
+    {
+      "shot_id": 72,
+      "rally_id": 46,
+      "t_hit_s": 272.67,
+      "processed_index": 8172,
+      "source_frame": 16344,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        12.072,
+        7.156
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -14.25,
+      "slope_post_px_per_frame": 13.67,
+      "ball_px_at_contact": [
+        1672.5,
+        615.0
+      ],
+      "ball_px_frame_used": 8172
+    },
+    {
+      "shot_id": 73,
+      "rally_id": 47,
+      "t_hit_s": 275.71,
+      "processed_index": 8263,
+      "source_frame": 16526,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        1.523,
+        -0.261
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 5,
+      "n_post": 2
+    },
+    {
+      "shot_id": 74,
+      "rally_id": 47,
+      "t_hit_s": 277.68,
+      "processed_index": 8322,
+      "source_frame": 16644,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        0.903,
+        24.453
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 2,
+      "n_post": 4
+    },
+    {
+      "shot_id": 75,
+      "rally_id": 48,
+      "t_hit_s": 288.92,
+      "processed_index": 8659,
+      "source_frame": 17318,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        -1.307,
+        21.511
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +18.73, post +11.10, threshold 1.20 px/frame)",
+      "n_pre": 4,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 18.725,
+      "slope_post_px_per_frame": 11.1,
+      "ball_px_at_contact": [
+        738.8,
+        536.2
+      ],
+      "ball_px_frame_used": 8659
+    },
+    {
+      "shot_id": 76,
+      "rally_id": 49,
+      "t_hit_s": 319.02,
+      "processed_index": 9561,
+      "source_frame": 19122,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        2.091,
+        11.059
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 1,
+      "n_post": 5
+    },
+    {
+      "shot_id": 77,
+      "rally_id": 50,
+      "t_hit_s": 323.16,
+      "processed_index": 9685,
+      "source_frame": 19370,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        10.757,
+        17.518
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 0,
+      "n_post": 5
+    },
+    {
+      "shot_id": 78,
+      "rally_id": 51,
+      "t_hit_s": 327.86,
+      "processed_index": 9826,
+      "source_frame": 19652,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        1.844,
+        18.786
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 0,
+      "n_post": 5
+    },
+    {
+      "shot_id": 79,
+      "rally_id": 52,
+      "t_hit_s": 330.63,
+      "processed_index": 9909,
+      "source_frame": 19818,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        3.921,
+        24.843
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -4.50, post -6.38, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -4.5,
+      "slope_post_px_per_frame": -6.375,
+      "ball_px_at_contact": [
+        937.5,
+        532.5
+      ],
+      "ball_px_frame_used": 9909
+    },
+    {
+      "shot_id": 80,
+      "rally_id": 53,
+      "t_hit_s": 340.87,
+      "processed_index": 10216,
+      "source_frame": 20432,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        1.601,
+        11.263
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 2.25,
+      "slope_post_px_per_frame": -10.875,
+      "ball_px_at_contact": [
+        744.6,
+        575.1
+      ],
+      "ball_px_frame_used": 10216
+    },
+    {
+      "shot_id": 81,
+      "rally_id": 54,
+      "t_hit_s": 345.71,
+      "processed_index": 10361,
+      "source_frame": 20722,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        0.45,
+        20.189
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +0.17, post -4.50, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 0.175,
+      "slope_post_px_per_frame": -4.5,
+      "ball_px_at_contact": [
+        798.8,
+        517.5
+      ],
+      "ball_px_frame_used": 10361
+    },
+    {
+      "shot_id": 82,
+      "rally_id": 54,
+      "t_hit_s": 346.18,
+      "processed_index": 10375,
+      "source_frame": 20750,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        -0.222,
+        18.212
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +2.13, post +29.25, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 2.135,
+      "slope_post_px_per_frame": 29.25,
+      "ball_px_at_contact": [
+        829.0,
+        523.0
+      ],
+      "ball_px_frame_used": 10375
+    },
+    {
+      "shot_id": 83,
+      "rally_id": 55,
+      "t_hit_s": 350.82,
+      "processed_index": 10514,
+      "source_frame": 21028,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        8.285,
+        -0.995
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 0,
+      "n_post": 4
+    },
+    {
+      "shot_id": 84,
+      "rally_id": 55,
+      "t_hit_s": 352.39,
+      "processed_index": 10561,
+      "source_frame": 21122,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        0.932,
+        22.855
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 2,
+      "n_post": 3
+    },
+    {
+      "shot_id": 85,
+      "rally_id": 56,
+      "t_hit_s": 357.16,
+      "processed_index": 10704,
+      "source_frame": 21408,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        10.54,
+        17.123
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 2,
+      "n_post": 4
+    },
+    {
+      "shot_id": 86,
+      "rally_id": 57,
+      "t_hit_s": 362.46,
+      "processed_index": 10863,
+      "source_frame": 21726,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        5.878,
+        25.241
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +7.12, post +4.12, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 7.125,
+      "slope_post_px_per_frame": 4.125,
+      "ball_px_at_contact": [
+        1001.2,
+        547.5
+      ],
+      "ball_px_frame_used": 10863
+    },
+    {
+      "shot_id": 87,
+      "rally_id": 58,
+      "t_hit_s": 370.84,
+      "processed_index": 11114,
+      "source_frame": 22228,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        5.608,
+        4.737
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 3,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 7.5,
+      "slope_post_px_per_frame": -91.075,
+      "ball_px_at_contact": [
+        993.8,
+        656.2
+      ],
+      "ball_px_frame_used": 11114
+    },
+    {
+      "shot_id": 88,
+      "rally_id": 58,
+      "t_hit_s": 372.11,
+      "processed_index": 11152,
+      "source_frame": 22304,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        2.251,
+        25.04
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 3,
+      "slope_pre_px_per_frame": 2.625,
+      "slope_post_px_per_frame": -21.5,
+      "ball_px_at_contact": [
+        877.5,
+        521.2
+      ],
+      "ball_px_frame_used": 11152
+    },
+    {
+      "shot_id": 89,
+      "rally_id": 58,
+      "t_hit_s": 373.71,
+      "processed_index": 11200,
+      "source_frame": 22400,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        1.71,
+        16.558
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 1,
+      "n_post": 5
+    },
+    {
+      "shot_id": 90,
+      "rally_id": 59,
+      "t_hit_s": 378.34,
+      "processed_index": 11339,
+      "source_frame": 22678,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        0.479,
+        4.072
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -2.172,
+      "slope_post_px_per_frame": 15.0,
+      "ball_px_at_contact": [
+        442.5,
+        660.0
+      ],
+      "ball_px_frame_used": 11339
+    },
+    {
+      "shot_id": 91,
+      "rally_id": 60,
+      "t_hit_s": 382.68,
+      "processed_index": 11469,
+      "source_frame": 22938,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        2.974,
+        25.74
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -2.45,
+      "slope_post_px_per_frame": 27.75,
+      "ball_px_at_contact": [
+        933.8,
+        513.8
+      ],
+      "ball_px_frame_used": 11469
+    },
+    {
+      "shot_id": 92,
+      "rally_id": 60,
+      "t_hit_s": 383.08,
+      "processed_index": 11481,
+      "source_frame": 22962,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        0.278,
+        16.338
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -10.88, post -3.00, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -10.875,
+      "slope_post_px_per_frame": -3.0,
+      "ball_px_at_contact": [
+        648.8,
+        543.8
+      ],
+      "ball_px_frame_used": 11481
+    },
+    {
+      "shot_id": 93,
+      "rally_id": 61,
+      "t_hit_s": 385.38,
+      "processed_index": 11550,
+      "source_frame": 23100,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        7.366,
+        23.799
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": 6.725,
+      "slope_post_px_per_frame": -63.436,
+      "ball_px_at_contact": [
+        1046.2,
+        525.0
+      ],
+      "ball_px_frame_used": 11550
+    },
+    {
+      "shot_id": 94,
+      "rally_id": 61,
+      "t_hit_s": 386.22,
+      "processed_index": 11575,
+      "source_frame": 23150,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        7.532,
+        -0.037
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 3,
+      "n_post": 2
+    },
+    {
+      "shot_id": 95,
+      "rally_id": 62,
+      "t_hit_s": 391.56,
+      "processed_index": 11735,
+      "source_frame": 23470,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        -0.426,
+        5.229
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 23.25,
+      "slope_post_px_per_frame": -9.0,
+      "ball_px_at_contact": [
+        399.0,
+        659.0
+      ],
+      "ball_px_frame_used": 11735
+    },
+    {
+      "shot_id": 96,
+      "rally_id": 63,
+      "t_hit_s": 396.9,
+      "processed_index": 11895,
+      "source_frame": 23790,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        0.305,
+        24.853
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 1,
+      "n_post": 5
+    },
+    {
+      "shot_id": 97,
+      "rally_id": 63,
+      "t_hit_s": 397.33,
+      "processed_index": 11908,
+      "source_frame": 23816,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        7.138,
+        23.435
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +0.00, post -50.23, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 0.0,
+      "slope_post_px_per_frame": -50.225,
+      "ball_px_at_contact": [
+        896.2,
+        521.2
+      ],
+      "ball_px_frame_used": 11908
+    },
+    {
+      "shot_id": 98,
+      "rally_id": 63,
+      "t_hit_s": 398.46,
+      "processed_index": 11942,
+      "source_frame": 23884,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        9.667,
+        14.074
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -13.72, post -6.00, threshold 1.20 px/frame)",
+      "n_pre": 4,
+      "n_post": 4,
+      "slope_pre_px_per_frame": -13.725,
+      "slope_post_px_per_frame": -6.0,
+      "ball_px_at_contact": [
+        1205.0,
+        579.0
+      ],
+      "ball_px_frame_used": 11942
+    },
+    {
+      "shot_id": 99,
+      "rally_id": 64,
+      "t_hit_s": 410.51,
+      "processed_index": 12303,
+      "source_frame": 24606,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        9.526,
+        23.746
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 0,
+      "n_post": 1
+    },
+    {
+      "shot_id": 100,
+      "rally_id": 65,
+      "t_hit_s": 414.15,
+      "processed_index": 12412,
+      "source_frame": 24824,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        10.854,
+        18.05
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 1,
+      "n_post": 5
+    },
+    {
+      "shot_id": 101,
+      "rally_id": 65,
+      "t_hit_s": 415.98,
+      "processed_index": 12467,
+      "source_frame": 24934,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        5.358,
+        24.318
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +13.16, post +25.50, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 13.157,
+      "slope_post_px_per_frame": 25.5,
+      "ball_px_at_contact": [
+        948.5,
+        503.5
+      ],
+      "ball_px_frame_used": 12467
+    },
+    {
+      "shot_id": 102,
+      "rally_id": 65,
+      "t_hit_s": 416.38,
+      "processed_index": 12479,
+      "source_frame": 24958,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        8.812,
+        14.434
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre -9.00, post -4.50, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -9.0,
+      "slope_post_px_per_frame": -4.5,
+      "ball_px_at_contact": [
+        1218.8,
+        551.2
+      ],
+      "ball_px_frame_used": 12479
+    },
+    {
+      "shot_id": 103,
+      "rally_id": 66,
+      "t_hit_s": 418.72,
+      "processed_index": 12549,
+      "source_frame": 25098,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        7.629,
+        21.831
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 5,
+      "n_post": 1
+    },
+    {
+      "shot_id": 104,
+      "rally_id": 67,
+      "t_hit_s": 422.42,
+      "processed_index": 12660,
+      "source_frame": 25320,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.777,
+        24.778
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +4.92, post +0.00, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 3,
+      "slope_pre_px_per_frame": 4.925,
+      "slope_post_px_per_frame": 0.0,
+      "ball_px_at_contact": [
+        968.3,
+        605.7
+      ],
+      "ball_px_frame_used": 12660
+    },
+    {
+      "shot_id": 105,
+      "rally_id": 68,
+      "t_hit_s": 424.62,
+      "processed_index": 12726,
+      "source_frame": 25452,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        1.681,
+        23.057
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +3.42, post +23.25, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 3.425,
+      "slope_post_px_per_frame": 23.25,
+      "ball_px_at_contact": [
+        881.2,
+        506.2
+      ],
+      "ball_px_frame_used": 12726
+    },
+    {
+      "shot_id": 106,
+      "rally_id": 68,
+      "t_hit_s": 426.29,
+      "processed_index": 12776,
+      "source_frame": 25552,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        8.051,
+        23.564
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +7.64, post +3.32, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 7.638,
+      "slope_post_px_per_frame": 3.323,
+      "ball_px_at_contact": [
+        1098.8,
+        551.2
+      ],
+      "ball_px_frame_used": 12776
+    },
+    {
+      "shot_id": 107,
+      "rally_id": 69,
+      "t_hit_s": 434.4,
+      "processed_index": 13019,
+      "source_frame": 26038,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.517,
+        14.069
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -25.325,
+      "slope_post_px_per_frame": 2.567,
+      "ball_px_at_contact": [
+        912.8,
+        493.8
+      ],
+      "ball_px_frame_used": 13019
+    },
+    {
+      "shot_id": 108,
+      "rally_id": 70,
+      "t_hit_s": 445.34,
+      "processed_index": 13347,
+      "source_frame": 26694,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        6.785,
+        12.251
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 16.875,
+      "slope_post_px_per_frame": -7.5,
+      "ball_px_at_contact": [
+        1068.8,
+        588.8
+      ],
+      "ball_px_frame_used": 13347
+    },
+    {
+      "shot_id": 109,
+      "rally_id": 70,
+      "t_hit_s": 446.65,
+      "processed_index": 13386,
+      "source_frame": 26772,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        13.202,
+        4.099
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 1,
+      "n_post": 4
+    },
+    {
+      "shot_id": 110,
+      "rally_id": 71,
+      "t_hit_s": 451.75,
+      "processed_index": 13539,
+      "source_frame": 27078,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        3.758,
+        -0.111
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 5,
+      "n_post": 0
+    },
+    {
+      "shot_id": 111,
+      "rally_id": 72,
+      "t_hit_s": 454.32,
+      "processed_index": 13616,
+      "source_frame": 27232,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        -1.836,
+        6.479
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -7.5,
+      "slope_post_px_per_frame": 18.95,
+      "ball_px_at_contact": [
+        367.5,
+        618.8
+      ],
+      "ball_px_frame_used": 13616
+    },
+    {
+      "shot_id": 112,
+      "rally_id": 73,
+      "t_hit_s": 457.29,
+      "processed_index": 13705,
+      "source_frame": 27410,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        -0.217,
+        2.686
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 9.0,
+      "slope_post_px_per_frame": -70.4,
+      "ball_px_at_contact": [
+        239.0,
+        706.0
+      ],
+      "ball_px_frame_used": 13705
+    },
+    {
+      "shot_id": 113,
+      "rally_id": 74,
+      "t_hit_s": 459.53,
+      "processed_index": 13772,
+      "source_frame": 27544,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        1.052,
+        6.404
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 16.7,
+      "slope_post_px_per_frame": -8.25,
+      "ball_px_at_contact": [
+        596.2,
+        641.2
+      ],
+      "ball_px_frame_used": 13772
+    },
+    {
+      "shot_id": 114,
+      "rally_id": 75,
+      "t_hit_s": 465.16,
+      "processed_index": 13941,
+      "source_frame": 27882,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        8.213,
+        1.733
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +0.00, post +41.52, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 3,
+      "slope_pre_px_per_frame": 0.0,
+      "slope_post_px_per_frame": 41.518,
+      "ball_px_at_contact": [
+        1376.2,
+        738.8
+      ],
+      "ball_px_frame_used": 13941
+    },
+    {
+      "shot_id": 115,
+      "rally_id": 76,
+      "t_hit_s": 467.43,
+      "processed_index": 14009,
+      "source_frame": 28018,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        2.57,
+        8.453
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 14.25,
+      "slope_post_px_per_frame": -1.875,
+      "ball_px_at_contact": [
+        768.8,
+        607.5
+      ],
+      "ball_px_frame_used": 14009
+    },
+    {
+      "shot_id": 116,
+      "rally_id": 76,
+      "t_hit_s": 468.9,
+      "processed_index": 14053,
+      "source_frame": 28106,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        5.077,
+        12.981
+      ],
+      "end": "undecided",
+      "reason": "no clean image-y reversal (pre +4.62, post +12.20, threshold 1.20 px/frame)",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 4.625,
+      "slope_post_px_per_frame": 12.2,
+      "ball_px_at_contact": [
+        952.5,
+        521.2
+      ],
+      "ball_px_frame_used": 14053
+    },
+    {
+      "shot_id": 117,
+      "rally_id": 76,
+      "t_hit_s": 470.74,
+      "processed_index": 14108,
+      "source_frame": 28216,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        8.507,
+        -0.839
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 3,
+      "n_post": 2
+    },
+    {
+      "shot_id": 118,
+      "rally_id": 77,
+      "t_hit_s": 474.11,
+      "processed_index": 14209,
+      "source_frame": 28418,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        6.937,
+        17.837
+      ],
+      "end": "undecided",
+      "reason": "too few ball detections around the contact",
+      "n_pre": 2,
+      "n_post": 3
+    },
+    {
+      "shot_id": 119,
+      "rally_id": 78,
+      "t_hit_s": 480.55,
+      "processed_index": 14402,
+      "source_frame": 28804,
+      "pipeline_player": "A",
+      "hit_xy_court": [
+        3.538,
+        4.997
+      ],
+      "end": "near",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": 4.5,
+      "slope_post_px_per_frame": -8.25,
+      "ball_px_at_contact": [
+        783.8,
+        663.8
+      ],
+      "ball_px_frame_used": 14402
+    }
+  ]
+}

@@ -229,3 +229,20 @@ T21. **Re-deriving a rule instead of sharing it — then trusting the copy over 
    is a suspect too**, and a rule with two implementations will eventually have two meanings.
    Now one function, `labels_to_dataset.usable_frames`, called by both, with an assertion in
    `build()` that it still selects exactly what gets written.
+T23. **Trusting a calibration AUDIT that never looks at the frame.** `data/yt_match40_pts.json`
+   is stamped **PASS, fit residual 0.9 px**, and all four of its clicked corners sit on blank
+   run-off asphalt, on the hedge, and on the fence *behind* the court — not one is on a court
+   line (`data/output/p0_3_calib_corners_yt_match40.png`). The residual only asks whether four
+   points form a plausible projective image of a regulation court, and four arbitrary points in
+   a sane trapezoid do. The cost: the pipeline's net line landed 35–75 px low, so
+   `select_players_on_court` labelled the NEAR player FAR whenever they stood forward of it,
+   and **P0-2 published that mislabel as an 11.0% far-player detection rate** — `far_kpts`
+   non-null on 1125 of 10268 frames, exactly 11.0%. It survived a written gate, a pre-registered
+   sweep and a published evidence file. This is the SECOND time a committed `*_pts.json` has been
+   silently wrong; the first family was caught by residuals (38–565 px, stamped DEGENERATE), and
+   **this one is invisible to that test by construction.** The audit's one real signal was
+   ignored: it reported an **11.3 m camera** for a clip that is plainly a tripod behind a public
+   court, and the pixels say ~2 m. **Verify a calibration by rendering the clicked corners on the
+   frame, not by reading its residual** — and treat an implausible camera height as a failure,
+   not a footnote. Related: T19 (a rate is not evidence the model found the right thing) —
+   here a rate was not even evidence about the right PERSON.

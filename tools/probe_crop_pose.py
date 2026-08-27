@@ -1,3 +1,16 @@
+"""SUPERSEDED 2026-08-28 — DO NOT RUN. Use `tools/p0_3_crop_probe.py`.
+
+This probe's 78.8% is withdrawn. Three defects, all fatal:
+  1. it selected its population with `hit_xy[1] > court.NET_Y`, the ball's
+     GROUND-projected contact, which calls 193 of 196 yt_match40 contacts "far";
+  2. its detection test asked "does ANY person box overlap the region", which the
+     near player satisfies almost regardless on a 448 px box;
+  3. it indexed frames as `t_hit_s * match["video"]["fps"]`, but that field is the
+     EFFECTIVE frame rate, so on a 60 fps clip it seeked to half the intended time.
+Kept only so the defects stay legible next to their replacement.
+See docs/evidence/p0-3-crop-around-contact.md.
+"""
+
 """P0-3 — does a native-resolution CROP around the ball contact find the far player
 where a full frame does not?
 
