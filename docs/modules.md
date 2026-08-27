@@ -93,8 +93,19 @@ Text preserved verbatim from CLAUDE.md.
   MOBILE.md is the integration guide (React Native + vision-camera + ORT).
 - Caveat: int8 is slower than fp32 on x86 desktop (quant-kernel pathology); it's
   for mobile CoreML/NNAPI int8 accel. Not benchmarked on a real phone — don't
-  quote a phone fps. The app shell (camera frame processor, UI, store build) is
-  the remaining mobile-dev work; the ML + call logic are done here.
+  quote a phone fps.
+- **The port is SPLIT — do not read the line above as covering the product.** For
+  **live line calls**, the ML + call logic really are done here and the app shell
+  (frame processor, UI, store build) is the remaining work. For the **offline
+  analyzer** that is false: it is a rebuild, not a port. Its smoother is non-causal
+  by construction (Kalman + RTS forward-backward, plus Savitzky-Golay), it runs
+  whole-video multi-pass with full per-frame arrays, court auto-detection is ~2,900
+  lines of classical CV with no conversion toolchain, pose is not exported at all,
+  and three features shell out to a bundled desktop ffmpeg. Audit:
+  [evidence/mobile-viability-audit.md](evidence/mobile-viability-audit.md).
+- Known divergence: `mobile/models/*.onnx` are exported from `_tracknet.py`, while
+  the shipped default detector is **BallNet v21**. Mobile and desktop run different
+  ball models.
 
 ## Performance (CPU)
 

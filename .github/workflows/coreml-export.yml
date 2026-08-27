@@ -1,0 +1,42 @@
+name: Core ML export (P0-0)
+
+# Manual only — this exists to avoid the 24-hour minimum lease that both AWS EC2
+# Mac and Scaleway charge under Apple's own EULA for any macOS instance, even a
+# 10-minute job. See docs/evidence/p0-0-coreml-export.md. Runs on real macOS, so
+# coremltools ships its compiled libmilstoragepython / libcoremlpython — the
+# pieces missing from the Windows wheel that blocked this locally.
+on:
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: macos-14   # pinned (Apple Silicon), not macos-latest — reproducible
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Disk space before install
+        run: df -h /
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements-ml.txt coremltools
+
+      - name: Disk space after install
+        run: df -h /
+
+      - name: Export
+        run: python tools/export_coreml_p0.py
+
+      - name: Disk space after export
+        run: df -h /
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coreml-export
+          path: ios/coreml_export/
+          retention-days: 14
