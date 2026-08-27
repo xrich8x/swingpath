@@ -52,12 +52,27 @@ specific person, not any box overlap.
 
 ## Two supporting facts, so the numbers are not misread
 
-- **`am_hard_utr`'s 1.0% is post-guard.** `pipeline._reject_static_player` nulls an entire
-  track that survives on under 15% of frames, so a low-but-real detection rate is wiped to
-  near zero. The 26.7% figure in
-  [the-far-player-is-a-detection-problem.md](the-far-player-is-a-detection-problem.md) is a
-  *pre-guard* number and is not comparable to this table. Do not read a 26.7 → 1.0
-  "regression" here; they measure different stages.
+- **These are PRE-guard numbers** — corrected 2026-08-28, having first been written up here
+  as post-guard, which was wrong. The perception cache is written inside `_perceive`;
+  `_reject_static_player` runs afterwards in `analyze_video`, so the cache never sees it.
+  That makes this table directly comparable to the figures in
+  [the-far-player-is-a-detection-problem.md](the-far-player-is-a-detection-problem.md),
+  which are also pre-guard. The gap between its 14.5% on `yt_match40` and the 11.0%
+  measured here is a genuine difference across code versions, not two different stages.
+- **The guard discards most of what perception found — and that is already known not to
+  be the lever.** On the `yt_match40` 1280 run: perception located a far player on **1125
+  frames**, `_reject_static_player` dropped **885 as "static-fixture"**, and the surviving
+  240 fell under its own 15% floor, wiping the track. 79% discarded, and the guard's
+  docstring names the cause (20 px / 8 px radii are depth-blind, so a far player's real
+  motion is smaller than a near player's jitter).
+  **Do not read this as a cheap win in the guard.** `body_relative` is the depth-invariant
+  fix and is already a measured negative
+  ([depth-invariant-static-player-guard.md](depth-invariant-static-player-guard.md)):
+  it improved 1 of 3 clips, and on `yt_match40` specifically it changed **0.0 → 0.0**
+  because the far player is on only 14.5% of frames — **already below the guard's own 15%
+  floor, so a perfect filter changes nothing.** This run's 11.0% is lower still, so the
+  same reasoning holds a fortiori. The prior conclusion stands: on this footage the far
+  player is a DETECTION problem, not a filtering one.
 - **`yt_match40` runs at `frame_step=1`** (30 fps source) and `am_hard_utr` at
   `frame_step=2` (60 fps source), so the denominators differ. Both are the pipeline's own
   default `auto` behaviour, not a setting chosen for this experiment.
