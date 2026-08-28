@@ -18,7 +18,8 @@ rows, each measured here under a pre-registered gate. Nine were re-proposed at l
 - [iOS background compute](ios-background-compute.md) — no multi-hour background job exists; ANE-only is mandatory
 - [Core ML / A13 ANE budget](coreml-ane-budget.md) — the desktop ball-vs-pose cost ratio INVERTS on ANE; int8 buys no speed on A13
 - [Sensor court priors](sensor-court-priors.md) — gravity usable, yaw useless, LiDAR does not reach the far baseline; 1 deg pitch = 6 px
-- [Point-boundary ground truth](point-boundary-ground-truth.md) — boundaries are LOGIC, so labels are evaluation-only; audio is the strongest compliant signal
+- [Point-boundary ground truth](point-boundary-ground-truth.md) — boundaries are LOGIC, so labels are evaluation-only; audio is the strongest compliant signal; priced 2026-08-28: 3-6h, Hardcourt+Clay only, Shell/Grass have no eligible footage
 - [macOS + A13 device access](macos-and-device-access-options.md) — GH Actions CI for Core ML export; Xcode Performance Report needs a local USB device
+- [Audio hit detection mobile port](audio-hit-detection-mobile-port.md) — corpus audio-track presence unverified since Session E3b; rolling-median floor is O(n·win), vDSP has no equivalent; this session had no exec tool at all
 
 **Settled:** iOS only, A13+, Core ML/ANE only. No Android, no TFLite, no NNAPI.

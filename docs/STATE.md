@@ -54,7 +54,9 @@ One number, one home.
 | Mobile | ONNX + int8, argmax baked into the graph | 0.9 MB / 11 MB. Call logic ported to JS, verified bit-identical. |
 
 **Footage layout (reorganised 2026-08-20):** every source video lives under
-`data/incoming/<surface>/` - **Clay 9, Hardcourt 38, Shell 6, Grass 4**, plus
+`data/incoming/<surface>/` - **Clay 9, Hardcourt 39, Shell 64, Grass 4** (counted
+2026-08-28; the old "Shell 6" predated `split_by_serve.py` cutting the five Manila venues
+into per-point clips, and 88 of the 116 carry audio - `data/output/audio_census.json`), plus
 `Raw - Do Not Process` (9 full-length downloads whose trims are already in the surface
 folders; the eval skips it by rule, because sweeping both counts the same court twice).
 `data/amateur_clips`, `data/train_clips`, `data/gold_clips` and `data/highlights` are gone.
@@ -216,7 +218,9 @@ number — that is what a dated record is. The guard skips them.
 | **Whether a better detector can reach the ghost ball at all** | Establishing which stage absorbs a detector gain, before the next detector idea | [evidence/whether-a-better-detector-can-reach-the.md](evidence/whether-a-better-detector-can-reach-the.md) |
 | **Off-machine backup** | Second disk verified 2026-08-17; off-machine still open | [evidence/off-machine-backup.md](evidence/off-machine-backup.md) |
 | **The far player is a DETECTION problem on the target footage** | Settled 2026-08-17; `--far-player-rescue` recovers frames the shipped guard then deletes | [evidence/the-far-player-is-a-detection-problem.md](evidence/the-far-player-is-a-detection-problem.md) |
-| **Bounce detection** | No true ball height from one camera. Unevaluated: audio impact (module exists, unwired), monocular 3D | - |
+| **Bounce detection** | No true ball height from one camera. Audio impact is no longer unevaluated - see the audio screen row below; still unwired, and monocular 3D unevaluated | - |
+| **Audio impact on indoor SHELL - SCREENED, not measured** - run 2026-08-28 | A per-stroke reference that rule 11 permits (human-clicked impact times, or boundaries from bounces and physics). **No recall or precision figure exists or may be derived** - the HUD scorer is barred for this. The screen is label-free and settles only the catastrophic case: `detect_impacts` self-declares useless on **0 of 88** clips over 309.3 min, including **0 of 62** indoor shell. Yield and contrast on the quiet founder venues are a third of outdoor, and the binding threshold is the level-dependent absolute one. Corpus census also corrects a stale repo claim that every clip is video-only | [evidence/audio-impact-feasibility-screen.md](evidence/audio-impact-feasibility-screen.md) |
+| **`detect_impacts`'s rolling floor is O(n x win), not O(n)** - measured 2026-08-28 | Nothing. Unblocked, and the replacement is already prototyped and pinned. On a 28.2 min clip the floor costs **26.16 s against 0.82 s** for the whole band-pass stage, and the shipped expression's peak allocation is **13.5 GB**. Flat in n, doubling with win. Accelerate has no rolling-median primitive, so iOS needs the exact O(log win) streaming order-statistic form in `tools/audio_ondevice_probe.py` (10 tests, bit-identical to `np.median`) written in Swift | [evidence/audio-impact-feasibility-screen.md](evidence/audio-impact-feasibility-screen.md) |
 | **Speed coverage is CHAIN-shaped, and the two stages are named** - the best-measured open target | Nothing. `smooth_forecast` costs -12.0 pts, `suppress_false_locks` -7.2, `gate_ball_to_court` exactly zero | [evidence/speed-coverage-is-chain-shaped-and-the.md](evidence/speed-coverage-is-chain-shaped-and-the.md) |
 | **Ball-chain work is NOT closed — the stopping rule did not fire** | **Nothing. Unblocked.** The rule triggers if a separating mechanism lands at or below ~7:1; at full power `bounce_hypothesis` lands at **9.00:1**, so the premise that the exchange rate is a property of the SIGNAL is disproved. A second hypothesis beats it. What fails is position accuracy on one clip, which is a fixable mechanism problem, not a closed lane. | [evidence/bounce-hypothesis.md](evidence/bounce-hypothesis.md) |
 | **8 court gold frames are mislabelled** | A minute of human re-labelling in the Lab. Deliberately not quietly edited | [evidence/8-court-gold-frames-are-mislabelled.md](evidence/8-court-gold-frames-are-mislabelled.md) |

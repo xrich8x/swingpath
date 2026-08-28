@@ -106,6 +106,17 @@ Text preserved verbatim from CLAUDE.md.
 - Known divergence: `mobile/models/*.onnx` are exported from `_tracknet.py`, while
   the shipped default detector is **BallNet v21**. Mobile and desktop run different
   ball models.
+- **`audio.py` on-device, scoped 2026-08-28:** three items, not one. (1)
+  `extract_audio` shells out to the bundled desktop ffmpeg → `AVAssetReader` /
+  `AVAudioFile` + `AVAudioConverter`. (2) `sosfiltfilt` → a vDSP biquad cascade,
+  and the padding is the hard part: 4 sections, zero-phase double pass, scipy
+  `padtype='odd'` with `padlen=27`; getting it wrong moves the output 4.83% of
+  peak in the first and last 27 samples. Needs a parity harness, not an
+  assumption. (3) The rolling median/MAD floor is **O(n·win)** and has no
+  Accelerate primitive; the exact O(log win) streaming replacement is prototyped
+  in `tools/audio_ondevice_probe.py` and pinned by
+  `backend/tests/test_audio_streaming_floor.py`. Detail:
+  [evidence/audio-impact-feasibility-screen.md](evidence/audio-impact-feasibility-screen.md).
 
 ## Performance (CPU)
 

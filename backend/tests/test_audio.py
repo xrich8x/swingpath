@@ -1,9 +1,19 @@
 """audio.py: impact detection + conservative fusion (Session E3b).
 
 The detector is scored on synthetic audio where the ground truth is exact:
-clicks of known times buried in noise. No real-footage assertion lives here —
-every YouTube clip in data/ was pulled without an audio stream, so the real
-measurement (tools/audio_hits.py vs the HUD reference) waits on new footage.
+clicks of known times buried in noise. No real-footage assertion lives here.
+
+CORRECTION, 2026-08-28. The old note here said every clip in data/ was pulled
+without an audio stream. That was true when written and is now stale: 88 of 116
+clips carry audio, including 62 of 64 indoor Shell, because the founder's own
+venue recordings are re-encoded by tools/split_by_serve.py with `-c:a aac`
+(census: data/output/audio_census.json). What still does NOT exist is a
+per-stroke reference this project may use — `tools/audio_hits.py` scores against
+SwingVision's burned-in HUD, which rule 11 bars for anything but a speed
+AGREEMENT figure. So the real measurement waits on compliant labels, not on
+footage. A label-free feasibility screen over all 88 clips is recorded in
+docs/evidence/audio-impact-feasibility-screen.md; it produces no recall or
+precision figure, deliberately.
 """
 import numpy as np
 import pytest

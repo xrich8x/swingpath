@@ -1,0 +1,181 @@
+{
+ "provenance": {
+  "note": "THIS IS A FEASIBILITY SCREEN, NOT AN ACCURACY MEASUREMENT.",
+  "measured_against": "wall-clock on this machine, and numpy/scipy's own output as the numerical reference. No detection quality is measured or implied.",
+  "clip": "data/incoming/Clay/CYqapSq5llo.mp4",
+  "clip_duration_s": 1692.01,
+  "commit": "a837460",
+  "python": "3.14.3",
+  "numpy": "2.5.0",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "cpu": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+  "date": "2026-08-28"
+ },
+ "complexity": {
+  "t_impact_envelope_s": 0.968,
+  "n_env_samples": 1692013,
+  "vary_n_win1000": [
+   {
+    "n": 50000,
+    "t_s": 0.695,
+    "us_per_env_sample": 13.895
+   },
+   {
+    "n": 100000,
+    "t_s": 1.416,
+    "us_per_env_sample": 14.161
+   },
+   {
+    "n": 200000,
+    "t_s": 2.909,
+    "us_per_env_sample": 14.545
+   },
+   {
+    "n": 400000,
+    "t_s": 5.997,
+    "us_per_env_sample": 14.992
+   },
+   {
+    "n": 800000,
+    "t_s": 12.297,
+    "us_per_env_sample": 15.371
+   }
+  ],
+  "vary_win_n200000": [
+   {
+    "win": 125,
+    "t_s": 0.452,
+    "us_per_env_sample": 2.258
+   },
+   {
+    "win": 250,
+    "t_s": 0.827,
+    "us_per_env_sample": 4.135
+   },
+   {
+    "win": 500,
+    "t_s": 1.507,
+    "us_per_env_sample": 7.535
+   },
+   {
+    "win": 1000,
+    "t_s": 2.855,
+    "us_per_env_sample": 14.277
+   },
+   {
+    "win": 2000,
+    "t_s": 5.431,
+    "us_per_env_sample": 27.155
+   }
+  ],
+  "full_clip": {
+   "n": 1692013,
+   "win": 1000,
+   "t_s": 25.68,
+   "element_visits": 3384026000
+  },
+  "unchunked_peak_alloc_bytes_full_clip": 13536104000
+ },
+ "filter_parity": {
+  "sos_shape": [
+   4,
+   6
+  ],
+  "n_sections": 4,
+  "sos_float64": [
+   [
+    0.2595466561065162,
+    -0.5190933122130325,
+    0.2595466561065162,
+    1.0,
+    -1.0268802217449706,
+    0.29262376059327894
+   ],
+   [
+    1.0,
+    2.0,
+    1.0,
+    1.0,
+    1.3120738294778787,
+    0.4480428941217216
+   ],
+   [
+    1.0,
+    -2.0,
+    1.0,
+    1.0,
+    -1.3861426939818438,
+    0.6762328297776111
+   ],
+   [
+    1.0,
+    2.0,
+    1.0,
+    1.0,
+    1.6267314970847566,
+    0.7648732029434524
+   ]
+  ],
+  "scipy_default_padtype": "odd",
+  "derived_padlen": 27,
+  "derived_padlen_matches_default": true,
+  "sosfilt_zi_float64": [
+   [
+    -0.2595466561065162,
+    0.2595466561065162
+   ],
+   [
+    0.0,
+    0.0
+   ],
+   [
+    -0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0
+   ]
+  ],
+  "rel_err_if_padtype_constant_edge": 0.048257,
+  "rel_err_if_padtype_constant_interior": 0.001054171,
+  "rel_err_if_no_padding_edge": 0.048257,
+  "note": "sosfiltfilt is a zero-phase DOUBLE pass (forward, reverse) with odd-symmetric edge extension of padlen samples and per-section initial state sosfilt_zi * x[0]. A vDSP biquad cascade reproduces the sections trivially and the padding not at all unless it is written out explicitly; the two disagree hardest inside the first and last padlen samples, which is where a rally starts."
+ },
+ "streaming_mad": {
+  "scaling_in_win_n_out2000": [
+   {
+    "win": 125,
+    "us_per_out_streaming_python": 6.45,
+    "us_per_out_numpy_sliding": 3.48
+   },
+   {
+    "win": 250,
+    "us_per_out_streaming_python": 12.59,
+    "us_per_out_numpy_sliding": 4.49
+   },
+   {
+    "win": 500,
+    "us_per_out_streaming_python": 10.65,
+    "us_per_out_numpy_sliding": 7.07
+   },
+   {
+    "win": 1000,
+    "us_per_out_streaming_python": 14.67,
+    "us_per_out_numpy_sliding": 13.41
+   },
+   {
+    "win": 2000,
+    "us_per_out_streaming_python": 17.58,
+    "us_per_out_numpy_sliding": 24.75
+   }
+  ],
+  "n_out": 3000,
+  "win": 1000,
+  "median_exact_match": true,
+  "mad_max_abs_diff": 0.0,
+  "mad_exact_match": true,
+  "t_streaming_python_s": 0.051,
+  "note": "The streaming form is O(log win) per sample and exact. The Python timing is interpreter overhead, not the algorithm's cost; it is here to prove equivalence, not to be a speed claim."
+ }
+}

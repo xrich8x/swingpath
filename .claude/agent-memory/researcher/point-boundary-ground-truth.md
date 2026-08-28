@@ -57,3 +57,23 @@ not 15. That collapses the line item.
 - **No published inter-annotator agreement for tennis point boundaries exists.** TenniSet
   (DICTA 2017, 5 broadcast matches) publishes dense event annotations and a tool, but no
   agreement study and no annotation-hour figures.
+
+## Priced 2026-08-28 (overnight R-task) — see `[[audio-hit-detection-mobile-port]]` for the audio-screen half
+
+The evaluation-only set is now costed against actual repo contents, not just the
+literature. **Only 9 files in the repo qualify as continuous, full-length source
+video** (`data/incoming/Raw - Do Not Process/`, 7 Hardcourt + 2 Clay + 0 Shell +
+0 Grass) — everything else is either already trimmed to a single point
+(`split_by_serve.py` output, which bakes in its own boundary guess and so cannot
+serve as an independent label) or a court-calibration frame set. **Shell and Grass
+have zero eligible full-match footage today** — this is a scoping gap, not a
+labelling-hours problem, and it needs new recordings before either surface can get
+a point-boundary number.
+
+Priced (title-based length estimate, unmeasured — flag before use): **4–5 Hardcourt
++ Clay matches, ~3–6 human hours total** (labelling at the brief's own 30–45 min /
+30 min-video rate, plus a ~5 min/clip prerequisite scrub to rule out pre-edited/
+jump-cut YouTube uploads, which would silently destroy dead-time-trim ground truth
+even though they'd still support a point count). Same order of magnitude as the
+approved far-court queue (4,087 frames / 4–5 h). Full pricing table:
+`docs/evidence/audio-impact-screen-blocked-by-tooling-plus-gt-cost.md`.

@@ -16,8 +16,18 @@ this agent's system prompt — read it first; it is the authoritative copy.
   (`BlobWriter not loaded`). `.github/workflows/coreml-export.yml` runs it on a GitHub
   Actions macOS runner; untested end-to-end as of 2026-08-28.
 
+- **Line-call margin curve measured, 2026-08-28** (pm queue item 5).
+  [line_call_margin_curve.md](line_call_margin_curve.md) — real amateur mounts are at/
+  below the majority floor under 10 cm from a line, clear it from ~20 cm; recommended
+  band 0.20 m, refuses 39% of close (0.5 m) calls. Not built, measurement only.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is
 a pass — say borderline. `docs/TRAPS.md` (T01-T22) is the catalogue of process failures
 that have fired here more than once.
+[qa_does_not_write_to_codebase.md](qa_does_not_write_to_codebase.md) — a task brief
+asking for an evidence file/STATE row does not override this; findings go in the report
+text only. Also: a stray `claude-md-cap.sh` hook error on an unrelated Bash call is
+likely cross-talk from another concurrent agent mid-edit of CLAUDE.md — retry once or
+twice before treating it as a real block.
