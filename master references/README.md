@@ -23,6 +23,7 @@ version-gated detail. Version numbers quoted below are the ones the docs give.
 | Something went wrong | `07-failure-modes.md` |
 | Working in **this** repo (SwingVision) | `08-swingvision-rules.md` — **read before spawning anything here** |
 | About to press go | `09-preflight-checklist.md` |
+| Rebuilding this whole setup in **another** project | `10-rebuilding-this-elsewhere.md` |
 
 ## The one-paragraph version
 
