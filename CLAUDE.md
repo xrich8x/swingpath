@@ -63,14 +63,13 @@ it, that doc is wrong. This file is orientation, not status.
 9. **Never quietly edit human ground truth.** Mislabels get recorded, not fixed.
 10. **Always inspect the rejects**, not what a filter kept.
 11. **Truth comes from the GAME, not the VIDEO.** Court, ball, players, bounces,
-    physics — never a scoreboard, HUD or graphic burned into the frame. That is
-    somebody's data entry *about* the game: barred as a training target, a
-    ground-truth reference AND a tuning signal. Independence is not truth — a
-    diligently-kept WRONG board is perfectly self-consistent, and nothing leaning on
-    an overlay generalises to the user's own phone clip. Compliant references: human
-    clicks, `tools/synth_truth.py`, geometry we derive. **One live exception, flagged
-    not hidden:** `tools/hud_ocr.py` reads SwingVision's MPH panel — a "HUD MAE" is
-    *agreement with another estimator, not accuracy*. Label it so; add no new ones.
+    physics — never a scoreboard, HUD or burned-in graphic. That is somebody's data
+    entry *about* the game: barred as training target, ground-truth reference AND
+    tuning signal. Independence is not truth — a diligently-kept WRONG board is
+    self-consistent, and nothing leaning on an overlay generalises to a phone clip.
+    Compliant: human clicks, `tools/synth_truth.py`, geometry we derive. **One live
+    exception, flagged not hidden:** `tools/hud_ocr.py` reads SwingVision's MPH panel
+    — a "HUD MAE" is *agreement with another estimator, not accuracy*. Add no new ones.
 12. **The rally / score layer is BACK IN SCOPE** — user ruling 2026-08-27, superseding
     the 2026-08-20 ruling that closed it. The product needs match scoring (sets,
     games), point-by-point clip segmentation and dead-time trimming. **Reopening
@@ -83,19 +82,17 @@ it, that doc is wrong. This file is orientation, not status.
 ## Commands
 
 ```bash
-# Backend (Python 3.12). On Windows use `py`, or backend\.venv\Scripts\python.exe
-cd backend && python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+# Backend (Python 3.12). Windows: backend\.venv\Scripts\python.exe (CPU), .venv-train (CUDA)
+cd backend && python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 python run.py demo --out ../frontend/src/data/sample_match.json   # synthetic, no weights
 python run.py check <video> --keypoints pts.json                  # pre-flight: grade the mount
 python run.py analyze <video> --keypoints pts.json --out out.json # full pipeline
-python -m pytest tests/
-cd ../frontend && npm install && npm run dev
+python -m pytest tests/ && cd ../frontend && npm install && npm run dev
 ```
 
-`run.py`: `demo | analyze | check | live | correct | highlights`.
-`tools/lab_server.py` is the Lab (label/train/score in a browser). Not part of the
-analyzer — it never imports `swingvision` and deleting it leaves the product intact.
+`run.py`: `demo | analyze | check | live | correct | highlights`. `tools/lab_server.py` is
+the Lab (label/train/score in a browser) — not part of the analyzer; it never imports
+`swingvision` and deleting it leaves the product intact.
 
 ## Conventions
 
@@ -139,14 +136,12 @@ in the evidence file — if your row needs a paragraph, you are writing in the w
   on that clip is detection recall, NOT a measurement.
 - **`demo30` is 0.5 px but low (1.38 m)** — measures 5.2 m of 23.77. Never cite its speeds.
 - **Bounce height is a single-camera heuristic.** Known open task, not a bug.
-- **Don't fan out to parallel agents.** The bottleneck is one GPU and one gold set.
-  Two multi-agent runs burned ~971k tokens for zero results.
 
 ## The team — `tennis-team`
 
-Five teammates in `.claude/agents/`, all on opus, each with memory in
-`.claude/agent-memory/<name>/`. **Announce a teammate by name before invoking it** and
-label its output with that name — never present its work as your own.
+Five teammates in `.claude/agents/`, each with memory in `.claude/agent-memory/<name>/`.
+**Announce a teammate by name before invoking it** and label its output with that name —
+never present its work as your own.
 
 | Teammate | Owns | Writes code |
 | --- | --- | --- |
@@ -156,15 +151,33 @@ label its output with that name — never present its work as your own.
 | **frontend-dev** | The iPhone app: UI/UX, camera capture, calling the pipeline, rendering results | yes |
 | **qa** | Independent verification of both layers. Runs gates, reports numbers, **never fixes** | no |
 
-**They coordinate and move independently — no approval gate between phases.** pm sequences
-the work; it does not have to sign off each step. qa reports; it does not block by fiat.
+**They coordinate and move independently — no approval gate between phases.** pm sequences;
+it does not sign off each step. qa reports; it does not block by fiat.
 
-**Two constraints bind every teammate.** **iOS/iPadOS only, A13+** (iPhone 11, SE 2nd gen,
-2020 iPad Pro and up), Core ML/ANE the only inference target — settled, not reopened. And
-**100% on-device, forever**: no server, no cloud, no API fallback. A proposed network
-dependency is a scope violation, not an optimisation.
+**Two constraints bind every teammate.** **iOS/iPadOS only, A13+**, Core ML/ANE the only
+inference target — settled, not reopened. And **100% on-device, forever**: no server, no
+cloud, no API fallback. A proposed network dependency is a scope violation, not an
+optimisation. **Folder boundary:** every teammate works only inside this project folder,
+never installs globally, never touches system or account settings.
 
-**Folder boundary.** Every teammate works only inside this project folder — never reads,
-writes or navigates outside it, never installs anything globally, never touches system or
-account settings. `tools:` in each agent file is what actually enforces this: pm,
-researcher and qa have no write access, and only backend-dev and frontend-dev can edit.
+## How the lead dispatches work
+
+The main session is the team lead. **Decompose the work and hand it out without asking
+first** — that is the job, not a liberty. Match the task to the agent's `tools:` first:
+sending execution work to an agent with no `Bash` wastes a whole run, and has already.
+
+Sort every task and act immediately: **runs unattended** → dispatch now; **blocked** →
+queue behind its dependency; **needs a human** → PAUSE, do not guess, keep other lanes
+moving. **Independent tasks run concurrently, MAX 3 AGENTS AT ONCE** — and the only hard
+serialisation is the single GPU; CPU work runs alongside it. Concurrency never means
+several agents on one question (trap T07 — two such runs burned ~971k tokens for zero
+results); it means different tasks on different resources.
+
+**A task needs a human when** its result can only be invalidated by eye (render the frames
+— a number whose failure mode is visual is provisional until seen); it fires a stopping
+rule or is otherwise irreversible; it is a product decision; it needs hardware this session
+lacks; or it would edit human ground truth (rule 9). **Paused tasks batch into ONE update**
+naming exactly what unpauses each — the decision, the click, the hardware.
+
+**Never idle the machine to write a status report.** When an agent returns, the next
+dispatch comes before the summary.
