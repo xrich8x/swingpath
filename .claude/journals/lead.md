@@ -13,7 +13,7 @@ so a rate-limit kill or a crash leaves it usable.
 - Numbers here are pointers. The authority is `docs/STATE.md` + `docs/evidence/`.
 - Never put a result here that belongs in STATE. This is working state, not findings.
 
-**Last updated:** 2026-08-28, after the detector-comparison agent was killed by a usage limit.
+**Last updated:** 2026-08-28, after the concurrency doorman was built, verified by qa and fixed.
 
 ---
 
@@ -51,6 +51,14 @@ thing you try — re-dispatching the work that just died — is the thing it blo
   BallNet, F1@4 favours TrackNet on 9 of 10 clips) and neither has been scored at the
   chain, which is where rule 5 says ball work is judged. Settles which model v1 exports.
 
+- **Court mask sweep: a possible gate pass, unclaimed.** `data/output/court_mask_sweep.json`
+  was re-run; the arms changed shape (ablation -> routed) and the routed variants show **12
+  accepted vs baseline's 11**. Committed as an artifact, deliberately NOT recorded as a gate
+  result: the gate is >=12 of 20 AND zero accepted court more than 20 px from the human
+  clicks, the precision half is absolute, and an accept count alone cannot clear it. Two
+  changes have already died on exactly that. **Needs a qa run against the real gate** — this
+  is a dispatch the lead can make, not a founder decision.
+
 ## BLOCKED — needs the founder, nothing proceeds without it
 
 1. **Look at the P0-3 contact sheet** — `data/output/p0_3_sheet_yt_match40_crop192at640_x.png`.
@@ -86,6 +94,21 @@ thing you try — re-dispatching the work that just died — is the thing it blo
   what it discarded.
 
 ## LOG — newest first
+
+- **2026-08-28** — **Concurrency doorman built, verified and fixed.** A cap kept only in
+  CLAUDE.md could not hold, because the lead cannot see what its children spawn.
+  `.claude/hooks/agent_cap.py` now counts every agent in the tree; a refused dispatch is
+  parked verbatim and handed back when a slot frees. Teammates may now call each other.
+  Measured: **~38k tokens is the floor for ANY agent**, so three at once is ~115k before a
+  useful result; nested probe read BEFORE=1, INNER=2, AFTER=1.
+  **qa passed it on nine checks and broke it on three.** The one that mattered: a read-only
+  check is not a gate — counting had no side effect, so several dispatches in one message all
+  saw the same free slot and all passed. Fixed with a reservation taken at approval time.
+  Also fixed: sanitised agent ids colliding into one lock, and prompts truncated in the
+  hand-back with no notice. Recreation guide at `master references/10`.
+  **Two lead errors worth not repeating:** a `cd` leaked into a subagent's working directory
+  (qa started in `master references/`, not the repo root); and Python's `write_text` silently
+  rewrote seven LF files to CRLF, which the repo's own CLAUDE.md cap hook caught.
 
 - **2026-08-28** — Detector comparison killed by usage limit. **Lesson: nothing restarts a
   dead subagent.** `autoContinueAtUsageLimit` resumes the SESSION; a subagent that hits the
