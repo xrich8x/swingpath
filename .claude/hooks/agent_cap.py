@@ -39,6 +39,8 @@ MAX_PROMPT_ECHO = 8000     # chars of prompt handed back inline
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 LOCKS = ROOT / ".claude" / ".agent-locks"
 QUEUE = ROOT / ".claude" / ".agent-queue"
+RESV = ROOT / ".claude" / ".agent-reservations"
+RESV_TTL = 120   # an approved dispatch that has not started in 2 min was abandoned
 
 
 def allow():
@@ -51,25 +53,45 @@ def emit(obj):
 
 
 def safe_name(s):
-    return "".join(c if c.isalnum() or c in "_-" else "_" for c in str(s))[:120]
+    """Sanitised id + a hash of the RAW id.
+
+    Sanitising alone collides: `team:agent.7` and `team/agent 7` both flatten to
+    `team_agent_7`, so two live agents would share one lock and the count would
+    silently run one short. qa demonstrated this. The suffix makes distinct ids
+    distinct regardless of what the sanitiser folds together.
+    """
+    raw = str(s)
+    flat = "".join(c if c.isalnum() or c in "_-" else "_" for c in raw)[:100]
+    return f"{flat}-{hashlib.sha1(raw.encode('utf-8')).hexdigest()[:8]}"
 
 
-def sweep_and_count():
-    """Drop locks from sessions that died without firing SubagentStop, then count."""
-    LOCKS.mkdir(parents=True, exist_ok=True)
+def _sweep(d, ttl):
+    d.mkdir(parents=True, exist_ok=True)
     now = time.time()
-    live = 0
-    for f in LOCKS.iterdir():
+    n = 0
+    for f in d.iterdir():
         if not f.is_file():
             continue
         try:
-            if now - f.stat().st_mtime > TTL:
+            if now - f.stat().st_mtime > ttl:
                 f.unlink()
                 continue
         except OSError:
             continue
-        live += 1
-    return live
+        n += 1
+    return n
+
+
+def sweep_and_count():
+    """Live agents = started locks + approved-but-not-yet-started reservations.
+
+    Counting locks alone is a check-then-act race: PreToolUse had no side effect,
+    so N dispatches emitted in one block all saw the same free slot and all passed.
+    qa demonstrated it with two back-to-back checks. A reservation written at
+    approval time makes the check cost a slot immediately; SubagentStart then
+    converts one reservation into a real lock.
+    """
+    return _sweep(LOCKS, TTL) + _sweep(RESV, RESV_TTL)
 
 
 def task_key(tool_input):
@@ -97,6 +119,10 @@ def main():
         if agent:
             LOCKS.mkdir(parents=True, exist_ok=True)
             (LOCKS / safe_name(agent)).write_text(str(time.time()), encoding="utf-8")
+            RESV.mkdir(parents=True, exist_ok=True)
+            held = sorted(RESV.glob("*"), key=lambda f: f.stat().st_mtime)
+            if held:
+                held[0].unlink(missing_ok=True)   # this start consumes one reservation
         allow()
 
     if event == "SubagentStop":
@@ -136,7 +162,14 @@ def main():
 
         f.write_text(json.dumps(rec), encoding="utf-8")
         ti = rec.get("tool_input", {})
-        prompt = (ti.get("prompt") or "")[:MAX_PROMPT_ECHO]
+        full = ti.get("prompt") or ""
+        prompt = full[:MAX_PROMPT_ECHO]
+        if len(full) > MAX_PROMPT_ECHO:
+            where = f.relative_to(ROOT).as_posix()
+            prompt += (
+                "\n\n[...TRUNCATED at %d of %d chars. The parked file holds the full "
+                "text: %s -> tool_input.prompt]" % (MAX_PROMPT_ECHO, len(full), where)
+            )
         remaining = len(parked) - 1
 
         payload = (
@@ -166,6 +199,9 @@ def main():
 
     if live < CAP:
         key.unlink(missing_ok=True)      # this dispatch satisfies any parked copy
+        RESV.mkdir(parents=True, exist_ok=True)
+        tuid = ev.get("tool_use_id") or str(time.time())
+        (RESV / safe_name(tuid)).write_text(str(time.time()), encoding="utf-8")
         allow()
 
     if not key.exists():

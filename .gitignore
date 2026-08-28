@@ -199,3 +199,4 @@ data/output/_*
 # transient concurrent-agent slots (see .claude/hooks/agent-cap.sh)
 .claude/.agent-locks/
 .claude/.agent-queue/
+.claude/.agent-reservations/
