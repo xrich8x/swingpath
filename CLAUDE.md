@@ -128,13 +128,12 @@ in the evidence file — if your row needs a paragraph, you are writing in the w
   54.0% at 1.0 m, ~69% at 3 m, ~81% at 8 m, against a **56.2% majority-class
   floor** — so 1 m is worse than answering "in" every time. Quote that, not
   `reliable_court_span`, which is a geometric bound and reads far kinder.
-- **Audit every calibration before trusting it.** Some committed `data/*_pts.json` are
-  degenerate and silently break the overlay + ball gating. `tools/validate_new_clip.py
-  --audit <files>` — good is < 2.5 px fit residual. Known-good/bad: `docs/calibration.md`.
-- **`am_hard_utr` (primary 1080p gold) fits a 1.74 m camera** and is measurable
-  only to court-y 7.5 m of 23.77. It does not reach the net. Any far-court number
-  on that clip is detection recall, NOT a measurement.
-- **`demo30` is 0.5 px but low (1.38 m)** — measures 5.2 m of 23.77. Never cite its speeds.
+- **A residual proves NOTHING — render the corners** (T23). `yt_match40` is stamped PASS at
+  0.9 px with all four clicks off any court line, so the pipeline called the NEAR player
+  far. `validate_new_clip.py --audit` is a screen, not a verdict. `docs/calibration.md`.
+- **Both calibrated golds are LOW mounts, so far-court numbers there are recall, not
+  measurement.** `am_hard_utr` 1.74 m, measurable to 7.5 m of 23.77 (never reaches the
+  net); `demo30` 1.38 m, 5.2 m — never cite its speeds.
 - **Bounce height is a single-camera heuristic.** Known open task, not a bug.
 
 ## The team — `tennis-team`
@@ -151,33 +150,34 @@ never present its work as your own.
 | **frontend-dev** | The iPhone app: UI/UX, camera capture, calling the pipeline, rendering results | yes |
 | **qa** | Independent verification of both layers. Runs gates, reports numbers, **never fixes** | no |
 
-**They coordinate and move independently — no approval gate between phases.** pm sequences;
-it does not sign off each step. qa reports; it does not block by fiat.
-
-**Two constraints bind every teammate.** **iOS/iPadOS only, A13+**, Core ML/ANE the only
-inference target — settled, not reopened. And **100% on-device, forever**: no server, no
-cloud, no API fallback. A proposed network dependency is a scope violation, not an
-optimisation. **Folder boundary:** every teammate works only inside this project folder,
-never installs globally, never touches system or account settings.
+**They move independently — no approval gate between phases.** pm sequences but does not
+sign off each step; qa reports but does not block by fiat. **Two constraints bind all five:
+iOS/iPadOS only, A13+**, Core ML/ANE the only inference target — settled, not reopened; and
+**100% on-device, forever** — a proposed network dependency is a scope violation, not an
+optimisation. **Folder boundary:** inside this project folder only, no global installs, no
+system or account settings.
 
 ## How the lead dispatches work
 
-The main session is the team lead. **Decompose the work and hand it out without asking
-first** — that is the job, not a liberty. Match the task to the agent's `tools:` first:
-sending execution work to an agent with no `Bash` wastes a whole run, and has already.
+The lead **decomposes and hands out work without asking first**, matching the task to the
+agent's `tools:` — execution work to an agent with no `Bash` wastes a whole run.
 
-Sort every task and act immediately: **runs unattended** → dispatch now; **blocked** →
-queue behind its dependency; **needs a human** → PAUSE, do not guess, keep other lanes
-moving. **MAX 3 AGENTS ON 3 DISTINCT TASKS — ONE TASK EACH.** Not three agents juggling
-twenty; a bloated brief is the same overload wearing one name. It is a Pro-plan QUOTA cap:
-they share one account's usage, opus burns it fastest, one run hit 253k tokens. The GPU
-serialises separately. Never several agents on one question (T07 — ~971k tokens, zero).
+**THREE LIVE AGENTS PROJECT-WIDE — enforced by `.claude/hooks/agent-cap.sh`, which counts
+the whole tree.** A teammate calling a teammate spends the same quota: lead→backend-dev→qa
+is two of three. **A refusal is PARKED, not lost** — handed back when a slot frees, so never
+retry and never shrink to fit. Pro-plan QUOTA cap: one shared account, one run hit 253k
+tokens, a one-word agent ~38k. Never several agents on one question (T07 — 971k, zero).
 
-**A task needs a human when** its result can only be invalidated by eye (render the frames
-— a number whose failure mode is visual is provisional until seen); it fires a stopping
-rule or is otherwise irreversible; it is a product decision; it needs hardware this session
-lacks; or it would edit human ground truth (rule 9). **Paused tasks batch into ONE update**
-naming exactly what unpauses each — the decision, the click, the hardware.
+**The lead holds ONE direct child at a time**, and **one task per brief** — two deliverables
+is two runs in one. Queue the rest on paper, dispatch only the head, PAUSE anything needing a
+human, re-sort on every return (a result often kills what was queued behind it), and dispatch
+before writing the status report.
 
-**Never idle the machine to write a status report.** When an agent returns, the next
-dispatch comes before the summary.
+**A task needs a human when** only an eye can invalidate the result (visual failure mode →
+provisional until the frames are seen); it fires a stopping rule, is irreversible, is a
+product decision, needs absent hardware, or would edit human ground truth (rule 9).
+**Paused tasks batch into ONE update** naming what unpauses each.
+
+**`.claude/JOURNAL.md` is live state — write it DURING work, not after.** A usage limit
+kills a subagent outright and nothing restarts it, so a journal written at the end does not
+survive. Read it first after any death; treat a rate-limit notice as a restart trigger.
