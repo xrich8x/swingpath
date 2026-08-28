@@ -159,7 +159,8 @@ In `.claude/settings.json`. `PreToolUse` takes a matcher; the other three do not
 }
 ```
 
-Gitignore the transient dirs: `.claude/.agent-locks/`, `.claude/.agent-queue/`.
+Gitignore the transient dirs: `.claude/.agent-locks/`, `.claude/.agent-queue/`,
+`.claude/.agent-reservations/`.
 
 ## Step 5 — verify it cheaply
 
