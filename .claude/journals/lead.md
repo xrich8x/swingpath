@@ -17,6 +17,24 @@ so a rate-limit kill or a crash leaves it usable.
 
 ---
 
+## RESTART CHECKLIST — run this before anything else after a death
+
+A usage limit kills a subagent outright; the session itself resumes
+(`autoContinueAtUsageLimit`). The doorman does not know the agent died, because a killed
+agent never fires `SubagentStop`. So the corpse keeps holding its slot, and the first
+thing you try — re-dispatching the work that just died — is the thing it blocks.
+
+1. **Read the journals.** `.claude/journals/lead.md` first, then the teammate's own.
+2. **Reconcile live agents against held slots:**
+   ```
+   ls .claude/.agent-locks
+   ```
+   Compare with `ListAgents`. A lock with no matching live agent is a corpse — it frees
+   itself after 30 min, or clear it now: `rm .claude/.agent-locks/<id>`.
+3. **Check for parked work:** `ls .claude/.agent-queue` — refused dispatches live here and
+   survive a death. The directory is gitignored, so nothing else will surface them.
+4. **Then resume**, preferring the killed agent's uncommitted files over a restart.
+
 ## NOW — what is running
 
 **Nothing.** Verified with `ListAgents`, zero subagents live.
@@ -56,8 +74,11 @@ so a rate-limit kill or a crash leaves it usable.
 
 - **iOS/iPadOS only, A13+**, Core ML/ANE the only inference target. **100% on-device
   forever** — a proposed network dependency is a scope violation.
-- **Max 3 agents, 3 distinct tasks, one each.** A Pro-plan QUOTA cap, not machine load.
-  Enforced by `.claude/hooks/agent-cap.sh`. A refused call is PARKED, not lost.
+- **Three live agents PROJECT-WIDE**, counting the whole tree — a teammate calling a
+  teammate spends the same quota. Teammates MAY call each other. A Pro-plan QUOTA cap, not
+  machine load; a one-word agent still costs ~38k. Enforced by
+  `.claude/hooks/agent-cap.sh`; a refused call is PARKED verbatim, not lost, and handed
+  back when a slot frees — never retry it and never shrink it to fit.
 - **The rally/score layer is in scope but has no ground truth.** A compliant source is a
   prerequisite line item.
 - Court auto-detection and the activity gate/trimmer are **not to be run unattended** —
