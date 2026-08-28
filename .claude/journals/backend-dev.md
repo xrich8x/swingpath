@@ -40,9 +40,15 @@ metrics route through the homography. Update docs/STATE.md same commit.
 
 ## STATE — where I got to
 
-Read v1 evidence, v2 gate, ball.py `smooth_forecast`, eval_chain_gate.py,
-test_bounce_hypothesis.py. Next: reproduce v1's 10-clip table as the baseline before
-changing any code.
+**DONE AND COMMITTED as `39dbc75`.** Nothing outstanding on this item.
+
+VERDICT: **v2 FAILS the pre-registered gate on 4 of 7 bars. Does not ship. Stays off
+by default.** P1 PASS (47.0->48.1%, +18), P4 PASS (9.00:1), P5 PASS (272);
+P2 FAIL (ghosts rise on 5/10), P3 FAIL (am_hard_utr 69->73 vs >=77, yt_match40
+124->127 vs >=132), P6 FAIL, P7 FAIL (`wrong` rises on 4/10).
+The gate's NAMED cause (`restitution_band`) is DISCONFIRMED. The stopping rule does
+NOT fire — its antecedent needs the `wrong` regression FIXED and v2 only reduced it.
+Durable learnings written to agent-memory/chain-gate-mechanism-findings.md.
 
 ## LOG — newest first
 

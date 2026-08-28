@@ -49,5 +49,18 @@ metadata:
   and writing with `newline=''` is NOT enough — normalise the whole file after editing
   and check `git diff --numstat` is the size you expect.
 
+- **A test can pass VACUOUSLY and look like proof.** A seeded 40-fixture property test
+  passed 40/40 — because both arms were IDENTICAL on every fixture, so it asserted
+  nothing. Before trusting a property test, check the two arms actually DIFFER somewhere
+  in the family, and check the test fails when the mechanism is broken. Related and
+  specific: on the smoother, **emitted-frame count is a poor proxy for branch
+  acceptance** — a detection the bounce branch rejects is often re-seeded a frame later
+  by the ordinary `reset_after` path, so a synthetic bounce cannot discriminate two
+  gate variants at all ([[chain-gate-mechanism-findings]]).
+- **"Stage X is dead code" does not generalise across CACHES.** `gate_ball_to_court`
+  removes 0 locks on the detector-A/B caches and **−674 on gold_sAjkpeRq4P4** in the gold
+  set. A no-op measured on one cache family is a fact about that family. Re-measure
+  before reusing the claim.
+
 Related: [[calibration-trap-check-corners-first]], [[ios-architecture-rules]],
-[[ball-detector-choice-is-split]].
+[[ball-detector-choice-is-split]], [[chain-gate-mechanism-findings]].
