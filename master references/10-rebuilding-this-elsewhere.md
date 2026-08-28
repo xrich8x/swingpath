@@ -112,6 +112,7 @@ is only remembered is a cap that gets forgotten.
 | `SubagentStop` | always | removes it |
 | `PreToolUse` | matcher `Agent\|Task` | counts locks **+ reservations**; denies at the cap, else takes a reservation |
 | `Stop` | always | hands a parked task back when a slot frees |
+| `SessionStart` | always | reports slots held from before this session |
 
 **Do not decrement on `PostToolUse`.** The Agent tool returns *immediately* for a background
 agent that is still running, so the count would collapse to zero. `SubagentStart` /
@@ -139,8 +140,13 @@ nothing fires twice. Without this the Stop hook re-offers a task that already ra
 **Bound the hand-back loop.** Count hand-backs, drop the task after 3 with a visible message.
 Otherwise a model that ignores the offer can prevent the turn from ever ending.
 
-**Sweep stale locks.** A killed agent never fires `SubagentStop`, so its lock pins a slot
-forever. Expire locks by age (we use 30 min).
+**Sweep stale locks, and say so at session start.** A killed agent never fires
+`SubagentStop`, so its lock pins a slot until the TTL expires it — measured: still denying
+at 29 minutes, allowed at 31. That is exactly when you come back from a usage-limit reset,
+so the first thing you meet is an unexplained refusal claiming agents are live when none
+are. Wire `SessionStart` to REPORT held slots with the clearing command. Do not clear
+automatically: the cap is project-wide, and another window may have agents genuinely
+running.
 
 ## Step 4 — wiring
 

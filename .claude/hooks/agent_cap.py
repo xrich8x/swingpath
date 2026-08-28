@@ -135,6 +135,37 @@ def main():
 
     live = sweep_and_count()
 
+    if event == "SessionStart":
+        # A usage limit kills an agent outright, so it never fires SubagentStop and its
+        # slot stays held until the TTL sweep -- up to 30 min of unexplained refusals
+        # right when you come back from a reset. We do NOT clear automatically: the cap
+        # is project-wide, and another window's agents may genuinely be running. Say so
+        # instead, with the command, so the block is visible rather than mystifying.
+        if live:
+            held = sorted(f.name for f in LOCKS.iterdir() if f.is_file())
+            parked = len(list(QUEUE.glob("*.json")))
+            msg = (
+                "%d of %d agent slots are held from before this session started%s. "
+                "If agents really are running elsewhere, leave them. If not, these leaked "
+                "from a killed session -- they clear themselves after 30 min, or now with: "
+                "rm -rf .claude/.agent-locks\nHeld: %s"
+                % (live, CAP,
+                   (", and %d task(s) are parked" % parked) if parked else "",
+                   ", ".join(held))
+            )
+            emit({
+                "systemMessage": msg,
+                "hookSpecificOutput": {
+                    "hookEventName": "SessionStart",
+                    "additionalContext": (
+                        "Concurrency slots at session start.\n" + msg +
+                        "\nReconcile against ListAgents before dispatching; see the "
+                        "RESTART CHECKLIST in .claude/journals/lead.md."
+                    ),
+                },
+            })
+        allow()
+
     if event == "Stop":
         if live >= CAP:
             allow()                      # no slot to dispatch into; let the turn end
