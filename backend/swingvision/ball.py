@@ -636,6 +636,7 @@ def smooth_forecast(
     bounce_hypothesis: bool = False,
     restitution: float = 0.75,
     restitution_band: float = 0.20,
+    restitution_set: Optional[Sequence[float]] = None,
     max_gap_s: float = 0.4,
     scale_m_per_px: Optional[Sequence[Optional[float]]] = None,
     max_jerk_ratio: float = 4.0,
@@ -737,6 +738,56 @@ def smooth_forecast(
     well under the 74 the product gate uses, so +1 is inside sampling noise
     (trap T09); the real_landing columns are the load-bearing ones.
     Evidence: data/output/post_bounce_chain.md.
+
+    Re-run at full power over all TEN gold clips (1658 clicks, 272 no-ball frames,
+    tools/eval_chain_gate.py) the v1 verdict moves: recall 47.0 -> 48.1% (+18 hits)
+    PASSES, separation 9.00:1 against a >7 bar PASSES, but ghosts rise on 5 of 10
+    clips and `wrong` rises +5 on gold_UHf0LeMU2pg. Still FAILS, on P2/P6 rather
+    than on separation. Evidence: docs/evidence/bounce-hypothesis.md.
+
+    `restitution_set` (V2, MEASURED NEGATIVE, off by default, kept so the
+    measurement is not repeated). v1's defect was mislocalisation on ball frames,
+    caused by `restitution_band` inflating S[1,1] by (band*vy_prev)^2 - at a large
+    pre-bounce vy that dominates the measurement noise, so the y-gate widens
+    exactly when the ball is fastest while the x-gate stays tight, and a lock at
+    the right x with a wrong y passes. v2 removes the inflation entirely and
+    enumerates e instead: each candidate is tested at the UNMODIFIED S, so every
+    gate is exactly as tight as the shipped path and "more hypotheses" is the only
+    difference. The lowest-chi2 passing candidate wins. Scored against the
+    pre-registered gate in docs/evidence/bounce-hypothesis-v2-gate.md, which adds
+    P7 (`wrong` must not rise on any clip) to the six bars of ball-chain-gate.md.
+
+    THE GATE FAILS, 4 of 7 bars, over all ten gold clips (1658 clicks, 272
+    no-ball frames):
+
+        P1 recall      47.0 -> 48.1% (+18)                     PASS
+        P2 ghosts      86 -> 88, rising on 5 of 10 clips       FAIL
+        P3 seen_frac   am_hard_utr 69 -> 73 (bar >=77)         FAIL
+                       yt_match40 124 -> 127 (bar >=132)       FAIL
+        P4 separation  18 hits / 2 ghosts = 9.00 : 1 (bar >7)  PASS
+        P5 power       272 no-ball frames (bar >=74)           PASS
+        P6 replication                                         FAIL
+        P7 wrong       285 -> 291, rising on 4 of 10 clips     FAIL
+
+    AND THE NAMED CAUSE IS DISCONFIRMED. v2's y-gate is strictly TIGHTER than
+    v1's, so if `restitution_band` had caused the mislocalisation, removing it
+    should have zeroed the `wrong` rises. It removed one clip of five. An
+    ablation at a single e on the unmodified S (band removed, extra hypotheses
+    NOT added) is better than both - +21 hits, +5 wrong, 10.50:1 - and still
+    rises on the same 5 clips. Gate tightness is not the lever.
+
+    What the added `wrong` frames actually are, measured on three clips:
+      1. GHOST ADMISSION ON BALL FRAMES. At every miss->wrong frame the raw
+         detection was already 20-502 px from the human click, and the reflected
+         hypothesis admitted it at the unmodified S. This falsifies the design
+         claim above that "a ghost fits neither": reflecting vy moves the
+         predicted position far enough to cover a lock 502 px off the track. The
+         second hypothesis has its own false-acceptance region.
+      2. SEGMENT-RESTART DEGRADATION. A well-localised frame is pushed past the
+         10 px radius because the branch inserted a segment boundary nearby and
+         the RTS pass now smooths a different set together (gold_shell f2146:
+         raw error 0.7 px, emitted 1.5 -> 11.3 px).
+    Evidence: docs/evidence/bounce-hypothesis-v2-gate.md.
 
     Tuned on 1280x720@30fps gold + demo footage (meas_var=25 -> ~5px detector
     noise; sigma_jerk=1.0): jerkiness 9.9 -> 5.6 px/frame^2 at -1.6 pt hit@10.
@@ -859,22 +910,46 @@ def smooth_forecast(
                 # approximates the pixel-space reflection; `restitution_band` is
                 # carried as extra variance on the y innovation rather than
                 # guessing one value, which keeps the x gate exactly as tight.
+                # V2 (`restitution_set`) REPLACES the band with a small discrete
+                # set of restitution hypotheses, each tested at the UNMODIFIED S.
+                # v1 passed the separation bar but raised `wrong` on ball frames,
+                # which is mislocalisation, not ghost admission: the band adds
+                # (band*vy_prev)^2 to S[1,1], and at a large pre-bounce vy that
+                # term dominates the measurement noise, so the y-gate widens
+                # exactly when the ball is fastest while the x-gate stays tight.
+                # A lock at the right x and a wrong y then passes. Enumerating e
+                # keeps every gate exactly as tight as the shipped path and makes
+                # "more hypotheses" the only difference from OFF - which is the
+                # property that made the separation bar pass in the first place.
                 elif bounce_hypothesis and float(x[4]) > 0.0:
                     ay = float(x[5])
                     vy_prev = float(x[4]) - ay
                     y_prev = float(x[3]) - vy_prev - 0.5 * ay
                     if vy_prev > 0.0:
-                        vy_b = -float(restitution) * vy_prev
-                        xb = x.copy()
-                        xb[3] = y_prev + vy_b + 0.5 * ay
-                        xb[4] = vy_b + ay
-                        yb = np.array([z[0], z[1]]) - Hm @ xb
-                        Sb = S.copy()
-                        Sb[1, 1] += (float(restitution_band) * vy_prev) ** 2
-                        if float(yb @ np.linalg.solve(Sb, yb)) <= gate_chi2:
+                        zv = np.array([z[0], z[1]])
+                        best = None                     # (chi2, xb)
+                        if restitution_set:
+                            cands = [float(e) for e in restitution_set]
+                            Sb = S               # unmodified: v2's whole point
+                        else:
+                            cands = [float(restitution)]
+                            Sb = S.copy()
+                            Sb[1, 1] += (float(restitution_band) * vy_prev) ** 2
+                        Sb_inv_of = np.linalg.solve
+                        for e in cands:
+                            vy_b = -e * vy_prev
+                            xb = x.copy()
+                            xb[3] = y_prev + vy_b + 0.5 * ay
+                            xb[4] = vy_b + ay
+                            yb = zv - Hm @ xb
+                            d2 = float(yb @ Sb_inv_of(Sb, yb))
+                            if d2 <= gate_chi2 and (best is None or d2 < best[0]):
+                                best = (d2, xb)
+                        if best is not None:
                             # A bounce, not an outlier. Start a new segment from
                             # this detection carrying the reflected velocity, so
                             # the RTS pass cannot round the corner back off.
+                            xb = best[1]
                             x, P = seed(z)
                             x[1] = float(xb[1])
                             x[4] = float(xb[4])

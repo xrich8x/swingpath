@@ -11,7 +11,9 @@ SAME order, with the SAME parameters as pipeline.analyze_video's ball section:
 
 `--stop-after` writes the track as it stands at the end of a named stage, which
 is how the per-stage attribution table is produced. `--bounce-hypothesis` turns
-on the fourth smoother attempt (docs/evidence/ball-chain-gate.md).
+on the fourth smoother attempt (docs/evidence/ball-chain-gate.md), and
+`--restitution-set 0.6,0.75,0.9` selects its v2 form
+(docs/evidence/bounce-hypothesis-v2-gate.md).
 
   backend/.venv/Scripts/python.exe tools/chain_cache.py \
       --keypoints data/am_hard_utr_pts.json \
@@ -49,7 +51,7 @@ def homography(keypoints: str | None):
 
 
 def run_chain(ball_px, *, fps_eff, width, height, H, hfov, stop_after="smooth",
-              bounce_hypothesis=False):
+              bounce_hypothesis=False, restitution_set=None):
     """Invoke the shipped stages. Returns (track, coasted, per_stage_counts)."""
     res_scale = height / 720.0
     counts = {"raw": sum(p is not None for p in ball_px)}
@@ -82,7 +84,7 @@ def run_chain(ball_px, *, fps_eff, width, height, H, hfov, stop_after="smooth",
 
     ball_px, coasted, _conf = ball_mod.smooth_forecast(
         ball_px, fps_eff=fps_eff, res_scale=res_scale,
-        bounce_hypothesis=bounce_hypothesis,
+        bounce_hypothesis=bounce_hypothesis, restitution_set=restitution_set,
     )
     counts["smooth"] = sum(p is not None for p in ball_px)
     # A coasted frame is DRAWN but was not SEEN. real_fraction counts seen, so
@@ -103,6 +105,10 @@ def main() -> int:
                     help="used when --out is absent")
     ap.add_argument("--stop-after", default="smooth", choices=STAGES)
     ap.add_argument("--bounce-hypothesis", action="store_true")
+    ap.add_argument("--restitution-set", default=None,
+                    help="v2: comma-separated restitution hypotheses tested at "
+                         "the UNMODIFIED S, e.g. 0.6,0.75,0.9. Absent = v1 "
+                         "(single restitution + restitution_band on S[1,1]).")
     ap.add_argument("--fps", type=float, default=None,
                     help="source fps; fps_eff = fps / frame_step")
     ap.add_argument("--width", type=int, default=None)
@@ -112,6 +118,8 @@ def main() -> int:
                          "coasted fills), which is what a recall number needs")
     args = ap.parse_args()
 
+    rset = ([float(v) for v in args.restitution_set.split(",")]
+            if args.restitution_set else None)
     H = homography(args.keypoints)
 
     for path in args.caches:
@@ -143,6 +151,7 @@ def main() -> int:
             fps_eff=fps_eff, width=width, height=height, H=H, hfov=hfov,
             stop_after=args.stop_after,
             bounce_hypothesis=args.bounce_hypothesis,
+            restitution_set=rset,
         )
 
         if args.seen_only:
@@ -152,6 +161,7 @@ def main() -> int:
         cache.setdefault("provenance", {})["chain"] = {
             "stop_after": args.stop_after,
             "bounce_hypothesis": bool(args.bounce_hypothesis),
+            "restitution_set": rset,
             "seen_only": bool(args.seen_only),
             "fps_eff": fps_eff,
             "res_scale": height / 720.0,

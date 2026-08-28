@@ -15,124 +15,170 @@ findings go in `docs/STATE.md` + `docs/evidence/`.
 
 ## TASK — what I was asked to do
 
-**BallNet v21 vs TrackNet, scored at the CHAIN (not the detector).** RESUMED 2026-08-28
-after a usage-limit kill. Predecessor left uncommitted:
-`tools/eval_detector_chain_ab.py`, `tools/build_detector_ab_caches.py`,
-`tools/compare_match_products.py`, `data/output/detector_ab/`.
-Predecessor wrote NOTHING to this journal — resuming from artifacts only.
+**Run `bounce_hypothesis` v2 against its pre-registered gate**
+(`docs/evidence/bounce-hypothesis-v2-gate.md`, written 2026-08-27 before any code).
+pm queue item 4. Items 1,2,3,5 done. The detector A/B above is FINISHED (2ead76a) — do
+not redo it.
 
-Product metrics to report: solid ghost balls, `event_audit`, speed coverage. NOT hit@10 /
-F1@4 (secondary at most). Must state which metrics route through the homography
-(`yt_match40` calibration confirmed WRONG, trap T23; `am_hard_utr` visibly skewed right).
-Do not change shipped defaults. Update docs/STATE.md in the same commit.
+v1 at full power (10 clips, 1658 clicks, 272 no-ball): P1 PASS 47.0->48.1 (+18),
+P4 PASS 9.00:1 (>7 bar), P5 PASS. FAILS P2 (ghosts rise on 5/10) and P6 (replication).
+Named defect: `wrong` rises on ball frames (+5 on gold_UHf0LeMU2pg) => reflected state
+accepted at the WRONG POSITION, a loosening hiding in `restitution_band`'s y-variance
+inflation (`Sb[1,1] += (band*vy_prev)**2` dominates R at large vy; x-gate stays tight,
+so right-x/wrong-y passes).
 
-Consequence to record: if BallNet v21 wins it has NO Core ML export path today.
+**v2 = replace the band with a discrete set of restitution hypotheses (0.6/0.75/0.9)
+each tested at the UNMODIFIED S.** Gate doc says this is preferable to bounding the
+inflation. MUST NOT touch gate_chi2, reset_after, max_gap_s, suppress_false_locks (T10).
+
+**Gate = all 6 bars of ball-chain-gate.md PLUS P7: `wrong` must not rise on any clip.**
+Run over all 10 cached clips with `tools/eval_chain_gate.py`.
+
+Discipline: failed gate stays failed, no retuning. `4.50:1` is WITHDRAWN — never cite
+(hook refuses the commit). Off by default unless every criterion passes. State which
+metrics route through the homography. Update docs/STATE.md same commit.
 
 ## STATE — where I got to
 
-**MEASUREMENT IS ESSENTIALLY DONE. Remaining: am_hard_utr product pair, STATE row, commit.**
-
-### Chain half — FULL POWER, 10 clips, 1658 clicks, 272 no-ball frames. H-FREE.
-`data/output/detector_ab_chain.json` + `..._nogate.json`, payloads byte-identical except
-the flag. `gate_ball_to_court` removes 0 locks on 7 calibrated clips x 2 arms = **14/14**.
-So T23's broken yt_match40 calibration cannot have touched this verdict.
-  solid ghosts **88 -> 62 (-26, -29.5%)**, all ghosts 125 -> 83, hits 869 -> 861 (-8),
-  recall 52.4 -> 51.9. Cost **0.31 hits per solid ghost removed**.
-  18% frame overlap between arms' solid ghosts => different failure modes, not a
-  threshold shift. Per-clip SPLIT: T wins 6/10 at 7:1, 5/10 at 1:1 (pooled utility +18).
-  Secondary: far_px (H-free) 53.3 -> 53.8; far_geo (H-DEP) 50.5 -> 48.9.
-
-### Product half — 2 of 3 pairs done (BallNet ahead or level on BOTH)
-  yt_rally2:        shots 12->10, speed_confident **7->5**, calls 3->2, track 252->231
-  gold_UHf0LeMU2pg: shots 43->39, speed_confident **22->22**, calls 16->14, track 932->879
-  Use ABSOLUTE speed_confident, never the pct (pct rewards emitting fewer shots).
-  H-DEPENDENT: everything except shots/rallies.
-  event_audit (yt_rally2 only): phantom hits 1/8 -> 0/6, landings 1/4 -> 1/5. Moves by 1
-  vs the tool's own >=3 bar => **INDETERMINATE**.
-
-RUNNING: background **bajq91mja**, am_hard_utr both arms (~45 min/arm). The first analyze
-driver (bdzto98i9) was KILLED at run 5/6 — 4 of 6 match.json survived, relaunched only the
-missing clip. If it dies again: report on 2 pairs and say the third was cut.
-
-### THE VERDICT (write it this way)
-**SPLIT, and it does not favour a switch.** TrackNet wins the ghost half decisively;
-BallNet wins or ties the product half (speed coverage, trail length) on both measured
-clips. No gate was pre-registered — this is a measurement, not a pass/fail.
-=> **Do not switch the desktop default.** For the FIRST Mac session the honest read is
-that TrackNet's Core ML path already exists (mobile/models/*.onnx) and BallNet's does
-NOT, and the chain evidence does not establish BallNet as better at the product.
-Recommend: export TrackNet FIRST, keep BallNet's export as a follow-up, and resolve the
-divergence by MEASUREMENT on device rather than by assuming the desktop default.
+Read v1 evidence, v2 gate, ball.py `smooth_forecast`, eval_chain_gate.py,
+test_bounce_hypothesis.py. Next: reproduce v1's 10-clip table as the baseline before
+changing any code.
 
 ## LOG — newest first
 
-- 2026-08-28 **COMMITTED 2ead76a** — test, STATE row (+ updated the "can a better detector
-  reach the ghost ball" OPEN row), evidence file, both chain JSONs, both product JSONs,
-  both eventaudit JSONs. 462 tests pass. `data/output/detector_ab/` is GITIGNORED
-  (.gitignore:51 `data/output/*`) — evidence JSONs need `git add -f`, which is the existing
-  convention (354 tracked under data/output/). Caches themselves deliberately left untracked.
-  **CRLF trap hit and fixed:** docs/STATE.md is CRLF on disk / LF in HEAD (autocrlf). An
-  inserted row terminated with '
-' left ONE bare LF. Read+write with newline='' is not
-  enough — normalise the whole file after editing.
+- 2026-08-29 **ENV: `python` is a broken Store shim. Use `backend/.venv/Scripts/python.exe`.**
+  That venv is numpy 2.5.0 / cv2 4.13.0 / torch 2.12.1+**cpu**, cuda False. The chain gate
+  runs off CACHED perception (`data/output/*.perception.json`) so **no GPU is needed** for
+  this whole task — it is CPU-only. Do not queue GPU jobs for it.
+- 2026-08-29 Started item 4. Code facts: v1 branch is in `smooth_forecast`, ball.py ~862.
+  De-propagates the prior (vy_prev = x[4]-ay, y_prev = x[3]-vy_prev-0.5ay), reflects,
+  re-propagates, gates with `Sb = S.copy(); Sb[1,1] += (band*vy_prev)**2`. On accept:
+  `seed(z)`, carry reflected vx/vy, `seg += 1`, accept=True, rej=miss=0.
+  `tools/eval_chain_gate.py` prints P1/P2/P4/P5 and the per-clip `wrong` delta column
+  (so P7 is readable from it). **P3 (seen_frac shot counts) and P6 are NOT printed** —
+  P6 is a judgement over the per-clip rows; P3 needs a separate route. Resolve P3.
+  Existing tests: backend/tests/test_bounce_hypothesis.py, 6 tests, incl.
+  `test_off_is_byte_identical_to_shipped_default` and `test_flag_is_not_inert`.
 
-- 2026-08-28 **gold_UHf0LeMU2pg product pair done — and it exposes a metric trap.**
-  shots 43 -> 39, speed_confident **22 -> 22 (IDENTICAL)**, but speed_confident_**pct**
-  51.2 -> 56.4 (+5.2). The percentage moves ONLY because the denominator shrank.
-  **Report the ABSOLUTE speed-confident count, not the pct** — the pct rewards a detector
-  for emitting fewer shots. Same trap on yt_rally2 (7 -> 5 absolute, 58.3 -> 50.0 pct;
-  there they agree, but only by luck).
-  Also: call_confident 16 -> 14, ball_track_points 932 -> 879 (BallNet draws a longer trail
-  on both clips). **There is NO shot-count ground truth**, so 43 -> 39 cannot be scored as
-  better or worse — only event_audit can adjudicate and it is underpowered. Say that.
+- 2026-08-28 **COMMITTED 2ead76a** (previous item, detector A/B). CRLF trap: docs/STATE.md
+  is CRLF on disk / LF in HEAD (autocrlf). Normalise the WHOLE file after editing, not
+  just the inserted row. `data/output/*` is gitignored — evidence JSONs need `git add -f`.
+- 2026-08-28 Detector verdict: SPLIT, does not favour a switch. Export TrackNet first.
 
-- 2026-08-28 **yt_rally2 analyze pair done. BallNet wins the PRODUCT half on this clip.**
-  compare_match_products: shots 12 -> 10, speed_confident 7 (58.3%) -> 5 (50.0%),
-  call_confident 3 -> 2, ball_track_points 252 -> 231. All H-DEPENDENT except shots/rallies.
-  event_audit (yt_rally2 is the ONLY adjudicable clip): phantom hits **1/8 -> 0/6**,
-  phantom landings 1/4 -> 1/5. The raw count moved by **1**, and the tool's own docstring
-  says do not claim a change unless it moves by **>=3**. So event_audit is **INDETERMINATE
-  — report it as such, do not spend it as a TrackNet win.**
-  Consistent with the chain half: yt_rally2 is one of the 4 clips where BallNet wins.
-- 2026-08-28 Court gate verified a **complete no-op: 0 locks removed, 7 calibrated clips x
-  2 arms = 14/14**, hfov 20.7-93.7. Dead code at the chain. Own STATE line.
+- 2026-08-29 **BASELINE REPRODUCES v1 EXACTLY.** `eval_chain_gate.py --bounce-hypothesis`
+  over 10 clips reprinted the committed correction table row-for-row: pooled 1658 ball /
+  272 no-ball, hits 779->797 (+18), wrong +7, ghosts 86->88 (+2), 9.00:1, rises on 5/10.
+  Runtime ~2 min, CPU. So the harness is deterministic and any v2 delta is real.
+  NOTE the `wrong` OFF column differs from the 3-clip v1 doc (285 pooled here) — that is
+  just the larger clip set, not a discrepancy.
 
-- 2026-08-28 **Operating-point confound is BOUNDED by existing evidence, not by a new run.**
-  Caches store no per-detection score (keys: frame_step/src_fps/eff_fps/bgsub/ball_model/
-  provenance/ball_px), so BallNet cannot be re-thresholded offline to match TrackNet's lock
-  rate. But `docs/evidence/expecting-a-detector-gain-of-any-kind.md` records score_thresh as
-  ONE OF FOUR detector changes that cut detector false fire substantially and delivered
-  NOTHING at the chain. So a pure threshold move on BallNet is already measured not to buy
-  -26 solid ghosts. State it that way; do not spend GPU re-deriving it.
-- 2026-08-28 This A/B is the first chain-level answer to the OPEN STATE row *"whether a
-  better detector can reach the ghost ball at all"*. Four PARAMETER-level detector gains
-  reached nothing; a wholesale detector SWAP moves solid ghosts 77 -> 51. Worth its own
-  STATE line.
+- 2026-08-29 **v2 IMPLEMENTED + REFACTOR PROVED NEUTRAL.** Added
+  `restitution_set: Optional[Sequence[float]] = None` to `smooth_forecast`. None =>
+  v1 exactly (single `restitution`, `Sb[1,1] += (band*vy_prev)**2`). Non-empty => v2:
+  each e tested at the **UNMODIFIED S**, lowest-chi2 passing candidate wins, no
+  inflation at all. Wired `--restitution-set` through tools/chain_cache.py and
+  tools/eval_chain_gate.py; added P6-input and **P7** lines to the gate report.
+  PROOF OF NEUTRALITY: 47 tests pass (test_bounce_hypothesis + test_ball), and the v1
+  arm re-run reprints the identical table (779->797, wrong +7, 86->88, 9.00:1).
+  New P7 readout on **v1**: pooled wrong 285 -> 292 (+7), rises on **5 of 10** —
+  gold_shell +2, gold_clay +1, gold_am +1, gold_UHf0LeMU2pg +5, gold_uR5q2cSM6AY +3.
+  So v1 fails P7 on 5 clips, not just the one the gate doc named.
+  CAUTION: my P6 line prints only the -2.0 pt recall floor (0 of 10 on v1) — that is
+  an INPUT, not the verdict. v1's P6 fail was a judgement at -1.8 pts, inside the
+  floor. Relabelled the line so it cannot be misread as "P6 passes".
 
-- 2026-08-28 **THE VERDICT IS WEIGHT-DEPENDENT — do not report the pooled number alone.**
-  Interim 8 clips: T removes 26 solid ghosts for 3 hits = **8.67:1**, above the project's
-  ~7:1 structural exchange rate. BUT pooled recall being flat is CANCELLATION, not
-  stability: gold_shell +20 hits, gold_clay +13, gold_am **-24**, gold_uR5q2cSM6AY **-25**.
-  Weighting 1 ghost = 7 hits, T wins 6/8 clips. Weighting 1:1, it is 4-4.
-  Also: T fires **13-21% FEWER raw locks** than B on 7 of 8 clips (T/B 0.79-1.00), so part
-  of the ghost cut is a lower operating point, not better discrimination. Mitigating
-  precedent to check, not assume: STATE says score_thresh was one of four detector gains
-  that moved the detector and nothing downstream.
-  => The TIEBREAKER must be the analyze half: `speed_confident` is set from
-  real_fraction(hit,landing) >= 0.5, so recall losses hit the product directly through
-  SPEED COVERAGE. Run run_detector_ab_analyze.py. Do not call this on ghosts alone.
+- 2026-08-29 **### V2 RESULT — THE GATE FAILS. P7 FAILS, P2 FAILS. ###**
+  `eval_chain_gate.py --bounce-hypothesis --restitution-set 0.6,0.75,0.9`, 10 clips,
+  1658 clicks, 272 no-ball. **Numbers are final — do not re-run to "check".**
+    P1 recall  47.0 -> 48.1% (+18/1658)          **PASS**
+    P2 ghosts  86 -> 88 (+2), rises on **5 of 10**  **FAIL**
+    P4 separation 18 hits / 2 ghosts = 9.00:1     **PASS**
+    P5 power   272 no-ball frames                 **PASS**
+    P6 replication                                **FAIL** (P2 rises on 5; recall flat
+       on 3 clips while +5 on am_hard_utr; per-clip recall floor itself 0 of 10)
+    P7 wrong   285 -> 291 (+6), rises on **4 of 10**  **FAIL**
+       gold_shell +2, gold_clay +1, gold_UHf0LeMU2pg +3, gold_uR5q2cSM6AY +3
+  v2 vs v1 per-clip: gold_UHf0LeMU2pg **-3 hits/+5 wrong -> 0 hits/+3 wrong** (the
+  named clip is HALF fixed), gold_am +1 wrong -> 0, gold_L73ep7JHiJ4 +6 -> +4 hits,
+  yt_rally2 +1 -> 0 hits. Pooled hits IDENTICAL (+18), ghosts IDENTICAL (+2, same 5).
+  **=> THE GATE DOC'S NAMED MECHANISM IS DISCONFIRMED.** v2's y-gate is STRICTLY
+  TIGHTER than v1's (unmodified S vs band-inflated S), so if `restitution_band` were
+  the cause of the mislocalisation, removing it should have zeroed the `wrong` rises.
+  It removed ONE clip of five and 1 of 7 pooled. The mislocalisation is NOT the band.
+  **STOPPING RULE DOES NOT FIRE.** Its antecedent is "if v2 FIXES the `wrong`
+  regression and P2 still fails". The regression is reduced, not fixed, so the
+  condition is not met. Say this explicitly — do not fire it by vibes.
 
-- 2026-08-28 Wrote `backend/tests/test_detector_chain_ab_ladder.py` (7 tests, pass).
-  Pins the A/B tool's ladder to `pipeline.analyze_video` by AST source comparison —
-  order, tuning literals, res_scale, H-guard. VERIFIED IT CAN FAIL: dropping
-  remove_outliers -> 2 fail; 35.0 -> 30.0 -> 1 fail. File restored, git diff clean.
-- 2026-08-28 `event_audit.py` runs on **yt_rally2 ONLY** (label density; am_hard_utr is
-  5.5% adjudicable and unmeasurable). Power ~12 hits: do NOT claim a phantom change
-  unless the raw count moves by >=3. Its own docstring says so — quote that limit.
-- 2026-08-28 `tools/run_detector_ab_analyze.py` ALREADY EXISTS (committed) — full
-  pipeline, both arms, serial, --ball-model forced. Use it for the analyze half.
-  Predecessor's tools were all committed by the lead; my tree is clean but for this file.
+- 2026-08-29 **ABLATION (one variable): single e=0.75 at UNMODIFIED S** — i.e. band
+  removed, extra hypotheses NOT added. `--restitution-set 0.75`.
+    hits **+21** (v1 +18, v2 +18), wrong **+5** (v1 +7, v2 +6), ghosts +2 / 5 of 10
+    (identical in all three), separation **10.50:1**, P7 rises on **5 of 10**.
+  TWO findings:
+  (a) **Removing the band is the GOOD half; adding 0.6/0.9 is NET HARMFUL** — the extra
+      hypotheses cost 3 hits and add 1 wrong vs band-removal alone. "More hypotheses"
+      does not help; the gate doc's preferred form is the worse of the two.
+  (b) **THE `wrong` RISE IS NOT GATE LOOSENESS.** The single-e/unmodified-S arm is
+      STRICTLY TIGHTER than v1 in y and identical in x, and it reproduces the SAME 5
+      clips rising, ghosts +2 on the SAME 5. Gate tightness is not the lever.
+  HYPOTHESIS FOR THE REAL MECHANISM (verify, do not assert): on accept the branch does
+  `x, P = seed(z)`, so the emitted position IS THE RAW DETECTION z, unsmoothed. Every
+  acceptance converts "no output" into "raw detector output", and raw output has ~5px
+  noise plus tails — some land inside the 10px scoring radius (hit), some outside
+  (wrong). That predicts hits and wrong rise TOGETHER from one cause, which is exactly
+  what all three arms show (+21/+5, +18/+7, +18/+6). NEXT: confirm on gold_UHf0LeMU2pg
+  that the added-wrong frames are bounce-branch acceptances emitting z verbatim.
 
-- 2026-08-28 Build relaunched, 2 caches missing, background b0hyw9ad6.
-- 2026-08-28 RESUMED. Journal was empty; lead.md PARKED section is the only handoff.
-  Predecessor left a finished 3-tool harness and 13 of 15 caches.
+- 2026-08-29 **`seed(z)` HYPOTHESIS DISCONFIRMED — 0/17 changed frames emitted the raw
+  detection verbatim.** The emitted value is RTS-smoothed. But the diagnostic names TWO
+  REAL mechanisms (scratchpad diag_wrong.py, 3 clips, 17 changed frames):
+  **(1) GHOST ADMISSION ON BALL FRAMES (miss -> wrong).** At every such frame the RAW
+  detection was ALREADY far off: gold_shell f226 d_raw=**502.2**, uR5q2cSM6AY f1162
+  d_raw=76.0, f882 49.3, UHf0LeMU2pg f1534 40.3, f852 20.2. The reflected hypothesis
+  ADMITTED them at the UNMODIFIED S. **This falsifies the mechanism's core design claim**
+  ("all 19 chain false locks sit 208-829 px off the track, so a ghost fits NEITHER
+  hypothesis"): reflecting vy moves the predicted position far enough that a 502 px-off
+  lock fits the REFLECTED model. The second hypothesis has its own false-acceptance
+  region. These score `wrong` not `fp` only because a human happened to label a ball
+  present on that frame — same object as a ghost.
+  **(2) SEGMENT-RESTART DEGRADATION (hit -> wrong).** A well-localised frame gets pushed
+  out past 10 px because the branch inserted a segment boundary nearby and the RTS pass
+  now smooths a different set together: gold_shell f2146 d_raw=**0.7**, d_off=1.5 ->
+  d_on=**11.3**; uR5q2cSM6AY f624 d_raw=5.1, d_off=**0.9** -> d_on=**13.4**.
+  NEITHER is the `restitution_band`. Power caveat: 17 frames / 3 clips — characterise,
+  do not quantify. The 502 px case is not sampling noise.
+
+- 2026-08-29 **P3 MEASURED, AND IT FAILS.** Re-derived `real_fraction` (a closure, not
+  importable) and VALIDATED IT BY REPRODUCTION: OFF arm reprints part 3's committed
+  smoother-stage counts EXACTLY — am_hard_utr **69**/120, yt_match40 **124**/196.
+    am_hard_utr 69 -> v1 72 / **v2 73** / e=.75 72   BAR >=77  **FAIL, short by 4**
+    yt_match40 124 -> v1 127 / **v2 127** / e=.75 127 BAR >=132 **FAIL, short by 5**
+  Spans taken from committed match.json `t_hit_s`/`bounce_t_s`, held IDENTICAL across
+  arms. Script: scratchpad/p3_seenfrac.py.
+
+- 2026-08-29 **CORRECTION TO A BELIEF I WAS CARRYING — the court gate is NOT dead code.**
+  On the GOLD caches it removes locks on **4 of 7** calibrated clips:
+  gold_sAjkpeRq4P4 **-674**, gold_uR5q2cSM6AY -43, gold_L73ep7JHiJ4 -30, yt_match40 -5;
+  no-op only on am_hard_utr, yt_rally2, gold_UHf0LeMU2pg. My previous item's "0 locks
+  removed, 14/14" was measured on the **detector_ab caches (different ball models)** and
+  does NOT generalise. Fix agent-memory.
+  H-ROUTING VERDICT: the gate runs BEFORE the smoother and the flag only touches the
+  smoother, so both arms get byte-identical gate output => **the A/B DELTAS are H-clean**.
+  The absolute LEVELS on those 4 clips are H-shaped, and yt_match40's H is confirmed
+  wrong (T23). P3 is worse: its hit->landing SPANS come from match.json, i.e. from the
+  pipeline's H-dependent bounce detection, so P3's WINDOW POPULATION is H-dependent on
+  both clips (yt_match40 broken, am_hard_utr skewed right) even though its delta is not.
+
+- 2026-08-29 **WRITE-UP DONE, 468 tests pass.** ball.py docstring carries the full
+  verdict + both named mechanisms; evidence file appended (250 lines); STATE updated:
+  new v2 FAIL row + "reflected hypothesis has its own false-acceptance region" +
+  "more hypotheses is the WORSE half" + "gate_ball_to_court is NOT dead code";
+  retired the Open pre-registration row; corrected the "ball-chain NOT closed" row's
+  reasoning. Tests: 13 in test_bounce_hypothesis.py.
+  **CAUGHT A VACUOUS TEST BEFORE SHIPPING IT.** My first strict-tightness test passed
+  on 40/40 seeded fixtures — but v1 and v2 were EQUAL on all 40, so it proved nothing.
+  Swept vy 18-42 x dy 6-44 (100 combos): still 0 binding cases. Reason: a detection the
+  bounce branch rejects is often re-seeded a frame later by the ordinary `reset_after`
+  path, so EMITTED-FRAME COUNT IS A POOR PROXY FOR BRANCH ACCEPTANCE. Replaced it with
+  a test that PINS that negative (do not tune this mechanism on the fixture), and
+  verified it is sensitive: 6/12 differ if the set uses a wrong e.
+  REMAINING: commit (CRLF-normalise STATE), update agent-memory.

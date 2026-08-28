@@ -78,3 +78,173 @@ bar is passable; if the ghosts cannot be held flat with the position bug fixed,
 they are not a position bug.
 
 This is the fifth attempt on this stage.
+
+---
+
+# RESULT, 2026-08-29 — the gate FAILS on 4 of 7 bars, and the named cause is DISCONFIRMED
+
+**Measured against:** 1658 human ball clicks and 272 no-ball frames across all ten
+gold clips, never trained on. **Evidence tag: MEASURED.** Chain stages are *invoked*,
+not re-derived — `tools/chain_cache.py` calls the same functions in the same order
+with the same parameters as `pipeline.analyze_video` (T15).
+
+## What v2 is
+
+The gate's preferred option: `restitution_band` is removed entirely and `e` is
+enumerated over `{0.6, 0.75, 0.9}`, **each candidate tested at the unmodified `S`**,
+lowest-χ² passing candidate wins. `gate_chi2`, `reset_after`, `max_gap_s` and
+`suppress_false_locks` are untouched (T10). Shipped default is unchanged:
+`restitution_set=None` reproduces v1 exactly, and the flag OFF is byte-identical to
+the shipped path — both pinned by tests.
+
+**Harness validated by reproduction before the A/B**: the v1 arm re-run after the
+refactor reprints the committed v1 table row-for-row, and the P3 script's OFF arm
+reprints `post_bounce_chain.md` part 3's committed counts exactly (am_hard_utr
+**69**/120, yt_match40 **124**/196).
+
+## The table
+
+| clip | cal | ball | hit off → on | Δ | wrong Δ | no-ball | ghosts off → on |
+|---|---|---|---|---|---|---|---|
+| am_hard_utr | Y | 90 | 31 → 36 | **+5** | +0 | 24 | 11 → 11 (0) |
+| gold_shell | n | 184 | 99 → 100 | +1 | **+2** | 55 | 20 → 18 (**−2**) |
+| gold_clay | n | 111 | 47 → 48 | +1 | **+1** | 7 | 2 → 2 (0) |
+| gold_am | n | 181 | 95 → 97 | +2 | +0 | 32 | 10 → 11 (+1) |
+| yt_rally2 | Y | 258 | 109 → 109 | 0 | −1 | 26 | 4 → 5 (+1) |
+| yt_match40 | Y | 184 | 97 → 100 | +3 | +0 | 24 | 5 → 6 (+1) |
+| gold_UHf0LeMU2pg | Y | 168 | 82 → 82 | 0 | **+3** | 9 | 4 → 5 (+1) |
+| gold_sAjkpeRq4P4 | Y | 151 | 55 → 57 | +2 | −1 | 33 | 4 → 5 (+1) |
+| gold_uR5q2cSM6AY | Y | 163 | 85 → 85 | 0 | **+3** | 32 | 21 → 20 (−1) |
+| gold_L73ep7JHiJ4 | Y | 168 | 79 → 83 | +4 | −1 | 30 | 5 → 5 (0) |
+| **pooled** | | **1658** | **779 → 797** | **+18** | **+6** | **272** | **86 → 88 (+2)** |
+
+| bar | result | |
+|---|---|---|
+| **P1** recall | 47.0% → 48.1%, +18 hits, no clip below the −2.0 pt floor | **PASS** |
+| **P2** ghosts | 86 → 88, rising on **5 of 10** clips; bar is *must not rise on any* | **FAIL** |
+| **P3** trusted-speed shots | am_hard_utr 69 → **73** (bar ≥77); yt_match40 124 → **127** (bar ≥132) | **FAIL** |
+| **P4** separation | 18 real hits / 2 ghosts = **9.00 : 1** against >7 | **PASS** |
+| **P5** power | 272 no-ball frames against ≥74 | **PASS** |
+| **P6** replication | +5 hits on am_hard_utr, flat on three clips, ghosts up on five | **FAIL** |
+| **P7** `wrong` must not rise on any clip | 285 → 291, rising on **4 of 10** — gold_shell +2, gold_clay +1, gold_UHf0LeMU2pg +3, gold_uR5q2cSM6AY +3 | **FAIL** |
+
+**Not shipped. `bounce_hypothesis=False` and `restitution_set=None` stay the
+defaults**, byte-identical to the shipped path and pinned by tests.
+
+## v2 did move the named clip — and it was still not enough
+
+On `gold_UHf0LeMU2pg`, the clip the gate was written around, v2 halves the defect:
+**−3 hits / +5 wrong under v1 → 0 hits / +3 wrong under v2**. `gold_am`'s rise is
+eliminated. But four clips still rise, so P7 fails as written.
+
+## The gate's hypothesis is DISCONFIRMED, not merely unmet
+
+The gate named `restitution_band`'s y-variance inflation as the cause. v2 removes
+that inflation entirely, and gating at the unmodified `S` is **strictly tighter in y
+than v1** — inflating a variance can only lower a χ² statistic, so v1 accepts a
+superset. If the band were the cause, removing it should have zeroed the `wrong`
+rises. It removed one clip of five, and 1 of 7 pooled.
+
+A one-variable ablation isolates the two halves of v2 — a **single** `e = 0.75` at the
+unmodified `S` (band removed, extra hypotheses *not* added):
+
+| arm | hits | wrong | ghosts | separation | P7 rises |
+|---|---|---|---|---|---|
+| v1 (band, single e) | +18 | +7 | +2 | 9.00 : 1 | 5 of 10 |
+| **band removed, single e** | **+21** | **+5** | +2 | **10.50 : 1** | 5 of 10 |
+| v2 (band removed, three e) | +18 | +6 | +2 | 9.00 : 1 | 4 of 10 |
+
+Two things follow. **Removing the band is the good half**; adding 0.6/0.9 costs 3 hits
+and 1 `wrong` — the gate doc's preferred form is the worse of the two, and "more
+hypotheses" does not help. And **the `wrong` rise is not gate looseness at all**: the
+strictly-tightest arm reproduces the same 5 rising clips and the same +2 ghosts.
+
+## What the added `wrong` frames actually are
+
+Every frame that changed classification on three clips, with the distance from the
+human click to the emitted position and to the **raw** pre-smoother detection:
+
+**1. Ghost admission on ball frames** (miss → wrong). The raw detection was *already*
+far off, and the reflected hypothesis admitted it at the unmodified `S`:
+
+| clip | frame | d_raw | d_on |
+|---|---|---|---|
+| gold_shell | 226 | **502.2 px** | 501.6 |
+| gold_uR5q2cSM6AY | 1162 | 76.0 | 69.1 |
+| gold_uR5q2cSM6AY | 882 | 49.3 | 42.5 |
+| gold_UHf0LeMU2pg | 1534 | 40.3 | 33.7 |
+| gold_UHf0LeMU2pg | 852 | 20.2 | 13.4 |
+
+**This falsifies the mechanism's core design claim.** The docstring argued that
+*"all 19 chain false locks sit 208–829 px off the track, so a ghost fits neither
+hypothesis"*. A lock **502 px** from the click fits the reflected one: negating `vy`
+moves the predicted position far enough to cover it. The second hypothesis has its own
+false-acceptance region, and these score `wrong` rather than `fp` only because a human
+happened to mark a ball present on that frame. They are the same object as a ghost.
+
+**2. Segment-restart degradation** (hit → wrong). A well-localised frame is pushed past
+the 10 px radius because the branch inserted a segment boundary nearby, so the RTS pass
+now smooths a different set of frames together:
+
+| clip | frame | d_raw | d_off → d_on |
+|---|---|---|---|
+| gold_shell | 2146 | **0.7 px** | 1.5 → **11.3** |
+| gold_uR5q2cSM6AY | 624 | 5.1 | **0.9** → **13.4** |
+
+Neither mechanism is the band. Power caveat: 17 changed frames across 3 clips — these
+name the failure modes, they do not quantify them. The 502 px case is not sampling noise.
+
+## Which metrics route through the homography
+
+- **P1, P2, P4, P7 — deltas are H-clean; levels are not, on 4 of 7 calibrated clips.**
+  Scoring is a pixel distance to a human pixel click, so it is H-free. But the chain
+  contains `gate_ball_to_court`, and on these caches that stage is **not** the no-op it
+  was on the detector-A/B caches: it removes locks on `gold_sAjkpeRq4P4` (**−674**),
+  `gold_uR5q2cSM6AY` (−43), `gold_L73ep7JHiJ4` (−30) and `yt_match40` (−5), and is a
+  no-op only on `am_hard_utr`, `yt_rally2`, `gold_UHf0LeMU2pg`. It runs **before** the
+  smoother and the flag only touches the smoother, so both arms receive byte-identical
+  input and the **A/B deltas are uncontaminated**; the absolute recall *levels* on those
+  four clips are shaped by H, and `yt_match40`'s calibration is confirmed wrong (T23).
+- **P3 — window population is H-DEPENDENT on both clips.** The hit→landing spans come
+  from the committed `match.json`, i.e. from the pipeline's H-dependent bounce
+  detection. `yt_match40`'s H is wrong (T23) and `am_hard_utr`'s is skewed right, so the
+  *set of windows* P3 scores over is placed by imperfect geometry. The spans are held
+  identical across arms, so the delta is not biased — but P3's absolute 69 and 124 are
+  not independent of the calibration.
+- **P5** is a count of human labels. H-free.
+
+## The stopping rule does NOT fire
+
+Its trigger is *"if v2 **fixes** the `wrong` regression and P2 still fails"*. v2
+**reduces** the regression (+7 → +6 pooled, 5 clips → 4) but does not fix it, so the
+antecedent is not satisfied and the rule does not fire on its own terms. It is not
+fired by reinterpretation here.
+
+What the evidence does say is separate and stronger, and is for whoever sequences the
+next attempt: the reflected hypothesis has a measured false-acceptance region of its
+own, so a *sixth* attempt of this shape needs a mechanism that constrains **where** the
+reflected state may be adopted — not another way of choosing `e`, and not another
+tightening, both of which are now measured not to be the lever.
+
+## A note on the fixture, recorded so it is not re-learned
+
+The synthetic bouncing track in `test_bounce_hypothesis.py` **cannot distinguish v1
+from v2**: swept over `vy` 18–42 px/frame against a post-bounce y-displacement of
+6–44 px, all 100 combinations emit an identical number of real frames, because a
+detection the bounce branch rejects is often re-seeded a frame or two later by the
+ordinary `reset_after` path. Emitted-frame count is a poor proxy for branch
+acceptance. This mechanism discriminates only on real footage, and a test now pins
+that fact so a future attempt does not "validate" a change on the fixture and
+conclude it is inert.
+
+## Reproduce
+
+```
+backend/.venv/Scripts/python.exe tools/eval_chain_gate.py --bounce-hypothesis \
+    --restitution-set 0.6,0.75,0.9
+backend/.venv/Scripts/python.exe tools/eval_chain_gate.py --bounce-hypothesis   # v1
+backend/.venv/Scripts/python.exe tools/eval_chain_gate.py --bounce-hypothesis \
+    --restitution-set 0.75                                                      # ablation
+```
+
+CPU only — the chain runs off the cached perception, no GPU and no re-detection.

@@ -56,9 +56,21 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--bounce-hypothesis", action="store_true",
                     help="the arm under test; off-arm is always the shipped path")
+    ap.add_argument("--restitution-set", default=None,
+                    help="v2 of the bounce hypothesis: comma-separated "
+                         "restitution values, each tested at the UNMODIFIED S "
+                         "(docs/evidence/bounce-hypothesis-v2-gate.md). Absent "
+                         "= v1, a single restitution with restitution_band "
+                         "inflating S[1,1].")
     ap.add_argument("--radius", type=float, default=10.0)
     ap.add_argument("--markdown", default=None)
     args = ap.parse_args()
+    rset = ([float(v) for v in args.restitution_set.split(",")]
+            if args.restitution_set else None)
+    arm = ("OFF (shipped)" if not args.bounce_hypothesis
+           else (f"v2 restitution_set={rset}, S UNMODIFIED" if rset
+                 else "v1 single restitution + restitution_band on S[1,1]"))
+    print(f"ON-arm: {arm}")
 
     rows = []
     tot = dict(ball=0, nb=0, h_off=0, h_on=0, w_off=0, w_on=0, f_off=0, f_on=0)
@@ -91,7 +103,8 @@ def main() -> int:
             track, coasted, _counts = run_chain(
                 list(cache["ball_px"]), fps_eff=fps_eff, width=w, height=h,
                 H=H, hfov=(cache.get("provenance") or {}).get("camera_hfov_deg"),
-                bounce_hypothesis=flag)
+                bounce_hypothesis=flag,
+                restitution_set=(rset if flag else None))
             seen = [None if coasted[i] else p for i, p in enumerate(track)]
             res[arm] = score({**cache, "ball_px": seen}, gold, {}, args.radius)
 
@@ -124,6 +137,32 @@ def main() -> int:
     print(f"P4 separation {dh} real hits / {dg} ghosts = "
           f"{ratio:.2f} : 1      GATE REQUIRES > 7")
     print(f"P5 power      {tot['nb']} no-ball frames      GATE REQUIRES >= 74")
+
+    # P6 replication: a pass on one clip and a collapse on another is a FAIL.
+    # The gate's own per-clip recall floor is -2.0 pts.
+    r_fail = [name for name, _, o, n in rows
+              if o['n_ball'] and (n['hit'] - o['hit']) / o['n_ball'] * 100 < -2.0]
+    print(f"P6 replication INPUT ONLY - clips below the -2.0 pt per-clip recall "
+          f"floor: {len(r_fail)} of {len(rows)}"
+          f"{(' ' + ', '.join(r_fail)) if r_fail else ''}")
+    print("   P6 is a JUDGEMENT over the per-clip rows, not this one number: a "
+          "pass on one clip")
+    print("   and a collapse on another is a FAIL. Read it with P2 and P7's "
+          "per-clip rises -")
+    print("   v1 failed P6 at a recall delta INSIDE this floor.")
+
+    # P7 (v2 gate only, docs/evidence/bounce-hypothesis-v2-gate.md). v1's real
+    # defect was mislocalisation on BALL frames, which P1-P6 only saw indirectly:
+    # recall can rise while the track gets less accurate. A ghost lands on a
+    # no-ball frame and scores `fp`; a wrong position on a ball frame scores
+    # `wrong`, and that is the column this bar reads.
+    w_rise = [(name, n['wrong'] - o['wrong']) for name, _, o, n in rows
+              if n['wrong'] > o['wrong']]
+    print(f"P7 wrong      {tot['w_off']} -> {tot['w_on']} ({dw:+d}) pooled; "
+          f"per-clip rises: {len(w_rise)} of {len(rows)}"
+          f"      GATE REQUIRES 0 rises on any clip")
+    for name, d in w_rise:
+        print(f"   {name:<22}{d:+d}")
     return 0
 
 
