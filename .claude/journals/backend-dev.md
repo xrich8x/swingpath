@@ -66,6 +66,16 @@ divergence by MEASUREMENT on device rather than by assuming the desktop default.
 
 ## LOG — newest first
 
+- 2026-08-28 **COMMITTED 2ead76a** — test, STATE row (+ updated the "can a better detector
+  reach the ghost ball" OPEN row), evidence file, both chain JSONs, both product JSONs,
+  both eventaudit JSONs. 462 tests pass. `data/output/detector_ab/` is GITIGNORED
+  (.gitignore:51 `data/output/*`) — evidence JSONs need `git add -f`, which is the existing
+  convention (354 tracked under data/output/). Caches themselves deliberately left untracked.
+  **CRLF trap hit and fixed:** docs/STATE.md is CRLF on disk / LF in HEAD (autocrlf). An
+  inserted row terminated with '
+' left ONE bare LF. Read+write with newline='' is not
+  enough — normalise the whole file after editing.
+
 - 2026-08-28 **gold_UHf0LeMU2pg product pair done — and it exposes a metric trap.**
   shots 43 -> 39, speed_confident **22 -> 22 (IDENTICAL)**, but speed_confident_**pct**
   51.2 -> 56.4 (+5.2). The percentage moves ONLY because the denominator shrank.

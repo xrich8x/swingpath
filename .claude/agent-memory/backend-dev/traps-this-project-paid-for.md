@@ -34,4 +34,20 @@ metadata:
 - **A repo claim about the DATA can go stale.** Two live files said every clip was pulled
   video-only; 88 of 116 now carry audio. Census the corpus before believing a blocker.
 
-Related: [[calibration-trap-check-corners-first]], [[ios-architecture-rules]].
+- **A percentage whose denominator is under the treatment's control is not a metric.**
+  `speed_confident_pct` rose 51.2 -> 56.4 for a detector that emitted FOUR FEWER SHOTS
+  while the confident count stayed at exactly 22. Report the absolute count; check what
+  the denominator is made of before quoting any rate in an A/B
+  ([[ball-detector-choice-is-split]]).
+- **A pooled number can be pure cancellation.** "Recall flat, -0.5 pts" hid +20 hits on
+  one clip against -24 and -25 on two others. If the per-clip deltas disagree in sign,
+  the pooled figure is an average of opposite effects — say so and print the rows. The
+  chain A/B tool prints this warning itself; do not talk past it.
+- **Windows CRLF vs LF.** `docs/STATE.md` is CRLF on disk and LF in HEAD (autocrlf), so
+  inserting a row terminated with `
+` leaves one bare LF that git then flags. Reading
+  and writing with `newline=''` is NOT enough — normalise the whole file after editing
+  and check `git diff --numstat` is the size you expect.
+
+Related: [[calibration-trap-check-corners-first]], [[ios-architecture-rules]],
+[[ball-detector-choice-is-split]].

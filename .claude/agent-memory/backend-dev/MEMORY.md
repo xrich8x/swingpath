@@ -11,3 +11,4 @@ monolithic file; nothing was dropped.
 - [Data limits: far-end contacts](data-limits-far-end-contacts.md) — thin populations, contaminated criteria, one corrupted shot list
 - [Audio lane: screened, not measured](audio-lane-screened-not-measured.md) — 0 bail-outs on 88 clips incl. 62 indoor shell; the rolling floor is O(n·win) and the rewrite is prototyped
 - [Traps this project paid for](traps-this-project-paid-for.md) — unscaled constants, stale stamps, fps confusion, rates about the wrong subject, counts nobody rendered
+- [Ball detector choice is SPLIT](ball-detector-choice-is-split.md) — settled at the chain 2026-08-28: TrackNet wins ghosts, BallNet wins speed coverage; export TrackNet first
