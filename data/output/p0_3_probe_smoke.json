@@ -1,0 +1,1128 @@
+{
+  "probe": "P0-3 crop-around-contact, rebuilt",
+  "measured_against": "ball-derived far-end contacts (image-y local minimum) and a calibration-free person-specific test: a detection counts only if its own keypoint-hull box, expanded 25%, contains the ball contact point AND its height is at most half the tallest person the full-frame control found in the same frame. NOT scored against human pose labels.",
+  "pipeline_stage": "raw pose detections, BEFORE select_players_on_court and BEFORE _reject_static_player \u2014 the same stage the perception cache is written at, but on far-end contact frames only",
+  "not_comparable_to": "the 11.0%/1.0% in docs/evidence/pose-downscale-far-player.md \u2014 different denominator (all pose frames) and different acceptance test",
+  "video": "yt_match40.mp4",
+  "frame_wh": [
+    1280,
+    720
+  ],
+  "source_fps": 29.0,
+  "frame_step": 1,
+  "population": {
+    "criterion": "far-end hit = local MINIMUM of the ball's raw IMAGE y-track; least-squares slope over +/-5 processed frames, min |slope| 0.8 px/frame scaled by height/720, min 3 detections per side",
+    "far_contacts_evaluated": 3,
+    "shots_total": 196,
+    "class_counts": {
+      "far": 25,
+      "near": 46,
+      "undecided": 125
+    },
+    "alternation_check": {
+      "decided_consecutive_pairs": 33,
+      "alternating": 17,
+      "alternating_pct": 51.5
+    },
+    "pipeline_player_agreement": {
+      "decided": 71,
+      "agree": 25,
+      "agree_pct": 35.2,
+      "pipeline_called_far": 71,
+      "pipeline_called_far_pct": 100.0
+    }
+  },
+  "arms": {
+    "control_full@1280": {
+      "weights": "yolo11m-pose.pt",
+      "imgsz": 1280,
+      "crop_px": null
+    },
+    "crop192@192_m": {
+      "weights": "yolo11m-pose.pt",
+      "imgsz": 192,
+      "crop_px": 192
+    },
+    "crop192@640_m": {
+      "weights": "yolo11m-pose.pt",
+      "imgsz": 640,
+      "crop_px": 192
+    },
+    "crop192@640_x": {
+      "weights": "yolo11x-pose.pt",
+      "imgsz": 640,
+      "crop_px": 192
+    },
+    "crop320@320_m": {
+      "weights": "yolo11m-pose.pt",
+      "imgsz": 320,
+      "crop_px": 320
+    },
+    "crop320@640_m": {
+      "weights": "yolo11m-pose.pt",
+      "imgsz": 640,
+      "crop_px": 320
+    },
+    "crop320@640_x": {
+      "weights": "yolo11x-pose.pt",
+      "imgsz": 640,
+      "crop_px": 320
+    },
+    "crop448@448_m": {
+      "weights": "yolo11m-pose.pt",
+      "imgsz": 448,
+      "crop_px": 448
+    },
+    "crop448@640_m": {
+      "weights": "yolo11m-pose.pt",
+      "imgsz": 640,
+      "crop_px": 448
+    },
+    "crop448@640_x": {
+      "weights": "yolo11x-pose.pt",
+      "imgsz": 640,
+      "crop_px": 448
+    }
+  },
+  "rates": {
+    "control_full@1280": {
+      "found": 0,
+      "rate_pct": 0.0,
+      "found_secondary_homography": 0,
+      "rate_secondary_pct": 0.0
+    },
+    "crop192@192_m": {
+      "found": 0,
+      "rate_pct": 0.0,
+      "found_secondary_homography": 0,
+      "rate_secondary_pct": 0.0
+    },
+    "crop192@640_m": {
+      "found": 0,
+      "rate_pct": 0.0,
+      "found_secondary_homography": 0,
+      "rate_secondary_pct": 0.0
+    },
+    "crop192@640_x": {
+      "found": 0,
+      "rate_pct": 0.0,
+      "found_secondary_homography": 0,
+      "rate_secondary_pct": 0.0
+    },
+    "crop320@320_m": {
+      "found": 0,
+      "rate_pct": 0.0,
+      "found_secondary_homography": 0,
+      "rate_secondary_pct": 0.0
+    },
+    "crop320@640_m": {
+      "found": 0,
+      "rate_pct": 0.0,
+      "found_secondary_homography": 0,
+      "rate_secondary_pct": 0.0
+    },
+    "crop320@640_x": {
+      "found": 0,
+      "rate_pct": 0.0,
+      "found_secondary_homography": 0,
+      "rate_secondary_pct": 0.0
+    },
+    "crop448@448_m": {
+      "found": 0,
+      "rate_pct": 0.0,
+      "found_secondary_homography": 0,
+      "rate_secondary_pct": 0.0
+    },
+    "crop448@640_m": {
+      "found": 0,
+      "rate_pct": 0.0,
+      "found_secondary_homography": 0,
+      "rate_secondary_pct": 0.0
+    },
+    "crop448@640_x": {
+      "found": 0,
+      "rate_pct": 0.0,
+      "found_secondary_homography": 0,
+      "rate_secondary_pct": 0.0
+    }
+  },
+  "accepted_box_heights": {
+    "control_full@1280": {
+      "n": 0,
+      "median_accepted_box_h_px": null
+    },
+    "crop192@192_m": {
+      "n": 0,
+      "median_accepted_box_h_px": null
+    },
+    "crop192@640_m": {
+      "n": 0,
+      "median_accepted_box_h_px": null
+    },
+    "crop192@640_x": {
+      "n": 0,
+      "median_accepted_box_h_px": null
+    },
+    "crop320@320_m": {
+      "n": 0,
+      "median_accepted_box_h_px": null
+    },
+    "crop320@640_m": {
+      "n": 0,
+      "median_accepted_box_h_px": null
+    },
+    "crop320@640_x": {
+      "n": 0,
+      "median_accepted_box_h_px": null
+    },
+    "crop448@448_m": {
+      "n": 0,
+      "median_accepted_box_h_px": null
+    },
+    "crop448@640_m": {
+      "n": 0,
+      "median_accepted_box_h_px": null
+    },
+    "crop448@640_x": {
+      "n": 0,
+      "median_accepted_box_h_px": null
+    }
+  },
+  "calibration": {
+    "keypoints_file": "yt_match40_pts.json",
+    "keypoints_sha256": "d8758a233989",
+    "fit_residual_px": 9.11,
+    "source": "manual+snap",
+    "hfov_deg": 26.432084416097254,
+    "lens_k1": 0.0,
+    "WARNING": "the secondary_* fields route through this homography; verify it lands on the real court lines before reading them"
+  },
+  "provenance": {
+    "device": "cuda",
+    "seed": 0,
+    "git_commit": "acd079f-dirty",
+    "weights": {
+      "yolo11m-pose.pt": {
+        "path": "yolo11m-pose.pt",
+        "sha256": "29b17eaf3a31"
+      },
+      "yolo11x-pose.pt": {
+        "path": "yolo11x-pose.pt",
+        "sha256": "013c43543b07"
+      }
+    },
+    "match_json": "p0_1280_yt_match40.json",
+    "perception_pose_model": "yolo11m-pose.pt@1280",
+    "elapsed_s": 30.8,
+    "created_utc": "2026-08-27T17:44:30Z"
+  },
+  "contacts": [
+    {
+      "shot_id": 9,
+      "rally_id": 1,
+      "t_hit_s": 15.48,
+      "processed_index": 449,
+      "source_frame": 449,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        6.952,
+        25.093
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -17.0,
+      "slope_post_px_per_frame": 5.0,
+      "ball_px_at_contact": [
+        797.5,
+        227.5
+      ],
+      "ball_px_frame_used": 449,
+      "tallest_control_box_h_px": 263.5,
+      "max_far_box_h_px": 131.8,
+      "arms": {
+        "control_full@1280": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                628.3,
+                230.3,
+                709.0,
+                493.8
+              ],
+              "box_h_px": 263.5,
+              "score": 0.91,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.31,
+                4.57
+              ],
+              "secondary_expected_h_px": 132.4
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop192@192_m": {
+          "n_detections": 0,
+          "accepted": [],
+          "rejected": [],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop192@640_m": {
+          "n_detections": 0,
+          "accepted": [],
+          "rejected": [],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop192@640_x": {
+          "n_detections": 0,
+          "accepted": [],
+          "rejected": [],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop320@320_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                637.0,
+                229.4,
+                711.4,
+                349.9
+              ],
+              "box_h_px": 120.6,
+              "score": 0.925,
+              "contains_contact": false,
+              "small_enough": true,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.33,
+                10.47
+              ],
+              "secondary_expected_h_px": 114.5
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop320@640_m": {
+          "n_detections": 2,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                637.0,
+                229.2,
+                720.3,
+                349.9
+              ],
+              "box_h_px": 120.7,
+              "score": 0.623,
+              "contains_contact": false,
+              "small_enough": true,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.33,
+                10.46
+              ],
+              "secondary_expected_h_px": 114.5
+            },
+            {
+              "box": [
+                639.4,
+                228.4,
+                737.1,
+                348.9
+              ],
+              "box_h_px": 120.5,
+              "score": 0.258,
+              "contains_contact": false,
+              "small_enough": true,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.64,
+                10.44
+              ],
+              "secondary_expected_h_px": 114.6
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop320@640_x": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                637.0,
+                228.7,
+                713.4,
+                349.9
+              ],
+              "box_h_px": 121.1,
+              "score": 0.914,
+              "contains_contact": false,
+              "small_enough": true,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.32,
+                10.46
+              ],
+              "secondary_expected_h_px": 114.5
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop448@448_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                629.4,
+                227.9,
+                711.0,
+                418.2
+              ],
+              "box_h_px": 190.2,
+              "score": 0.91,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.22,
+                6.44
+              ],
+              "secondary_expected_h_px": 126.1
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop448@640_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                626.2,
+                230.1,
+                710.8,
+                418.7
+              ],
+              "box_h_px": 188.6,
+              "score": 0.912,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.65,
+                6.42
+              ],
+              "secondary_expected_h_px": 126.3
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop448@640_x": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                626.4,
+                229.0,
+                713.3,
+                418.9
+              ],
+              "box_h_px": 189.9,
+              "score": 0.893,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.34,
+                6.43
+              ],
+              "secondary_expected_h_px": 126.2
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        }
+      }
+    },
+    {
+      "shot_id": 12,
+      "rally_id": 1,
+      "t_hit_s": 17.34,
+      "processed_index": 503,
+      "source_frame": 503,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        4.695,
+        23.772
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 5,
+      "slope_pre_px_per_frame": -1.25,
+      "slope_post_px_per_frame": 1.5,
+      "ball_px_at_contact": [
+        677.5,
+        242.5
+      ],
+      "ball_px_frame_used": 503,
+      "tallest_control_box_h_px": 167.8,
+      "max_far_box_h_px": 83.9,
+      "arms": {
+        "control_full@1280": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                592.4,
+                279.5,
+                667.9,
+                447.3
+              ],
+              "box_h_px": 167.8,
+              "score": 0.922,
+              "contains_contact": true,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.14,
+                6.84
+              ],
+              "secondary_expected_h_px": 124.9
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop192@192_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                592.0,
+                278.3,
+                653.1,
+                338.0
+              ],
+              "box_h_px": 59.7,
+              "score": 0.819,
+              "contains_contact": false,
+              "small_enough": true,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                4.21,
+                14.24
+              ],
+              "secondary_expected_h_px": 105.2
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop192@640_m": {
+          "n_detections": 2,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                592.4,
+                279.7,
+                653.1,
+                335.8
+              ],
+              "box_h_px": 56.1,
+              "score": 0.896,
+              "contains_contact": false,
+              "small_enough": true,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                4.21,
+                14.25
+              ],
+              "secondary_expected_h_px": 105.2
+            },
+            {
+              "box": [
+                720.2,
+                270.1,
+                735.0,
+                299.5
+              ],
+              "box_h_px": 29.4,
+              "score": 0.313,
+              "contains_contact": false,
+              "small_enough": true,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": false,
+              "secondary_court_xy": [
+                5.88,
+                17.56
+              ],
+              "secondary_expected_h_px": 98.6
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop192@640_x": {
+          "n_detections": 3,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                591.8,
+                279.2,
+                653.8,
+                336.0
+              ],
+              "box_h_px": 56.8,
+              "score": 0.648,
+              "contains_contact": false,
+              "small_enough": true,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                4.22,
+                14.24
+              ],
+              "secondary_expected_h_px": 105.2
+            },
+            {
+              "box": [
+                720.0,
+                270.3,
+                734.6,
+                300.2
+              ],
+              "box_h_px": 29.9,
+              "score": 0.645,
+              "contains_contact": false,
+              "small_enough": true,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": false,
+              "secondary_court_xy": [
+                5.87,
+                17.52
+              ],
+              "secondary_expected_h_px": 98.7
+            },
+            {
+              "box": [
+                595.4,
+                279.1,
+                654.2,
+                325.2
+              ],
+              "box_h_px": 46.1,
+              "score": 0.202,
+              "contains_contact": false,
+              "small_enough": true,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                4.52,
+                14.22
+              ],
+              "secondary_expected_h_px": 105.3
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop320@320_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                591.6,
+                279.3,
+                655.3,
+                402.0
+              ],
+              "box_h_px": 122.7,
+              "score": 0.857,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                4.65,
+                9.47
+              ],
+              "secondary_expected_h_px": 117.1
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop320@640_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                591.7,
+                279.1,
+                652.6,
+                367.2
+              ],
+              "box_h_px": 88.2,
+              "score": 0.849,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                4.62,
+                9.47
+              ],
+              "secondary_expected_h_px": 117.0
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop320@640_x": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                593.0,
+                279.6,
+                653.1,
+                366.6
+              ],
+              "box_h_px": 87.1,
+              "score": 0.809,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                4.62,
+                9.48
+              ],
+              "secondary_expected_h_px": 117.0
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop448@448_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                594.3,
+                279.8,
+                666.8,
+                449.8
+              ],
+              "box_h_px": 170.1,
+              "score": 0.921,
+              "contains_contact": true,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.15,
+                6.58
+              ],
+              "secondary_expected_h_px": 125.7
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop448@640_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                593.2,
+                280.2,
+                669.0,
+                450.2
+              ],
+              "box_h_px": 170.0,
+              "score": 0.918,
+              "contains_contact": true,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.15,
+                6.55
+              ],
+              "secondary_expected_h_px": 125.8
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop448@640_x": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                594.4,
+                279.5,
+                668.5,
+                451.4
+              ],
+              "box_h_px": 171.9,
+              "score": 0.929,
+              "contains_contact": true,
+              "small_enough": false,
+              "secondary_far_by_H": false,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                5.16,
+                6.81
+              ],
+              "secondary_expected_h_px": 125.0
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        }
+      }
+    },
+    {
+      "shot_id": 14,
+      "rally_id": 1,
+      "t_hit_s": 19.1,
+      "processed_index": 554,
+      "source_frame": 554,
+      "pipeline_player": "B",
+      "hit_xy_court": [
+        0.108,
+        20.102
+      ],
+      "end": "far",
+      "reason": "",
+      "n_pre": 5,
+      "n_post": 4,
+      "slope_pre_px_per_frame": -6.45,
+      "slope_post_px_per_frame": 33.55,
+      "ball_px_at_contact": [
+        356.0,
+        345.0
+      ],
+      "ball_px_frame_used": 554,
+      "tallest_control_box_h_px": 92.5,
+      "max_far_box_h_px": 46.2,
+      "arms": {
+        "control_full@1280": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                384.8,
+                274.4,
+                480.1,
+                366.8
+              ],
+              "box_h_px": 92.5,
+              "score": 0.87,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                1.2,
+                12.32
+              ],
+              "secondary_expected_h_px": 109.2
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop192@192_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                383.9,
+                279.0,
+                445.5,
+                368.6
+              ],
+              "box_h_px": 89.5,
+              "score": 0.891,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                1.18,
+                12.48
+              ],
+              "secondary_expected_h_px": 108.8
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop192@640_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                383.2,
+                280.0,
+                450.9,
+                367.0
+              ],
+              "box_h_px": 87.0,
+              "score": 0.919,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                1.22,
+                12.16
+              ],
+              "secondary_expected_h_px": 109.5
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop192@640_x": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                382.5,
+                277.6,
+                444.1,
+                367.6
+              ],
+              "box_h_px": 90.1,
+              "score": 0.92,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                1.21,
+                12.13
+              ],
+              "secondary_expected_h_px": 109.6
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop320@320_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                384.9,
+                274.3,
+                477.8,
+                367.2
+              ],
+              "box_h_px": 93.0,
+              "score": 0.913,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                1.2,
+                12.38
+              ],
+              "secondary_expected_h_px": 109.0
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop320@640_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                384.8,
+                275.2,
+                475.0,
+                365.8
+              ],
+              "box_h_px": 90.6,
+              "score": 0.92,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                1.21,
+                12.24
+              ],
+              "secondary_expected_h_px": 109.3
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop320@640_x": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                384.5,
+                273.6,
+                482.6,
+                366.5
+              ],
+              "box_h_px": 92.9,
+              "score": 0.912,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                1.21,
+                12.25
+              ],
+              "secondary_expected_h_px": 109.3
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop448@448_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                385.0,
+                273.3,
+                481.0,
+                367.6
+              ],
+              "box_h_px": 94.3,
+              "score": 0.881,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                1.2,
+                12.39
+              ],
+              "secondary_expected_h_px": 109.0
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop448@640_m": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                383.3,
+                272.4,
+                478.9,
+                365.5
+              ],
+              "box_h_px": 93.1,
+              "score": 0.914,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                1.2,
+                12.25
+              ],
+              "secondary_expected_h_px": 109.3
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        },
+        "crop448@640_x": {
+          "n_detections": 1,
+          "accepted": [],
+          "rejected": [
+            {
+              "box": [
+                383.2,
+                268.5,
+                481.8,
+                368.2
+              ],
+              "box_h_px": 99.7,
+              "score": 0.889,
+              "contains_contact": false,
+              "small_enough": false,
+              "secondary_far_by_H": true,
+              "secondary_size_ok": true,
+              "secondary_court_xy": [
+                1.2,
+                12.25
+              ],
+              "secondary_expected_h_px": 109.3
+            }
+          ],
+          "found": false,
+          "found_secondary": false
+        }
+      }
+    }
+  ]
+}

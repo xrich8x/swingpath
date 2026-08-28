@@ -1,0 +1,19 @@
+{
+  "measured_against": "ball-derived contact locations from an existing analyzed match.json, projected through the manual court calibration; NOT against human pose labels \u2014 this measures DETECTION RATE at a known location, not pose accuracy",
+  "video": "yt_match40.mp4",
+  "contacts_evaluated": 193,
+  "full_imgsz": 1280,
+  "crop_imgsz": 640,
+  "detected": {
+    "full": 152,
+    "crop192": 134,
+    "crop320": 139,
+    "crop448": 152
+  },
+  "rate_pct": {
+    "full": 78.8,
+    "crop192": 69.4,
+    "crop320": 72.0,
+    "crop448": 78.8
+  }
+}
