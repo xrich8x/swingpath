@@ -1,0 +1,1049 @@
+{
+ "tool": "eval_detector_chain_ab",
+ "measured_against": "human gold clicks on the 10-clip gold set; hit = within 10 px of the click; a ghost = a no-ball click on which the FULL post-chain track still carries a ball (solid = the detector saw it, faded = the smoother interpolated it)",
+ "arms": {
+  "ballnet21": "ball_model=ours, weights/ballnet_v21.pt",
+  "tracknet": "ball_model=tracknet, weights/tracknet.pt"
+ },
+ "one_variable": "ball_model; every other ball_perception.py argument identical",
+ "gate_ball_to_court": true,
+ "ladder": "shipped pipeline order",
+ "meta": {
+  "am_hard_utr": {
+   "wh": [
+    1920,
+    1080
+   ],
+   "src_fps": 59.94,
+   "hfov": 86.1,
+   "calibrated": true,
+   "n_ball_labelled": 175,
+   "n_noball_labelled": 53,
+   "ballnet21_step": 2,
+   "tracknet_step": 2
+  },
+  "gold_shell": {
+   "wh": [
+    1280,
+    720
+   ],
+   "src_fps": 30.0,
+   "hfov": 70.0,
+   "calibrated": false,
+   "n_ball_labelled": 184,
+   "n_noball_labelled": 55,
+   "ballnet21_step": 1,
+   "tracknet_step": 1
+  },
+  "gold_clay": {
+   "wh": [
+    1280,
+    720
+   ],
+   "src_fps": 59.94,
+   "hfov": 70.0,
+   "calibrated": false,
+   "n_ball_labelled": 219,
+   "n_noball_labelled": 14,
+   "ballnet21_step": 2,
+   "tracknet_step": 2
+  },
+  "gold_am": {
+   "wh": [
+    1280,
+    720
+   ],
+   "src_fps": 30.0,
+   "hfov": 70.0,
+   "calibrated": false,
+   "n_ball_labelled": 181,
+   "n_noball_labelled": 32,
+   "ballnet21_step": 1,
+   "tracknet_step": 1
+  },
+  "yt_rally2": {
+   "wh": [
+    1280,
+    720
+   ],
+   "src_fps": 60.0,
+   "hfov": 93.7,
+   "calibrated": true,
+   "n_ball_labelled": 258,
+   "n_noball_labelled": 26,
+   "ballnet21_step": 2,
+   "tracknet_step": 2
+  },
+  "yt_match40": {
+   "wh": [
+    1280,
+    720
+   ],
+   "src_fps": 29.0,
+   "hfov": 20.7,
+   "calibrated": true,
+   "n_ball_labelled": 184,
+   "n_noball_labelled": 24,
+   "ballnet21_step": 1,
+   "tracknet_step": 1
+  },
+  "gold_UHf0LeMU2pg": {
+   "wh": [
+    1920,
+    1080
+   ],
+   "src_fps": 60.0,
+   "hfov": 72.8,
+   "calibrated": true,
+   "n_ball_labelled": 168,
+   "n_noball_labelled": 9,
+   "ballnet21_step": 2,
+   "tracknet_step": 2
+  },
+  "gold_sAjkpeRq4P4": {
+   "wh": [
+    1920,
+    1080
+   ],
+   "src_fps": 59.94,
+   "hfov": 83.1,
+   "calibrated": true,
+   "n_ball_labelled": 151,
+   "n_noball_labelled": 33,
+   "ballnet21_step": 2,
+   "tracknet_step": 2
+  },
+  "gold_uR5q2cSM6AY": {
+   "wh": [
+    1920,
+    1080
+   ],
+   "src_fps": 60.0,
+   "hfov": 86.2,
+   "calibrated": true,
+   "n_ball_labelled": 163,
+   "n_noball_labelled": 32,
+   "ballnet21_step": 2,
+   "tracknet_step": 2
+  },
+  "gold_L73ep7JHiJ4": {
+   "wh": [
+    1920,
+    1080
+   ],
+   "src_fps": 59.94,
+   "hfov": 80.4,
+   "calibrated": true,
+   "n_ball_labelled": 168,
+   "n_noball_labelled": 30,
+   "ballnet21_step": 2,
+   "tracknet_step": 2
+  }
+ },
+ "rows": {
+  "ballnet21": {
+   "am_hard_utr": {
+    "n_ball": 90,
+    "hit": 38,
+    "recall": 42.2,
+    "n_noball": 24,
+    "fires": 13,
+    "fires_solid": 10,
+    "fires_faded": 3,
+    "fire_frames_solid": [
+     9316,
+     9666,
+     12344,
+     13276,
+     13392,
+     24106,
+     24222,
+     24572,
+     25270,
+     26202
+    ],
+    "n_far_px": 5,
+    "far_px_hit": 1,
+    "far_px": 20.0,
+    "n_far_geo": 73,
+    "far_geo_hit": 34,
+    "far_geo": 46.6,
+    "cache_path": "data/output/detector_ab/am_hard_utr.ballnet21.perception.json",
+    "frame_step": 2,
+    "fps_eff": 29.97,
+    "raw_locks": 11456,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 09:51:10",
+     "video": "am_hard_utr.mp4",
+     "weight_files": {
+      "ballnet": "weights/ballnet_v21.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.003,
+      5
+     ]
+    }
+   },
+   "gold_shell": {
+    "n_ball": 184,
+    "hit": 106,
+    "recall": 57.6,
+    "n_noball": 55,
+    "fires": 28,
+    "fires_solid": 20,
+    "fires_faded": 8,
+    "fire_frames_solid": [
+     23,
+     45,
+     248,
+     407,
+     610,
+     813,
+     1084,
+     1491,
+     1559,
+     2485,
+     3253,
+     3547,
+     3908,
+     3931,
+     3953,
+     4111,
+     4405,
+     5083,
+     5218,
+     5331
+    ],
+    "n_far_px": 122,
+    "far_px_hit": 84,
+    "far_px": 68.9,
+    "n_far_geo": 0,
+    "far_geo_hit": 0,
+    "far_geo": null,
+    "cache_path": "data/output/gold_shell.perception.json",
+    "frame_step": 1,
+    "fps_eff": 30.0,
+    "raw_locks": 4317,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-27 01:10:13",
+     "video": "gold_shell.mp4",
+     "weight_files": {
+      "ballnet": "weights/ballnet_v21.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0,
+      5
+     ]
+    }
+   },
+   "gold_clay": {
+    "n_ball": 111,
+    "hit": 52,
+    "recall": 46.8,
+    "n_noball": 7,
+    "fires": 3,
+    "fires_solid": 2,
+    "fires_faded": 1,
+    "fire_frames_solid": [
+     1174,
+     2212
+    ],
+    "n_far_px": 47,
+    "far_px_hit": 20,
+    "far_px": 42.6,
+    "n_far_geo": 0,
+    "far_geo_hit": 0,
+    "far_geo": null,
+    "cache_path": "data/output/gold_clay.perception.json",
+    "frame_step": 2,
+    "fps_eff": 29.97,
+    "raw_locks": 3922,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-27 01:11:32",
+     "video": "gold_clay.mp4",
+     "weight_files": {
+      "ballnet": "weights/ballnet_v21.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.002999842113573,
+      5
+     ]
+    }
+   },
+   "gold_am": {
+    "n_ball": 181,
+    "hit": 104,
+    "recall": 57.5,
+    "n_noball": 32,
+    "fires": 16,
+    "fires_solid": 10,
+    "fires_faded": 6,
+    "fire_frames_solid": [
+     1017,
+     1084,
+     1107,
+     2982,
+     3479,
+     3524,
+     3727,
+     4044,
+     4834,
+     4925
+    ],
+    "n_far_px": 12,
+    "far_px_hit": 8,
+    "far_px": 66.7,
+    "n_far_geo": 0,
+    "far_geo_hit": 0,
+    "far_geo": null,
+    "cache_path": "data/output/gold_am.perception.json",
+    "frame_step": 1,
+    "fps_eff": 30.0,
+    "raw_locks": 4357,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-27 01:12:48",
+     "video": "gold_am.mp4",
+     "weight_files": {
+      "ballnet": "weights/ballnet_v21.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0,
+      5
+     ]
+    }
+   },
+   "yt_rally2": {
+    "n_ball": 258,
+    "hit": 154,
+    "recall": 59.7,
+    "n_noball": 26,
+    "fires": 8,
+    "fires_solid": 5,
+    "fires_faded": 3,
+    "fire_frames_solid": [
+     6,
+     18,
+     762,
+     1494,
+     1598
+    ],
+    "n_far_px": 156,
+    "far_px_hit": 83,
+    "far_px": 53.2,
+    "n_far_geo": 179,
+    "far_geo_hit": 102,
+    "far_geo": 57.0,
+    "cache_path": "data/output/detector_ab/yt_rally2.ballnet21.perception.json",
+    "frame_step": 2,
+    "fps_eff": 30.0,
+    "raw_locks": 922,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 09:13:10",
+     "video": "yt_rally2.mp4",
+     "weight_files": {
+      "ballnet": "weights/ballnet_v21.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0,
+      5
+     ]
+    }
+   },
+   "yt_match40": {
+    "n_ball": 184,
+    "hit": 98,
+    "recall": 53.3,
+    "n_noball": 24,
+    "fires": 9,
+    "fires_solid": 5,
+    "fires_faded": 4,
+    "fire_frames_solid": [
+     172,
+     3571,
+     4567,
+     4773,
+     9271
+    ],
+    "n_far_px": 86,
+    "far_px_hit": 49,
+    "far_px": 57.0,
+    "n_far_geo": 139,
+    "far_geo_hit": 80,
+    "far_geo": 57.6,
+    "cache_path": "data/output/detector_ab/yt_match40.ballnet21.perception.json",
+    "frame_step": 1,
+    "fps_eff": 29.0,
+    "raw_locks": 7930,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 09:30:54",
+     "video": "yt_match40.mp4",
+     "weight_files": {
+      "ballnet": "weights/ballnet_v21.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.103448275862069,
+      5
+     ]
+    }
+   },
+   "gold_UHf0LeMU2pg": {
+    "n_ball": 168,
+    "hit": 88,
+    "recall": 52.4,
+    "n_noball": 9,
+    "fires": 8,
+    "fires_solid": 4,
+    "fires_faded": 4,
+    "fire_frames_solid": [
+     126,
+     1730,
+     1798,
+     2080
+    ],
+    "n_far_px": 157,
+    "far_px_hit": 83,
+    "far_px": 52.9,
+    "n_far_geo": 139,
+    "far_geo_hit": 75,
+    "far_geo": 54.0,
+    "cache_path": "data/output/gold_UHf0LeMU2pg.perception.json",
+    "frame_step": 2,
+    "fps_eff": 30.0,
+    "raw_locks": 2970,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-27 01:14:02",
+     "video": "UHf0LeMU2pg.mp4",
+     "weight_files": {
+      "ballnet": "weights/ballnet_v21.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0,
+      5
+     ]
+    }
+   },
+   "gold_sAjkpeRq4P4": {
+    "n_ball": 151,
+    "hit": 55,
+    "recall": 36.4,
+    "n_noball": 33,
+    "fires": 11,
+    "fires_solid": 6,
+    "fires_faded": 5,
+    "fire_frames_solid": [
+     238,
+     326,
+     1154,
+     1160,
+     1554,
+     1566
+    ],
+    "n_far_px": 64,
+    "far_px_hit": 21,
+    "far_px": 32.8,
+    "n_far_geo": 108,
+    "far_geo_hit": 30,
+    "far_geo": 27.8,
+    "cache_path": "data/output/gold_sAjkpeRq4P4.perception.json",
+    "frame_step": 2,
+    "fps_eff": 29.97,
+    "raw_locks": 40048,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-27 01:36:09",
+     "video": "sAjkpeRq4P4.mp4",
+     "weight_files": {
+      "ballnet": "weights/ballnet_v21.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0030006412997006,
+      5
+     ]
+    }
+   },
+   "gold_uR5q2cSM6AY": {
+    "n_ball": 163,
+    "hit": 89,
+    "recall": 54.6,
+    "n_noball": 32,
+    "fires": 21,
+    "fires_solid": 21,
+    "fires_faded": 0,
+    "fire_frames_solid": [
+     4,
+     34,
+     46,
+     52,
+     1544,
+     1570,
+     1580,
+     1584,
+     1590,
+     1766,
+     1772,
+     1778,
+     1784,
+     1786,
+     2030,
+     2086,
+     2090,
+     2104,
+     2130,
+     2136,
+     2186
+    ],
+    "n_far_px": 28,
+    "far_px_hit": 18,
+    "far_px": 64.3,
+    "n_far_geo": 110,
+    "far_geo_hit": 61,
+    "far_geo": 55.5,
+    "cache_path": "data/output/gold_uR5q2cSM6AY.perception.json",
+    "frame_step": 2,
+    "fps_eff": 30.0,
+    "raw_locks": 8998,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-27 01:39:54",
+     "video": "uR5q2cSM6AY.mp4",
+     "weight_files": {
+      "ballnet": "weights/ballnet_v21.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0,
+      5
+     ]
+    }
+   },
+   "gold_L73ep7JHiJ4": {
+    "n_ball": 168,
+    "hit": 85,
+    "recall": 50.6,
+    "n_noball": 30,
+    "fires": 8,
+    "fires_solid": 5,
+    "fires_faded": 3,
+    "fire_frames_solid": [
+     198,
+     210,
+     320,
+     322,
+     1964
+    ],
+    "n_far_px": 126,
+    "far_px_hit": 61,
+    "far_px": 48.4,
+    "n_far_geo": 113,
+    "far_geo_hit": 53,
+    "far_geo": 46.9,
+    "cache_path": "data/output/gold_L73ep7JHiJ4.perception.json",
+    "frame_step": 2,
+    "fps_eff": 29.97,
+    "raw_locks": 15845,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-27 01:46:13",
+     "video": "L73ep7JHiJ4.mp4",
+     "weight_files": {
+      "ballnet": "weights/ballnet_v21.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0029984494819586,
+      5
+     ]
+    }
+   }
+  },
+  "tracknet": {
+   "am_hard_utr": {
+    "n_ball": 90,
+    "hit": 33,
+    "recall": 36.7,
+    "n_noball": 24,
+    "fires": 9,
+    "fires_solid": 7,
+    "fires_faded": 2,
+    "fire_frames_solid": [
+     8152,
+     9782,
+     13276,
+     14440,
+     18516,
+     24688,
+     27134
+    ],
+    "n_far_px": 5,
+    "far_px_hit": 1,
+    "far_px": 20.0,
+    "n_far_geo": 73,
+    "far_geo_hit": 28,
+    "far_geo": 38.4,
+    "cache_path": "data/output/detector_ab/am_hard_utr.tracknet.perception.json",
+    "frame_step": 2,
+    "fps_eff": 29.97,
+    "raw_locks": 9501,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 10:02:24",
+     "video": "am_hard_utr.mp4",
+     "weight_files": {
+      "tracknet": "weights/tracknet.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.003,
+      5
+     ]
+    }
+   },
+   "gold_shell": {
+    "n_ball": 184,
+    "hit": 126,
+    "recall": 68.5,
+    "n_noball": 55,
+    "fires": 14,
+    "fires_solid": 10,
+    "fires_faded": 4,
+    "fire_frames_solid": [
+     610,
+     1084,
+     1491,
+     2123,
+     2214,
+     2666,
+     3547,
+     4405,
+     5218,
+     5331
+    ],
+    "n_far_px": 122,
+    "far_px_hit": 94,
+    "far_px": 77.0,
+    "n_far_geo": 0,
+    "far_geo_hit": 0,
+    "far_geo": null,
+    "cache_path": "data/output/detector_ab/gold_shell.tracknet.perception.json",
+    "frame_step": 1,
+    "fps_eff": 30.0,
+    "raw_locks": 3741,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 09:24:55",
+     "video": "gold_shell.mp4",
+     "weight_files": {
+      "tracknet": "weights/tracknet.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0,
+      5
+     ]
+    }
+   },
+   "gold_clay": {
+    "n_ball": 111,
+    "hit": 65,
+    "recall": 58.6,
+    "n_noball": 7,
+    "fires": 2,
+    "fires_solid": 1,
+    "fires_faded": 1,
+    "fire_frames_solid": [
+     2212
+    ],
+    "n_far_px": 47,
+    "far_px_hit": 25,
+    "far_px": 53.2,
+    "n_far_geo": 0,
+    "far_geo_hit": 0,
+    "far_geo": null,
+    "cache_path": "data/output/detector_ab/gold_clay.tracknet.perception.json",
+    "frame_step": 2,
+    "fps_eff": 29.97,
+    "raw_locks": 3934,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 09:20:55",
+     "video": "gold_clay.mp4",
+     "weight_files": {
+      "tracknet": "weights/tracknet.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.002999842113573,
+      5
+     ]
+    }
+   },
+   "gold_am": {
+    "n_ball": 181,
+    "hit": 80,
+    "recall": 44.2,
+    "n_noball": 32,
+    "fires": 7,
+    "fires_solid": 4,
+    "fires_faded": 3,
+    "fire_frames_solid": [
+     1084,
+     2530,
+     3479,
+     4834
+    ],
+    "n_far_px": 12,
+    "far_px_hit": 5,
+    "far_px": 41.7,
+    "n_far_geo": 0,
+    "far_geo_hit": 0,
+    "far_geo": null,
+    "cache_path": "data/output/detector_ab/gold_am.tracknet.perception.json",
+    "frame_step": 1,
+    "fps_eff": 30.0,
+    "raw_locks": 3444,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 09:28:56",
+     "video": "gold_am.mp4",
+     "weight_files": {
+      "tracknet": "weights/tracknet.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0,
+      5
+     ]
+    }
+   },
+   "yt_rally2": {
+    "n_ball": 258,
+    "hit": 155,
+    "recall": 60.1,
+    "n_noball": 26,
+    "fires": 15,
+    "fires_solid": 11,
+    "fires_faded": 4,
+    "fire_frames_solid": [
+     6,
+     12,
+     18,
+     24,
+     1602,
+     2122,
+     2130,
+     2156,
+     2158,
+     2176,
+     2186
+    ],
+    "n_far_px": 156,
+    "far_px_hit": 80,
+    "far_px": 51.3,
+    "n_far_geo": 179,
+    "far_geo_hit": 100,
+    "far_geo": 55.9,
+    "cache_path": "data/output/detector_ab/yt_rally2.tracknet.perception.json",
+    "frame_step": 2,
+    "fps_eff": 30.0,
+    "raw_locks": 855,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 09:14:03",
+     "video": "yt_rally2.mp4",
+     "weight_files": {
+      "tracknet": "weights/tracknet.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0,
+      5
+     ]
+    }
+   },
+   "yt_match40": {
+    "n_ball": 184,
+    "hit": 109,
+    "recall": 59.2,
+    "n_noball": 24,
+    "fires": 10,
+    "fires_solid": 9,
+    "fires_faded": 1,
+    "fire_frames_solid": [
+     3571,
+     4258,
+     4533,
+     4773,
+     5082,
+     8722,
+     9100,
+     9271,
+     9889
+    ],
+    "n_far_px": 86,
+    "far_px_hit": 44,
+    "far_px": 51.2,
+    "n_far_geo": 139,
+    "far_geo_hit": 79,
+    "far_geo": 56.8,
+    "cache_path": "data/output/detector_ab/yt_match40.tracknet.perception.json",
+    "frame_step": 1,
+    "fps_eff": 29.0,
+    "raw_locks": 6595,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 09:38:20",
+     "video": "yt_match40.mp4",
+     "weight_files": {
+      "tracknet": "weights/tracknet.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.103448275862069,
+      5
+     ]
+    }
+   },
+   "gold_UHf0LeMU2pg": {
+    "n_ball": 168,
+    "hit": 94,
+    "recall": 56.0,
+    "n_noball": 9,
+    "fires": 6,
+    "fires_solid": 3,
+    "fires_faded": 3,
+    "fire_frames_solid": [
+     126,
+     1776,
+     1786
+    ],
+    "n_far_px": 157,
+    "far_px_hit": 90,
+    "far_px": 57.3,
+    "n_far_geo": 139,
+    "far_geo_hit": 83,
+    "far_geo": 59.7,
+    "cache_path": "data/output/detector_ab/gold_UHf0LeMU2pg.tracknet.perception.json",
+    "frame_step": 2,
+    "fps_eff": 30.0,
+    "raw_locks": 2733,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 09:17:04",
+     "video": "UHf0LeMU2pg.mp4",
+     "weight_files": {
+      "tracknet": "weights/tracknet.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0,
+      5
+     ]
+    }
+   },
+   "gold_sAjkpeRq4P4": {
+    "n_ball": 151,
+    "hit": 47,
+    "recall": 31.1,
+    "n_noball": 33,
+    "fires": 5,
+    "fires_solid": 5,
+    "fires_faded": 0,
+    "fire_frames_solid": [
+     1154,
+     1160,
+     2028,
+     2060,
+     2186
+    ],
+    "n_far_px": 64,
+    "far_px_hit": 17,
+    "far_px": 26.6,
+    "n_far_geo": 108,
+    "far_geo_hit": 24,
+    "far_geo": 22.2,
+    "cache_path": "data/output/detector_ab/gold_sAjkpeRq4P4.tracknet.perception.json",
+    "frame_step": 2,
+    "fps_eff": 29.97,
+    "raw_locks": 39500,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 18:20:17",
+     "video": "sAjkpeRq4P4.mp4",
+     "weight_files": {
+      "tracknet": "weights/tracknet.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0030006412997006,
+      5
+     ]
+    }
+   },
+   "gold_uR5q2cSM6AY": {
+    "n_ball": 163,
+    "hit": 64,
+    "recall": 39.3,
+    "n_noball": 32,
+    "fires": 7,
+    "fires_solid": 6,
+    "fires_faded": 1,
+    "fire_frames_solid": [
+     4,
+     34,
+     182,
+     188,
+     1544,
+     1690
+    ],
+    "n_far_px": 28,
+    "far_px_hit": 12,
+    "far_px": 42.9,
+    "n_far_geo": 110,
+    "far_geo_hit": 51,
+    "far_geo": 46.4,
+    "cache_path": "data/output/detector_ab/gold_uR5q2cSM6AY.tracknet.perception.json",
+    "frame_step": 2,
+    "fps_eff": 30.0,
+    "raw_locks": 7776,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 09:47:02",
+     "video": "uR5q2cSM6AY.mp4",
+     "weight_files": {
+      "tracknet": "weights/tracknet.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0,
+      5
+     ]
+    }
+   },
+   "gold_L73ep7JHiJ4": {
+    "n_ball": 168,
+    "hit": 88,
+    "recall": 52.4,
+    "n_noball": 30,
+    "fires": 8,
+    "fires_solid": 6,
+    "fires_faded": 2,
+    "fire_frames_solid": [
+     188,
+     276,
+     298,
+     346,
+     1918,
+     2004
+    ],
+    "n_far_px": 126,
+    "far_px_hit": 64,
+    "far_px": 50.8,
+    "n_far_geo": 113,
+    "far_geo_hit": 56,
+    "far_geo": 49.6,
+    "cache_path": "data/output/detector_ab/gold_L73ep7JHiJ4.tracknet.perception.json",
+    "frame_step": 2,
+    "fps_eff": 29.97,
+    "raw_locks": 14560,
+    "provenance": {
+     "tool": "ball_perception.py",
+     "date": "2026-08-28 17:39:26",
+     "video": "L73ep7JHiJ4.mp4",
+     "weight_files": {
+      "tracknet": "weights/tracknet.pt"
+     },
+     "device": "cuda",
+     "score_thresh": "0.5",
+     "court_gate": false,
+     "static_gate": [
+      3.0029984494819586,
+      5
+     ]
+    }
+   }
+  }
+ },
+ "pooled": {
+  "ballnet21": {
+   "nb": 272,
+   "solid": 88,
+   "fires": 125,
+   "ball": 1658,
+   "hit": 869,
+   "fpx_n": 803,
+   "fpx_h": 428,
+   "fgeo_n": 861,
+   "fgeo_h": 435,
+   "recall": 52.4,
+   "far_px": 53.3,
+   "far_geo": 50.5
+  },
+  "tracknet": {
+   "nb": 272,
+   "solid": 62,
+   "fires": 83,
+   "ball": 1658,
+   "hit": 861,
+   "fpx_n": 803,
+   "fpx_h": 432,
+   "fgeo_n": 861,
+   "fgeo_h": 421,
+   "recall": 51.9,
+   "far_px": 53.8,
+   "far_geo": 48.9
+  }
+ }
+}

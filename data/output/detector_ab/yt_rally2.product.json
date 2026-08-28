@@ -1,0 +1,61 @@
+{
+ "tool": "compare_match_products",
+ "clip": "yt_rally2",
+ "measured_against": "nothing - this is an A/B between two runs of the same pipeline, not an accuracy measurement. Every row except shots/rallies routes through the homography.",
+ "arms": {
+  "ballnet21": {
+   "shots": 12,
+   "rallies": 6,
+   "shots_with_speed": 12,
+   "speed_confident": 7,
+   "speed_confident_pct": 58.3,
+   "speed_physics": 0,
+   "speed_physics_pct": 0.0,
+   "call_confident": 3,
+   "call_confident_pct": 25.0,
+   "avg_speed_kmh": 48.1,
+   "top_speed_kmh": 72.2,
+   "speed_estimated": false,
+   "line_calls": {
+    "in": 3,
+    "out": 0,
+    "uncertain": 9
+   },
+   "ball_track_points": 252,
+   "shot_mix": {
+    "serve": 1,
+    "backhand": 3,
+    "forehand": 6,
+    "volley": 2
+   },
+   "file": "yt_rally2.ballnet21.match.json"
+  },
+  "tracknet": {
+   "shots": 10,
+   "rallies": 6,
+   "shots_with_speed": 10,
+   "speed_confident": 5,
+   "speed_confident_pct": 50.0,
+   "speed_physics": 0,
+   "speed_physics_pct": 0.0,
+   "call_confident": 2,
+   "call_confident_pct": 20.0,
+   "avg_speed_kmh": 52.9,
+   "top_speed_kmh": 78.0,
+   "speed_estimated": false,
+   "line_calls": {
+    "in": 2,
+    "out": 0,
+    "uncertain": 8
+   },
+   "ball_track_points": 231,
+   "shot_mix": {
+    "serve": 1,
+    "forehand": 5,
+    "backhand": 3,
+    "volley": 1
+   },
+   "file": "yt_rally2.tracknet.match.json"
+  }
+ }
+}

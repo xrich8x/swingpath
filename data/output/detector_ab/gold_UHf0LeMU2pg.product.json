@@ -1,0 +1,63 @@
+{
+ "tool": "compare_match_products",
+ "clip": "gold_UHf0LeMU2pg",
+ "measured_against": "nothing - this is an A/B between two runs of the same pipeline, not an accuracy measurement. Every row except shots/rallies routes through the homography.",
+ "arms": {
+  "ballnet21": {
+   "shots": 43,
+   "rallies": 25,
+   "shots_with_speed": 43,
+   "speed_confident": 22,
+   "speed_confident_pct": 51.2,
+   "speed_physics": 0,
+   "speed_physics_pct": 0.0,
+   "call_confident": 16,
+   "call_confident_pct": 37.2,
+   "avg_speed_kmh": 60.0,
+   "top_speed_kmh": 122.2,
+   "speed_estimated": false,
+   "line_calls": {
+    "in": 12,
+    "out": 4,
+    "uncertain": 27
+   },
+   "ball_track_points": 932,
+   "shot_mix": {
+    "serve": 1,
+    "forehand": 8,
+    "volley": 3,
+    "backhand": 29,
+    "overhead": 2
+   },
+   "file": "gold_UHf0LeMU2pg.ballnet21.match.json"
+  },
+  "tracknet": {
+   "shots": 39,
+   "rallies": 25,
+   "shots_with_speed": 39,
+   "speed_confident": 22,
+   "speed_confident_pct": 56.4,
+   "speed_physics": 0,
+   "speed_physics_pct": 0.0,
+   "call_confident": 14,
+   "call_confident_pct": 35.9,
+   "avg_speed_kmh": 58.0,
+   "top_speed_kmh": 131.8,
+   "speed_estimated": false,
+   "line_calls": {
+    "in": 12,
+    "out": 2,
+    "uncertain": 25
+   },
+   "ball_track_points": 879,
+   "shot_mix": {
+    "serve": 1,
+    "forehand": 14,
+    "backhand": 21,
+    "overhead": 2,
+    "volley": 1
+   },
+   "file": "gold_UHf0LeMU2pg.tracknet.match.json"
+  }
+ }
+}
