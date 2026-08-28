@@ -168,10 +168,10 @@ sending execution work to an agent with no `Bash` wastes a whole run, and has al
 
 Sort every task and act immediately: **runs unattended** → dispatch now; **blocked** →
 queue behind its dependency; **needs a human** → PAUSE, do not guess, keep other lanes
-moving. **MAX 3 CLAUDE AGENTS AT ONCE — a Pro-plan QUOTA limit, not a machine one.** They
-share one account's usage; opus agents burn it fastest and a single backend-dev run has hit
-253k tokens. The GPU serialises separately. Never several agents on one question (T07 —
-two such runs burned ~971k tokens for zero results): different tasks, different resources.
+moving. **MAX 3 AGENTS ON 3 DISTINCT TASKS — ONE TASK EACH.** Not three agents juggling
+twenty; a bloated brief is the same overload wearing one name. It is a Pro-plan QUOTA cap:
+they share one account's usage, opus burns it fastest, one run hit 253k tokens. The GPU
+serialises separately. Never several agents on one question (T07 — ~971k tokens, zero).
 
 **A task needs a human when** its result can only be invalidated by eye (render the frames
 — a number whose failure mode is visual is provisional until seen); it fires a stopping
