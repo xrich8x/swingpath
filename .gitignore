@@ -54,6 +54,12 @@ data/output/*
 # ball-track regression (HANDOFF.md §6): archived perception caches + match
 # outputs must be recoverable. Videos/images in data/output stay ignored.
 !data/output/*.json
+# ...EXCEPT the P0 resolution-sweep perception caches. The rule above was written
+# for caches that were small; these are 9-14 MB each, 74 MB across 23 files, and
+# git history cannot be slimmed afterwards without a rewrite. Their FINDINGS are
+# recorded (P0-2's downscaling failure, P0-3's upscale-factor lever); the per-frame
+# arrays are reproducible from the tools that made them. Regenerate, do not archive.
+data/output/p0_*.perception.json
 # Same reasoning for the eval-ladder .txt results. CLAUDE.md cites
 # data/output/gold_v21_e6.txt BY NAME (the Session F score sweep reproduces it
 # digit for digit), so leaving them out meant the repo cited a result it did not
