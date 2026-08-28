@@ -189,3 +189,7 @@ eval/frames/*/
 # *.md) IS committed - the intermediates are not.
 eval/_*
 data/output/_*
+
+# transient concurrent-agent slots (see .claude/hooks/agent-cap.sh)
+.claude/.agent-locks/
+.claude/.agent-queue/
