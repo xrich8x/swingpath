@@ -122,12 +122,11 @@ in the evidence file — if your row needs a paragraph, you are writing in the w
 
 ## Gotchas that bite every session
 
-- **Speed is average ball speed**, ~15–20% under radar. That is drag (−21.7%),
-  confirmed against synthetic truth. Never "fix" it to match TV.
-- **A low mount is not a style choice, it is measured accuracy.** Close calls:
-  54.0% at 1.0 m, ~69% at 3 m, ~81% at 8 m, against a **56.2% majority-class
-  floor** — so 1 m is worse than answering "in" every time. Quote that, not
-  `reliable_court_span`, which is a geometric bound and reads far kinder.
+- **Speed is average ball speed** (~15–20% under radar): drag (−21.7%) vs synth truth, not a bug.
+- **A low mount is measured accuracy, not a style choice.** Close calls 54.0% at 1.0 m,
+  ~69% at 3 m, ~81% at 8 m against a **56.2% majority-class floor** — 1 m is worse than
+  answering "in" every time. Quote that, never `reliable_court_span` (a kinder-reading
+  geometric bound).
 - **A residual proves NOTHING — render the corners** (T23). `yt_match40` is stamped PASS at
   0.9 px with all four clicks off any court line, so the pipeline called the NEAR player
   far. `validate_new_clip.py --audit` is a screen, not a verdict. `docs/calibration.md`.
@@ -178,6 +177,7 @@ provisional until the frames are seen); it fires a stopping rule, is irreversibl
 product decision, needs absent hardware, or would edit human ground truth (rule 9).
 **Paused tasks batch into ONE update** naming what unpauses each.
 
-**`.claude/JOURNAL.md` is live state — write it DURING work, not after.** A usage limit
-kills a subagent outright and nothing restarts it, so a journal written at the end does not
-survive. Read it first after any death; treat a rate-limit notice as a restart trigger.
+**`.claude/journals/` — one per agent plus `lead.md`, written DURING work, not after.** A
+usage limit kills an agent outright and nothing restarts it, so a journal written at the end
+never survives the kill it exists for. Read yours FIRST when restarting — a populated
+TASK/STATE means resume, not begin — and treat a rate-limit notice as a restart trigger.

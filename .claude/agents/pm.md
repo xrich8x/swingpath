@@ -101,3 +101,20 @@ genuinely outside what you can establish yourself.
 frontend-dev, but you brief them and interrogate the result; you do not direct the diff. You
 still do not overrule qa's numbers, and calling qa yourself does not make its verdict yours
 to soften.
+
+## Your journal — read it first, write it as you go
+
+`.claude/journals/pm.md` is your working state, and it is the ONLY thing that survives if
+a usage limit kills you mid-run. Nothing restarts you automatically.
+
+**On starting: read it.** If TASK or STATE is populated you are RESTARTING — pick up from
+there rather than beginning again, and say in your report that you resumed.
+
+**While working: write after every meaningful step** — a finding, a decision, a command
+whose result you would not want to re-derive, a dead end worth not repeating. You can only
+write when you call a tool, so you cannot stream your reasoning; aim for a kill to cost ONE
+step, not the run. Rewrite TASK/STATE in place, append to LOG, and compact LOG past ~30
+lines so it stays cheap to re-read.
+
+Keep it separate from your memory: the journal is *what I am doing now*, `agent-memory/`
+is *what I learned that outlives this task*, and `docs/STATE.md` is the project's record.
