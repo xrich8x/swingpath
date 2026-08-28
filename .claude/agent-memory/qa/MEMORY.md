@@ -21,6 +21,16 @@ this agent's system prompt — read it first; it is the authoritative copy.
   below the majority floor under 10 cm from a line, clear it from ~20 cm; recommended
   band 0.20 m, refuses 39% of close (0.5 m) calls. Not built, measurement only.
 
+- **Doorman (concurrency cap) + journal system verified, 2026-08-28.**
+  [agent_cap_doorman_verified.md](agent_cap_doorman_verified.md) — cap/fail-open/
+  parking/hand-back/no-double-fire/TTL-sweep/wiring/journals all measured PASS by
+  feeding synthetic hook payloads directly to `agent_cap.py`. Three real gaps found
+  (not fixed): a TOCTOU race at the PreToolUse check (no reservation side-effect,
+  demonstrated), a `safe_name()` collision that undercounts live agents (demonstrated),
+  and silent >8000-char prompt truncation in the Stop-event hand-back (queue storage
+  itself is not truncated). Also: this session's declared cwd was a decoy/stale
+  subfolder, not the real repo root — see that file for the path note.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is

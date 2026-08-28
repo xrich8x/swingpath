@@ -110,12 +110,23 @@ is only remembered is a cap that gets forgotten.
 | --- | --- | --- |
 | `SubagentStart` | always | writes `.claude/.agent-locks/<agent_id>` |
 | `SubagentStop` | always | removes it |
-| `PreToolUse` | matcher `Agent\|Task` | counts locks; **denies** at the cap |
+| `PreToolUse` | matcher `Agent\|Task` | counts locks **+ reservations**; denies at the cap, else takes a reservation |
 | `Stop` | always | hands a parked task back when a slot frees |
 
 **Do not decrement on `PostToolUse`.** The Agent tool returns *immediately* for a background
 agent that is still running, so the count would collapse to zero. `SubagentStart` /
 `SubagentStop` pair on the same key and cannot drift.
+
+**Reserve the slot at check time, or the gate is racy.** If `PreToolUse` only *reads*
+the count, it has no side effect — so N dispatches emitted in a single message all see the
+same free slot and all pass. Our QA demonstrated this with two back-to-back checks against
+one free slot: both allowed. Write a reservation keyed by `tool_use_id` when you approve,
+count it alongside locks, and have `SubagentStart` convert one reservation into a lock.
+Expire reservations fast (120 s) — an approved dispatch that never started was abandoned.
+
+**Hash the raw agent id into the lock filename.** Sanitising alone collides:
+`team:agent.7` and `team/agent 7` both flatten to `team_agent_7`, two live agents share
+one lock, and the count silently runs short. Also demonstrated.
 
 **Refusing is not enough — park the task.** A bare refusal loses the work: the model either
 drops it or retries in a loop, and the retry loop burns the quota the cap exists to protect.
@@ -165,7 +176,10 @@ Do not fill the cap with four real agents; that is the thing you are trying not 
    appear under its real `agent_id` and vanish on completion.
 4. **Prove nesting counts.** Dispatch one cheap agent whose task is to spawn one more, where
    the inner agent's whole job is `ls .claude/.agent-locks`. The inner must report **2**.
-5. **Delete your fake locks.** They never fire `SubagentStop` and will block real work until
+5. **Test the race.** With one slot free, fire two `PreToolUse` checks back to back
+   without a `SubagentStart` in between. The second must deny. If both pass, your gate is
+   read-only and a single message with several dispatches will walk straight past it.
+6. **Delete your fake locks.** They never fire `SubagentStop` and will block real work until
    the TTL sweeps them.
 
 Our results: `BEFORE=1, INNER=2, AFTER=1`. Nesting counts.
@@ -178,6 +192,9 @@ Our results: `BEFORE=1, INNER=2, AFTER=1`. Nesting counts.
 - **A flat per-brief allowance does not sum to a global cap.** "You may spawn one each" with
   unbounded depth is unbounded total. Either hand down a *decrementing* budget, or count for
   real — we count for real.
+- **A read-only check is not a gate.** Counting without reserving loses to any message
+  that dispatches more than once. This is the hole an independent reviewer found in ours
+  after everything else had passed — write the reservation at approval time.
 - **A hook must fail open.** Garbage input, missing interpreter, no repo — step aside. A
   broken guard that wedges every dispatch is worse than no guard.
 - **`PreToolUse` DOES fire inside subagents**, carrying `agent_id` and `agent_type`. This is
@@ -199,6 +216,7 @@ Our results: `BEFORE=1, INNER=2, AFTER=1`. Nesting counts.
 | `TENNIS_AGENT_CAP` | 3 | you are on a bigger plan | you are hitting limits |
 | `TENNIS_AGENT_TTL` | 1800s | agents legitimately run longer | corpses block you too long |
 | `MAX_HANDBACKS` | 3 | — | the model keeps ignoring offers |
+| `RESV_TTL` | 120s | agents are slow to start | approvals are abandoned often |
 
 TTL must exceed your longest legitimate agent run, or a live agent's lock is swept and the cap
 over-subscribes. The robust alternative is a heartbeat — touch the lock on every tool call, so
