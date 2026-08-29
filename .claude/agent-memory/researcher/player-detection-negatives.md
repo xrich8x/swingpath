@@ -37,6 +37,19 @@ The far player is the binding accuracy AND compute problem (see [[coreml-ane-bud
   trust a tool docstring's "unrun" claim without checking `docs/STATE.md` and its evidence
   files first — this cost a wrong premise in the brief that spawned this file.
 
+## The far player is a SEARCH problem; the far ball is a DISCRIMINATION problem (2026-08-29)
+
+Tested the founder's "are these the same problem" framing directly. They are not. The
+player's fix (crop+upscale) does not transfer to the ball because the ball's own analog
+(a whole-frame resolution bump, already tried) already failed at the chain — the entire
+recall gain arrived as extra solid ghosts, one of ball-negatives.md's four-for-four closed
+items. See [[open-questions]] and
+[docs/evidence/far-end-player-and-ball-what-is-left.md](../../../docs/evidence/far-end-player-and-ball-what-is-left.md)
+for the ranked list, the closed items, and a pre-registered gate for the next player test:
+**re-centre the P0-3 crop on a court-geometry prior instead of the ball position**, to
+attack the measured weak link (median 26.3 px from crop edge). Cheap, zero new labels,
+existing infrastructure, not a repeat of anything dead.
+
 ## What IS established about the far player (not a negative — the state of the problem)
 
 - Full-frame pose @1280 finds the far player at **0 of 25** far-end contacts on

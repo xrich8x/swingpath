@@ -39,8 +39,16 @@ Backfilled 2026-08-27 from `docs/STATE.md` and the archived sessions.
 - **Real-time on-device.** No phone benchmark exists anywhere in this repo. Never quote a
   phone fps. See [[coreml-ane-budget]] for what is and is not published elsewhere.
 - **Does a motion blob's per-frame POSITION identify the far player specifically?**
-  (2026-08-29, founder hypothesis.) The aggregate version of this (fraction of feet inside
-  a candidate court) is dead with a backwards sign; the confuser census from the same
-  primitive is a median ~9 blobs/frame. The narrower per-frame identity question was never
-  tested. Pre-registered, zero-new-labelling gate specified in
-  [[player-detection-negatives]] / `docs/evidence/far-player-motion-contrast-hypothesis.md`.
+  (2026-08-29, founder hypothesis.) **CLOSED same day — see below, this is now a negative,
+  not an open question.**
+- **Far player vs. far ball: same problem or two?** (2026-08-29, founder question, framed
+  deliberately as one.) **ANSWERED: not the same problem.** Shared root cause (optical
+  undersampling at 15-24m from a fixed amateur mount) but divergent failure mode: the
+  player is SEARCH-limited (full-frame model 0/25, a crop+upscale escapes it — a real,
+  weak, measured positive); the ball is DISCRIMINATION-limited (detector already fires on
+  73-76% of far-court frames; the ball's own analog of the crop trick — a whole-frame
+  resolution bump — was already tried and its entire recall gain arrived as extra solid
+  ghosts, one of the four-for-four closed detector items). The player's fix does not
+  trivially transfer to the ball, and that non-transfer IS the evidence the two problems
+  differ. Two narrow items left open, one gated, one sketched:
+  [docs/evidence/far-end-player-and-ball-what-is-left.md](../../../docs/evidence/far-end-player-and-ball-what-is-left.md).

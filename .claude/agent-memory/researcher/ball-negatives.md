@@ -40,4 +40,17 @@ the vendored **TrackNet** (360x640, 256-channel output), which is much heavier. 
 already-logged model divergence now has a compute consequence: the exported model is the
 expensive one. See [[coreml-ane-budget]].
 
+**Far-end framing test (2026-08-29):** the ball's far-end problem is NOT the same as the
+far player's. The player is search-limited (full-frame model literally never fires); the
+ball already fires on 73-76% of far-court frames — its problem is that the chain cannot
+DISCRIMINATE the survivors from confusers carrying the same kinematic signature (all 19
+chain false locks have `run_len = 1`, a real ball's own signature — see
+[[9-solid-ghost-balls]] via `docs/evidence/9-solid-ghost-balls.md`). The one thing that
+did move solid ghosts was a MODEL SWAP (TrackNet vs BallNet, -29.5%), not a sharper look —
+which is why "more resolution, applied locally instead of globally" (sketched, NOT run,
+NOT gated, confidence ~25-30%) is the only ball-side idea left that isn't already closed.
+Full ranking, literature check (SAHI/TOTNet/Kalman-tiny-object survey, all footage-flagged)
+and the caveats in
+[docs/evidence/far-end-player-and-ball-what-is-left.md](../../../docs/evidence/far-end-player-and-ball-what-is-left.md).
+
 Related: [[open-questions]], [[project-method-rules]]

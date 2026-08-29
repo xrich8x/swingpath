@@ -101,3 +101,51 @@ pre-registration row retired and replaced by an ungated contrast-characterisatio
     **|dL| / surround_sd median 0.30** (0.01-0.59) — the player's luminance offset is
     consistently SMALLER than the court patch's own luminance spread.
   Artifacts: data/output/far_player_motion_gate.json
+
+- 2026-08-29 **### MECHANISM FOUND — IT IS A MISSING PROVENANCE KEY, NOT A GATE PROPERTY. ###**
+  `ball.play_volume_polygon` has TWO RUNGS (backend/swingvision/ball.py:501):
+    Rung A (`if hfov_deg:`) -> `calibration.project_court_3d` extruded 6 m play
+      volume, convex hull of 8 projected corners. WIDE, self-scaling.
+    Rung B (fallback)       -> ground trapezoid + fixed 220 px top / 120 px side band
+      (resolution-scaled). MUCH TIGHTER. Gate docstring: Rung B kept only **15.4%**
+      of far-court gold balls on am_hard_utr vs Rung A's 100%.
+  Which rung runs is decided by whether `hfov_deg` is truthy. And the harnesses
+  source it DIFFERENTLY:
+    `tools/eval_detector_chain_ab.py:hfov_for()` **FITS** it (courtfit.cam_fit_quad,
+       fallback 70.0) -> ALWAYS truthy -> **Rung A** -> removes 0. 
+    `tools/eval_chain_gate.py:105` + `tools/chain_cache.py` read
+       `provenance.camera_hfov_deg` from the CACHE -> **the gold caches do not have
+       that key** -> hfov=None -> **Rung B** -> the -674.
+  VERIFIED by direct inspection of provenance keys:
+    gold_sAjkpeRq4P4 / gold_uR5q2cSM6AY / gold_L73ep7JHiJ4 / gold_UHf0LeMU2pg
+      (both plain and detector_ab/*.tracknet): hfov = **None**,
+      keys = [court_gate, date, device, score_thresh, static_gate, tool, video,
+      weight_files]  (old build_gold_caches.py schema)
+    am_hard_utr: hfov = **86.31**, full modern provenance schema.
+  => the two "cache families" are really TWO PROVENANCE SCHEMAS.
+- 2026-08-29 **SHIPPED PATH TAKES RUNG A.** `pipeline.analyze_video` passes
+  `camera_hfov_deg`, set at pipeline.py:1244-1260 by lens lock -> focal self-cal ->
+  **hard default 70.0**. It is never None. So the shipped product resembles the
+  DETECTOR A/B ARMS, and the -674 is a harness artefact. STILL TO PROVE: per-clip
+  Rung A vs Rung B removal counts, and the ghost/real split of the rejects vs gold
+  clicks. Do not publish the conclusion before that is measured.
+
+- 2026-08-29 **### T23 VERDICT: `data/sAjkpeRq4P4_pts.json` IS MISCALIBRATED. SETTLED BY EYE. ###**
+  Rendered frame 0 at 1920x1080 with the clicks AND the full projected court model
+  (scratchpad saj_courtmodel.png / saj_farband.png).
+    far_bl (760,417) and far_br (1151,409) sit **ON THE NET BAND**, not the far
+      baseline. Proof, three independent: (a) net POSTS visible at x~460 and x~1470,
+      both clicks well INSIDE them; (b) the white band SAGS in the middle
+      (y 407 at the posts, ~425 mid) - a straight far baseline projects to a
+      STRAIGHT image line, a sagging net does not; (c) dark net MESH texture and the
+      white CENTRE STRAP hang below the band.
+    near_bl (148,819) sits **on the AmateurTennis.tv watermark banner**, off court
+      entirely. near_br (1830,822) sits on **bare clay ~85 px above** the real
+      sideline x baseline corner (~1810,907).
+    ALL FOUR CLICKS ARE OFF ANY COURT LINE. Stamped PASS at 2.8 px. Second instance
+    of T23 after yt_match40.
+  CONSEQUENCE: H maps 23.77 m onto ~half the court, so the model's own net line
+  lands mid near-service-box and camera_height 3.33 m is inflated. RULE 9: the pts
+  file is human ground truth - NOT EDITED, recorded only.
+  => Every sAjkpeRq4P4 number in this run is **CONTINGENT** and must be reported
+  separately. It is now contingent for a KNOWN reason, not an unverified one.

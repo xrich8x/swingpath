@@ -8,8 +8,8 @@ rows, each measured here under a pre-registered gate. Nine were re-proposed at l
 ## The existing pipeline
 
 - [Court detection negatives](court-detection-negatives.md) — ~20 rejected approaches; the detector finds the lines but cannot assemble them
-- [Player detection negatives](player-detection-negatives.md) — far-player: pose-quality, body_relative, foot-gate (x2) all dead; motion+contrast partially tested, docstring "UNRUN" traps found stale twice
-- [Ball negatives](ball-negatives.md) — detector work is CLOSED; chain work is open
+- [Player detection negatives](player-detection-negatives.md) — far-player: pose-quality, body_relative, foot-gate (x3, motion incl.) all dead; SEARCH-limited, crop+upscale works, weak link is crop centring (26.3px)
+- [Ball negatives](ball-negatives.md) — detector work is CLOSED; chain work is open; far ball is DISCRIMINATION-limited, NOT the same problem as the far player (2026-08-29)
 - [Project method rules](project-method-rules.md) — gold discipline, threshold scaling, the screening proxy that does not predict the gate
 - [Open questions](open-questions.md) — what is genuinely unresolved
 
