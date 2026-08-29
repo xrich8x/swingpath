@@ -101,8 +101,7 @@ the Lab (label/train/score in a browser) — not part of the analyzer; it never 
   call-accuracy table → `calls.js`. Both enforced by `tests/test_js_mirror_parity.py`.
 - One module per pipeline stage; independently testable.
 - Metres for all real-world measurement; km/h for speeds.
-- Every pixel threshold scales by `frame_height/720` — except `static_radius_px`,
-  which measurement says should not.
+- Every pixel threshold scales by `frame_height/720` — except `static_radius_px` (measured).
 - Add a test for any new geometry or logic.
 - No new dependencies for what stdlib/numpy/scipy already do.
 
@@ -117,23 +116,22 @@ the Lab (label/train/score in a browser) — not part of the analyzer; it never 
 | A model, weight file, or runtime | `docs/STATE.md` "The stack" | judgement |
 | A process mistake hit **twice** | `docs/TRAPS.md` — **append a new ID, never renumber** | judgement |
 
-A STATE entry is **one line**: what changed, the number, the evidence path. Prose goes
-in the evidence file — if your row needs a paragraph, you are writing in the wrong file.
+A STATE entry is **one line**: what changed, the number, the evidence path. Prose goes in the
+evidence file — a row needing a paragraph is being written in the wrong file.
 
 ## Gotchas that bite every session
 
 - **Speed is average ball speed** (~15–20% under radar): drag (−21.7%) vs synth truth, not a bug.
-- **A low mount is measured accuracy, not a style choice.** Close calls 54.0% at 1.0 m,
-  ~69% at 3 m, ~81% at 8 m against a **56.2% majority-class floor** — 1 m is worse than
-  answering "in" every time. Quote that, never `reliable_court_span` (a kinder-reading
-  geometric bound).
-- **A residual proves NOTHING — render the corners** (T23). `yt_match40` is stamped PASS at
-  0.9 px with all four clicks off any court line, so the pipeline called the NEAR player
-  far. `validate_new_clip.py --audit` is a screen, not a verdict. `docs/calibration.md`.
+- **A low mount is measured accuracy, not a style choice.** Close calls 54.0% at 1.0 m, ~69%
+  at 3 m, ~81% at 8 m against a **56.2% majority-class floor** — 1 m is worse than answering
+  "in" every time. Quote that, never `reliable_court_span` (a kinder geometric bound).
+- **A residual proves NOTHING — render the corners** (T23). `yt_match40` is stamped PASS at 0.9 px
+  with all four clicks off any court line, so the pipeline called the NEAR player far.
+  `validate_new_clip.py --audit` is a screen, not a verdict. `docs/calibration.md`.
 - **Both calibrated golds are LOW mounts, so far-court numbers there are recall, not
-  measurement.** `am_hard_utr` 1.74 m, measurable to 7.5 m of 23.77 (never reaches the
-  net); `demo30` 1.38 m, 5.2 m — never cite its speeds.
-- **Bounce height is a single-camera heuristic.** Known open task, not a bug.
+  measurement.** `am_hard_utr` 1.74 m reaches 7.5 m of 23.77 (never the net); `demo30` 1.38 m,
+  5.2 m — never cite its speeds.
+- **Bounce height is a single-camera heuristic.** Open task, not a bug.
 
 ## The team — `tennis-team`
 
@@ -149,28 +147,31 @@ never present its work as your own.
 | **frontend-dev** | The iPhone app: UI/UX, camera capture, calling the pipeline, rendering results | yes |
 | **qa** | Independent verification of both layers. Runs gates, reports numbers, **never fixes** | no |
 
-**They move independently — no approval gate between phases.** pm sequences but does not
-sign off each step; qa reports but does not block by fiat. **Two constraints bind all five:
-iOS/iPadOS only, A13+**, Core ML/ANE the only inference target — settled, not reopened; and
-**100% on-device, forever** — a proposed network dependency is a scope violation, not an
-optimisation. **Folder boundary:** inside this project folder only, no global installs, no
-system or account settings.
+**They move independently — no approval gate between phases.** pm sequences but does not sign
+off each step; qa reports but does not block by fiat. **Three constraints bind all five:
+iOS/iPadOS only, A13+** with Core ML/ANE the only inference target; **100% on-device forever**
+(a proposed network dependency is a scope violation, not an optimisation); and this project
+folder only — no global installs, no system or account settings. Settled, not reopened.
 
 ## How the lead dispatches work
+
+**A surprising RESULT goes to `researcher` FIRST, then `pm`** (founder ruling 2026-08-29): an
+unexplained gate failure, a number that moved unexpectedly, a claim that turns out wrong.
+Researcher establishes what is true and why; only then does pm re-sequence. The lead neither
+diagnoses alone nor jumps to a fix. Findings only — a mislabelled doc number is fixed on sight.
 
 The lead **decomposes and hands out work without asking first**, matching the task to the
 agent's `tools:` — execution work to an agent with no `Bash` wastes a whole run.
 
-**THREE LIVE AGENTS PROJECT-WIDE — enforced by `.claude/hooks/agent-cap.sh`, which counts
-the whole tree.** A teammate calling a teammate spends the same quota: lead→backend-dev→qa
-is two of three. **A refusal is PARKED, not lost** — handed back when a slot frees, so never
-retry and never shrink to fit. Pro-plan QUOTA cap: one shared account, one run hit 253k
-tokens, a one-word agent ~38k. Never several agents on one question (T07 — 971k, zero).
+**THREE LIVE AGENTS PROJECT-WIDE — `.claude/hooks/agent-cap.sh` counts the whole tree**, so a
+teammate calling a teammate spends the same quota (lead→backend-dev→qa is two of three). **A
+refusal is PARKED, not lost** — handed back when a slot frees; never retry, never shrink to fit.
+A Pro-plan QUOTA cap: one run hit 253k, a one-word agent ~38k. Never several on one question (T07).
 
-**The lead holds ONE direct child at a time**, and **one task per brief** — two deliverables
-is two runs in one. Queue the rest on paper, dispatch only the head, PAUSE anything needing a
-human, re-sort on every return (a result often kills what was queued behind it), and dispatch
-before writing the status report.
+**The lead holds ONE direct child at a time**, **one task per brief** — two deliverables is two
+runs in one. Queue the rest on paper, dispatch only the head, PAUSE anything needing a human,
+re-sort on every return (a result often kills what was queued behind it), and dispatch before
+writing the status report.
 
 **A task needs a human when** only an eye can invalidate the result (visual failure mode →
 provisional until the frames are seen); it fires a stopping rule, is irreversible, is a
