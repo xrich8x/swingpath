@@ -13,3 +13,4 @@ monolithic file; nothing was dropped.
 - [Traps this project paid for](traps-this-project-paid-for.md) — unscaled constants, stale stamps, fps confusion, rates about the wrong subject, counts nobody rendered
 - [Ball detector choice is SPLIT](ball-detector-choice-is-split.md) — settled at the chain 2026-08-28: TrackNet wins ghosts, BallNet wins speed coverage; export TrackNet first
 - [Chain-gate mechanism findings](chain-gate-mechanism-findings.md) — five failed attempts on the smoother: the reflected hypothesis has its OWN false-acceptance region, and tightness is not the lever
+- [Null controls and pre-registered populations](null-controls-and-pre-registered-populations.md) - a FAILING null control is what makes a failed gate clean; a population described two ways is two sets

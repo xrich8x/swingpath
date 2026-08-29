@@ -41,9 +41,17 @@ buffer of up to 31 frames: harmless offline, fatal for live.
 
 ## STATE — where I got to
 
-Previous task (bounce_hypothesis v2) is DONE + COMMITTED `39dbc75`. This is a NEW task.
+**DONE AND COMMITTED as `7d002e0`. Nothing outstanding.**
 
-Now: population resolved, building the runner.
+VERDICT: **the motion gate FAILS.** Nearest blob median **5.751** box-heights, **7 of
+15** within 1.5, against a bar of <=1.5 on >=10 of 15 — fails both halves. Random null
+control also fails (9.265, 2/15, 0.0% of 1,000 draws), so the negative is CLEAN. Failure
+is BIMODAL (nothing between 0.62 and 5.75). No tiles rendered — those were pre-committed
+to the PASS branch only. No fix/variant/v2 proposed. Contrast rider shipped as
+DESCRIPTIVE with no gate. STATE: negative filed in "What has not worked"; the Open
+pre-registration row retired and replaced by an ungated contrast-characterisation row.
+479 tests pass (11 new). Memory updated (new file
+`null-controls-and-pre-registered-populations.md` + 2 bullets on traps).
 
 ## LOG — newest first
 

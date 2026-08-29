@@ -62,5 +62,18 @@ metadata:
   set. A no-op measured on one cache family is a fact about that family. Re-measure
   before reusing the claim.
 
+- **`eval/` is NOT covered by the mobile-viability audit.** That audit's "every cv2
+  symbol used exists in the mobile builds" was scoped to `backend/swingvision/` only.
+  Anything in `eval/` or `tools/` that a proposal wants to ship (e.g. `eval/movers.py`)
+  needs its own symbol re-check as a **prerequisite line item, not a footnote**. Also:
+  `movers.clean_plate` holds a rolling buffer of up to 31 frames - harmless for the
+  shipped record-then-process design, fatal for any live/real-time use, where it would
+  be rebuilt rather than ported ([[mobile-port-split]], [[ios-architecture-rules]]).
+- **A tool's own docstring is a claim about the past (T24).** `eval/movers.py` still
+  says "UNRUN" after three separate runs. Establish run history from `git log`, from
+  what imports it, and from `docs/STATE.md` - never from the prose inside the thing you
+  are asking about. And when you add a STATE row for a module, **put the module's name
+  in the row title**, or a later grep will miss it exactly as T24 records.
+
 Related: [[calibration-trap-check-corners-first]], [[ios-architecture-rules]],
 [[ball-detector-choice-is-split]], [[chain-gate-mechanism-findings]].
