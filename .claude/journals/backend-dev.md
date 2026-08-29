@@ -72,3 +72,24 @@ Now: population resolved, building the runner.
   reads cached probe JSON + decodes video with cv2.
 - 2026-08-29 CRLF trap (carried forward): `docs/STATE.md` is CRLF on disk / LF in HEAD.
   Normalise the WHOLE file after editing. `data/output/*` is gitignored -> `git add -f`.
+
+- 2026-08-29 **### GATE RESULT — FAILS. FINAL. NUMBERS BELOW ARE THE ANSWER. ###**
+  `eval/far_player_motion_gate.py --arm crop192@640_x --seed 0`, 15/25 contacts,
+  31-frame windows, movers UNMODIFIED, no homography.
+    NEAREST blob : median **5.751** box-heights, **7 of 15** within 1.5   BAR: <=1.5 and
+                   >=10 of 15  -> **FAIL on both halves**
+    RANDOM (null): median **9.265**, **2 of 15** within 1.5              -> **also FAILS**
+                   1000-seed repeat: median-of-medians 9.265 (p5-p95 8.11-9.92),
+                   mean 2.99 within, **0.0%** of draws pass the bar.
+    subset (anchor <=1.5 box-h, n=14): median 6.396, 6 within.
+  => The null control is CLEAN (random fails decisively), so this is a genuine failure,
+  not the ambiguous "control passed too" outcome. Nearest IS better than random
+  (5.75 vs 9.27) so there is SOME positional signal — but the bar is absolute and it
+  misses by ~3.8x on the median. **Rule 2: failed gate stays failed. Do NOT propose a v2.**
+  No eye needed per the stop condition: a nearest blob that is far away is far away.
+  CONTRAST RIDER (DESCRIPTIVE, NO GATE, cannot pass/fail anything), n=15:
+    |dL| median **5.96** (min 0.11, max 13.3); dChroma_ab median 11.71 (6.04-25.28);
+    dE median 14.67; surround SD of L median **20.99**;
+    **|dL| / surround_sd median 0.30** (0.01-0.59) — the player's luminance offset is
+    consistently SMALLER than the court patch's own luminance spread.
+  Artifacts: data/output/far_player_motion_gate.json

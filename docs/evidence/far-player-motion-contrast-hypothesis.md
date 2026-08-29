@@ -1,5 +1,13 @@
 # Is the far player better found by MOTION+CONTRAST than by person detection?
 
+> **EXECUTED 2026-08-29. THE GATE BELOW FAILED.** Nearest-blob median **5.751**
+> box-heights, **7 of 15** frames within 1.5, against a bar of <=1.5 on >=10 of 15.
+> The mandatory random-blob null control also failed, so the negative is clean.
+> Full result, the contrast rider (descriptive, no gate) and the reproduce line:
+> **[far-player-motion-gate-result.md](far-player-motion-gate-result.md)**.
+> The pre-registration below is left EXACTLY as written - rule 2, the bar does not
+> move to fit the result.
+
 > Answers the founder's question, verbatim: *"the far person is always moving and is in
 > relative contrast to the court."* Researcher task, 2026-08-29. No code run — this is a
 > synthesis of evidence already in the repo (`eval/movers.py` and its two downstream

@@ -1,0 +1,1120 @@
+{
+  "experiment": "far-player MOTION gate, pre-registered docs/evidence/far-player-motion-contrast-hypothesis.md",
+  "measured_against": "a POST-HOC far-player box from P0-3's crop192@640_x (yolo11x) pose detections - a MODEL-DERIVED reference, not a human label. No number here is accuracy against ground truth.",
+  "homography": "NEVER TOUCHED. movers.feet_in_court and calibration.image_to_court are not called anywhere in this run (T23: yt_match40's H is wrong).",
+  "pre_registered_bar": {
+    "metric": "distance from the NEAREST movers.foot_points foot point to the POST-HOC far-player box centroid, in box-heights",
+    "bar": "median <= 1.5 box-heights on >= 10 of 15 frames, AND the random-blob control fails the same bar"
+  },
+  "resolved_config": {
+    "probe": "data/output/p0_3_probe_yt_match40.json",
+    "video": "data/incoming/Hardcourt/yt_match40.mp4",
+    "arm": "crop192@640_x",
+    "seed": 0,
+    "window_half_frames": 15,
+    "window_frames": 31,
+    "movers_WORK_W": 960,
+    "movers_PLATE_MAX": 31,
+    "movers_MAX_PLAYERS": 4,
+    "movers_AREA_MIN_FRAC": 0.0002,
+    "movers_AREA_MAX_FRAC": 0.06,
+    "movers_MIN_H_OVER_W": 0.8,
+    "movers_modified": false,
+    "surround_grow_box_heights": 1.0,
+    "random_repeats_descriptive": 1000
+  },
+  "provenance": {
+    "git_commit": "cc213d3",
+    "cv2": "4.13.0",
+    "numpy": "2.5.0",
+    "video_frames": 10268,
+    "video_fps": 29.0,
+    "probe_provenance": {
+      "device": "cuda",
+      "seed": 0,
+      "git_commit": "acd079f-dirty",
+      "weights": {
+        "yolo11m-pose.pt": {
+          "path": "yolo11m-pose.pt",
+          "sha256": "29b17eaf3a31"
+        },
+        "yolo11x-pose.pt": {
+          "path": "yolo11x-pose.pt",
+          "sha256": "013c43543b07"
+        }
+      },
+      "match_json": "p0_1280_yt_match40.json",
+      "perception_pose_model": "yolo11m-pose.pt@1280",
+      "elapsed_s": 11.1,
+      "created_utc": "2026-08-27T17:50:53Z"
+    },
+    "probe_calibration_sha": "d8758a233989"
+  },
+  "population": {
+    "n_far_contacts_total": 25,
+    "n_selected": 15,
+    "selection": "nearest small_enough & not_the_near_player candidate in crop192@640_x; POST-HOC",
+    "doc_discrepancy": "the gate doc says '15 ... within 1.5 box-heights'; in the sweep JSON 15 is found-anywhere and by_rel_box_h['1.5'] is 14. The bar's denominator 15 is load-bearing, so found-anywhere is primary and the 14-frame <=1.5 subset is reported alongside."
+  },
+  "RESULT_nearest_blob": {
+    "n_with_a_blob": 15,
+    "median_rel_h": 5.751,
+    "n_within_1.5_box_heights": 7,
+    "n_population": 15,
+    "passes_bar": false
+  },
+  "RESULT_random_blob_null_control": {
+    "n_with_a_blob": 15,
+    "median_rel_h": 9.265,
+    "n_within_1.5_box_heights": 2,
+    "n_population": 15,
+    "passes_bar": false
+  },
+  "random_control_stability_DESCRIPTIVE": {
+    "repeats": 1000,
+    "median_of_medians_rel_h": 9.265,
+    "median_rel_h_p5_p95": [
+      8.11,
+      9.919
+    ],
+    "mean_n_within_1.5": 2.99,
+    "pct_of_draws_that_pass_the_bar": 0.0
+  },
+  "subset_anchor_within_1.5_box_heights": {
+    "n": 14,
+    "median_rel_h": 6.396,
+    "n_within_1.5_box_heights": 6
+  },
+  "CONTRAST_RIDER_DESCRIPTIVE_NO_GATE": {
+    "warning": "NO pre-registered bar exists for contrast. This is characterisation. It cannot pass or fail anything.",
+    "abs_delta_L": {
+      "n": 15,
+      "min": 0.11,
+      "p25": 3.98,
+      "median": 5.96,
+      "p75": 9.57,
+      "max": 13.3,
+      "mean": 6.49
+    },
+    "delta_L_signed": {
+      "n": 15,
+      "min": -2.36,
+      "p25": 3.98,
+      "median": 5.96,
+      "p75": 9.57,
+      "max": 13.3,
+      "mean": 5.93
+    },
+    "delta_chroma_ab": {
+      "n": 15,
+      "min": 6.04,
+      "p25": 9.96,
+      "median": 11.71,
+      "p75": 15.16,
+      "max": 25.28,
+      "mean": 13.46
+    },
+    "delta_E": {
+      "n": 15,
+      "min": 6.32,
+      "p25": 11.13,
+      "median": 14.67,
+      "p75": 17.95,
+      "max": 25.71,
+      "mean": 15.46
+    },
+    "surround_sd_L": {
+      "n": 15,
+      "min": 19.16,
+      "p25": 19.95,
+      "median": 20.99,
+      "p75": 22.84,
+      "max": 23.86,
+      "mean": 21.38
+    },
+    "abs_delta_L_over_surround_sd": {
+      "n": 15,
+      "min": 0.01,
+      "p25": 0.17,
+      "median": 0.3,
+      "p75": 0.43,
+      "max": 0.59,
+      "mean": 0.3
+    }
+  },
+  "per_contact": [
+    {
+      "shot_id": 12,
+      "source_frame": 503,
+      "ball_px_at_contact": [
+        677.5,
+        242.5
+      ],
+      "ref_box_POST_HOC": [
+        720.0,
+        270.3,
+        734.6,
+        300.2
+      ],
+      "ref_box_h_px": 29.9,
+      "ref_centroid_POST_HOC": [
+        727.3,
+        285.25
+      ],
+      "ref_score": 0.645,
+      "anchor_edge_dist_px": 50.78,
+      "anchor_edge_dist_rel_h": 1.698,
+      "near_player_box_full_frame": [
+        592.4,
+        279.5,
+        667.9,
+        447.3
+      ],
+      "contact_on_near_player": true,
+      "n_blobs_at_contact_frame": 2,
+      "n_foot_points_in_window": 56,
+      "blobs_at_contact_frame": [
+        {
+          "x": 725.3,
+          "y": 293.3,
+          "area_frac": 0.00021,
+          "dist_px": 8.32
+        },
+        {
+          "x": 638.0,
+          "y": 480.0,
+          "area_frac": 0.011609,
+          "dist_px": 214.25
+        }
+      ],
+      "nearest_dist_px": 8.32,
+      "nearest_dist_rel_h": 0.278,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 44.04,
+        "surround_mean_L": 35.98,
+        "delta_L": 8.06,
+        "abs_delta_L": 8.06,
+        "delta_chroma_ab": 24.41,
+        "delta_E": 25.7,
+        "surround_sd_L": 21.91,
+        "abs_delta_L_over_surround_sd": 0.37,
+        "n_px_box": 450,
+        "n_px_surround": 6300
+      },
+      "random_pick_index": 1,
+      "random_dist_px": 214.25,
+      "random_dist_rel_h": 7.166
+    },
+    {
+      "shot_id": 33,
+      "source_frame": 1428,
+      "ball_px_at_contact": [
+        662.5,
+        282.5
+      ],
+      "ref_box_POST_HOC": [
+        679.3,
+        265.6,
+        698.6,
+        299.8
+      ],
+      "ref_box_h_px": 34.3,
+      "ref_centroid_POST_HOC": [
+        688.95,
+        282.70000000000005
+      ],
+      "ref_score": 0.645,
+      "anchor_edge_dist_px": 16.8,
+      "anchor_edge_dist_rel_h": 0.49,
+      "near_player_box_full_frame": [
+        381.4,
+        267.2,
+        443.6,
+        448.1
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 2,
+      "n_foot_points_in_window": 73,
+      "blobs_at_contact_frame": [
+        {
+          "x": 690.7,
+          "y": 292.0,
+          "area_frac": 0.000307,
+          "dist_px": 9.46
+        },
+        {
+          "x": 416.7,
+          "y": 486.7,
+          "area_frac": 0.011821,
+          "dist_px": 340.21
+        }
+      ],
+      "nearest_dist_px": 9.46,
+      "nearest_dist_rel_h": 0.276,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 40.84,
+        "surround_mean_L": 37.52,
+        "delta_L": 3.31,
+        "abs_delta_L": 3.31,
+        "delta_chroma_ab": 11.04,
+        "delta_E": 11.53,
+        "surround_sd_L": 23.06,
+        "abs_delta_L_over_surround_sd": 0.14,
+        "n_px_box": 680,
+        "n_px_surround": 8296
+      },
+      "random_pick_index": 1,
+      "random_dist_px": 340.21,
+      "random_dist_rel_h": 9.919
+    },
+    {
+      "shot_id": 51,
+      "source_frame": 2387,
+      "ball_px_at_contact": [
+        697.5,
+        287.5
+      ],
+      "ref_box_POST_HOC": [
+        667.2,
+        265.9,
+        681.3,
+        300.1
+      ],
+      "ref_box_h_px": 34.2,
+      "ref_centroid_POST_HOC": [
+        674.25,
+        283.0
+      ],
+      "ref_score": 0.544,
+      "anchor_edge_dist_px": 16.2,
+      "anchor_edge_dist_rel_h": 0.474,
+      "near_player_box_full_frame": [
+        477.6,
+        286.7,
+        617.6,
+        524.3
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 4,
+      "n_foot_points_in_window": 66,
+      "blobs_at_contact_frame": [
+        {
+          "x": 486.0,
+          "y": 340.0,
+          "area_frac": 0.000228,
+          "dist_px": 196.69
+        },
+        {
+          "x": 541.3,
+          "y": 468.0,
+          "area_frac": 0.00549,
+          "dist_px": 227.8
+        },
+        {
+          "x": 560.7,
+          "y": 544.0,
+          "area_frac": 0.000905,
+          "dist_px": 284.64
+        },
+        {
+          "x": 479.3,
+          "y": 529.3,
+          "area_frac": 0.001476,
+          "dist_px": 314.12
+        }
+      ],
+      "nearest_dist_px": 196.69,
+      "nearest_dist_rel_h": 5.751,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 48.71,
+        "surround_mean_L": 35.41,
+        "delta_L": 13.3,
+        "abs_delta_L": 13.3,
+        "delta_chroma_ab": 11.71,
+        "delta_E": 17.72,
+        "surround_sd_L": 22.57,
+        "abs_delta_L_over_surround_sd": 0.59,
+        "n_px_box": 476,
+        "n_px_surround": 7888
+      },
+      "random_pick_index": 2,
+      "random_dist_px": 284.64,
+      "random_dist_rel_h": 8.323
+    },
+    {
+      "shot_id": 52,
+      "source_frame": 2402,
+      "ball_px_at_contact": [
+        674.2,
+        264.2
+      ],
+      "ref_box_POST_HOC": [
+        653.4,
+        270.9,
+        670.5,
+        299.5
+      ],
+      "ref_box_h_px": 28.6,
+      "ref_centroid_POST_HOC": [
+        661.95,
+        285.2
+      ],
+      "ref_score": 0.437,
+      "anchor_edge_dist_px": 7.65,
+      "anchor_edge_dist_rel_h": 0.268,
+      "near_player_box_full_frame": [
+        502.2,
+        264.5,
+        556.9,
+        495.2
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 4,
+      "n_foot_points_in_window": 74,
+      "blobs_at_contact_frame": [
+        {
+          "x": 666.0,
+          "y": 290.7,
+          "area_frac": 0.000282,
+          "dist_px": 6.8
+        },
+        {
+          "x": 567.3,
+          "y": 345.3,
+          "area_frac": 0.000482,
+          "dist_px": 112.11
+        },
+        {
+          "x": 510.0,
+          "y": 440.0,
+          "area_frac": 0.004904,
+          "dist_px": 216.91
+        },
+        {
+          "x": 534.7,
+          "y": 536.0,
+          "area_frac": 0.004012,
+          "dist_px": 281.25
+        }
+      ],
+      "nearest_dist_px": 6.8,
+      "nearest_dist_rel_h": 0.238,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 47.26,
+        "surround_mean_L": 35.74,
+        "delta_L": 11.52,
+        "abs_delta_L": 11.52,
+        "delta_chroma_ab": 8.14,
+        "delta_E": 14.1,
+        "surround_sd_L": 23.01,
+        "abs_delta_L_over_surround_sd": 0.5,
+        "n_px_box": 493,
+        "n_px_surround": 6032
+      },
+      "random_pick_index": 1,
+      "random_dist_px": 112.11,
+      "random_dist_rel_h": 3.92
+    },
+    {
+      "shot_id": 58,
+      "source_frame": 2588,
+      "ball_px_at_contact": [
+        622.5,
+        272.5
+      ],
+      "ref_box_POST_HOC": [
+        663.9,
+        271.2,
+        676.0,
+        302.7
+      ],
+      "ref_box_h_px": 31.6,
+      "ref_centroid_POST_HOC": [
+        669.95,
+        286.95
+      ],
+      "ref_score": 0.398,
+      "anchor_edge_dist_px": 41.4,
+      "anchor_edge_dist_rel_h": 1.31,
+      "near_player_box_full_frame": [
+        223.6,
+        282.4,
+        345.0,
+        484.9
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 4,
+      "n_foot_points_in_window": 104,
+      "blobs_at_contact_frame": [
+        {
+          "x": 295.3,
+          "y": 308.0,
+          "area_frac": 0.000469,
+          "dist_px": 375.21
+        },
+        {
+          "x": 312.7,
+          "y": 425.3,
+          "area_frac": 0.001671,
+          "dist_px": 383.15
+        },
+        {
+          "x": 351.3,
+          "y": 505.3,
+          "area_frac": 0.000972,
+          "dist_px": 386.27
+        },
+        {
+          "x": 250.7,
+          "y": 349.3,
+          "area_frac": 0.000513,
+          "dist_px": 423.9
+        }
+      ],
+      "nearest_dist_px": 375.21,
+      "nearest_dist_rel_h": 11.874,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 50.5,
+        "surround_mean_L": 38.67,
+        "delta_L": 11.84,
+        "abs_delta_L": 11.84,
+        "delta_chroma_ab": 12.38,
+        "delta_E": 17.13,
+        "surround_sd_L": 23.86,
+        "abs_delta_L_over_surround_sd": 0.5,
+        "n_px_box": 384,
+        "n_px_surround": 6912
+      },
+      "random_pick_index": 1,
+      "random_dist_px": 383.15,
+      "random_dist_rel_h": 12.125
+    },
+    {
+      "shot_id": 60,
+      "source_frame": 2691,
+      "ball_px_at_contact": [
+        535.0,
+        230.0
+      ],
+      "ref_box_POST_HOC": [
+        562.7,
+        267.8,
+        580.4,
+        304.9
+      ],
+      "ref_box_h_px": 37.1,
+      "ref_centroid_POST_HOC": [
+        571.55,
+        286.35
+      ],
+      "ref_score": 0.742,
+      "anchor_edge_dist_px": 46.86,
+      "anchor_edge_dist_rel_h": 1.263,
+      "near_player_box_full_frame": [
+        754.3,
+        293.0,
+        886.1,
+        475.3
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 2,
+      "n_foot_points_in_window": 73,
+      "blobs_at_contact_frame": [
+        {
+          "x": 568.7,
+          "y": 309.3,
+          "area_frac": 0.000422,
+          "dist_px": 23.16
+        },
+        {
+          "x": 827.3,
+          "y": 497.3,
+          "area_frac": 0.013237,
+          "dist_px": 331.57
+        }
+      ],
+      "nearest_dist_px": 23.16,
+      "nearest_dist_rel_h": 0.624,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 45.95,
+        "surround_mean_L": 34.88,
+        "delta_L": 11.07,
+        "abs_delta_L": 11.07,
+        "delta_chroma_ab": 11.46,
+        "delta_E": 15.93,
+        "surround_sd_L": 22.68,
+        "abs_delta_L_over_surround_sd": 0.49,
+        "n_px_box": 629,
+        "n_px_surround": 9472
+      },
+      "random_pick_index": 0,
+      "random_dist_px": 23.16,
+      "random_dist_rel_h": 0.624
+    },
+    {
+      "shot_id": 80,
+      "source_frame": 3800,
+      "ball_px_at_contact": [
+        642.5,
+        267.5
+      ],
+      "ref_box_POST_HOC": [
+        656.2,
+        271.3,
+        679.9,
+        302.8
+      ],
+      "ref_box_h_px": 31.5,
+      "ref_centroid_POST_HOC": [
+        668.05,
+        287.05
+      ],
+      "ref_score": 0.358,
+      "anchor_edge_dist_px": 14.22,
+      "anchor_edge_dist_rel_h": 0.451,
+      "near_player_box_full_frame": [
+        220.5,
+        272.7,
+        351.5,
+        505.3
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 3,
+      "n_foot_points_in_window": 80,
+      "blobs_at_contact_frame": [
+        {
+          "x": 296.0,
+          "y": 293.3,
+          "area_frac": 0.000453,
+          "dist_px": 372.1
+        },
+        {
+          "x": 263.3,
+          "y": 346.7,
+          "area_frac": 0.000511,
+          "dist_px": 409.08
+        },
+        {
+          "x": 291.3,
+          "y": 524.0,
+          "area_frac": 0.00787,
+          "dist_px": 445.04
+        }
+      ],
+      "nearest_dist_px": 372.1,
+      "nearest_dist_rel_h": 11.813,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 43.44,
+        "surround_mean_L": 38.64,
+        "delta_L": 4.8,
+        "abs_delta_L": 4.8,
+        "delta_chroma_ab": 9.61,
+        "delta_E": 10.74,
+        "surround_sd_L": 23.32,
+        "abs_delta_L_over_surround_sd": 0.21,
+        "n_px_box": 768,
+        "n_px_surround": 7680
+      },
+      "random_pick_index": 0,
+      "random_dist_px": 372.1,
+      "random_dist_rel_h": 11.813
+    },
+    {
+      "shot_id": 106,
+      "source_frame": 5505,
+      "ball_px_at_contact": [
+        642.5,
+        277.5
+      ],
+      "ref_box_POST_HOC": [
+        599.2,
+        266.6,
+        615.2,
+        298.7
+      ],
+      "ref_box_h_px": 32.0,
+      "ref_centroid_POST_HOC": [
+        607.2,
+        282.65
+      ],
+      "ref_score": 0.353,
+      "anchor_edge_dist_px": 27.3,
+      "anchor_edge_dist_rel_h": 0.853,
+      "near_player_box_full_frame": [
+        818.2,
+        273.0,
+        881.6,
+        427.2
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 2,
+      "n_foot_points_in_window": 68,
+      "blobs_at_contact_frame": [
+        {
+          "x": 608.7,
+          "y": 292.0,
+          "area_frac": 0.000311,
+          "dist_px": 9.46
+        },
+        {
+          "x": 850.7,
+          "y": 446.7,
+          "area_frac": 0.006584,
+          "dist_px": 293.56
+        }
+      ],
+      "nearest_dist_px": 9.46,
+      "nearest_dist_rel_h": 0.296,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 40.84,
+        "surround_mean_L": 34.89,
+        "delta_L": 5.96,
+        "abs_delta_L": 5.96,
+        "delta_chroma_ab": 21.33,
+        "delta_E": 22.15,
+        "surround_sd_L": 20.15,
+        "abs_delta_L_over_surround_sd": 0.3,
+        "n_px_box": 512,
+        "n_px_surround": 7168
+      },
+      "random_pick_index": 0,
+      "random_dist_px": 9.46,
+      "random_dist_rel_h": 0.296
+    },
+    {
+      "shot_id": 124,
+      "source_frame": 6355,
+      "ball_px_at_contact": [
+        627.5,
+        267.5
+      ],
+      "ref_box_POST_HOC": [
+        602.9,
+        262.8,
+        616.6,
+        287.4
+      ],
+      "ref_box_h_px": 24.6,
+      "ref_centroid_POST_HOC": [
+        609.75,
+        275.1
+      ],
+      "ref_score": 0.325,
+      "anchor_edge_dist_px": 10.9,
+      "anchor_edge_dist_rel_h": 0.443,
+      "near_player_box_full_frame": [
+        764.7,
+        272.6,
+        817.7,
+        438.9
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 2,
+      "n_foot_points_in_window": 63,
+      "blobs_at_contact_frame": [
+        {
+          "x": 782.7,
+          "y": 285.3,
+          "area_frac": 0.000291,
+          "dist_px": 173.22
+        },
+        {
+          "x": 788.7,
+          "y": 457.3,
+          "area_frac": 0.003875,
+          "dist_px": 255.38
+        }
+      ],
+      "nearest_dist_px": 173.22,
+      "nearest_dist_rel_h": 7.041,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 34.67,
+        "surround_mean_L": 30.01,
+        "delta_L": 4.65,
+        "abs_delta_L": 4.65,
+        "delta_chroma_ab": 25.28,
+        "delta_E": 25.71,
+        "surround_sd_L": 19.16,
+        "abs_delta_L_over_surround_sd": 0.24,
+        "n_px_box": 336,
+        "n_px_surround": 4128
+      },
+      "random_pick_index": 0,
+      "random_dist_px": 173.22,
+      "random_dist_rel_h": 7.041
+    },
+    {
+      "shot_id": 134,
+      "source_frame": 6893,
+      "ball_px_at_contact": [
+        642.5,
+        250.0
+      ],
+      "ref_box_POST_HOC": [
+        616.5,
+        264.1,
+        632.9,
+        303.3
+      ],
+      "ref_box_h_px": 39.1,
+      "ref_centroid_POST_HOC": [
+        624.7,
+        283.70000000000005
+      ],
+      "ref_score": 0.777,
+      "anchor_edge_dist_px": 17.06,
+      "anchor_edge_dist_rel_h": 0.436,
+      "near_player_box_full_frame": [
+        943.1,
+        268.8,
+        1051.9,
+        597.1
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 3,
+      "n_foot_points_in_window": 71,
+      "blobs_at_contact_frame": [
+        {
+          "x": 620.7,
+          "y": 290.7,
+          "area_frac": 0.000216,
+          "dist_px": 8.05
+        },
+        {
+          "x": 1110.0,
+          "y": 304.0,
+          "area_frac": 0.000583,
+          "dist_px": 485.72
+        },
+        {
+          "x": 964.0,
+          "y": 653.3,
+          "area_frac": 0.04284,
+          "dist_px": 501.75
+        }
+      ],
+      "nearest_dist_px": 8.05,
+      "nearest_dist_rel_h": 0.206,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 42.5,
+        "surround_mean_L": 37.33,
+        "delta_L": 5.17,
+        "abs_delta_L": 5.17,
+        "delta_chroma_ab": 17.44,
+        "delta_E": 18.19,
+        "surround_sd_L": 20.87,
+        "abs_delta_L_over_surround_sd": 0.25,
+        "n_px_box": 663,
+        "n_px_surround": 10452
+      },
+      "random_pick_index": 2,
+      "random_dist_px": 501.75,
+      "random_dist_rel_h": 12.832
+    },
+    {
+      "shot_id": 145,
+      "source_frame": 7586,
+      "ball_px_at_contact": [
+        657.5,
+        227.5
+      ],
+      "ref_box_POST_HOC": [
+        684.3,
+        266.3,
+        693.5,
+        299.8
+      ],
+      "ref_box_h_px": 33.5,
+      "ref_centroid_POST_HOC": [
+        688.9,
+        283.05
+      ],
+      "ref_score": 0.506,
+      "anchor_edge_dist_px": 47.16,
+      "anchor_edge_dist_rel_h": 1.408,
+      "near_player_box_full_frame": [
+        494.8,
+        267.1,
+        569.2,
+        477.2
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 1,
+      "n_foot_points_in_window": 49,
+      "blobs_at_contact_frame": [
+        {
+          "x": 532.7,
+          "y": 505.3,
+          "area_frac": 0.014246,
+          "dist_px": 271.7
+        }
+      ],
+      "nearest_dist_px": 271.7,
+      "nearest_dist_rel_h": 8.11,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 32.9,
+        "surround_mean_L": 32.79,
+        "delta_L": 0.11,
+        "abs_delta_L": 0.11,
+        "delta_chroma_ab": 10.3,
+        "delta_E": 10.31,
+        "surround_sd_L": 19.76,
+        "abs_delta_L_over_surround_sd": 0.01,
+        "n_px_box": 340,
+        "n_px_surround": 7616
+      },
+      "random_pick_index": 0,
+      "random_dist_px": 271.7,
+      "random_dist_rel_h": 8.11
+    },
+    {
+      "shot_id": 161,
+      "source_frame": 8372,
+      "ball_px_at_contact": [
+        617.5,
+        267.5
+      ],
+      "ref_box_POST_HOC": [
+        573.7,
+        267.5,
+        591.2,
+        300.6
+      ],
+      "ref_box_h_px": 33.0,
+      "ref_centroid_POST_HOC": [
+        582.45,
+        284.05
+      ],
+      "ref_score": 0.744,
+      "anchor_edge_dist_px": 26.3,
+      "anchor_edge_dist_rel_h": 0.797,
+      "near_player_box_full_frame": [
+        806.7,
+        282.4,
+        897.2,
+        467.5
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 1,
+      "n_foot_points_in_window": 54,
+      "blobs_at_contact_frame": [
+        {
+          "x": 846.0,
+          "y": 489.3,
+          "area_frac": 0.010077,
+          "dist_px": 334.07
+        }
+      ],
+      "nearest_dist_px": 334.07,
+      "nearest_dist_rel_h": 10.123,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 33.69,
+        "surround_mean_L": 36.05,
+        "delta_L": -2.36,
+        "abs_delta_L": 2.36,
+        "delta_chroma_ab": 7.38,
+        "delta_E": 7.74,
+        "surround_sd_L": 19.33,
+        "abs_delta_L_over_surround_sd": 0.12,
+        "n_px_box": 561,
+        "n_px_surround": 7656
+      },
+      "random_pick_index": 0,
+      "random_dist_px": 334.07,
+      "random_dist_rel_h": 10.123
+    },
+    {
+      "shot_id": 165,
+      "source_frame": 8464,
+      "ball_px_at_contact": [
+        642.5,
+        267.5
+      ],
+      "ref_box_POST_HOC": [
+        624.4,
+        263.3,
+        643.4,
+        298.8
+      ],
+      "ref_box_h_px": 35.5,
+      "ref_centroid_POST_HOC": [
+        633.9,
+        281.05
+      ],
+      "ref_score": 0.468,
+      "anchor_edge_dist_px": 0.0,
+      "anchor_edge_dist_rel_h": 0.0,
+      "near_player_box_full_frame": [
+        843.7,
+        258.3,
+        938.3,
+        474.3
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 2,
+      "n_foot_points_in_window": 46,
+      "blobs_at_contact_frame": [
+        {
+          "x": 629.3,
+          "y": 289.3,
+          "area_frac": 0.000241,
+          "dist_px": 9.46
+        },
+        {
+          "x": 879.3,
+          "y": 500.0,
+          "area_frac": 0.014518,
+          "dist_px": 328.9
+        }
+      ],
+      "nearest_dist_px": 9.46,
+      "nearest_dist_rel_h": 0.266,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 32.16,
+        "surround_mean_L": 34.0,
+        "delta_L": -1.84,
+        "abs_delta_L": 1.84,
+        "delta_chroma_ab": 6.04,
+        "delta_E": 6.32,
+        "surround_sd_L": 20.37,
+        "abs_delta_L_over_surround_sd": 0.09,
+        "n_px_box": 684,
+        "n_px_surround": 9144
+      },
+      "random_pick_index": 1,
+      "random_dist_px": 328.9,
+      "random_dist_rel_h": 9.265
+    },
+    {
+      "shot_id": 176,
+      "source_frame": 9155,
+      "ball_px_at_contact": [
+        660.0,
+        247.5
+      ],
+      "ref_box_POST_HOC": [
+        661.6,
+        279.1,
+        672.3,
+        302.5
+      ],
+      "ref_box_h_px": 23.4,
+      "ref_centroid_POST_HOC": [
+        666.95,
+        290.8
+      ],
+      "ref_score": 0.238,
+      "anchor_edge_dist_px": 31.64,
+      "anchor_edge_dist_rel_h": 1.352,
+      "near_player_box_full_frame": [
+        219.8,
+        263.5,
+        308.3,
+        481.8
+      ],
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 3,
+      "n_foot_points_in_window": 70,
+      "blobs_at_contact_frame": [
+        {
+          "x": 1105.3,
+          "y": 317.3,
+          "area_frac": 0.002133,
+          "dist_px": 439.19
+        },
+        {
+          "x": 268.0,
+          "y": 514.7,
+          "area_frac": 0.01081,
+          "dist_px": 457.47
+        },
+        {
+          "x": 1242.7,
+          "y": 318.7,
+          "area_frac": 0.002797,
+          "dist_px": 576.39
+        }
+      ],
+      "nearest_dist_px": 439.19,
+      "nearest_dist_rel_h": 18.769,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 44.03,
+        "surround_mean_L": 36.99,
+        "delta_L": 7.05,
+        "abs_delta_L": 7.05,
+        "delta_chroma_ab": 12.87,
+        "delta_E": 14.67,
+        "surround_sd_L": 20.99,
+        "abs_delta_L_over_surround_sd": 0.34,
+        "n_px_box": 230,
+        "n_px_surround": 3634
+      },
+      "random_pick_index": 2,
+      "random_dist_px": 576.39,
+      "random_dist_rel_h": 24.632
+    },
+    {
+      "shot_id": 180,
+      "source_frame": 9343,
+      "ball_px_at_contact": [
+        642.5,
+        247.5
+      ],
+      "ref_box_POST_HOC": [
+        633.3,
+        275.9,
+        640.8,
+        300.9
+      ],
+      "ref_box_h_px": 25.1,
+      "ref_centroid_POST_HOC": [
+        637.05,
+        288.4
+      ],
+      "ref_score": 0.259,
+      "anchor_edge_dist_px": 28.45,
+      "anchor_edge_dist_rel_h": 1.133,
+      "near_player_box_full_frame": null,
+      "contact_on_near_player": false,
+      "n_blobs_at_contact_frame": 3,
+      "n_foot_points_in_window": 57,
+      "blobs_at_contact_frame": [
+        {
+          "x": 1202.7,
+          "y": 569.3,
+          "area_frac": 0.000399,
+          "dist_px": 631.54
+        },
+        {
+          "x": 1270.7,
+          "y": 382.7,
+          "area_frac": 0.000368,
+          "dist_px": 640.59
+        },
+        {
+          "x": 1273.3,
+          "y": 508.0,
+          "area_frac": 0.000696,
+          "dist_px": 673.11
+        }
+      ],
+      "nearest_dist_px": 631.54,
+      "nearest_dist_rel_h": 25.161,
+      "contrast_DESCRIPTIVE": {
+        "box_mean_L": 42.63,
+        "surround_mean_L": 36.39,
+        "delta_L": 6.24,
+        "abs_delta_L": 6.24,
+        "delta_chroma_ab": 12.56,
+        "delta_E": 14.02,
+        "surround_sd_L": 19.64,
+        "abs_delta_L_over_surround_sd": 0.32,
+        "n_px_box": 200,
+        "n_px_surround": 4150
+      },
+      "random_pick_index": 1,
+      "random_dist_px": 640.59,
+      "random_dist_rel_h": 25.522
+    }
+  ]
+}
