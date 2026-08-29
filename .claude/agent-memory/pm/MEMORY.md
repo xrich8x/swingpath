@@ -9,5 +9,9 @@ Index. Detail in the topic files. Inherited 2026-08-28 from the prior planning w
 - [Score layer reopened, still no ground truth](score-layer-reopened-no-ground-truth.md) — scoring and point clips are in scope; a compliant truth source is a prerequisite line item
 - [Line-call numbers assume a perfect bounce detector](line-call-numbers-assume-perfect-bounce.md) — 95.9% and the 54/69/81% curve are geometry ceilings, not end-to-end accuracy
 - [The live path has no refusal surface](live-path-has-no-refusal-surface.md) — no confidence band, no false-lock suppression, no serve boxes
+- [v1 critical path is founder-blocked](v1-critical-path-is-founder-blocked.md) — Core ML export needs a Mac, pose affordability needs 4 re-clicked corners; every queueable item is OFF the critical path
+- [Founder rulings 2026-08-29](founder-rulings-2026-08-29.md) — TrackNet ships v1, line calling PARKED, P0-3 accepted, a TrackNet idea withheld; surprising results go to researcher first
+- [Human asks are a scarce batched resource](human-asks-are-a-scarce-batched-resource.md) — one batched update, ranked by leverage, artefact built first, dispatched before machine work
+- [Cheap tests that close a line](cheap-tests-that-close-a-line.md) — price a cheap experiment by what its FAILURE closes; riders get no gate; pre-write the row both ways
 
 **Settled, do not reopen:** iOS only, A13+, Core ML only. 100% on-device, no server ever.
