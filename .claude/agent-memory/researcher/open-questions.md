@@ -38,3 +38,9 @@ Backfilled 2026-08-27 from `docs/STATE.md` and the archived sessions.
   mask px. A better shell mask cannot fix it.
 - **Real-time on-device.** No phone benchmark exists anywhere in this repo. Never quote a
   phone fps. See [[coreml-ane-budget]] for what is and is not published elsewhere.
+- **Does a motion blob's per-frame POSITION identify the far player specifically?**
+  (2026-08-29, founder hypothesis.) The aggregate version of this (fraction of feet inside
+  a candidate court) is dead with a backwards sign; the confuser census from the same
+  primitive is a median ~9 blobs/frame. The narrower per-frame identity question was never
+  tested. Pre-registered, zero-new-labelling gate specified in
+  [[player-detection-negatives]] / `docs/evidence/far-player-motion-contrast-hypothesis.md`.

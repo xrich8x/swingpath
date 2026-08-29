@@ -246,3 +246,21 @@ T23. **Trusting a calibration AUDIT that never looks at the frame.** `data/yt_ma
    frame, not by reading its residual** — and treat an implausible camera height as a failure,
    not a footnote. Related: T19 (a rate is not evidence the model found the right thing) —
    here a rate was not even evidence about the right PERSON.
+
+T24. **Trusting a tool's own docstring about whether it has been RUN.** `eval/movers.py`
+   opens with "UNRUN. Written 2026-08-24; no number in this repo has been measured with it
+   yet." That was true for about a day. Its primitives ran the **same day** via
+   `eval/candidate_audit.py --movers` (which imports `movers` directly) and
+   `eval/foot_gate_power.py`, over 30 clips — and **two rows in `docs/STATE.md` already carry
+   the results**: `movers.crop_row` at k=1.0 is "safe but inert", and the player-foot gate is
+   "DEAD — no discriminative power", sign backwards, over 216 locks. Nobody went back and
+   edited the docstring. The lead read it, believed it, and told the founder their idea was
+   "half-built and never tested" — when the aggregate form of it was already a measured
+   negative sitting in the table the lead had read minutes earlier. The STATE rows do not say
+   "movers" in their titles, so reading the table was not enough either.
+   **A file's own header is a claim about the past, not a fact about the present. Establish
+   run history from `git log`, from what imports it, and from STATE — never from the prose
+   inside the thing you are asking about.** This is the second of its species: T02 is trusting
+   a stale *cache*, this is trusting a stale *docstring*. Related: T21 (trusting a copy of a
+   rule over the source).
+
