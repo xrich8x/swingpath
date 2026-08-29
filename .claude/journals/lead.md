@@ -13,7 +13,7 @@ so a rate-limit kill or a crash leaves it usable.
 - Numbers here are pointers. The authority is `docs/STATE.md` + `docs/evidence/`.
 - Never put a result here that belongs in STATE. This is working state, not findings.
 
-**Last updated:** 2026-08-29, after three founder decisions and the P0-3 review.
+**Last updated:** 2026-08-29, after the motion gate failed and the corner sheets were built.
 
 ---
 
@@ -57,17 +57,29 @@ thing you try — re-dispatching the work that just died — is the thing it blo
 
 ## BLOCKED — needs the founder, nothing proceeds without it
 
-1. **Re-click `yt_match40` corners** in the court setup tool. Its calibration is confirmed
-   wrong (trap T23) — all four clicked corners are off any court line, so the pipeline
-   labelled the NEAR player FAR. Left near-baseline corner is unambiguous at ~(103, 448);
-   `near_br_doubles` runs off-frame and needs extrapolating.
-2. **Audit every other `*_pts.json` by RENDERING the corners**, not by reading residuals.
-   `am_hard_utr` is "close but visibly skewed on the right." Lead builds the sheets; the
-   founder only has to look.
-3. **~3-6 human hours** for point-boundary labels (Hardcourt + Clay only; Shell and Grass
-   have zero eligible footage and need new recordings).
-4. **A TrackNet improvement idea the founder is holding** — stated 2026-08-29, not yet
-   shared. Do not start ball-chain work until it lands; it may redirect the lane.
+Ranked by leverage (pm, 2026-08-29). **The v1 critical path is 100% founder-blocked** — the
+two gates that decide whether an iPhone can run this (P0-0 Core ML export, P0-2 pose
+affordability) both wait here, and nothing dispatchable is on that path.
+
+1. **Re-click `yt_match40` corners** (~5 min) — unblocks P0-2, the top v1 runtime risk.
+   Calibration confirmed wrong (T23). `near_br_doubles` runs off-frame and needs
+   extrapolating. Sheet ready at `data/output/corner_audit/yt_match40_corners.png`.
+2. **Look at `data/output/corner_audit/`** (~10 min) — 27 sheets BUILT and committed
+   (`cc213d3`). Lead cannot settle two of them: on `am_hard_utr` and `sAjkpeRq4P4` the far
+   corners land near the NET rather than the far baseline, and a still frame does not
+   separate those at a low mount. The camera-height fit says both are fine (1.74 m, 3.33 m)
+   but that is corroboration, not proof.
+3. **A Mac + a physical A13.** The Core ML export itself fails on Windows — `coremltools`'
+   wheel lacks the native library that writes an `mlprogram`'s weights.
+4. **The TrackNet idea — or one sentence: detector-side or chain-side?** If detector-side,
+   rule 6 leaves chain work open and speed coverage unparks to the front of the queue.
+5. **~3-6 h point-boundary labels. DO NOT START** until researcher's protocol lands, or the
+   hours get spent twice. Hardcourt + Clay only.
+6. **Re-label 8 court gold frames** (~1 min). Rule 9 — recorded, never quietly fixed, so
+   permanently the founder's. Lowest urgency; court is not v1-blocking.
+7. **Is the score layer settled in scope?** It flipped out 2026-08-20, back in 2026-08-27.
+8. **Is a Mac weeks or months away?** A sequencing input, not a nudge — pm would build a
+   different plan for a months-long gap.
 
 ## DECIDED — binds everyone, do not reopen
 
@@ -96,6 +108,23 @@ thing you try — re-dispatching the work that just died — is the thing it blo
 
 ## LOG — newest first
 
+- **2026-08-29** — **Far-player MOTION gate FAILS; the null control is CLEAN.** Nearest
+  `movers.foot_points` blob to a post-hoc far-player box: **median 5.751 box-heights, 7/15**
+  within 1.5, against a bar of <=1.5 on >=10/15. Random-blob control also fails (9.265, 2/15;
+  0 of 1000 seeded draws pass), so the negative is a measurement, not candidate density.
+  **Bimodal, not marginal** — nothing between 0.62 and 5.75: on him for 7, 173-632 px away
+  for 8. Third negative in the player-foot-gate family; rule 3 closes it. All verified by the
+  lead: 479 tests pass, `eval/movers.py` byte-identical, both arms re-read from the artifact.
+  **A number in MY brief was wrong**: "median ~9 blobs per frame" is pre-`MAX_PLAYERS`;
+  post-cap it is **median 2**. That made the control WEAKER than designed (1-in-2.5, and
+  random picked the nearest blob outright on 6 of 15) — so the negative survived an easier
+  test than intended, which strengthens it. Contrast rider is descriptive, no gate: the
+  player's luminance offset **never reaches the court patch's own luminance spread**, colour
+  is the stronger channel, and contrast does NOT separate the frames motion found from those
+  it missed. Commits `7d002e0`, `be0415e`.
+- **2026-08-29** — Corner audit sheets built for 27 of 29 calibrations (`cc213d3`), pm's
+  top-ranked item. Reproduces T23 on sight. The **camera-height fit is the isolating screen**:
+  `yt_match40` alone fits 11.3 m; everything else 1.3-3.4 m.
 - **2026-08-29** — **P0-3 reviewed and STATE corrected.** Built
   `tools/p0_3_context_sheet.py` (full frame + blown-up crop, straight from the probe JSON,
   no model run, no court lines because the calibration is broken). Reviewing the 25 tiles
