@@ -103,3 +103,69 @@ This is the sixth branch. It is not open-ended.
 - **No touching `AGREE_PX`** as part of this. It is 6× tighter on 4K than on the
   gate and is doing a second job — a real issue, but it cannot ship before the
   search problem and must not be folded into this experiment as a second variable.
+
+---
+
+## Step 1 — grouping by CONCURRENCY: measured 2026-08-29
+
+The gate says all five failed branches assumed the assignment can be settled before
+the homography. The first thing joint correspondence needs is the primitive that
+killed the last one: **which detected lines belong to the same world-parallel
+family.** P3a answered that by direction and it was ill-posed under perspective.
+
+`eval/pencils.py` answers it by **concurrency** instead. World-parallel lines meet at
+a shared vanishing point whether or not they look parallel, so a family is a *pencil*
+— a set of lines sharing a null vector. Staying in homogeneous coordinates
+(`l = (cos n, sin n, −rho)`, membership iff `l·v = 0`) handles a vanishing point at
+infinity with no special case, which a square-on court genuinely has.
+
+### The bar failed first, and that stands
+
+Pre-registered: *the true lengthwise family and the true across family land in
+different pencils, on a majority of clips.*
+
+| run | result |
+|---|---|
+| as first written (`tau` = 0.012, greedy exclusive membership) | **15/38 — FAILS** |
+| after fixing greedy exclusivity (a correctness fix, see below) | **19/38 — FAILS** |
+
+**Greedy exclusive membership was a genuine defect, not a knob.** Pencils are found
+largest-first, and in a cluttered frame the largest concurrent family is the
+building — so it consumed court lines before the court's own pencil could form.
+The tell: capture of the true lines was pinned at 2.0 of 3.5 whether 2, 4 or 6
+pencils were extracted. Exclusivity is a decision about which family a line belongs
+to, and a greedy pass is not entitled to make it; the correspondence stage has the
+court model and can.
+
+### What was actually binding: the inlier tolerance
+
+`INLIER_TAU = 0.012` was a guess — about **0.7°** of pencil misalignment, against
+detected lines whose angular error `_structure` itself allows **7°** for. Sweeping
+it, with `tau` chosen on the TUNE pool and shell **held out** per the tuning rule:
+
+| `tau` | ≈ angle | TUNE (gold + 1920 refs) | SHELL (held out) |
+|---|---|---|---|
+| 0.012 | 0.7° | 11/30 | 6/8 |
+| 0.020 | 1.1° | 20/30 | 7/8 |
+| **0.030** | **1.7°** | **21/30** | **7/8** |
+| 0.045 | 2.6° | 21/30 | 7/8 |
+
+Not monotonic in the earlier full-pool sweep (0.03 → 28/38, 0.06 → 26/38), so this is
+an optimum rather than "looser always wins". `min_pencil` was changed alongside `tau`
+in the first sweep — a two-variable slip — and was isolated afterwards: **2 and 3 give
+identical results**, so the gain is attributable to `tau` alone.
+
+### Where this leaves the build
+
+**The primitive works.** On the held-out shell pool the two court families separate on
+**7 of 8** clips — the pool where the angular split had put 24 of 26 lines in a single
+family. Concurrency grouping is the right operation, and it is now measured rather
+than argued.
+
+**Nothing in C1–C6 has been touched.** This is step 1 of the build, not the gate. What
+remains is the part that makes it *joint*: enumerating assignments of pencil members
+to the model's known positions (lengthwise x = 0, 1.37, 5.485, 9.60, 10.97; across
+y = 0, 5.485, 11.885, 18.285, 23.77), screened by **cross-ratio** — the projective
+invariant that is equal in the image and in the metric court, and the reason
+cross-ratio screening was deferred in Session O for want of a generator. That
+generator now exists.
