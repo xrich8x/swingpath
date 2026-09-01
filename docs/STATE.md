@@ -248,6 +248,8 @@ number — that is what a dated record is. The guard skips them.
 
 ---
 
+| ~~**`mobile/live_calls.js` doubles-alley bug**~~ - found 2026-09-02, FIXED + EXERCISED 2026-09-02 | **Nothing. Fixed.** `_detectBounce` called `isInSingles` unconditionally regardless of `this.singles` - in doubles mode an alley ball (inside doubles, outside singles) was called **OUT while the displayed margin read positive/inside**, and it is legally IN in doubles. `live.py` was already correct (its ternary branches on `self.singles`); only the port had drifted, and JS had no `isInDoubles` at all to branch to. Fixed: added `isInDoubles`, `_detectBounce` now branches like the Python. **Exercised, not just fixed** - the existing parity check is singles-only and produced zero OUT calls, so it could not see this bug. New `mobile/doubles_alley_parity_cases.json` (21 synthetic court positions, hand-computed expected, independent of both implementations) + `backend/live_doubles_alley_probe.py` + `mobile/verify_live_doubles.js` drive the full bounce state machine (identity homography, not `isInSingles`/`isInDoubles` in isolation - the bug was in the wiring) in both modes: **42/42 match** the hand-computed expectation on both sides, including all 7 alley-asymmetric cases. **Python checked independently, not assumed correct**: 42/42 also match on the Python side alone - no findings against the reference. Confirmed non-vacuous: reverting the fix and re-running fails exactly the 7 doubles-mode alley cases. | [evidence/doubles-alley-live-call-bug-fixed-and-exercised.md](evidence/doubles-alley-live-call-bug-fixed-and-exercised.md) |
+
 ## Recently closed
 
 Answered, and kept only as a pointer so the answer is not re-derived.

@@ -1,0 +1,35 @@
+{
+  "_purpose": "PARITY test cases for the live-call singles/doubles boundary, not an accuracy test. Positions are synthetic court-plane METRES (no camera, no real trajectory, no invented ground truth) chosen to straddle every X/Y boundary that matters -- centre court, both doubles alleys (the case where a position is OUT in singles and IN in doubles), fully outside the doubles court, and every line to within a few millimetres of the margined boundary. expected_singles/expected_doubles were HAND-COMPUTED from the raw court constants below, independently of either implementation -- they are not derived by running Python or JS.",
+  "court_constants_m": {
+    "X_LEFT_DOUBLES": 0.0,
+    "X_LEFT_SINGLES": 1.37,
+    "X_RIGHT_SINGLES": 9.60,
+    "X_RIGHT_DOUBLES": 10.97,
+    "Y_NEAR_BASELINE": 0.0,
+    "Y_FAR_BASELINE": 23.77
+  },
+  "line_margin_m": 0.05,
+  "cases": [
+    {"name": "centre_court",                        "x": 5.485, "y": 10.0,   "expected_singles": "in",  "expected_doubles": "in"},
+    {"name": "left_alley",                           "x": 0.5,   "y": 10.0,   "expected_singles": "out", "expected_doubles": "in"},
+    {"name": "right_alley",                          "x": 10.2,  "y": 10.0,   "expected_singles": "out", "expected_doubles": "in"},
+    {"name": "outside_doubles_left",                 "x": -0.2,  "y": 10.0,   "expected_singles": "out", "expected_doubles": "out"},
+    {"name": "outside_doubles_right",                "x": 11.2,  "y": 10.0,   "expected_singles": "out", "expected_doubles": "out"},
+    {"name": "outside_near_baseline_by_y",           "x": 5.485, "y": -0.2,   "expected_singles": "out", "expected_doubles": "out"},
+    {"name": "outside_far_baseline_by_y",            "x": 5.485, "y": 24.0,   "expected_singles": "out", "expected_doubles": "out"},
+    {"name": "on_singles_sideline_exact",            "x": 1.37,  "y": 10.0,   "expected_singles": "in",  "expected_doubles": "in"},
+    {"name": "on_doubles_sideline_exact",            "x": 0.0,   "y": 10.0,   "expected_singles": "out", "expected_doubles": "in"},
+    {"name": "singles_margin_left_3mm_inside",       "x": 1.323, "y": 10.0,   "expected_singles": "in",  "expected_doubles": "in"},
+    {"name": "singles_margin_left_3mm_outside",      "x": 1.317, "y": 10.0,   "expected_singles": "out", "expected_doubles": "in"},
+    {"name": "doubles_margin_left_3mm_inside",       "x": -0.047,"y": 10.0,   "expected_singles": "out", "expected_doubles": "in"},
+    {"name": "doubles_margin_left_3mm_outside",      "x": -0.053,"y": 10.0,   "expected_singles": "out", "expected_doubles": "out"},
+    {"name": "singles_margin_right_3mm_inside",      "x": 9.647, "y": 10.0,   "expected_singles": "in",  "expected_doubles": "in"},
+    {"name": "singles_margin_right_3mm_outside",     "x": 9.653, "y": 10.0,   "expected_singles": "out", "expected_doubles": "in"},
+    {"name": "doubles_margin_right_3mm_inside",      "x": 11.017,"y": 10.0,   "expected_singles": "out", "expected_doubles": "in"},
+    {"name": "doubles_margin_right_3mm_outside",     "x": 11.023,"y": 10.0,   "expected_singles": "out", "expected_doubles": "out"},
+    {"name": "near_baseline_3mm_inside",             "x": 5.485, "y": -0.047, "expected_singles": "in",  "expected_doubles": "in"},
+    {"name": "near_baseline_3mm_outside",            "x": 5.485, "y": -0.053, "expected_singles": "out", "expected_doubles": "out"},
+    {"name": "far_baseline_3mm_inside",              "x": 5.485, "y": 23.817, "expected_singles": "in",  "expected_doubles": "in"},
+    {"name": "far_baseline_3mm_outside",             "x": 5.485, "y": 23.823, "expected_singles": "out", "expected_doubles": "out"}
+  ]
+}

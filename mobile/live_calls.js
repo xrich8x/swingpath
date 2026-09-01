@@ -100,6 +100,16 @@ export function isInSingles(x, y, margin = 0) {
   );
 }
 
+// Mirror of court.is_in_doubles. Added 2026-09-02 alongside the _detectBounce fix
+// below -- it did not exist before, which is exactly how the bug survived: there
+// was no doubles-bounds check to call.
+export function isInDoubles(x, y, margin = 0) {
+  return (
+    x >= COURT.X_LEFT_DOUBLES - margin && x <= COURT.X_RIGHT_DOUBLES + margin &&
+    y >= COURT.Y_NEAR_BASELINE - margin && y <= COURT.Y_FAR_BASELINE + margin
+  );
+}
+
 // --- the live analyzer (mirror of live.LiveAnalyzer) ------------------------
 
 export class LiveAnalyzer {
@@ -142,7 +152,16 @@ export class LiveAnalyzer {
     const [t, x, y] = this.valid[this.valid.length - 2];
     if (t - this.lastCallT < this.minCallGap) return null;
     this.lastCallT = t;
-    const inBounds = isInSingles(x, y, this.lineMargin);
+    // FIXED 2026-09-02 (was: unconditionally isInSingles regardless of this.singles).
+    // Mirror of live.py's `court.is_in_singles(...) if self.singles else
+    // court.is_in_doubles(...)`. The bug: in doubles mode the alley (inside doubles,
+    // outside singles) was called OUT while _distanceInside (below, always correct)
+    // reported a positive inside margin -- a self-contradictory call, and the wrong
+    // one for doubles scoring. See mobile/doubles_alley_parity_cases.json +
+    // mobile/verify_live_doubles.js for the parity test that exercises this branch.
+    const inBounds = this.singles
+      ? isInSingles(x, y, this.lineMargin)
+      : isInDoubles(x, y, this.lineMargin);
     const margin = this._distanceInside(x, y);
     const call = { t_s: +t.toFixed(2), xy: [+x.toFixed(3), +y.toFixed(3)], call: inBounds ? "in" : "out", margin_m: +margin.toFixed(3) };
     this.calls.push(call);
