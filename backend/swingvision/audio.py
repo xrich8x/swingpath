@@ -103,6 +103,12 @@ def impact_envelope(samples: np.ndarray, sr: int,
     return env[::dec].astype(np.float64), sr // dec
 
 
+# Peak elements the rolling-floor deviation block may materialise at once.
+# 8M float64 is ~64 MB, which keeps a 28.2 min clip off the 13.5 GB cliff
+# without shrinking the window-vectorised median enough to matter.
+_FLOOR_CHUNK_ELEMS = 8_000_000
+
+
 def detect_impacts(samples: np.ndarray, sr: int, *,
                    band_hz: tuple[float, float] = (1500.0, 7000.0),
                    floor_win_s: float = 1.0,
@@ -131,13 +137,37 @@ def detect_impacts(samples: np.ndarray, sr: int, *,
     n = env.size
     win = max(3, int(floor_win_s * erate))
 
-    # Rolling median/MAD via strided windows on a padded copy (win ~1000 at
-    # 1 kHz -> fine for clips of minutes).
+    # Rolling median/MAD via strided windows on a padded copy.
+    #
+    # CHUNKED, because the one-shot form allocates O(n * win). `sliding_window_view`
+    # is free — it is a view — but `np.abs(sw - med[:, None])` materialises the whole
+    # thing: on a 28.2 min clip that is ~1.7M envelope samples x a 1000-sample window
+    # = a 13.5 GB peak, measured, for a result that is 1.7M floats. Long clips are
+    # exactly what the offline analyzer is for, so this is not a corner case.
+    #
+    # Chunking bounds the peak at CHUNK * win and is BIT-IDENTICAL: the same numpy
+    # median over the same windows, just evaluated in slices. Pinned by
+    # tests/test_audio_floor_chunking.py against the unchunked expression.
+    #
+    # This is the DESKTOP fix and deliberately not the iOS one. Accelerate has no
+    # rolling-median primitive, so the port needs a genuine streaming order
+    # statistic — `tools/audio_ondevice_probe.streaming_med_mad`, which is exact
+    # against numpy and pinned by tests/test_audio_streaming_floor.py. That is a
+    # rewrite, and it is slower than vectorised numpy here, so it does not belong
+    # in this path.
     pad = win // 2
     padded = np.pad(env, pad, mode="edge")
     sw = np.lib.stride_tricks.sliding_window_view(padded, win)[:n]
-    med = np.median(sw, axis=1)
-    mad = np.median(np.abs(sw - med[:, None]), axis=1) + 1e-9
+    med = np.empty(n, dtype=np.float64)
+    mad = np.empty(n, dtype=np.float64)
+    chunk = max(1, int(_FLOOR_CHUNK_ELEMS // max(win, 1)))
+    for a in range(0, n, chunk):
+        b = min(n, a + chunk)
+        block = sw[a:b]
+        m = np.median(block, axis=1)
+        med[a:b] = m
+        mad[a:b] = np.median(np.abs(block - m[:, None]), axis=1)
+    mad += 1e-9
     floor_abs = min_contrast * float(np.median(env))
     above = (env > med + k_mad * mad) & (env > floor_abs)
 
