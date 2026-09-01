@@ -26,7 +26,16 @@ from swingvision._ballnet import BallNet
 OUT = os.path.join(ROOT, "ios", "coreml_export")
 os.makedirs(OUT, exist_ok=True)
 
-POSE_WEIGHTS = os.path.join(ROOT, "backend", "yolo11m-pose.pt")
+# The pose checkpoint is NOT in the repo - `.gitignore`'s `*.pt` excludes it and only
+# `ballnet*.pt` is excepted (those are trained in-house and not re-downloadable; this
+# one is a stock Ultralytics release asset). A CI runner checks out a fresh tree, so
+# hard-coding the local path made the macOS export job fail at the POSE step while
+# succeeding at the ball step - and the pose model is the whole reason the job exists.
+#
+# Fall back to the bare name, which is how ultralytics fetches a stock checkpoint.
+# A local run still prefers the file already on disk, so nothing re-downloads here.
+_LOCAL_POSE = os.path.join(ROOT, "backend", "yolo11m-pose.pt")
+POSE_WEIGHTS = _LOCAL_POSE if os.path.exists(_LOCAL_POSE) else "yolo11m-pose.pt"
 BALL_WEIGHTS = os.path.join(ROOT, "backend", "weights", "ballnet_v21.pt")
 BALL_W, BALL_H = 512, 288   # BallNet's trained resolution (backend/swingvision/_ballnet.py)
 POSE_SIZES = [1280, 640, 384]

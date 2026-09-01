@@ -37,7 +37,14 @@ thing you try — re-dispatching the work that just died — is the thing it blo
 
 ## NOW — what is running
 
-**Nothing.** Verified with `ListAgents`, zero subagents live.
+**An autonomous /loop, self-paced, working `docs/STATE.md`'s Open table.** Founder
+instruction 2026-09-02: *keep going, do not ask questions, record decisions for later.*
+So nothing below is a request — it is a queue to hand over when asked.
+
+**If you are a fresh context reading this after a reset: resume the loop.** Re-read
+`docs/STATE.md` Open first, then `docs/DECISIONS_PENDING.md`. Do NOT re-derive the
+closed branches listed in "What has not worked" — 13 hypotheses died there this week.
+
 
 ## PARKED — work that was started and stopped
 
