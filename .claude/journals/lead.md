@@ -35,6 +35,27 @@ thing you try — re-dispatching the work that just died — is the thing it blo
    survive a death. The directory is gitignored, so nothing else will surface them.
 4. **Then resume**, preferring the killed agent's uncommitted files over a restart.
 
+## RESUME AFTER A KILL — read this first, it is one paste
+
+A usage limit kills the session outright and NOTHING restarts it — not this journal,
+not a scheduled job, not a cloud agent (a cloud agent cannot see this local repo).
+Resumption costs exactly one message. Paste this:
+
+    /loop Work docs/STATE.md's Open table continuously and autonomously, and ALWAYS
+    use the teammate agents for feature work — 3-live-agent project cap, one direct
+    child at a time. NEVER stop to ask; append anything needing a founder decision to
+    docs/DECISIONS_PENDING.md and keep going. Pre-register a bar before running
+    anything, one variable per A/B, a failed bar stays failed, never score a model
+    against its own output, inspect the rejects not what a filter kept. Commit to
+    master, DO NOT PUSH. Keep this journal's NOW current.
+
+Then, before doing anything else, read in this order:
+  1. `docs/STATE.md` — Open table. The live record. Authority for every number.
+  2. `docs/DECISIONS_PENDING.md` — what is waiting on the founder, and what was done
+     instead so the blocker was not also idle time.
+  3. "What has not worked" in STATE — **13 hypotheses died there this week.** Do not
+     re-derive them. Each row names the number that killed it.
+
 ## NOW — what is running
 
 **An autonomous /loop, self-paced, working `docs/STATE.md`'s Open table.** Founder
