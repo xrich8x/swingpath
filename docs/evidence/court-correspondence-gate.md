@@ -169,3 +169,76 @@ y = 0, 5.485, 11.885, 18.285, 23.77), screened by **cross-ratio** — the projec
 invariant that is equal in the image and in the metric court, and the reason
 cross-ratio screening was deferred in Session O for want of a generator. That
 generator now exists.
+
+---
+
+## Step 2 — the joint solver: SUB-BAR FAILED, and C6 failed with it. Run 2026-08-29
+
+`eval/correspondence.py`. Two lines from each pencil, labelled against the model's
+known positions, homography solved exactly from the four intersections, scored with
+the shipped criteria. The labelling **is** the assignment, so assignment and geometry
+are chosen together — the thing all five earlier branches did not do.
+
+Two lines per family rather than four, because step 1 measured capture at a median
+2.5 of 3.5 lengthwise: a strict cross-ratio needs four collinear points and would
+have refused most clips before starting.
+
+### A circular-scoring bug had to be fixed first, and it is worth recording
+
+The first version scored candidates on `_ori_detail` + `_structure` alone. That is
+**circular**: the hypothesis is built from four detected lines and both criteria
+reward landing on detected lines, so the four that constructed it match by
+construction. Measured — a labelling of two far-apart sidelines as `x=0, x=1.37`
+scored **g = 1.00, st = 1.00** while sitting **2,245 px from truth**; the enormous
+stretch throws the rest of the court off-frame and neither term objects.
+
+Applying the full shipped accept path (pose prior, `verify_court`, `_cam_refine`)
+is what discriminates. All are shipped criteria, so the C-list permits them.
+
+### The result
+
+Pre-registered sub-bar: *best-scoring candidate within 20 px@640 of the human court
+on a majority of the TUNE pool.*
+
+| pool | clips | produced any candidate | top-scoring ≤20 px |
+|---|---|---|---|
+| TUNE (gold + 1920 refs) | 30 | **17** | **7** |
+| SHELL (held out) | 8 | **2** | **0** |
+
+**7 of 30 on TUNE — the sub-bar FAILS** (a majority needs 15). For scale the shipped
+lattice path accepts 12 of 20 gold.
+
+**The dominant failure is not mis-ranking, it is producing nothing at all.** 13 of 30
+TUNE clips and 6 of 8 shell clips yield zero surviving candidates. Only **1 of 19**
+clips that did produce candidates had a good one ranked below a bad one
+(`flexi_joy_p07`). So the scorer is not the problem here either — consistent with
+Session O, and not a new claim.
+
+`am_ntrp40` is the sharpest case: the shipped detector **accepts** it at 7.9 px, and
+the joint solver produces **no candidate whatsoever**. Whatever is filtering, it is
+filtering out courts that demonstrably work.
+
+### C6 — cost: FAILED
+
+**907 s for 40 frames = 22.7 s/frame against a 1.8 s baseline = 12.6×.** The gate caps
+cost at **5×**, and killed `topk` for 7× at zero gain. C6 fails as implemented.
+
+### Where this leaves the branch
+
+The gate's stopping rule is conditioned on C5 + C2 and has **not** fired: C1–C5 are
+unmeasured, because a solver that produces nothing on 19 of 38 clips cannot be run
+through them honestly.
+
+What is established: the joint formulation is expressible and, where it produces a
+candidate, it usually produces a *sensible* one — `am_hard_utr` at 13.8 px labelled
+`x = 9.60, 1.37 | y = 0.0, 5.5`, correctly identifying that it found the two singles
+sidelines with the near baseline and near service line. That is the C5 shape of
+evidence, on the clips that survive.
+
+What is not established, and must be diagnosed before any further build: **which
+term is discarding the true court on the 19 clips that return nothing.** The
+candidates are the two expensive screens added to fix the circular scoring
+(`verify_court`, `_cam_refine`), the quad convexity/floor screens, or the pencils
+themselves failing to supply two usable lines in each family. That is an attribution
+question of exactly the shape `eval/seed_reach.py` answered for the lattice, and it
+should be answered the same way rather than guessed at.
