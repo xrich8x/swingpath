@@ -667,9 +667,24 @@ def estimate_k1_frames(frames, H: Optional[np.ndarray] = None, *,
 def homography_from_landmarks(named_image_points: Mapping[str, Sequence[float]]) -> np.ndarray:
     """Convenience: build H from a {landmark_name: [x_px, y_px]} mapping using
     the canonical court coordinates in court.LANDMARKS. This is what the manual
-    calibration JSON feeds into."""
+    calibration JSON feeds into.
+
+    `_`-PREFIXED KEYS ARE METADATA AND ARE SKIPPED. A calibration file is not only
+    landmarks: the Court Setup tool writes `_exact` when the user placed corners with
+    shape-lock off, and `validate_new_clip.py --stamp` writes `_audit` with the camera
+    verdict. `pipeline.calibrate_video` has always stripped them before calling here
+    (`{k: v for k, v in raw.items() if not k.startswith("_")}`) — but the five OTHER
+    callers pass `json.load(f)` in raw, so a stamped calibration raised
+    `KeyError: '_audit'` and took `run.py live`, `live_demo.py`, `show_in_action.py`,
+    `build_court_dataset.py` and `calibrate.py` down with it.
+
+    Doing it here rather than at each call site is the point: the filter was in one
+    caller and five were missing it, which is the shape of trap T15. An unknown key
+    that is NOT `_`-prefixed still raises — a typo'd landmark name should be loud."""
     court_pts, image_pts = [], []
     for name, px in named_image_points.items():
+        if name.startswith("_"):
+            continue
         if name not in court.LANDMARKS:
             raise KeyError(f"unknown landmark {name!r}; see court.LANDMARKS")
         court_pts.append(court.LANDMARKS[name])

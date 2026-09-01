@@ -88,9 +88,31 @@ def far_masks(ball, H, wh):
 
 def perceive(video, weights, device, H, cam_xyz, W, Hh, fps_eff, step,
              acquire_bound_m=4.0):
-    os.environ["BALLNET_WEIGHTS"] = weights
-    from swingvision.ball import OurBallDetector, BallTracker
-    det = OurBallDetector(device=device)
+    # WHICH DETECTOR, decided by the checkpoint rather than by a flag.
+    #
+    # This harness used to build `OurBallDetector` unconditionally, so it could not
+    # run TrackNet at all — `weights/tracknet.pt` is a bare state dict and died on
+    # KeyError: 'model_state_dict'. That mattered once the v1 ball detector became a
+    # founder decision for TrackNet: the ladder could not measure the shipped
+    # pairing, only the BallNet one.
+    #
+    # The two classes expose the same `detect(frame) -> (x, y) | None`, so
+    # `BallTracker` takes either. The type is sniffed from the checkpoint - BallNet
+    # checkpoints carry `model_state_dict`, TrackNet's is a bare OrderedDict - and
+    # PRINTED, because a measurement harness that silently picks a model is how a
+    # number ends up attributed to the wrong one.
+    import torch
+    from swingvision.ball import BallDetector, OurBallDetector, BallTracker
+    ck = torch.load(weights, map_location="cpu", weights_only=False)
+    is_ballnet = isinstance(ck, dict) and "model_state_dict" in ck
+    del ck
+    if is_ballnet:
+        os.environ["BALLNET_WEIGHTS"] = weights
+        det = OurBallDetector(device=device)
+        print(f"  detector: OurBallDetector (BallNet) <- {Path(weights).name}")
+    else:
+        det = BallDetector(weights, device=device)
+        print(f"  detector: BallDetector (TrackNet) <- {Path(weights).name}")
     tracker = BallTracker([det], (W, Hh), use_bgsub=False, homography=H,
                           fps=fps_eff, cam_xyz=cam_xyz,
                           acquire_bound_m=acquire_bound_m)
