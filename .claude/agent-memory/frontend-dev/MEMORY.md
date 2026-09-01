@@ -8,10 +8,17 @@ re-derive it.
 
 `mobile/` holds a working starting point: the ball model exported to ONNX fp32 and int8
 (11 MB) with argmax baked into the graph, so the per-frame output is 0.9 MB rather than
-236 MB; `live_calls.js` (the line-call logic and homography, pure JS, verified
-bit-identical to the Python); `ball_detector.js`; `verify_live.js`; and `MOBILE.md` as an
-integration guide. `court.py` is mirrored to `frontend/src/lib/court.js` and the mirror is
-enforced by `tests/test_js_mirror_parity.py`.
+236 MB; `live_calls.js` (the line-call logic and homography, pure JS); `ball_detector.js`;
+`verify_live.js`; and `MOBILE.md` as an integration guide. `court.py` is mirrored to
+`frontend/src/lib/court.js` and the mirror is enforced by `tests/test_js_mirror_parity.py`.
+
+`live_calls.js` is genuinely verified against the Python reference now (2026-09-02,
+[[video-free-parity-checks]]) — singles-path only, 7/7 calls exact to 0.001 m. Earlier
+claims of "verified bit-identical" in this repo (including a prior version of this memory
+file) were **unverifiable, not verified** — the harness was silently dead, then silently
+reading a degenerate calibration. Don't repeat an inherited verification claim without
+re-checking it actually ran; see [[video-free-parity-checks]] for what "verified" now
+rests on and what it still does not cover (the doubles branch, any OUT call).
 
 ## iOS execution model — the finding that shapes the whole app
 
@@ -84,3 +91,10 @@ verifier to cover the doubles branch when you touch it.
 
 Separately, `live.py` never reaches `analytics.is_in`, so the live path has no serve
 boxes — a serve landing deep is called IN.
+
+## More memory files
+
+- [Video-free parity checks](video_free_parity_checks.md) — how live-call JS/Python
+  parity was verified without the missing sample video; the reusable technique
+- [Committed calibration files can be degenerate](committed_calibration_files_can_be_degenerate.md)
+  — check the `_audit` stamp before trusting any `data/*_pts.json` as a reference
