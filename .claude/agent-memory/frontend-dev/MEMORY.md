@@ -13,12 +13,14 @@ re-derive it.
 `frontend/src/lib/court.js` and the mirror is enforced by `tests/test_js_mirror_parity.py`.
 
 `live_calls.js` is genuinely verified against the Python reference now (2026-09-02,
-[[video-free-parity-checks]]) — singles-path only, 7/7 calls exact to 0.001 m. Earlier
-claims of "verified bit-identical" in this repo (including a prior version of this memory
-file) were **unverifiable, not verified** — the harness was silently dead, then silently
-reading a degenerate calibration. Don't repeat an inherited verification claim without
-re-checking it actually ran; see [[video-free-parity-checks]] for what "verified" now
-rests on and what it still does not cover (the doubles branch, any OUT call).
+[[video-free-parity-checks]]) — singles-path, real cached track, 7/7 calls exact to
+0.001 m — AND, separately (2026-09-02, [[doubles-alley-bug-fixed]]), both singles AND
+doubles branches on 21 synthetic boundary cases, 42/42 exact. Earlier claims of
+"verified bit-identical" in this repo (including a prior version of this memory file)
+were **unverifiable, not verified** — the harness was silently dead, then silently
+reading a degenerate calibration, then (separately) silently not exercising doubles at
+all. Don't repeat an inherited verification claim without re-checking what it actually
+covers — "verified" always needs a "verified WHAT, on WHAT input" attached.
 
 ## iOS execution model — the finding that shapes the whole app
 
@@ -81,16 +83,15 @@ way on iPhone 11+, which is third-party evidence the thermal envelope exists.
   floor** — worse than answering "in" every time. This is why camera-height guidance is a
   product feature.
 
-## Known defect on the deferred live path
+## Live path — remaining known gap
 
-`mobile/live_calls.js:145` calls `isInSingles(...)` unconditionally while `_distanceInside`
-two lines below honours `this.singles` — so in doubles an alley ball is called OUT while
-the screen shows a positive inside margin. The Python is correct; the JS port dropped the
-ternary, and `verify_live.js` only ever tests `{singles: true}`. One-line fix; extend the
-verifier to cover the doubles branch when you touch it.
+`live.py` never reaches `analytics.is_in`, so the live path has no serve boxes — a
+serve landing deep is called IN. Still open, not touched by the doubles-alley fix.
 
-Separately, `live.py` never reaches `analytics.is_in`, so the live path has no serve
-boxes — a serve landing deep is called IN.
+(The doubles-alley `isInSingles`-called-unconditionally bug is FIXED — see
+[[doubles-alley-bug-fixed]]. Do not re-diagnose it; if the live-call verdict looks
+wrong in doubles again, it's a NEW bug, not a recurrence of the old one — check
+`mobile/verify_live_doubles.js` still passes first.)
 
 ## More memory files
 
@@ -98,3 +99,6 @@ boxes — a serve landing deep is called IN.
   parity was verified without the missing sample video; the reusable technique
 - [Committed calibration files can be degenerate](committed_calibration_files_can_be_degenerate.md)
   — check the `_audit` stamp before trusting any `data/*_pts.json` as a reference
+- [Doubles-alley bug: fixed and exercised](doubles_alley_bug_fixed.md) — the
+  `isInSingles`-called-unconditionally fix, and the general lesson: a fix is not done
+  until the SPECIFIC branch is driven through the real code path, not just patched
