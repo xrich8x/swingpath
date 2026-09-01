@@ -37,21 +37,29 @@ device number. This project has a standing rule against quoting an unmeasured fp
 
 ---
 
-## 2. `data/tennis_sample.mp4` is missing, and it is the mobile port's only reference
+## 2. ~~`data/tennis_sample.mp4` is missing~~ — RESOLVED 2026-09-02, no video needed
 
-`mobile/verify_live.js` is the sole parity check on the JS live-call port. Its header
-expects *7 calls, 5 in / 2 out*, matching `live_demo.py replay`. That replay cannot
-run: the video is not in the repo.
+**Closed by frontend-dev.** The ambiguity was not a missing asset, it was a bad
+calibration plus a stale harness input, and git history settled it.
 
-The harness itself was dead until 2026-09-02 (it never stripped `_`-prefixed
-calibration keys) and now runs, giving **6 in / 1 out** against `court_pts.json` and
-**7 in / 0 out** against `court_pts_refined.json` — which is the file `live_demo.py`
-actually names.
+`data/court_pts.json` carries its own `_audit` stamp reading **`verdict:
+"DEGENERATE"`, 38.1 px residual** — the project's calibration gate already rejects
+that file. The harness was reading it. Commit `20a672e` states directly that
+`court_pts_refined.json` is "the good version of the same clip". So the
+6in/1out-vs-7in/0out question had an answer on disk the whole time.
 
-**Nothing can say which is right until the reference runs.** Do not "fix" the port
-against either number. **Cost to unblock: restore one video file.**
+Parity is now **verified without the video**: `backend/live_replay_novideo.py` drives
+`live.push_position` over the cached track directly (it is a pure function; only
+`live.stream()` touches cv2), and Python and the JS port agree on **7 calls, 7 in /
+0 out with every t_s, xy and margin_m matching to 0.000 m** against a pre-registered
+0.001 m tolerance. `verify_live.js` is now a real regression gate that exits
+non-zero on drift.
 
----
+**One premise remains unverified and is recorded as such:** the cached track's
+123 frames at 30.0 fps comes from `real_match.json`'s recorded metadata, not from
+re-measuring the absent video. Restoring `tennis_sample.mp4` would close that, and
+would also exercise the decode path and the doubles branch, neither of which this
+check touches.
 
 ## 3. Carried over from the pre-existing BLOCKED list (lead journal, 2026-08-29)
 
