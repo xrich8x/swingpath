@@ -66,7 +66,9 @@ docs/STATE.md in the same commit as any backend/tools/mobile code change.
   + stream()'s loop body, skipping cv2 entirely) using court_pts_refined.json,
   run it, run JS pointed at the same file, diff.
 
-## TASK 2 — fix the doubles-branch bug at live_calls.js:145, exercise it for real
+## TASK 2 — DONE, committed (f1c3a2b code, c596879 memory). Fixed and exercised, not
+just fixed. See docs/evidence/doubles-alley-live-call-bug-fixed-and-exercised.md for
+full writeup. Nothing in flight.
 
 Coordinator follow-up 2026-09-02: fix `isInSingles` being called unconditionally in
 `_detectBounce` (ignores `this.singles`). MUST extend verification to actually run the
