@@ -242,3 +242,65 @@ candidates are the two expensive screens added to fix the circular scoring
 themselves failing to supply two usable lines in each family. That is an attribution
 question of exactly the shape `eval/seed_reach.py` answered for the lattice, and it
 should be answered the same way rather than guessed at.
+
+## Step 3 — attribution: three of my own screens were wrong, and the ceiling is 17 px
+
+`eval/corr_attrib.py`. Hand the solver the correspondence the HUMAN homography says
+is correct — real detected lines, real model labels — and follow that one candidate
+through every screen. Not a search result: the answer. Whatever kills it is
+discarding the truth.
+
+### Two self-inflicted screens, found and removed
+
+| | TUNE kills |
+|---|---|
+| size floors on the **construction quad** | mis-labelled as the cause; removing them changed nothing |
+| **convexity** of the construction quad | 10 |
+| **convexity** of the projected corners | 11 (the same clips, one stage later) |
+
+The size floors belong on the projected court, not on the four intersections: label
+two lines `x=0` and `x=1.37` and they bound a legitimately narrow 1.37 m strip.
+
+Convexity was the real defect, and it is wrong **everywhere**. A homography preserves
+convexity only when the shape stays off the vanishing line — and a low mount puts the
+far baseline on it, so the correct image of the court is *non-convex*. Removing it
+from the construction quad alone moved the kill one stage later without saving a
+single clip (10 "not convex" → 11 "corner screen", survival flat at 7/30), which is
+what proved the projected court is the non-convex thing. `autodetect`'s own
+degeneracy floor checks width and depth and nothing else; the solver now matches it.
+
+### What remains, after the self-inflicted screens are gone
+
+| stage | TUNE (30) | SHELL (8) |
+|---|---|---|
+| **SURVIVED** | **8** | **5** |
+| `verify_court` | 9 | – |
+| pose prior | 5 | 1 |
+| pencil supply (too few court lines detected) | 4 | – |
+| two pencils (families not separated) | 2 | – |
+| `_cam_refine` | 2 | 2 |
+
+**The kills are now spread across SHIPPED criteria rejecting a correctly-labelled
+court** — `verify_court` on 9 of 30 being the largest. This is not new: the candidate
+audit already found `verify` blocking the human court on 4 of 10 references. It does
+mean no single change rescues the solver, which is the test this script was written
+to apply.
+
+### The accuracy ceiling — and why C3 would fail anyway
+
+**Where the true correspondence survives every screen, the reconstructed court is a
+median 17.1 px@640 from truth** (n = 13), against the shipped detector's **8.1 px**
+median on the clips it accepts. C3 requires median ≤ 8.1 px and no clip worse by more
+than 3 px, so **C3 fails even when the correspondence is handed over correct.**
+
+The cause is structural: the homography is solved from exactly four line
+intersections, so each line's few-px error is amplified at the far end where the
+court is most foreshortened. Two continuations are untested and both are real:
+
+1. **Least-squares over ALL matched line correspondences** rather than an exact fit
+   to four points. Cheap, and aimed squarely at the 17.1 px ceiling.
+2. **Why the shipped screens reject a correct court** — `verify_court` on 9 of 30 is
+   its own question, and one that touches the shipped accept path rather than this
+   solver.
+
+Neither is attempted here. C1–C5 remain unmeasured end-to-end; C6 failed at 12.6×.

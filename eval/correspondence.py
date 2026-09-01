@@ -82,27 +82,57 @@ def _meet(l1, l2):
     return float(v[0] / v[2]), float(v[1] / v[2])
 
 
-def _quad_ok(pts, w, h):
-    """The four intersections must form a sane, convex, court-sized quad.
+def _quad_convex(pts):
+    """FINITE ONLY. Convexity is not a valid requirement here, and demanding it was
+    this solver's largest self-inflicted kill.
 
-    Applies autodetect's own floors rather than new ones: a candidate that could
-    never survive the shipped accept path is not worth scoring."""
+    A court is convex in the world, but a homography only preserves convexity when
+    the shape does not cross the vanishing line. On a low mount the far baseline
+    sits at or beyond the horizon, and the correct image of the court is then
+    NON-convex - the far edge is "inverted" through infinity. Measured: requiring
+    convexity of the four true line intersections rejected the TRUE correspondence
+    on 10 of 30 tuning clips (`data/output/corr_attrib.json`), and low mounts are
+    exactly the footage this project exists for. The shipped detector applies no
+    such test, which is part of why it accepts `am_hard_utr` at a 1.74 m mount.
+
+    Degenerate quads are still rejected - by the projected-corner floors, the pose
+    prior, `verify_court` and the physical camera re-fit, all of which are shipped
+    criteria and all of which run downstream of this."""
+    p = np.asarray(pts, float)
+    return bool(np.isfinite(p).all())
+
+
+def _quad_ok(pts, w, h):
+    """Convex, finite, and - when w/h are given - court-sized.
+
+    THE SIZE FLOORS BELONG ON THE PROJECTED COURT, NOT ON THE CONSTRUCTION QUAD,
+    and conflating the two was this solver's single biggest defect. The four
+    intersections bound whatever sub-rectangle the chosen lines happen to enclose:
+    label two lines x=0 and x=1.37 and they are 1.37 m apart, so a perfectly
+    correct correspondence yields a legitimately narrow strip. Applying
+    autodetect's 0.15w width floor to that strip rejected the TRUE correspondence
+    on 10 of 30 tuning clips - the largest single kill in the attribution
+    (`data/output/corr_attrib.json`), and self-inflicted.
+
+    Pass w=h=0 (via `_quad_convex`) for the construction quad; pass the real frame
+    size for the projected doubles corners, where the floors are autodetect's own
+    and do mean something."""
     p = np.asarray(pts, float)
     if not np.isfinite(p).all():
         return False
-    if p[:, 0].max() - p[:, 0].min() < 0.15 * w:
+    if w > 0 and p[:, 0].max() - p[:, 0].min() < 0.15 * w:
         return False                       # degeneracy floor on width
-    if p[:, 1].max() - p[:, 1].min() < 0.06 * h:
+    if h > 0 and p[:, 1].max() - p[:, 1].min() < 0.06 * h:
         return False                       # and on depth
-    # convex: all cross products of consecutive edges share a sign.
-    # Written out rather than np.cross - NumPy 2 removed the 2-D form, and a
-    # silent 3-D promotion here would compare the wrong thing.
-    s = []
-    for i in range(4):
-        a, b, c = p[i], p[(i + 1) % 4], p[(i + 2) % 4]
-        u, v = b - a, c - b
-        s.append(np.sign(u[0] * v[1] - u[1] * v[0]))
-    return abs(sum(s)) == 4
+    # NO CONVEXITY TEST, on the corners either. Dropping it from the construction
+    # quad alone moved the kill one stage later without saving a single clip -
+    # 10 "not convex" became 11 "corner screen", survival unchanged at 7/30 - which
+    # is what proved the projected COURT is the non-convex thing, not just the
+    # sub-rectangle used to build it. A homography preserves convexity only when
+    # the shape stays off the vanishing line, and a low mount puts the far baseline
+    # on it. `autodetect`'s own degeneracy floor checks width and depth and nothing
+    # else; this now matches it.
+    return True
 
 
 def solve_frame(im, calibration, court, cf, topn=8):
@@ -130,7 +160,7 @@ def solve_frame(im, calibration, court, cf, topn=8):
             for lc, ld in itertools.combinations(ib, 2):
                 P = [_meet(L[la], L[lc]), _meet(L[la], L[ld]),
                      _meet(L[lb], L[ld]), _meet(L[lb], L[lc])]
-                if any(p is None for p in P) or not _quad_ok(P, w, h):
+                if any(p is None for p in P) or not _quad_convex(P):
                     continue
                 for xa, xb in itertools.combinations(X_POS, 2):
                     for yc, yd in itertools.combinations(Y_POS, 2):
