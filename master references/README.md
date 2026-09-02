@@ -15,6 +15,7 @@ version-gated detail. Version numbers quoted below are the ones the docs give.
 | If you are… | Read |
 | --- | --- |
 | Reading the whole of **our** setup — doorman, cap, team prompts — in one place | `00-THE-FULL-SETUP.md` |
+| Just the **doorman** — cap, parking, wiring, both source files, the verification report | `00B-DOORMAN-ONLY.md` |
 | Deciding *whether* to use a team at all | `01-choosing-the-mechanism.md` |
 | Turning teams on / running one for the first time | `02-agent-teams-reference.md` |
 | Writing a reusable teammate role (`.claude/agents/*.md`) | `03-subagent-definitions.md` |
