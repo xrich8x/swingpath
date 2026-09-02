@@ -386,3 +386,45 @@ Tooling left behind: the probe now takes `BALL_PARITY_VIDEO` so other gold clips
 without forking it, and `onnx_run_int8()` skips tags whose heat file exists — int8
 inference is ~11.7 s/frame on this desktop, so a single agent call cannot cover 178
 frames and resumability is what makes the work survive a kill.
+
+## Second clip: the same failure, but a 3-frame CLUSTER. 2026-09-02 (lead)
+
+`yt_rally2`, full 178 frames, same probe, same bar:
+
+| | `am_hard_utr` | `yt_rally2` |
+|---|---|---|
+| null/non-null agreement | 170/178 (95.5%) PASS | 176/178 (98.9%) PASS |
+| median disagreement | 0.163 px PASS | 0.144 px PASS |
+| **no frame >10 px** | **70.831 px FAIL** | **75.393 px FAIL** |
+| frames where both fire | 53 | 149 |
+| shape of the failure | 1 isolated frame | **3 CONSECUTIVE — 0108, 0109, 0110** |
+
+    0109: fp32=[295.46,112.31]  int8=[351.62,162.62]  75.393 px
+    0110: fp32=[296.50,112.50]  int8=[353.31,161.46]  74.996 px
+    0108: fp32=[295.38,113.38]  int8=[350.50,163.50]  74.493 px
+
+**The cluster is the finding.** A single 70 px frame is a blip a smoother may absorb.
+Three consecutive frames, all ~75 px off in the same direction, is a ball that visibly
+jumps, sits somewhere wrong, and jumps back — and it is long enough to survive
+`smooth_forecast`'s innovation gate rather than be rejected as an outlier. The
+mechanism named on `am_hard_utr` frame 0147 (quantisation erodes the winning blob's
+area and flips a close two-blob margin) persists across consecutive frames because the
+*heatmap* persists across consecutive frames: a near-tie between two blobs does not
+resolve itself in 33 ms.
+
+**Two clips, two failures, both on the outlier condition only.** Aggregates stay
+excellent — medians 0.144–0.163 px, null agreement 95.5–98.9%. This is the third time
+on this file that a passing aggregate has concealed a catastrophic individual lock.
+
+Rate, stated honestly: **1 of 53 both-fire frames on one clip, 3 of 149 on the other**
+— roughly 1–2%, on two clips, both of which failed. That is not yet a rate anyone
+should quote as *the* rate; `yt_match40`'s int8 pass was 46/178 complete when the agent
+was killed.
+
+### A mislabelling I caused and corrected
+
+The summary filename is suffixed from `BALL_PARITY_VIDEO`. I set `BALL_PARITY_DIR` for
+the `yt_rally2` run and not the video var, so it wrote `yt_rally2`'s numbers into
+`..._summary__am_hard_utr.json`, **overwriting the real one**. Both have been
+regenerated with the env correctly set. Recorded because a mislabelled evidence file is
+worse than a missing one — it is wrong and it looks right.
