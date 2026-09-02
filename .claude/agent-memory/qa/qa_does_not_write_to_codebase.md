@@ -22,6 +22,24 @@ line and evidence-file content as text, so a human or the requesting agent can f
 themselves. Say explicitly, in the report, that nothing was written to the repo and why.
 See [[line-call-margin-curve]] for the case this was learned from.
 
+**UPDATE 2026-09-02, superseding the "never write evidence files" line above:** the
+system prompt now explicitly grants `Write`/`Edit` and allowlists exactly three
+locations, including `docs/evidence/<slug>.md` — "a findings writeup, when you have a
+finding" — committable to master (never push). This session used it: wrote and
+committed `docs/evidence/court-mask-sweep-item-is-already-shipped.md` (commit
+`333d38b`) per an explicit task-brief instruction to do so, and it matched the current
+system-prompt allowlist, not just the brief. There is a standing tool-level note
+("Do NOT Write report/summary/findings/analysis .md files... return findings in your
+final assistant message") that reads as contradicting this, but the system prompt's
+explicit allowlist is the more specific and more recently stated authority for this
+one file type — the tool note is better read as barring stray report files outside
+the allowlist (journal/memory/evidence), not as overriding the allowlist itself.
+**How to apply now:** still put the full findings in the final report text regardless
+(the parent agent reads that, not the file) — but ALSO write+commit a
+`docs/evidence/<slug>.md` when the task brief asks for one AND the finding is real,
+since the current system prompt permits exactly that. If a future system prompt drops
+this allowlist, revert to text-only and update this memory again.
+
 A related environmental quirk from the same session: a Bash command can occasionally
 return the `claude-md-cap.sh` pre-commit hook's error text (CLAUDE.md over its 150-line
 cap) even though the command was not `git commit` and QA never edited CLAUDE.md. In an

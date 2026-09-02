@@ -31,6 +31,18 @@ this agent's system prompt — read it first; it is the authoritative copy.
   itself is not truncated). Also: this session's declared cwd was a decoy/stale
   subfolder, not the real repo root — see that file for the path note.
 
+- **Court-mask-sweep parked item verified DEAD, 2026-09-02.**
+  [court-mask-sweep-item-is-already-shipped.md](court-mask-sweep-item-is-already-shipped.md)
+  — the "12 vs 11" sweep result is the already-shipped surface router (f41a489,
+  2026-08-21), re-banked not re-proposed; 3 independent runs agree 12/20, 0 wrong,
+  median 8.1px range 1.7-13.9 vs human clicks. Evidence committed: docs/evidence/
+  court-mask-sweep-item-is-already-shipped.md (333d38b).
+- **Process trap: ending a turn to "wait" on a backgrounded Bash job does not keep you
+  listening for its notification.** [background-wait-does-not-survive-ending-turn.md]
+  (background_wait_does_not_survive_ending_turn.md) — poll in a foreground loop within
+  one tool call instead; hit this on the court-mask-sweep task, coordinator had to
+  intervene.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is
