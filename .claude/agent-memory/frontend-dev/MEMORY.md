@@ -103,6 +103,10 @@ wrong in doubles again, it's a NEW bug, not a recurrence of the old one — chec
 
 ## More memory files
 
+- [Backgrounding + ending your turn loses the wait](background_wait_does_not_survive_ending_turn.md)
+  — never background a slow job and end the turn "waiting for notification"; poll
+  foreground with a bounded timeout, or use a partial/incremental result instead
+
 - [Video-free parity checks](video_free_parity_checks.md) — how live-call JS/Python
   parity was verified without the missing sample video; the reusable technique
 - [Committed calibration files can be degenerate](committed_calibration_files_can_be_degenerate.md)

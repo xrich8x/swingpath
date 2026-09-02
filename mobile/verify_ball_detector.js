@@ -124,10 +124,35 @@ function decodeOnnxPhase() {
   console.log(`decode-onnx: processed ${updates.length} triples (${missing} missing onnx_heat files)`);
 }
 
+// TASK 4 (coordinator follow-up, 2026-09-02): decode the real INT8 graph's
+// heatmap the same way decodeOnnxPhase() decodes the fp32 one. Same real
+// _decode() method, unmodified — only the heatmap's source graph differs.
+function decodeInt8Phase() {
+  const py = readResultsJson();
+  const updates = [];
+  let missing = 0;
+  for (const r of py.results) {
+    const { tag } = r;
+    const int8HeatPath = path.join(OUT, `int8_heat_${tag}.bin`);
+    if (!fs.existsSync(int8HeatPath)) { missing++; continue; }
+    const bd = new BallDetector(null);
+    const heatBuf = fs.readFileSync(int8HeatPath);
+    const heat = new Uint8Array(heatBuf.buffer, heatBuf.byteOffset, heatBuf.length);
+    if (heat.length !== HW) {
+      throw new Error(`int8 heat length ${heat.length} != ${HW} for ${tag}`);
+    }
+    const px = bd._decode(heat); // REAL method, unmodified
+    updates.push({ tag, int8_xy: px ? [px[0], px[1]] : null });
+  }
+  mergeJsResults(updates);
+  console.log(`decode-int8: processed ${updates.length} triples (${missing} missing int8_heat files)`);
+}
+
 const mode = process.argv[2];
 if (mode === "build-decode") buildDecodePhase();
 else if (mode === "decode-onnx") decodeOnnxPhase();
+else if (mode === "decode-int8") decodeInt8Phase();
 else {
-  console.error("usage: node verify_ball_detector.js <build-decode|decode-onnx>");
+  console.error("usage: node verify_ball_detector.js <build-decode|decode-onnx|decode-int8>");
   process.exit(1);
 }

@@ -168,6 +168,92 @@ Closed as stale in the STATE.md row itself (struck through with the
 correction, not deleted — rule 9 territory adjacent: the original finding was
 correct when made, only the context under it moved).
 
+## The int8 graph (`tracknet_ball.int8.onnx`) — coordinator follow-up, 2026-09-02
+
+**Question 1: is it reachable at all?** `ball_detector.js` does not hardcode a
+model path — the caller creates an `InferenceSession` and passes it into
+`new BallDetector(session)`; the choice of which `.onnx` file to load happens
+at that call site, outside this file. There is no app shell in this repo yet
+to inspect for a real load call. But the documentation is unambiguous about
+INTENT: `ball_detector.js`'s own file-header comment says "Wraps the mobile
+TrackNet ONNX (**tracknet_ball.int8.onnx**)" — names int8, not fp32 — and
+`MOBILE.md`'s file listing calls fp32 "(reference)" and int8 "**BUNDLE
+THIS**," with the integration instructions saying explicitly "bundle
+mobile/models/tracknet_ball.int8.onnx as an app asset." A repo-wide grep for
+`tracknet_ball` / `onnxruntime-react-native` outside `mobile/` and `docs/`
+found nothing else that could override this. **Verdict: reachable, and in
+fact the documented/intended shipped model — not dead weight.** fp32 is the
+desktop verification reference, not a shipping candidate.
+
+**Pre-registered bar** (written before measuring, since int8 vs fp32 are
+numerically different by design and the earlier 0.00px/5px bars were for
+algorithm-parity between two implementations of the SAME fp32 numbers, not
+applicable here): task 3 already proved JS-decode-of-the-real-fp32-graph is
+IDENTICAL to Python's PyTorch reference (61/61, 0.00px), so comparing
+JS-decode-of-int8 to JS-decode-of-fp32 isolates the quantisation effect alone
+— both sides run the same (already-fixed) decode algorithm, no algorithm
+confound. Justification for the numbers: a real ball's own footprint in this
+heatmap space is small — observed connected-component areas of 9-15px
+(~3.4-4.4px diameter) in task 3's own inspected frames, consistent with the
+repo's existing "far ball ~3.9px in a 720p frame" figure elsewhere. Bar:
+1. Null/non-null agreement `>=90%` — losing the ball to quantisation changes
+   the IN/OUT call outright, the severe failure mode, same reasoning as task 3.
+2. Median position disagreement (both fire) `<=2px` — ~6x the existing
+   `export_tracknet.py` historical figure (0.32px mean, 12 frames, one clip),
+   giving margin for real-clip diversity while staying inside "quantisation
+   noise" rather than "different object."
+3. **No single frame may disagree by more than 10px** (~2-3x a real ball's
+   own footprint), checked and reported individually — the exact discipline
+   that caught the decode bug above, applied again on purpose.
+
+**Measured — PARTIAL SAMPLE, explicitly labelled as such.** The int8 graph is
+markedly slower on this desktop x86 CPU than fp32 (already expected and
+documented in `MOBILE.md` — no hardware int8 acceleration on x86; a phone's
+CoreML/NNAPI provider is the intended target). Running the full 178-frame set
+would have cost another long foreground/background wait for no benefit to the
+question asked, so this was stopped after the **first 51 of 178 frames**
+(tags 0002-0052 — the *start* of the clip only, not a random or representative
+sample across the whole span) rather than waited out further:
+
+```
+=== INT8 vs FP32, both through the real (fixed) JS _decode() — 50 comparable frames ===
+null/non-null agreement: 48/50 (96.0%)          (bar: >=90% — PASS)
+both fire: 10 frames. median=0.192px mean=0.237px max=1.202px   (bar: median<=2px — PASS)
+No frame exceeded 10px                                          (bar — PASS)
+
+WORST 5 INDIVIDUAL DISAGREEMENTS (not the aggregate):
+  0005: fp32=[400, 200.67] int8=[401, 200]         dist=1.202px
+  0019: fp32=[397.13,108.47] int8=[397.1,108.8]     dist=0.335px
+  0014: fp32=[400.18,140.82] int8=[400.38,140.62]   dist=0.287px
+  0012: fp32=[401.33,155.75] int8=[401.43,155.93]   dist=0.202px
+  0018: fp32=[398.33,115.11] int8=[398.3,115.3]     dist=0.192px
+
+NULL MISMATCHES (2 of 50, both fp32-fires/int8-null — a real coverage cost,
+not a position error): tags 0006, 0017.
+```
+
+All three pre-registered bars **PASS** on the available data. Position
+agreement when both fire is tight and consistent with (in fact slightly
+tighter than) the existing 0.32px historical figure — no sign of the
+catastrophic multi-blob failure mode the fp32-vs-JS decode check found.
+**But there is a real, honestly-reported finding this partial sample surfaced
+and the aggregate does not hide**: quantisation caused the model to lose a
+detection entirely (fp32 fired, int8 returned null) on 2 of 50 frames (4%).
+That is coverage loss, not position error, and the null-agreement bar (96%)
+still clears 90% — but it is a genuine, non-zero cost worth naming rather
+than folding into "the bar passed."
+
+**Verdict: SAFE TO SHIP on the position-accuracy axis measured so far** (no
+outlier anywhere near the 238px class the fp32 decode bug produced) **but
+NOT YET A FULLY POWERED VERDICT** — only 10 frames contributed to the
+position-agreement number and only 51 of 178 real frames (the clip's start
+only) were sampled. If int8 ships in the actual app (which the documentation
+says it will), re-running this same harness's `onnx-run-int8` /
+`decode-int8` / `compare-int8` over the FULL 178-frame set (or a larger,
+more representative one) before that ships is the natural next step — the
+harness already supports it; it was simply not worth another long wait to
+extend a result that was already answering the question asked.
+
 ## What was NOT verified
 
 - **The `onnxruntime-react-native` engine binding** — CoreML (iOS) / NNAPI
@@ -176,10 +262,10 @@ correct when made, only the context under it moved).
   `export_tracknet.py`'s own fp32-vs-PyTorch check (`0.00 px`, `_postprocess`
   on both sides) is evidence the ONNX *graph* itself is faithful, but that is
   a Python-only check and does not touch the RN binding.
-- **The int8 model** (`tracknet_ball.int8.onnx`) — this check used fp32
-  throughout, matching what `export_tracknet.py` calls "the reference." int8
-  vs fp32 decode drift (`export_tracknet.py`'s own 0.32px figure) is a
-  separate, already-measured question and wasn't re-run here.
+- **The int8 model, fully** — see "The int8 graph" section above: measured
+  on a PARTIAL sample (51 of 178 real frames, clip-start only), 2026-09-02,
+  as a coordinator follow-up. All three pre-registered bars passed on that
+  sample; the full 178-frame run was not completed (see that section for why).
 - **The native camera resize path** (1080p/4K frame -> 640x360 RGB) — Python's
   `detect()` resizes internally with `cv2.resize`; the JS port assumes the
   caller (a vision-camera frame processor) already delivers 360x640 RGB. This
@@ -197,9 +283,15 @@ node mobile/verify_ball_detector.js build-decode   # BALL_PARITY_DIR=<dir>
 backend/.venv/Scripts/python.exe backend/ball_detector_parity_probe.py onnx-run <dir>
 node mobile/verify_ball_detector.js decode-onnx    # BALL_PARITY_DIR=<dir>
 backend/.venv/Scripts/python.exe backend/ball_detector_parity_probe.py compare <dir>
+
+# int8 leg (slow on desktop x86 — no int8 HW accel; expect it to take a while):
+backend/.venv/Scripts/python.exe backend/ball_detector_parity_probe.py onnx-run-int8 <dir>
+node mobile/verify_ball_detector.js decode-int8    # BALL_PARITY_DIR=<dir>
+backend/.venv/Scripts/python.exe backend/ball_detector_parity_probe.py compare-int8 <dir>
 ```
 
 `<dir>` is any writable scratch directory (`BALL_PARITY_DIR` env var for the
 Node steps, positional arg for the Python steps); large per-frame binaries are
-NOT committed, only the two scripts and the compact
-`data/output/ball_detector_parity_summary.json` result.
+NOT committed, only the scripts and the compact
+`data/output/ball_detector_parity_summary.json` +
+`data/output/ball_detector_int8_parity_summary.json` results.

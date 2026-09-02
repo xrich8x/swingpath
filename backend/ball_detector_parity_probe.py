@@ -46,6 +46,7 @@ from swingvision.ball import BallDetector  # noqa: E402
 VIDEO = os.path.join(ROOT, "data", "incoming", "Hardcourt", "am_hard_utr.mp4")
 WEIGHTS = os.path.join(ROOT, "backend", "weights", "tracknet.pt")
 ONNX_FP32 = os.path.join(ROOT, "mobile", "models", "tracknet_ball.onnx")
+ONNX_INT8 = os.path.join(ROOT, "mobile", "models", "tracknet_ball.int8.onnx")
 OUT = sys.argv[2] if len(sys.argv) > 2 else os.environ.get(
     "BALL_PARITY_DIR",
     r"C:\Users\richm\AppData\Local\Temp\claude\e--Claude-Outputs-Cowork-Tasks-Swing-Vision"
@@ -290,13 +291,124 @@ def onnx_run():
     print(f"onnx_run: ran real ONNX graph on {n} JS-built input tensors")
 
 
+def onnx_run_int8():
+    """TASK 4 (coordinator follow-up, 2026-09-02): int8 sibling of onnx_run().
+
+    Runs the REAL bundled INT8 graph (mobile/models/tracknet_ball.int8.onnx —
+    the file MOBILE.md and ball_detector.js's own docstring both name as the
+    one meant to ship, fp32 being the desktop "reference" only) on JS's own
+    _buildInput() tensors — same substitution as onnx_run(): Python's
+    onnxruntime standing in for onnxruntime-react-native, named explicitly,
+    same literal .onnx file bytes onnxruntime-react-native would load.
+    """
+    import onnxruntime as ort
+
+    sess = ort.InferenceSession(ONNX_INT8, providers=["CPUExecutionProvider"])
+    with open(os.path.join(OUT, "python_results.json")) as f:
+        py = json.load(f)
+    n = 0
+    for r in py["results"]:
+        tag = r["tag"]
+        jf = os.path.join(OUT, f"js_input_{tag}.bin")
+        if not os.path.exists(jf):
+            continue
+        js_input = np.fromfile(jf, dtype=np.float32).reshape(1, 9, IN_H, IN_W)
+        heat = sess.run(None, {"frames": js_input})[0][0]
+        heat.astype(np.uint8).tofile(os.path.join(OUT, f"int8_heat_{tag}.bin"))
+        n += 1
+    print(f"onnx_run_int8: ran real INT8 ONNX graph on {n} JS-built input tensors")
+
+
+def compare_int8():
+    """TASK 4: int8 vs fp32 through the (now-fixed, real) JS decode, on the
+    same 178 real frames. fp32-through-JS was already proven identical to
+    Python's PyTorch reference in task 3 (61/61, 0.00px), so comparing
+    int8-through-JS to fp32-through-JS here isolates the quantisation effect
+    alone — both sides run the same (correct) decode algorithm, no algorithm
+    confound left over from task 3.
+
+    PRE-REGISTERED BAR (written before this ran — see the journal for the
+    reasoning): (1) null/non-null agreement >=90%; (2) MEDIAN position
+    disagreement <=2px when both fire; (3) NO SINGLE FRAME may disagree by
+    more than 10px — checked and reported individually, not just averaged
+    into a pass rate, because task 3's own aggregate bars passed while hiding
+    a real 238px-class bug.
+    """
+    with open(os.path.join(OUT, "python_results.json")) as f:
+        py = json.load(f)
+    js_path = os.path.join(OUT, "js_results.json")
+    with open(js_path) as f:
+        js = json.load(f)
+    js_by_tag = {r["tag"]: r for r in js["results"]}
+
+    total = agree_null = both_nonnull = 0
+    diffs = []  # (tag, fp32_xy, int8_xy, dist)
+    for r in py["results"]:
+        tag = r["tag"]
+        jr = js_by_tag.get(tag)
+        if jr is None or "onnx_xy" not in jr or "int8_xy" not in jr:
+            continue
+        total += 1
+        fp32_xy = jr["onnx_xy"]          # JS decode of the real fp32 ONNX heatmap
+        int8_xy = jr["int8_xy"]          # JS decode of the real int8 ONNX heatmap
+        fp32_null = fp32_xy is None
+        int8_null = int8_xy is None
+        if fp32_null == int8_null:
+            agree_null += 1
+        if not fp32_null and not int8_null:
+            both_nonnull += 1
+            dist = ((fp32_xy[0]-int8_xy[0])**2 + (fp32_xy[1]-int8_xy[1])**2) ** 0.5
+            diffs.append((tag, fp32_xy, int8_xy, dist))
+        elif fp32_null != int8_null:
+            diffs.append((tag, fp32_xy, int8_xy, "NULL MISMATCH"))
+
+    numeric = sorted([d for _, _, _, d in diffs if isinstance(d, float)])
+    print(f"\n=== INT8 vs FP32, both through the real (fixed) JS _decode() — {total} frames ===")
+    print(f"  null/non-null agreement: {agree_null}/{total} ({100*agree_null/max(total,1):.1f}%)  (bar: >=90%)")
+    if numeric:
+        median = numeric[len(numeric)//2]
+        print(f"  both fire: {both_nonnull} frames. median={median:.3f}px "
+              f"mean={sum(numeric)/len(numeric):.3f}px max={max(numeric):.3f}px  (bar: median<=2px)")
+        print(f"  WORST 5 INDIVIDUAL DISAGREEMENTS (not the aggregate):")
+        worst = sorted([d for d in diffs if isinstance(d[3], float)], key=lambda d: -d[3])[:5]
+        for tag, a, b, dist in worst:
+            print(f"    {tag}: fp32={a} int8={b} dist={dist:.3f}px")
+    null_mismatches = [d for d in diffs if d[3] == "NULL MISMATCH"]
+    if null_mismatches:
+        print(f"  NULL MISMATCHES ({len(null_mismatches)}):")
+        for m in null_mismatches:
+            print("   ", m)
+
+    bar_null = total > 0 and agree_null / total >= 0.90
+    bar_median = bool(numeric) and numeric[len(numeric)//2] <= 2.0
+    bar_outlier = not numeric or max(numeric) <= 10.0
+    print(f"  BAR: null-agreement {'PASS' if bar_null else 'FAIL'}, "
+          f"median<=2px {'PASS' if bar_median else 'FAIL'}, "
+          f"NO frame >10px {'PASS' if bar_outlier else 'FAIL — see worst-5 above'}")
+
+    summary_path = os.path.join(ROOT, "data", "output", "ball_detector_int8_parity_summary.json")
+    with open(summary_path, "w") as f:
+        json.dump({
+            "total": total, "null_agree": agree_null, "both_nonnull": both_nonnull,
+            "diffs_px": numeric,
+            "bars": {"null_agreement_pass": bar_null, "median_le_2px_pass": bar_median,
+                     "no_frame_gt_10px_pass": bar_outlier},
+        }, f, indent=1)
+    print(f"\nwrote summary to {summary_path}")
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2 or sys.argv[1] not in ("extract", "compare", "onnx-run"):
+    modes = ("extract", "compare", "onnx-run", "onnx-run-int8", "compare-int8")
+    if len(sys.argv) < 2 or sys.argv[1] not in modes:
         print(__doc__)
         sys.exit(1)
     if sys.argv[1] == "extract":
         extract()
     elif sys.argv[1] == "onnx-run":
         onnx_run()
+    elif sys.argv[1] == "onnx-run-int8":
+        onnx_run_int8()
+    elif sys.argv[1] == "compare-int8":
+        compare_int8()
     else:
         compare()
