@@ -43,7 +43,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "backend"))
 from swingvision.ball import BallDetector  # noqa: E402
 
-VIDEO = os.path.join(ROOT, "data", "incoming", "Hardcourt", "am_hard_utr.mp4")
+#: 2026-09-02 (frontend-dev, int8 failure-rate characterisation task): default
+#: is still am_hard_utr.mp4 (byte-identical prior behaviour, no call site
+#: broken), but any other gold clip's real video can be substituted via
+#: BALL_PARITY_VIDEO so the int8 outlier found on am_hard_utr can be checked
+#: against other clips without forking this script. tools/_goldset.py's
+#: calibrated_map() is the source of truth for path -> (video, calib, labels).
+VIDEO = os.environ.get(
+    "BALL_PARITY_VIDEO",
+    os.path.join(ROOT, "data", "incoming", "Hardcourt", "am_hard_utr.mp4"),
+)
 WEIGHTS = os.path.join(ROOT, "backend", "weights", "tracknet.pt")
 ONNX_FP32 = os.path.join(ROOT, "mobile", "models", "tracknet_ball.onnx")
 ONNX_INT8 = os.path.join(ROOT, "mobile", "models", "tracknet_ball.int8.onnx")
@@ -306,17 +315,30 @@ def onnx_run_int8():
     sess = ort.InferenceSession(ONNX_INT8, providers=["CPUExecutionProvider"])
     with open(os.path.join(OUT, "python_results.json")) as f:
         py = json.load(f)
-    n = 0
+    # 2026-09-02 (frontend-dev): this graph runs ~11.7s/frame on this desktop
+    # x86 CPU (no int8 HW accel — expected, documented in MOBILE.md), so a
+    # full 178-frame clip exceeds one bounded shell call. RESUME: skip any
+    # tag whose int8_heat_{tag}.bin already exists so this can be invoked
+    # repeatedly across several bounded calls without losing progress or
+    # re-computing frames already done. Same substitution as before (Python
+    # onnxruntime standing in for onnxruntime-react-native), unchanged.
+    n = skipped = 0
     for r in py["results"]:
         tag = r["tag"]
         jf = os.path.join(OUT, f"js_input_{tag}.bin")
         if not os.path.exists(jf):
             continue
+        outf = os.path.join(OUT, f"int8_heat_{tag}.bin")
+        if os.path.exists(outf):
+            skipped += 1
+            continue
         js_input = np.fromfile(jf, dtype=np.float32).reshape(1, 9, IN_H, IN_W)
         heat = sess.run(None, {"frames": js_input})[0][0]
-        heat.astype(np.uint8).tofile(os.path.join(OUT, f"int8_heat_{tag}.bin"))
+        heat.astype(np.uint8).tofile(outf)
         n += 1
-    print(f"onnx_run_int8: ran real INT8 ONNX graph on {n} JS-built input tensors")
+        print(f"  int8 {tag} done ({n} this call, {skipped} already had)", flush=True)
+    print(f"onnx_run_int8: ran real INT8 ONNX graph on {n} JS-built input tensors "
+          f"this call ({skipped} already done, resumed)")
 
 
 def compare_int8():
@@ -386,11 +408,25 @@ def compare_int8():
           f"median<=2px {'PASS' if bar_median else 'FAIL'}, "
           f"NO frame >10px {'PASS' if bar_outlier else 'FAIL — see worst-5 above'}")
 
-    summary_path = os.path.join(ROOT, "data", "output", "ball_detector_int8_parity_summary.json")
+    # 2026-09-02 (frontend-dev, multi-clip widening): suffix by clip so this
+    # doesn't clobber another clip's summary when run under BALL_PARITY_VIDEO.
+    # am_hard_utr's original run was preserved as
+    # ball_detector_int8_parity_summary__am_hard_utr.json before this changed
+    # (a copy of the pre-existing unlabeled file, byte-identical).
+    clip_label = os.path.splitext(os.path.basename(VIDEO))[0]
+    summary_path = os.path.join(
+        ROOT, "data", "output", f"ball_detector_int8_parity_summary__{clip_label}.json")
     with open(summary_path, "w") as f:
         json.dump({
+            "clip": clip_label, "video": VIDEO,
             "total": total, "null_agree": agree_null, "both_nonnull": both_nonnull,
             "diffs_px": numeric,
+            "worst_frames": [
+                {"tag": tag, "fp32_xy": a, "int8_xy": b, "dist_px": d}
+                for tag, a, b, d in sorted(
+                    [d for d in diffs if isinstance(d[3], float)], key=lambda d: -d[3])[:10]
+            ],
+            "null_mismatch_tags": [tag for tag, _, _, d in diffs if d == "NULL MISMATCH"],
             "bars": {"null_agreement_pass": bar_null, "median_le_2px_pass": bar_median,
                      "no_frame_gt_10px_pass": bar_outlier},
         }, f, indent=1)

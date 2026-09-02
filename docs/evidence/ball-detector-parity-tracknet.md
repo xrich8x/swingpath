@@ -349,3 +349,40 @@ It does not say int8 is unusable — the median is 0.163 px and 170 of 178 frame
 on fire/no-fire. It says the quantised graph has a failure mode the fp32 reference
 does not, that mode is currently unbounded, and nobody has characterised how often it
 occurs on other clips. This is one clip (`am_hard_utr`), 178 contiguous frames.
+
+## The mechanism, named. Partial — agent killed mid-clip 2026-09-02
+
+frontend-dev root-caused frame 0147 before a session limit ended the run. Recovered
+from `.claude/journals/frontend-dev.md`, which is the whole reason it survived.
+
+Inspected the three heatmaps directly with connected components — PyTorch reference,
+fp32 ONNX (byte-identical to it), and int8 ONNX:
+
+| | true-ball blob | competing blob | winner |
+|---|---|---|---|
+| fp32 | area 15 × peak 220 = **3300** | area 13 × peak 242 = 3146 | true ball, by **~5%** |
+| int8 | fragmented to area 2 + area 1 → **440** | unchanged, **3146** | **the wrong blob** |
+
+> **Quantisation flips a close two-blob score margin by eroding the true-ball
+> component's AREA, not by moving either peak.**
+
+This is not a repeat of the decode bug — both sides run the corrected `area × peak`
+connected-component decode. The heatmap was already a near-tie in fp32; quantisation
+fragments the winning component's pixel footprint below threshold density and the
+runner-up takes it.
+
+**Two consequences worth stating.** The failure is not random: it needs a close
+two-blob heatmap, so its rate is the rate of *those*, not of frames in general. And
+the fp32 margin being ~5% means fp32 itself was one bad frame from the same error —
+the quantisation exposed a fragility that was already there.
+
+**Partial, and where it stopped:** a second cluster was found on `yt_rally2` with the
+mirror-image mechanism — int8 *growing the false blob's* area/peak rather than eroding
+the true one — and it is a **3-frame cluster, not an isolated frame**. That clip's int8
+stage completed (178/178); the decode and compare had not run. `yt_match40` was not
+started. The rate across clips is therefore still unknown.
+
+Tooling left behind: the probe now takes `BALL_PARITY_VIDEO` so other gold clips run
+without forking it, and `onnx_run_int8()` skips tags whose heat file exists — int8
+inference is ~11.7 s/frame on this desktop, so a single agent call cannot cover 178
+frames and resumability is what makes the work survive a kill.
