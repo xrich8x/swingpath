@@ -69,14 +69,15 @@ closed branches listed in "What has not worked" — 13 hypotheses died there thi
 
 ## PARKED — work that was started and stopped
 
-- **Court mask sweep: a possible gate pass, unclaimed.** `data/output/court_mask_sweep.json`
-  was re-run; the arms changed shape (ablation -> routed) and the routed variants show **12
-  accepted vs baseline's 11**. Committed as an artifact, deliberately NOT recorded as a gate
-  result: the gate is >=12 of 20 AND zero accepted court more than 20 px from the human
-  clicks, the precision half is absolute, and an accept count alone cannot clear it. Two
-  changes have already died on exactly that. **Needs a qa run against the real gate** — this
-  is a dispatch the lead can make, not a founder decision.
-
+- ~~**Court mask sweep: a possible gate pass, unclaimed.**~~ **CLOSED 2026-09-02 by qa —
+  it was already shipped.** `f41a489` (2026-08-21) is the ship commit for surface routing
+  and `calibration.court_line_mask` is unchanged since (qa read the live function, not the
+  commit message). `court_mask_sweep.json`'s content was rewritten a week LATER by
+  `040df9d` — a re-measurement of the shipped router banked for the record, not a new
+  candidate. Both routed variants are bit-identical to shipped on gold; the only clip that
+  ever differs is `am_rally32short`, and only because `baseline` predates the router.
+  Gate re-run independently: 12/20, max 13.9 px, zero over 20. Nothing replaces it — the
+  next court-mask idea has to be a genuinely new candidate.
 - **Corner contact sheets for the 25 `*_pts.json` files.** BLOCKED item 3 asks the founder to
   audit calibrations by rendering corners. Rendering is the lead's job, not theirs: build a
   sheet per file with the four clicked corners drawn on a real frame, so the founder's task
