@@ -63,3 +63,44 @@ Run with **`ballnet_v21.pt`**. The v1 ball detector is a founder decision for
 is not the shipped v1 choice. The obvious next check is the same ladder with
 TrackNet weights: if the ghost-additive behaviour holds there too it is a property
 of the stage, and if it does not it is a property of the pairing.
+
+---
+
+## Completed 2026-09-02: it is the PAIRING, not the stage
+
+The caveat above — that this was measured with `ballnet_v21` while v1 is a founder
+decision for **TrackNet** — is now closed. The same ladder, same 7 clips, same human
+gold clicks, one variable changed:
+
+| clip | BallNet recall Δ | ghosts | TrackNet recall Δ | ghosts |
+|---|---|---|---|---|
+| `yt_rally2` | +4.3 | +1 | **+10.5** | 0 |
+| `yt_match40` | +6.0 | +1 | **+4.9** | +1 |
+| `gold_uR5q2cSM6AY` | −8.0 | +2 | **+4.3** | 0 |
+| `am_hard_utr` | −1.2 | +5 | **+3.4** | +2 |
+| `gold_sAjkpeRq4P4` | +3.3 | +3 | **+2.6** | 0 |
+| `gold_L73ep7JHiJ4` | −7.1 | 0 | **+2.4** | 0 |
+| `gold_UHf0LeMU2pg` | −4.2 | 0 | −0.6 | 0 |
+| **mean / total** | **−1.0 pts** | **+12** | **+3.9 pts** | **+3** |
+
+**Under TrackNet the stage is clearly beneficial: +3.9 pts of recall for 3 added ghost
+frames across seven clips, and recall is up on six of seven.** Under BallNet it was
+−1.0 pts for 12 ghosts, up on only three. Same code, same clips, same ground truth.
+
+So the earlier headline — "adds ghosts on every clip and removes none" — was true of
+the pairing it was measured on and is **not** a property of `smooth_forecast`. The row
+is narrowed rather than withdrawn, which is what the caveat was written to allow.
+
+**Why this matters beyond the chain:** v1's detector is a founder decision for
+TrackNet. With that detector the smoother needs no attention. The −12.0 pt
+*speed-coverage* cost recorded elsewhere is a different metric (`seen_frac` over whole
+hit→landing spans, where interpolated frames may not count) and is untouched by this
+— both numbers stand.
+
+**Two process notes worth keeping.** The harness could not run TrackNet at all until
+2026-09-02 — it hardcoded the BallNet detector and died on
+`KeyError: 'model_state_dict'`, so the project's own chain ladder could not measure
+the v1 detector. And `gold_sAjkpeRq4P4` first appeared to fail silently under
+TrackNet; it was simply slower than the timeout, and a buffered stdout lost the
+output while the shell pipeline still reported success. Neither was a real defect in
+the stage under test, and both would have quietly biased the result.
