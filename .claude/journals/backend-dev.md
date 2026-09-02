@@ -30,10 +30,15 @@ Report both arms side by side. Commit to master, DO NOT PUSH. STATE.md same comm
 
 ## STATE — where I got to
 
-### ### RESULT IS IN. GATE **B** PASSES: THE COST **SURVIVES**. IT IS THE STAGE. ###
+### ### DONE AND COMMITTED as `c01c9d1`. NOT PUSHED. Nothing outstanding. ###
 
-All 8 runs done, artifacts in `data/output/speed_coverage/`. Remaining: inertness test
-for `span_sink`, evidence file, STATE row, commit.
+GATE **B** PASSES: the -12.0 pt cost **SURVIVES** under TrackNet. It is the STAGE, not
+the pairing. 502 tests pass (4 new). STATE rows 219 + 237 + 238 updated, evidence
+appended to `speed-coverage-is-chain-shaped-and-the.md`, part 4 appended to
+`post_bounce_chain.md`, 8 artifacts in `data/output/speed_coverage/`. Memory: 2 new
+files (`smoother-two-metrics-opposite-verdicts`, `perception-cache-families`) +
+`ball-detector-choice-is-split` updated. Concurrent `.claude/` edits by another session
+LEFT ALONE (agent_cap.py, qa/*, .gitignore, doorman_server.py, slots.py).
 
 PRIMARY (each arm on its OWN shots — what the shipped product would report):
 | clip | arm | raw | rect | suppr | gate | smooth | **D_smooth** | shots>=50% at smooth | n_shots |
