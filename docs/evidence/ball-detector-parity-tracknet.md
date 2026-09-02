@@ -295,3 +295,57 @@ Node steps, positional arg for the Python steps); large per-frame binaries are
 NOT committed, only the scripts and the compact
 `data/output/ball_detector_parity_summary.json` +
 `data/output/ball_detector_int8_parity_summary.json` results.
+
+---
+
+## Full 178-frame int8 run: the bar FAILS. Run 2026-09-02 (lead)
+
+The partial verdict above was flagged as needing a full run before being called
+conclusively safe. It did, and the answer changed.
+
+| | n=50 (partial) | **n=178 (full)** |
+|---|---|---|
+| null/non-null agreement (bar ≥90%) | 96.0% PASS | 95.5% PASS |
+| median disagreement (bar ≤2 px) | 0.192 px PASS | 0.163 px PASS |
+| **no single frame >10 px** | 1.202 px PASS | **70.831 px FAIL** |
+| null mismatches (fp32 fires, int8 does not) | 2 | **8** |
+
+    0147: fp32=[260.93, 143.60]  int8=[313.08, 191.54]  dist=70.831 px
+
+**The bar was pre-registered and it fails. It stays failed.** Two of three conditions
+still pass and the median is excellent — which is exactly why the outlier condition
+was written in the first place: an aggregate hides the case that reaches a screen.
+This is the second time on this file that a passing aggregate concealed a
+catastrophic individual lock, the first being the 238 px decode bug.
+
+**Why this matters more than a parity nicety:** `tracknet_ball.int8.onnx` is not a
+variant, it is **what ships**. `mobile/ball_detector.js`'s own header names it, and
+`MOBILE.md` labels fp32 "(reference)" while telling integrators "BUNDLE THIS" for
+int8. So the 70.8 px frame and the 8 null mismatches are the shipped path's
+behaviour, not a lab curiosity.
+
+### Why the partial run could not have found this
+
+Not a mistake in the earlier work — a sampling limit that was declared at the time.
+The partial covered 50 contiguous clip-start frames with only 10 position-comparable;
+frame 0147 is outside that span entirely. The earlier verdict's own words were "not
+yet a fully powered verdict given the small n ... flagged as needing a full 178-frame
+re-run", and that hedge was correct.
+
+### A pipeline trap worth recording
+
+Widening this took three attempts because the probe has **four stages that must run
+in order** — Python fp32 inference, Python int8 inference, the **JS decode of each**,
+then compare. Running the int8 inference over 178 frames did not widen anything,
+because `js_results.json` still held the JS decode of the old 50 and `compare_int8`
+silently skips any frame missing `int8_xy`. The comparison kept reporting "50 frames"
+while both Python sides had 178. **The count in the output header is the number of
+frames that had BOTH decodes, not the number measured** — read it as a diagnostic,
+not a label.
+
+### What this does not say
+
+It does not say int8 is unusable — the median is 0.163 px and 170 of 178 frames agree
+on fire/no-fire. It says the quantised graph has a failure mode the fp32 reference
+does not, that mode is currently unbounded, and nobody has characterised how often it
+occurs on other clips. This is one clip (`am_hard_utr`), 178 contiguous frames.
