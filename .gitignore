@@ -200,3 +200,4 @@ data/output/_*
 .claude/.agent-locks/
 .claude/.agent-queue/
 .claude/.agent-reservations/
+.claude/.agent-spend.log

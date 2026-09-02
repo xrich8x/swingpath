@@ -28,7 +28,6 @@ Do NOT "ML-ify" geometry or logic. It adds error to exact answers.
 
 | Task | Read | Do not read |
 | --- | --- | --- |
-| Anything at all | this file | — |
 | About to propose a change | `docs/STATE.md` **first** — the verdict table | evidence files |
 | A row in STATE looks wrong or you need the detail | that row's evidence file | all of them |
 | Any model work (create/train/tune/evaluate) | `ML_PRACTICES.md` — **required** | PLAYBOOK unless diagnosing |
@@ -70,29 +69,25 @@ it, that doc is wrong. This file is orientation, not status.
     Compliant: human clicks, `tools/synth_truth.py`, geometry we derive. **One live
     exception, flagged not hidden:** `tools/hud_ocr.py` reads SwingVision's MPH panel
     — a "HUD MAE" is *agreement with another estimator, not accuracy*. Add no new ones.
-12. **The rally / score layer is BACK IN SCOPE** — user ruling 2026-08-27, superseding
-    the 2026-08-20 ruling that closed it. The product needs match scoring (sets,
-    games), point-by-point clip segmentation and dead-time trimming. **Reopening
-    scope does not create ground truth.** That layer still has none, and rule 11 bars
-    the easy source — a burned-in scoreboard stays barred. A compliant source (human
-    -labelled point boundaries, or boundaries derived from bounces and physics) is a
-    prerequisite for any number here, not a detail. `stats.score_validation_note`
-    stays until a measured number replaces it.
+12. **The rally / score layer is BACK IN SCOPE** — user ruling 2026-08-27. The product needs
+    match scoring (sets, games), point-by-point clip segmentation and dead-time trimming.
+    **Reopening scope does not create ground truth:** it has none, rule 11 bars the easy
+    source, and a compliant one (human-labelled point boundaries, or boundaries from bounces
+    and physics) is a prerequisite for any number here. `stats.score_validation_note` stays.
 
 ## Commands
 
 ```bash
-# Backend (Python 3.12). Windows: backend\.venv\Scripts\python.exe (CPU), .venv-train (CUDA)
-cd backend && python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+# Backend (Python 3.12). Windows: backend\.venv\Scripts\python.exe (CPU), .venv-train (CUDA).
+# First-time venv + pip bootstrap: README.md / SETUP_PROMPT.md
 python run.py demo --out ../frontend/src/data/sample_match.json   # synthetic, no weights
 python run.py check <video> --keypoints pts.json                  # pre-flight: grade the mount
 python run.py analyze <video> --keypoints pts.json --out out.json # full pipeline
 python -m pytest tests/ && cd ../frontend && npm install && npm run dev
 ```
 
-`run.py`: `demo | analyze | check | live | correct | highlights`. `tools/lab_server.py` is
-the Lab (label/train/score in a browser) — not part of the analyzer; it never imports
-`swingvision` and deleting it leaves the product intact.
+`run.py`: `demo | analyze | check | live | correct | highlights`. `tools/lab_server.py` is the
+Lab (label/train/score in a browser) — not the analyzer; deleting it leaves the product intact.
 
 ## Conventions
 
@@ -122,15 +117,14 @@ evidence file — a row needing a paragraph is being written in the wrong file.
 ## Gotchas that bite every session
 
 - **Speed is average ball speed** (~15–20% under radar): drag (−21.7%) vs synth truth, not a bug.
-- **A low mount is measured accuracy, not a style choice.** Close calls 54.0% at 1.0 m, ~69%
-  at 3 m, ~81% at 8 m against a **56.2% majority-class floor** — 1 m is worse than answering
-  "in" every time. Quote that, never `reliable_court_span` (a kinder geometric bound).
-- **A residual proves NOTHING — render the corners** (T23). `yt_match40` is stamped PASS at 0.9 px
-  with all four clicks off any court line, so the pipeline called the NEAR player far.
-  `validate_new_clip.py --audit` is a screen, not a verdict. `docs/calibration.md`.
-- **Both calibrated golds are LOW mounts, so far-court numbers there are recall, not
-  measurement.** `am_hard_utr` 1.74 m reaches 7.5 m of 23.77 (never the net); `demo30` 1.38 m,
-  5.2 m — never cite its speeds.
+- **A low mount is measured accuracy, not a style choice.** Close calls 54.0% at 1.0 m against a
+  **56.2% majority-class floor** — worse than answering "in" every time; ~69% at 3 m, ~81% at 8 m.
+  Quote that, never `reliable_court_span` (a kinder geometric bound).
+- **A residual proves NOTHING — render the corners** (T23): `yt_match40` stamped PASS at 0.9 px
+  with all four clicks off any line, so the pipeline called the NEAR player far; `--audit` is a
+  screen, not a verdict. **Both calibrated golds are LOW mounts** — `am_hard_utr` 1.74 m reaches
+  7.5 m of 23.77, `demo30` 1.38 m / 5.2 m — so far-court numbers there are recall, not
+  measurement, and demo30's speeds are never citable. `docs/calibration.md`.
 - **Bounce height is a single-camera heuristic.** Open task, not a bug.
 
 ## The team — `tennis-team`
@@ -163,15 +157,22 @@ diagnoses alone nor jumps to a fix. Findings only — a mislabelled doc number i
 The lead **decomposes and hands out work without asking first**, matching the task to the
 agent's `tools:` — execution work to an agent with no `Bash` wastes a whole run.
 
-**THREE LIVE AGENTS PROJECT-WIDE — `.claude/hooks/agent-cap.sh` counts the whole tree**, so a
-teammate calling a teammate spends the same quota (lead→backend-dev→qa is two of three). **A
-refusal is PARKED, not lost** — handed back when a slot frees; never retry, never shrink to fit.
-A Pro-plan QUOTA cap: one run hit 253k, a one-word agent ~38k. Never several on one question (T07).
+**THREE LIVE AGENTS PROJECT-WIDE — `.claude/hooks/agent-cap.sh` counts the whole tree.** Only
+the lead hires: teammates have no `Agent` tool, so scan every report for **NEEDS DISPATCH** and
+fold it into the queue. **A cap refusal is PARKED, not lost** — handed back when a slot frees;
+never retry, never shrink. The **BUDGET (12 runs / 5 h) REFUSES instead**: batch blocked
+dispatches into ONE update for the founder and stop; going past it is their call via
+`TENNIS_AGENT_BUDGET`. One run hit 253k; a trivial teammate ~19k, any `*`-tool agent ~37k (T07).
 
-**The lead holds ONE direct child at a time**, **one task per brief** — two deliverables is two
-runs in one. Queue the rest on paper, dispatch only the head, PAUSE anything needing a human,
-re-sort on every return (a result often kills what was queued behind it), and dispatch before
-writing the status report.
+**Every brief needs ONE `DELIVERABLE:` and a `STOP-WHEN:` or the doorman rejects it** (free, no
+run spent): the single artifact this run produces, and what ends the run with questions still
+open — a condition, or "~25 tool calls, then write up what is established". Name the A-to-Z
+remainder `NOT-THIS-RUN:` so the agent cannot drift into it.
+
+**The lead holds ONE direct child at a time**, one task per brief — two deliverables is two runs
+in one. Queue the rest on paper, dispatch only the head, PAUSE anything needing a human, re-sort
+on every return (the answer to A usually deletes half of C–Z before they are paid for), and
+dispatch before writing the status report.
 
 **A task needs a human when** only an eye can invalidate the result (visual failure mode →
 provisional until the frames are seen); it fires a stopping rule, is irreversible, is a

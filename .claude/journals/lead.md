@@ -146,6 +146,23 @@ affordability) both wait here, and nothing dispatchable is on that path.
 
 ## LOG — newest first
 
+- **2026-09-03** — **doorman v2 installed** from `agent-team-package/swingvision-install/`
+  (INSTALL.md steps 1-5). New `agent_cap.py`/`agent-cap.sh`; settings env teams flag 1->0,
+  spawn depth 1, native concurrent cap 3; `Agent` removed from all five role files, replaced
+  by NEEDS DISPATCH + deliver-as-you-go; CLAUDE.md dispatch section gained the run budget
+  (12 / 5 h) and the DELIVERABLE/STOP-WHEN brief contract. Four gates verified by synthetic
+  payload (brief reject, cap park, hand-back, budget refusal) — all logged to `doorman.log`.
+  One real dispatch: SubagentStart recorded spend, SubagentStop freed the slot, no leak.
+  **STEP 7 MEASURED AND IT CONTRADICTS THE PACKAGE:** identical zero-tool agent cost
+  **36,836** tokens with the real 150-line CLAUDE.md vs **39,105** stubbed to 13 lines — the
+  stub cost 2,269 MORE, so CLAUDE.md size is NOT what the ~38k floor is made of. Trimming it
+  buys nothing on dispatch cost; run COUNT and brief scope are the only real levers.
+  **NOT DONE — needs a fresh session:** check 6, the nesting test (spawn-depth 1 and the new
+  role files only load at session start, so this session would report a false result).
+  CLAUDE.md had to drop 4 lines to stay at its 150 cap — see the diff, nothing load-bearing
+  cut. Note: `claude-md-cap.sh` (and its sibling guards) fire on EVERY write Bash command,
+  not just commits — their `"if": "Bash(git commit*)"` is not honoured by this CC version.
+
 - **2026-08-29** — **Far-player MOTION gate FAILS; the null control is CLEAN.** Nearest
   `movers.foot_points` blob to a post-hoc far-player box: **median 5.751 box-heights, 7/15**
   within 1.5, against a bar of <=1.5 on >=10/15. Random-blob control also fails (9.265, 2/15;
