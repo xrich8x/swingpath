@@ -34,5 +34,14 @@ detector number could settle it.
   conversion (512x288, 3-frame stack, fixed shapes, ANE validation) is a scoped line
   item, not a footnote.
 
+**The split is now quantified on the coverage side (2026-09-02, matched
+`detector_ab/` caches).** Shots clearing the 50% `seen_frac` speed bar after the full
+shipped chain: `am_hard_utr` BallNet **73** vs TrackNet **50**; `yt_match40` **138** vs
+**103**. BallNet's advantage is present from the raw tracker row (77.7 vs 69.6 / 81.9 vs
+68.8), so it is a detector gap, not something the chain creates. The founder's TrackNet
+decision therefore costs measurable speed coverage and that cost is now on the record —
+it is a known trade, not an open question.
+
 Related: [[traps-this-project-paid-for]], [[mobile-port-split]],
-[[ios-architecture-rules]].
+[[ios-architecture-rules]], [[smoother-two-metrics-opposite-verdicts]],
+[[perception-cache-families]].

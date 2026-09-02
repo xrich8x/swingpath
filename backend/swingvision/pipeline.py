@@ -1656,7 +1656,7 @@ def _estimate_speed_spin(ball_px, near_court, far_court, named_corners, H, img_w
 def _build_match_from_events(
     track, hit_idx, bounce_idx, near_court, far_court, fps, width, height, video_path,
     physics_shots=None, ball_conf=None, near_kpts=None, far_kpts=None, H=None, singles=True,
-    lens_k1=0.0, ball_coasted=None, ball_seen=None,
+    lens_k1=0.0, ball_coasted=None, ball_seen=None, span_sink=None,
 ) -> Match:
     """Turn ball track + contacts + player positions into a schema.Match.
 
@@ -1874,6 +1874,23 @@ def _build_match_from_events(
                            and not p["is_serve"] and speed <= PLAUSIBLE_KMH)
         call_confident = (land_scale is not None and land_scale <= UNRELIABLE_SCALE
                           and real_landing)
+        # OBSERVABILITY ONLY. `span_sink` lets a probe read the per-shot coverage
+        # this function actually computed, instead of re-deriving `real_fraction`
+        # outside it — the per-stage attribution table in
+        # data/output/post_bounce_chain.md is measured this way, and a re-derived
+        # copy of the span logic is exactly the kind of ladder that stops matching
+        # the shipped chain (trap T15). Default None: appends nothing, allocates
+        # nothing, and cannot alter a single emitted value. Pinned by
+        # tests/test_speed_coverage_span_sink.py.
+        if span_sink is not None:
+            span_sink.append({
+                "h": int(h), "land": int(land),
+                "seen_frac": float(seen_frac),
+                "real_landing": bool(real_landing),
+                "is_serve": bool(p["is_serve"]),
+                "speed_kmh": float(speed),
+                "speed_confident": bool(speed_confident),
+            })
         if not speed_confident:
             # Say WHY, and say EVERY why. This was a first-match if-chain, which
             # under-reported badly: on yt_rally2 it blamed `scale` once when scale

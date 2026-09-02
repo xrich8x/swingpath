@@ -1,0 +1,123 @@
+{
+ "tool": "eval_speed_coverage_chain",
+ "created": "2026-09-02 10:30:06",
+ "measured_against": "the tracker's own post-chain output over hit->landing spans fixed by the FULL shipped chain's events; seen_frac is a COVERAGE statistic, not accuracy \u2014 no human gold label is involved and no claim here is that a seen frame was on the ball",
+ "clip": "yt_match40",
+ "arm": "tracknet_bnspans",
+ "spans_from": "data/output/detector_ab/yt_match40.ballnet21.perception.json",
+ "ball_cache": "data/output/detector_ab/yt_match40.tracknet.perception.json",
+ "pose_cache": "E:\\Claude Outputs\\Cowork Tasks\\Swing Vision\\data\\output\\yt_match40.perception.json",
+ "ball_cache_provenance": {
+  "tool": "ball_perception.py",
+  "date": "2026-08-28 09:38:20",
+  "video": "yt_match40.mp4",
+  "weight_files": {
+   "tracknet": "weights/tracknet.pt"
+  },
+  "device": "cuda",
+  "score_thresh": "0.5",
+  "court_gate": false,
+  "static_gate": [
+   3.103448275862069,
+   5
+  ]
+ },
+ "pose_cache_provenance": {
+  "ball_model": "ours",
+  "pose_model": "yolo11m-pose.pt@1280",
+  "weights": {
+   "ballnet": {
+    "path": "weights/ballnet_v21.pt",
+    "sha256": "2624de41da99"
+   },
+   "pose": {
+    "path": "yolo11m-pose.pt",
+    "sha256": "29b17eaf3a31"
+   }
+  },
+  "device": "cuda",
+  "camera_hfov_deg": 26.43,
+  "court_gate_min_cam_h_m": 3.0,
+  "ball_score_thresh": 0.5,
+  "static_gate_step_px_min_run": [
+   3.103448275862069,
+   5
+  ],
+  "camera_height_m": 8.83,
+  "court_gate_on": true,
+  "homography_sha256": "b7770462995e",
+  "git_commit": "11db819-dirty",
+  "created_utc": "2026-08-08T01:57:56Z"
+ },
+ "resolution": "1280x720",
+ "src_fps": 29.0,
+ "frame_step": 1,
+ "fps_eff": 29.0,
+ "res_scale": 1.0,
+ "camera_hfov_deg": 26.43,
+ "lens_k1": 0.0,
+ "calibration_source": "manual+snap",
+ "reproj_err_px": 9.112,
+ "frames": 10268,
+ "n_shots": 187,
+ "n_hits": 195,
+ "n_bounces": 36,
+ "events_src": "gap+between",
+ "rows": [
+  {
+   "stage": "raw",
+   "label": "raw (tracker out)",
+   "mean_seen_frac_pct": 65.8,
+   "delta_pts": null,
+   "shots_ge_50pct": 141,
+   "delta_shots": null,
+   "n_shots": 187,
+   "locks": 6595,
+   "seen_frames": 6595
+  },
+  {
+   "stage": "rectify",
+   "label": "+ rectify_track",
+   "mean_seen_frac_pct": 64.5,
+   "delta_pts": -1.31,
+   "shots_ge_50pct": 139,
+   "delta_shots": -2,
+   "n_shots": 187,
+   "locks": 6451,
+   "seen_frames": 6451
+  },
+  {
+   "stage": "suppress",
+   "label": "+ suppress_false_locks",
+   "mean_seen_frac_pct": 59.73,
+   "delta_pts": -4.76,
+   "shots_ge_50pct": 123,
+   "delta_shots": -16,
+   "n_shots": 187,
+   "locks": 5974,
+   "seen_frames": 5974
+  },
+  {
+   "stage": "gate",
+   "label": "+ gate_ball_to_court",
+   "mean_seen_frac_pct": 59.67,
+   "delta_pts": -0.06,
+   "shots_ge_50pct": 123,
+   "delta_shots": 0,
+   "n_shots": 187,
+   "locks": 5965,
+   "seen_frames": 5965
+  },
+  {
+   "stage": "smooth",
+   "label": "+ smooth_forecast",
+   "mean_seen_frac_pct": 51.54,
+   "delta_pts": -8.13,
+   "shots_ge_50pct": 96,
+   "delta_shots": -27,
+   "n_shots": 187,
+   "locks": 6419,
+   "seen_frames": 5148
+  }
+ ]
+}

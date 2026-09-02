@@ -3,149 +3,133 @@
 **READ THIS FIRST IF YOU ARE RESTARTING.** A usage limit kills an agent outright and
 nothing restarts it automatically. Whatever is below is what survived.
 
-**Write here DURING the work, after every meaningful step** — a finding, a decision, a
-command whose result you would not want to re-derive. You can only write when you call a
-tool, so you cannot stream your thinking: the goal is that a kill loses ONE step, not the
-whole run. Rewrite TASK/STATE in place; append to LOG; compact LOG when it passes ~30 lines.
-
-This is transient working state. Durable learnings go in `.claude/agent-memory/backend-dev/`, and
-findings go in `docs/STATE.md` + `docs/evidence/`.
-
 ---
 
 ## TASK — what I was asked to do
 
-**Execute the ALREADY-WRITTEN pre-registered gate** in
-`docs/evidence/far-player-motion-contrast-hypothesis.md` §"Pre-registered gate, before
-anything is built". Do not design it, do not improve it. Rule 2: bar does not move.
+Re-measure the per-stage **SPEED-COVERAGE** attribution (`seen_frac = real_fraction(hit,
+landing)`, >=50% required for a trusted speed) under **TrackNet**, beside the existing
+BallNet numbers in `data/output/post_bounce_chain.md` part 3.
 
-- Population: P0-3's `yt_match40` far-end contacts, restricted to the 15/25 where the
-  POST-HOC `crop192@640_x` (yolo11x) arm found a far-sized non-near person. Zero new
-  human labelling. Reference stays labelled POST-HOC in every number.
-- Method: `eval/movers.py` **unmodified**, `foot_points`. Homography-free (T23).
-- Metric: distance nearest returned foot point -> known far-player box centroid, in
-  box-heights.
-- BAR: median <=1.5 box-heights on >=10 of 15 frames, **AND the random-blob null
-  control must FAIL the same bar.** If random passes too, the real arm proved nothing.
-- Rider, STRICTLY DESCRIPTIVE, NO GATE: luminance/chroma contrast of far player vs
-  surrounding court on the same 15 frames. Cannot pass or fail anything.
-- PASS => mark PROVISIONAL, render 15 contact tiles (style of
-  `tools/p0_3_context_sheet.py`, NO court lines), STOP. Do not propose a build.
-- FAIL => final, no eye needed. Say so plainly.
-- Either way: do NOT propose a fix/variant/v2. Write to docs/evidence/, hand STATE row text.
+BallNet table already on record (do not re-derive, but DO re-run as the A arm):
+  stage                  am_hard_utr mean / shots>=50%   yt_match40 mean / shots>=50%
+  raw                    75.5%  106/120                  79.3%  182/196
+  +rectify_track         72.1%  101                      77.5%  174
+  +suppress_false_locks  64.9%   90                      69.4%  150
+  +gate_ball_to_court    64.9% (0) 90                    69.4% (0) 150
+  +smooth_forecast       52.9% (-12.0) 69                59.7% (-9.7) 124
 
-Record whatever the outcome: (1) `eval/movers.py` is in `eval/`, NOT the shipped package,
-so the mobile-viability audit's "every cv2 symbol exists in mobile builds" does NOT cover
-it — prerequisite line item, do not do it this run. (2) `clean_plate` needs a rolling
-buffer of up to 31 frames: harmless offline, fatal for live.
+WHY: `docs/evidence/smooth-forecast-adds-ghosts.md` (2026-09-02) established that
+smooth_forecast's PER-FRAME behaviour is a property of the DETECTOR PAIRING not the
+stage (BallNet -1.0pt recall/+12 ghosts; TrackNet +3.9pt/+3 ghosts). v1 detector is a
+founder decision for TrackNet, so the -12.0 coverage cost may be a BallNet artefact.
+
+MUST: build a probe (none exists; real_fraction lives inside pipeline.py:1716).
+Mirror the SHIPPED chain order exactly. Pre-register a numeric bar BEFORE running.
+Report both arms side by side. Commit to master, DO NOT PUSH. STATE.md same commit.
 
 ## STATE — where I got to
 
-**DONE AND COMMITTED as `7d002e0`. Nothing outstanding.**
+### ### RESULT IS IN. GATE **B** PASSES: THE COST **SURVIVES**. IT IS THE STAGE. ###
 
-VERDICT: **the motion gate FAILS.** Nearest blob median **5.751** box-heights, **7 of
-15** within 1.5, against a bar of <=1.5 on >=10 of 15 — fails both halves. Random null
-control also fails (9.265, 2/15, 0.0% of 1,000 draws), so the negative is CLEAN. Failure
-is BIMODAL (nothing between 0.62 and 5.75). No tiles rendered — those were pre-committed
-to the PASS branch only. No fix/variant/v2 proposed. Contrast rider shipped as
-DESCRIPTIVE with no gate. STATE: negative filed in "What has not worked"; the Open
-pre-registration row retired and replaced by an ungated contrast-characterisation row.
-479 tests pass (11 new). Memory updated (new file
-`null-controls-and-pre-registered-populations.md` + 2 bullets on traps).
+All 8 runs done, artifacts in `data/output/speed_coverage/`. Remaining: inertness test
+for `span_sink`, evidence file, STATE row, commit.
+
+PRIMARY (each arm on its OWN shots — what the shipped product would report):
+| clip | arm | raw | rect | suppr | gate | smooth | **D_smooth** | shots>=50% at smooth | n_shots |
+|---|---|---|---|---|---|---|---|---|---|
+| am_hard_utr | BallNet  | 77.7 | 74.0 | 66.3 | 66.3 | 56.2 | **-10.1** | 87->73 (-14) | 124 |
+| am_hard_utr | TrackNet | 69.6 | 67.2 | 62.0 | 62.0 | 51.1 | **-11.0** | 65->50 (-15) | 90 |
+| yt_match40  | BallNet  | 81.9 | 80.3 | 73.3 | 73.3 | 63.1 | **-10.2** | 155->138 (-17) | 187 |
+| yt_match40  | TrackNet | 68.8 | 67.5 | 63.1 | 63.0 | 55.0 | **-8.1**  | 131->103 (-28) | 186 |
+
+CROSS-CHECK, identical shot populations (spans from BallNet for both arms):
+  am_hard  BN -10.1 vs TN **-10.2** ; match40 BN -10.2 vs TN **-8.1**. Same answer.
+
+GATE: A (pairing) needs |D_TN| <= 0.5|D_BN| on both -> 11.0 vs 5.1 and 8.1 vs 5.1 =>
+**FAILS**. B (stage) needs |D_TN| >= 0.75|D_BN| on both (7.6 / 7.7), >=5.0 pts absolute
+on both, and smooth still the largest single-stage cost -> 11.0 and 8.1, both, and
+-11.0 vs -5.2 / -8.1 vs -4.4 => **PASSES**. LIVE-TARGET FLOOR met (>=5 pts on both
+clips, 15 and 28 shots pushed under the bar).
+
+MECHANISM, and it is detector-INDEPENDENT: real detections deleted by the smoother's
+innovation gate (seen at gate -> seen at smooth): am_hard BN 9757->8278 (-15.2%),
+TN 8330->6910 (-17.0%); match40 BN 6918->5927 (-14.3%), TN 5965->5148 (-13.7%).
+14-17% in EVERY arm.
+
+RECONCILES with the ghost/recall finding rather than contradicting it: recall counts a
+COASTED frame within 10 px as a hit, `seen_frac` does not. The smoother trades real
+detections for coasted fills -> it can raise recall and lower coverage at the same time.
+
+FOOTNOTE, do not lose: `gate_ball_to_court` is NOT exactly 0.0 on yt_match40/TrackNet
+(-0.05 pts, 9 frames). 0.0 exactly on the other three arms.
+
+Probe = `tools/eval_speed_coverage_chain.py` (new). Hook = `span_sink=None` kwarg added
+to `pipeline._build_match_from_events` (observability only, provably inert). Design:
+spans FIXED once from the FULL shipped chain; each stage scored by handing the shipped
+function a different `ball_seen` mask. Pose/cam_motion/player tracks come from the
+clip's standard cache (detector-INDEPENDENT) so the ball track is the only variable.
+
+VALIDATION vs published part-3 (same input: main `*.perception.json`, BallNet):
+  am_hard_utr  mine 75.5 / 72.0 / 64.9 / 64.9 / **53.1**  shots 106/101/90/90/**71**
+               pub  75.5 / 72.1 / 64.9 / 64.9 / **52.9**  shots 106/101/90/90/**69**
+  yt_match40   mine 79.3 / 77.5 / 69.3 / 69.3 / **59.6**  shots 182/174/150/150/124
+               pub  79.3 / 77.5 / 69.4 / 69.4 / **59.7**  shots 182/174/150/150/124
+  => within +/-0.2 pt everywhere and +/-2 shots on one row. PASSES gate V (the am_hard
+  smooth row is AT the shot tolerance, not inside it — say so). Corroborated
+  independently: the tool printed "speed not trusted for 64/120 shots" on the smooth
+  row, the exact figure part 2 of the doc quotes.
+  D_smooth(BallNet, main cache): am_hard **-11.8**, match40 **-9.7**.
+
+CACHE FAMILIES DIFFER — this is why the A/B must re-run BOTH arms:
+  main `*.perception.json`      : court_gate **true** at perception time
+  `detector_ab/*.perception.json`: court_gate **false**, both detectors, same day,
+  same score_thresh 0.5, same static_gate, same frame counts (14499 / 10268).
+  Only the detector_ab pair is one-variable. The main-cache numbers above are for
+  probe validation ONLY and are never an arm.
+
+### PRE-REGISTERED BAR — written 2026-09-02 BEFORE any run. Rule 2: it does not move.
+
+Quantity under test: `D_smooth` = (mean seen_frac at `+gate_ball_to_court`) minus
+(mean seen_frac at `+smooth_forecast`), in percentage points, per clip. Published
+BallNet values: am_hard_utr **-12.0**, yt_match40 **-9.7**.
+Both arms are RE-MEASURED on the matched `detector_ab/` caches. The published numbers
+are the target for probe validation only, never an arm of the A/B.
+
+**V. PROBE VALIDATION (gate on the tool, run first).** Run the probe on the SAME input
+the published table used (`data/output/{am_hard_utr,yt_match40}.perception.json`,
+BallNet). It must reproduce every row to within **+/-1.0 pt** of mean seen_frac and
+**+/-2 shots** on the >=50% count. If it does not, the probe is not validated and every
+number below is reported as UNVALIDATED.
+
+**A. PAIRING PROPERTY (the -12.0 cost does NOT survive under TrackNet):**
+  |D_smooth(TrackNet)| <= 0.5 x |D_smooth(BallNet)| on **BOTH** clips,
+  AND the shots-dropping-below-50%-at-the-smoother count is likewise <= half on both.
+  (D_smooth(TrackNet) >= 0 on both clips is a decisive instance of this.)
+
+**B. STAGE PROPERTY (the cost SURVIVES):**
+  |D_smooth(TrackNet)| >= 0.75 x |D_smooth(BallNet)| on **BOTH** clips,
+  AND >= 5.0 pts absolute on both, AND `smooth_forecast` is still the LARGEST
+  single-stage coverage cost in the TrackNet ladder.
+
+**C. INDETERMINATE:** anything else, including a split across the two clips. Reported
+  as indeterminate, NOT rounded to whichever side is closer.
+
+**LIVE-TARGET FLOOR (separate, decides the STATE row's wording):** for speed coverage
+to stay a live product target under v1's detector, the smoother must cost, under
+TrackNet, **>= 5.0 pts** of mean seen_frac on at least one clip **AND** push **>= 10**
+shots below the 50% bar on at least one clip. Below that floor the row needs rewriting
+regardless of which of A/B/C fires.
 
 ## LOG — newest first
 
-- 2026-08-29 **DISCREPANCY IN THE GATE DOC'S POPULATION — record, do not silently pick.**
-  The gate says "the **15** of 25 contacts ... within **1.5 box-heights** of the ball
-  anchor". Those are two DIFFERENT sets in `p0_3_tolerance_sweep.json`
-  (`yt_match40.mp4/arms/crop192@640_x`):
-    `far_sized_candidate_found_anywhere_in_crop` = **15**  (i.e. any distance)
-    `by_rel_box_h["1.5"]`                        = **14**
-    `by_rel_box_h["2.0"]`                        = **15**
-  So N=15 is the found-ANYWHERE set; <=1.5 box-heights is 14. The BAR is written
-  ">=10 of 15", so the denominator 15 is load-bearing => use the found-anywhere set as
-  primary, and report the 14-subset alongside so nothing hinges on my reading.
-- 2026-08-29 Selection logic reproduced from `tools/p0_3_tolerance_sweep.py`: candidate =
-  entry in `arms[key]["accepted"] + ["rejected"]` with `small_enough and
-  not_the_near_player`; nearest by EDGE distance from box to `ball_px_at_contact`.
-  Reference box for a contact = that nearest candidate's `box`; normaliser = its
-  `box_h_px`.
-- 2026-08-29 **T24 CHECKED, run history established from git+STATE not prose.**
-  `eval/movers.py` docstring says "UNRUN" — STALE. `git log`: written in `424ecdc`
-  ("The court diagnosis harness, and the twelve negatives it produced"). Imported by
-  `eval/candidate_audit.py:222`. STATE.md:140-141 carries the results; TRAPS T24 is
-  already written. Never trust the docstring.
-- 2026-08-29 ENV: `python` is a broken Store shim. Use `backend/.venv/Scripts/python.exe`
-  (numpy 2.5.0, cv2 4.13.0, torch cpu). This task needs NO GPU — no inference runs, it
-  reads cached probe JSON + decodes video with cv2.
-- 2026-08-29 CRLF trap (carried forward): `docs/STATE.md` is CRLF on disk / LF in HEAD.
-  Normalise the WHOLE file after editing. `data/output/*` is gitignored -> `git add -f`.
-
-- 2026-08-29 **### GATE RESULT — FAILS. FINAL. NUMBERS BELOW ARE THE ANSWER. ###**
-  `eval/far_player_motion_gate.py --arm crop192@640_x --seed 0`, 15/25 contacts,
-  31-frame windows, movers UNMODIFIED, no homography.
-    NEAREST blob : median **5.751** box-heights, **7 of 15** within 1.5   BAR: <=1.5 and
-                   >=10 of 15  -> **FAIL on both halves**
-    RANDOM (null): median **9.265**, **2 of 15** within 1.5              -> **also FAILS**
-                   1000-seed repeat: median-of-medians 9.265 (p5-p95 8.11-9.92),
-                   mean 2.99 within, **0.0%** of draws pass the bar.
-    subset (anchor <=1.5 box-h, n=14): median 6.396, 6 within.
-  => The null control is CLEAN (random fails decisively), so this is a genuine failure,
-  not the ambiguous "control passed too" outcome. Nearest IS better than random
-  (5.75 vs 9.27) so there is SOME positional signal — but the bar is absolute and it
-  misses by ~3.8x on the median. **Rule 2: failed gate stays failed. Do NOT propose a v2.**
-  No eye needed per the stop condition: a nearest blob that is far away is far away.
-  CONTRAST RIDER (DESCRIPTIVE, NO GATE, cannot pass/fail anything), n=15:
-    |dL| median **5.96** (min 0.11, max 13.3); dChroma_ab median 11.71 (6.04-25.28);
-    dE median 14.67; surround SD of L median **20.99**;
-    **|dL| / surround_sd median 0.30** (0.01-0.59) — the player's luminance offset is
-    consistently SMALLER than the court patch's own luminance spread.
-  Artifacts: data/output/far_player_motion_gate.json
-
-- 2026-08-29 **### MECHANISM FOUND — IT IS A MISSING PROVENANCE KEY, NOT A GATE PROPERTY. ###**
-  `ball.play_volume_polygon` has TWO RUNGS (backend/swingvision/ball.py:501):
-    Rung A (`if hfov_deg:`) -> `calibration.project_court_3d` extruded 6 m play
-      volume, convex hull of 8 projected corners. WIDE, self-scaling.
-    Rung B (fallback)       -> ground trapezoid + fixed 220 px top / 120 px side band
-      (resolution-scaled). MUCH TIGHTER. Gate docstring: Rung B kept only **15.4%**
-      of far-court gold balls on am_hard_utr vs Rung A's 100%.
-  Which rung runs is decided by whether `hfov_deg` is truthy. And the harnesses
-  source it DIFFERENTLY:
-    `tools/eval_detector_chain_ab.py:hfov_for()` **FITS** it (courtfit.cam_fit_quad,
-       fallback 70.0) -> ALWAYS truthy -> **Rung A** -> removes 0. 
-    `tools/eval_chain_gate.py:105` + `tools/chain_cache.py` read
-       `provenance.camera_hfov_deg` from the CACHE -> **the gold caches do not have
-       that key** -> hfov=None -> **Rung B** -> the -674.
-  VERIFIED by direct inspection of provenance keys:
-    gold_sAjkpeRq4P4 / gold_uR5q2cSM6AY / gold_L73ep7JHiJ4 / gold_UHf0LeMU2pg
-      (both plain and detector_ab/*.tracknet): hfov = **None**,
-      keys = [court_gate, date, device, score_thresh, static_gate, tool, video,
-      weight_files]  (old build_gold_caches.py schema)
-    am_hard_utr: hfov = **86.31**, full modern provenance schema.
-  => the two "cache families" are really TWO PROVENANCE SCHEMAS.
-- 2026-08-29 **SHIPPED PATH TAKES RUNG A.** `pipeline.analyze_video` passes
-  `camera_hfov_deg`, set at pipeline.py:1244-1260 by lens lock -> focal self-cal ->
-  **hard default 70.0**. It is never None. So the shipped product resembles the
-  DETECTOR A/B ARMS, and the -674 is a harness artefact. STILL TO PROVE: per-clip
-  Rung A vs Rung B removal counts, and the ghost/real split of the rejects vs gold
-  clicks. Do not publish the conclusion before that is measured.
-
-- 2026-08-29 **### T23 VERDICT: `data/sAjkpeRq4P4_pts.json` IS MISCALIBRATED. SETTLED BY EYE. ###**
-  Rendered frame 0 at 1920x1080 with the clicks AND the full projected court model
-  (scratchpad saj_courtmodel.png / saj_farband.png).
-    far_bl (760,417) and far_br (1151,409) sit **ON THE NET BAND**, not the far
-      baseline. Proof, three independent: (a) net POSTS visible at x~460 and x~1470,
-      both clicks well INSIDE them; (b) the white band SAGS in the middle
-      (y 407 at the posts, ~425 mid) - a straight far baseline projects to a
-      STRAIGHT image line, a sagging net does not; (c) dark net MESH texture and the
-      white CENTRE STRAP hang below the band.
-    near_bl (148,819) sits **on the AmateurTennis.tv watermark banner**, off court
-      entirely. near_br (1830,822) sits on **bare clay ~85 px above** the real
-      sideline x baseline corner (~1810,907).
-    ALL FOUR CLICKS ARE OFF ANY COURT LINE. Stamped PASS at 2.8 px. Second instance
-    of T23 after yt_match40.
-  CONSEQUENCE: H maps 23.77 m onto ~half the court, so the model's own net line
-  lands mid near-service-box and camera_height 3.33 m is inflated. RULE 9: the pts
-  file is human ground truth - NOT EDITED, recorded only.
-  => Every sAjkpeRq4P4 number in this run is **CONTINGENT** and must be reported
-  separately. It is now contingent for a KNOWN reason, not an unverified one.
+- 2026-09-02 Previous task (far-player motion gate) is DONE + committed `7d002e0`. This
+  is a NEW task, not a restart.
+- CARRIED FORWARD from last run: `docs/STATE.md` is CRLF on disk / LF in HEAD -> normalise
+  the whole file after editing. `data/output/*` is gitignored -> `git add -f`.
+- CARRIED FORWARD: `python` is a broken Store shim. `backend/.venv/Scripts/python.exe`
+  (CPU), `backend/.venv-train/Scripts/python.exe` (CUDA).
+- TRAP given by lead: a `timeout` killing a slow clip with buffered stdout looks EXACTLY
+  like silent failure -> PYTHONUNBUFFERED=1 + generous timeouts. `gold_sAjkpeRq4P4` is
+  the slowest clip by far.
+- NOTE: `grep -rn` across the repo root TIMES OUT (huge data dirs). Use the Grep tool.

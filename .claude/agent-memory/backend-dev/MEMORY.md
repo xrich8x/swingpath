@@ -14,3 +14,5 @@ monolithic file; nothing was dropped.
 - [Ball detector choice is SPLIT](ball-detector-choice-is-split.md) — settled at the chain 2026-08-28: TrackNet wins ghosts, BallNet wins speed coverage; export TrackNet first
 - [Chain-gate mechanism findings](chain-gate-mechanism-findings.md) — five failed attempts on the smoother: the reflected hypothesis has its OWN false-acceptance region, and tightness is not the lever
 - [Null controls and pre-registered populations](null-controls-and-pre-registered-populations.md) - a FAILING null control is what makes a failed gate clean; a population described two ways is two sets
+- [Smoother: two metrics, opposite verdicts](smoother-two-metrics-opposite-verdicts.md) — ghosts/recall are detector-PAIRING dependent, speed coverage is NOT; coasted frames are why
+- [Perception cache families](perception-cache-families.md) — three incompatible families in data/output/; only detector_ab/ is a one-variable detector pair

@@ -203,3 +203,31 @@ buys coverage and pays in ghosts. Nothing in this measurement changes that trade
 says the trade is worth **20–23 pts of coverage** rather than the 3–4 the post-bounce window
 suggested. A third attempt needs a mechanism that separates *real* from *false* better,
 not one that admits more of both. Recorded and stopped.
+
+---
+
+# Part 4 — part 3 re-measured under TrackNet (2026-09-02): the cost SURVIVES
+
+Part 3 was measured under **BallNet v21**. v1's ball detector is a founder decision for
+**TrackNet**, and `docs/evidence/smooth-forecast-adds-ghosts.md` showed the smoother's
+*per-frame* behaviour is a property of the detector PAIRING. So part 3 was re-run with
+one variable changed, using the new `tools/eval_speed_coverage_chain.py` (which first
+reproduced part 3's table to within ±0.2 pt from the same input).
+
+| clip | arm | raw | +rectify | +suppress | +court gate | **+smooth** | **Δ** |
+|---|---|---|---|---|---|---|---|
+| `am_hard_utr` | BallNet | 77.7% | 74.0% | 66.3% | 66.3% | 56.2% | **−10.1** |
+| `am_hard_utr` | **TrackNet** | 69.6% | 67.2% | 62.0% | 62.0% | 51.1% | **−11.0** |
+| `yt_match40` | BallNet | 81.9% | 80.3% | 73.3% | 73.3% | 63.1% | **−10.2** |
+| `yt_match40` | **TrackNet** | 68.8% | 67.5% | 63.1% | 63.0% | 55.0% | **−8.1** |
+
+Arms are the matched `data/output/detector_ab/` caches (same day, same `score_thresh`,
+same static gate), which is why the BallNet row differs slightly from part 3 — part 3's
+cache was built with the tracker's court gate ON, these with it off. Pre-registered bar:
+pairing property required `|Δ_TrackNet| ≤ 0.5 |Δ_BallNet|` on both clips (**fails**);
+stage property required `≥ 0.75` on both plus ≥5 pts absolute plus still the largest
+stage (**passes**). Cross-checked on identical shot populations: −10.2 and −8.1.
+
+Mechanism is detector-independent — the innovation gate deletes **14–17%** of surviving
+real detections in every arm. Full write-up and the reconciliation with the recall/ghost
+result: `docs/evidence/speed-coverage-is-chain-shaped-and-the.md`.
