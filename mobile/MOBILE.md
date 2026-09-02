@@ -5,11 +5,14 @@ SwingVision does: the optimized on-device model, the ported call logic, and the
 integration plan. The split is deliberate and honest:
 
 - **Done here (the hard ML + logic):** the ball model exported and optimized for
-  mobile (ONNX, int8, in-graph decode), and the line-call brain ported to pure
-  JavaScript and verified against the Python backend two ways: `verify_live.js`
-  (a real cached ball track, singles-only) and `verify_live_doubles.js` (synthetic
-  boundary cases, singles AND doubles — see below). Python is the reference for
-  both; "verified" means agreement with it, not independent proof of correctness.
+  mobile (ONNX, int8, in-graph decode), the ball *decoder* (`ball_detector.js`)
+  verified against `ball.py`'s `BallDetector` on real frames from a gold clip
+  (`verify_ball_detector.js` + `backend/ball_detector_parity_probe.py` — see
+  below), and the line-call brain ported to pure JavaScript and verified
+  against the Python backend two ways: `verify_live.js` (a real cached ball
+  track, singles-only) and `verify_live_doubles.js` (synthetic boundary cases,
+  singles AND doubles). Python is the reference throughout; "verified" means
+  agreement with it, not independent proof of correctness.
 - **To build (the app shell):** the native camera capture + UI + store build.
   That's standard React Native work — the assets and logic below are drop-in.
 
@@ -28,12 +31,16 @@ models/
   tracknet_ball.int8.onnx   int8, ~11 MB, self-contained — BUNDLE THIS
 export_tracknet.py          how the models were produced (+ verification)
 ball_detector.js            on-device ball tracking (onnxruntime-react-native)
+verify_ball_detector.js     Node test: JS decode == Python decode, real frames, real ONNX graph
 live_calls.js               calibration + bounce + IN/OUT calls (pure JS)
 verify_live.js              Node test: JS calls == Python calls, real cached track, singles only
 doubles_alley_parity_cases.json  synthetic boundary cases (both singles + doubles), hand-computed expected
 verify_live_doubles.js      Node test: JS vs Python on the cases above, singles AND doubles branches
 package.json                ESM marker so the .js modules import cleanly
 ```
+(`../backend/ball_detector_parity_probe.py` is `verify_ball_detector.js`'s Python
+counterpart — extracts real frames, runs the real PyTorch model, and runs the
+real bundled ONNX graph on the JS-built input tensor.)
 
 ### The key mobile optimization
 The raw model emits a `256 × 360 × 640` tensor (~236 MB/frame) — infeasible to
@@ -96,9 +103,26 @@ if (call) showCall(call); // { call: "in"|"out", margin_m, xy, t_s }
 ## Performance — measured, and the honest caveat
 
 Verified on desktop (from `export_tracknet.py`):
-- **Accuracy:** fp32 ONNX = PyTorch exactly (0.00 px); int8 within **0.32 px**.
+- **Accuracy:** fp32 ONNX = PyTorch exactly (0.00 px); int8 within **0.32 px**. This
+  is the ONNX *graph's* fidelity to the PyTorch model, checked with Python's own
+  (correct) decode on both sides — a different question from whether the JS
+  *port's* decode agrees with Python, which is what `verify_ball_detector.js`
+  checks (see below).
 - **Output size:** 0.9 MB/frame (in-graph argmax) vs 236 MB raw — the change that makes on-device decode possible.
 - **Model size:** 43 MB → **11 MB** (int8).
+
+**`ball_detector.js`'s decode, separately verified against real frames**
+(2026-09-02): input-tensor channel packing was already bit-exact; the decode
+*algorithm* was not — the port used global-argmax + a small fixed window while
+`ball.py`'s `_postprocess` uses full-image connected-component analysis scored
+by area×peak. On 178 real contiguous frames from `data/incoming/Hardcourt/
+am_hard_utr.mp4` (61 real TrackNet detections), that difference caused 4/61
+gross mismatches (up to 238px) whenever the heatmap had two separate blobs —
+JS locked onto the single brightest pixel's blob, Python picked the larger,
+more coherent one. Fixed by porting the same connected-component + area×peak
+algorithm into JS (`_decode`, ball_detector.js); re-verified 61/61 exact
+(0.00px) on the same real frames, through the real bundled fp32 ONNX graph.
+See [evidence/ball-detector-parity-tracknet.md](../docs/evidence/ball-detector-parity-tracknet.md).
 
 **Important caveat on speed:** I could NOT benchmark a phone here. On this desktop
 x86 CPU, int8 was actually *slower* than fp32 (a well-known quantization-kernel

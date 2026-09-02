@@ -22,6 +22,14 @@ reading a degenerate calibration, then (separately) silently not exercising doub
 all. Don't repeat an inherited verification claim without re-checking what it actually
 covers — "verified" always needs a "verified WHAT, on WHAT input" attached.
 
+`ball_detector.js` (the ONNX TrackNet port) is ALSO now verified against `ball.py`
+(2026-09-02, [[ball-detector-decode-bug-fixed]]) — input tensor was already bit-exact,
+but the heatmap decode was a materially different algorithm despite its own "mirrors
+ball.py" docstring claim; found + fixed on real frames from a real gold clip, through
+the real bundled ONNX graph. Third sibling of the same pattern: every mobile/ port
+checked so far had a real bug on first inspection — never trust a port's own "mirrors
+X" comment without reading both algorithms.
+
 ## iOS execution model — the finding that shapes the whole app
 
 **There is no multi-hour background compute on iOS at any tier.** `BGProcessingTask` is
@@ -102,3 +110,7 @@ wrong in doubles again, it's a NEW bug, not a recurrence of the old one — chec
 - [Doubles-alley bug: fixed and exercised](doubles_alley_bug_fixed.md) — the
   `isInSingles`-called-unconditionally fix, and the general lesson: a fix is not done
   until the SPECIFIC branch is driven through the real code path, not just patched
+- [Ball detector decode bug: fixed and verified](ball_detector_decode_bug_fixed.md) —
+  `_decode()` didn't mirror `ball.py`'s connected-component algorithm; fixed, verified
+  on real frames + the real ONNX graph; also the technique for testing a port when
+  the runtime it dynamically imports isn't installed anywhere

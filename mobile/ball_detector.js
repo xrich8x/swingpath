@@ -65,24 +65,56 @@ export class BallDetector {
     return input;
   }
 
-  // Find the brightest blob in the heatmap and return its centroid (x,y).
+  // Decode exactly like ball.py's BallDetector._postprocess: threshold the
+  // heatmap, find every 8-connected blob, score each by area*peak (not just
+  // the brightest pixel), and return the UNWEIGHTED centroid of the winning
+  // blob. This matters: a scene can have two separate bright blobs (the ball
+  // plus a false response elsewhere, e.g. a court line or a player's kit) —
+  // picking by global-argmax-then-small-window (the old approach here) can
+  // lock onto a single hot pixel in the WRONG blob while a larger, more
+  // coherent blob a few dozen px away is the real ball. Measured on real
+  // frames (docs/evidence/ball-detector-parity-tracknet.md): this happened on
+  // 4/61 real TrackNet detections in a 178-frame span of am_hard_utr.mp4,
+  // with errors up to 238px — small in count, but a CONFIDENT wrong lock with
+  // no refusal signal, which is exactly the failure mode this product design
+  // refuses elsewhere. cv2.connectedComponentsWithStats(binm, connectivity=8)
+  // is the Python reference; this is a plain BFS flood-fill equivalent.
   _decode(heat) {
-    let max = 0, argmax = -1;
-    for (let i = 0; i < heat.length; i++) {
-      if (heat[i] > max) { max = heat[i]; argmax = i; }
-    }
-    if (max < this.threshold) return null;
-    // Sub-pixel centroid over a small window around the peak.
-    const cy = (argmax / IN_W) | 0, cx = argmax % IN_W;
-    let sx = 0, sy = 0, sw = 0;
-    for (let dy = -3; dy <= 3; dy++) {
-      for (let dx = -3; dx <= 3; dx++) {
-        const x = cx + dx, y = cy + dy;
-        if (x < 0 || x >= IN_W || y < 0 || y >= IN_H) continue;
-        const w = heat[y * IN_W + x];
-        if (w >= this.threshold) { sx += x * w; sy += y * w; sw += w; }
+    const n = heat.length;
+    const visited = new Uint8Array(n);
+    let best = null, bestScore = 0;
+    const stack = [];
+    for (let start = 0; start < n; start++) {
+      if (visited[start] || heat[start] < this.threshold) continue;
+      let count = 0, sx = 0, sy = 0, peak = 0;
+      stack.length = 0;
+      stack.push(start);
+      visited[start] = 1;
+      while (stack.length) {
+        const idx = stack.pop();
+        const y = (idx / IN_W) | 0, x = idx % IN_W;
+        count++;
+        sx += x;
+        sy += y;
+        if (heat[idx] > peak) peak = heat[idx];
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || nx >= IN_W || ny < 0 || ny >= IN_H) continue;
+            const nIdx = ny * IN_W + nx;
+            if (visited[nIdx] || heat[nIdx] < this.threshold) continue;
+            visited[nIdx] = 1;
+            stack.push(nIdx);
+          }
+        }
+      }
+      const score = count * peak;
+      if (score > bestScore) {
+        bestScore = score;
+        best = [sx / count, sy / count];
       }
     }
-    return sw > 0 ? [sx / sw, sy / sw] : [cx, cy];
+    return best;
   }
 }
