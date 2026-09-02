@@ -35,6 +35,15 @@ thing you try — re-dispatching the work that just died — is the thing it blo
    survive a death. The directory is gitignored, so nothing else will surface them.
 4. **Then resume**, preferring the killed agent's uncommitted files over a restart.
 
+## REPORTING RULE — founder instruction 2026-09-02
+
+**Do not surface founder-blocked items unless the founder asks for them.** They go in
+`docs/DECISIONS_PENDING.md` silently and stay there. Ending a status with "waiting on
+you..." is the interrupting this rule exists to stop — the founder asked to be left to
+work, and asks for the list when they want it.
+
+Report what was DONE. Keep the queue to yourself until requested.
+
 ## RESUME AFTER A KILL — read this first, it is one paste
 
 A usage limit kills the session outright and NOTHING restarts it — not this journal,

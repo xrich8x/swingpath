@@ -1,7 +1,9 @@
 # Decisions waiting on the founder
 
-**Do not interrupt to ask these.** Founder instruction 2026-09-02: keep working,
-record what needs a decision, hand it over when asked. This file is that handover.
+**Do not interrupt to ask these, and do not volunteer them in status reports either.**
+Founder instruction 2026-09-02, tightened the same day: keep working, record what needs a
+decision, and hand the list over ONLY when the founder asks for it. Mentioning a blocker
+unprompted — even as a closing line — is the interruption this file exists to prevent.
 
 Newest first. Each entry says what is blocked, what it costs to unblock, and what
 was done instead so the blocker is not also idle time.
