@@ -290,3 +290,28 @@ carried the text, and `git show <commit>:.claude/journals/lead.md` prints it in 
 lane I picked a threshold *after* seeing which frames failed, and qa showed it collapsed
 under a sweep. Both later briefs forbade naming a threshold from the data that revealed the
 problem, and both agents complied. Keep that clause in every threshold brief.
+
+---
+
+## RATE-LIMIT KILL 2026-09-03 ~23:45 — and what the lead did instead
+
+The `Definitive seen_frac gate numbers` run was **killed by a session limit before it did any
+work** (its whole output was "I'll start by reading my journal"). Session limit resets 19:40
+Asia/Manila. Locks checked and were already clear — no corpse to reap this time.
+
+**Do not re-dispatch that brief while the limit holds**; a re-dispatch dies the same way and
+spends a run for nothing. The lead is running the work directly instead: the harness is now a
+committed tool (`tools/seen_frac_speed_error.py`, `cf556a5`) with clips, seed and arm as
+arguments, so this particular task no longer needs an agent at all. That is a side benefit of
+having promoted it out of the scratchpad an hour earlier.
+
+**PARKED, verbatim, so it survives:** multi-seed classifier margin (accept-precision minus
+base rate) on the FAITHFUL 2.5 m config, both arms, against the **>=10-point bar already
+pre-registered in the evidence file's own section 7** — not a bar chosen after seeing the
+number. Plus the restated reject characterisation, and an explicit supersedes-list naming
+every number the 4.0 m defect invalidated.
+
+Seed 0, faithful config, already in hand: accept-precision **0.500** vs base rate **0.467**
+(unrestricted) and **0.500** vs **0.466** (shipped-shot) — a margin of **+3.3 / +3.4 points**
+against a >=10 bar. One seed is not evidence, which is the whole lesson of the run before
+this; 10 seeds x 2 arms are running now.
