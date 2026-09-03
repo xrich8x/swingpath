@@ -87,3 +87,53 @@ which `verify_court` does not look at, rather than a better white-mask threshold
 Reproduce: the script is in the lead's scratchpad (`verify_court_rejects.py`) and writes
 `verify_court_rejects.json`; it imports the shipped `calibration` module and reads only
 committed `data/*_pts*.json` plus their videos.
+
+---
+
+## The camera-height screen, quantified. 2026-09-04
+
+The section above ends by pointing at *geometric plausibility of the implied camera* as the
+signal `verify_court` does not look at. STATE asserts that qualitatively ("the one screen
+that isolates it"). Here is the actual distribution, read from the `_audit` stamps every
+committed calibration already carries — so the screen costs nothing to compute.
+
+**Non-degenerate calibrations fitting a camera above 4 m — the entire set:**
+
+| clip | camera h | stamped | correctness |
+|---|---|---|---|
+| `court_pts_refined` | 12.28 m | PASS 2.3 px | **unverified** |
+| `yt_match40` | 11.30 m | PASS 0.9 px | **KNOWN WRONG (T23)** |
+| `eala_pts_auto` | 8.89 m | PASS 3.7 px | **unverified** |
+
+**Every other non-degenerate calibration — all 25 of them — sits between 1.36 m and
+3.35 m.** The gap between the plausible band and the next file up is **3.35 → 8.89 m**, a
+factor of 2.7 with nothing in it.
+
+That gap is not merely empirical. The shipped framing advice in `calibration.py` states the
+physical prior independently of this table: *"a fence clamp (~2.5 m) is the practical
+ceiling, a standing tripod is ~1.5 m"*. A court-side amateur mount cannot be 9–12 m; that
+is a broadcast gantry.
+
+### What this is, and what it is not
+
+**It is a screen candidate with a physically-motivated bound — not a validated gate.**
+
+- **Only ONE of the three flagged files is verified wrong.** `yt_match40` is confirmed by
+  rendered corners. `court_pts_refined` and `eala_pts_auto` are **unverified in either
+  direction** — nobody has looked at their corner sheets. They may be correct calibrations
+  of genuinely elevated cameras.
+- **So the false-accept side is 1-for-1 and the false-reject side is 0 of 25 — on n = 1
+  known positive.** No rate is claimed from that, and none should be.
+- **The 4 m figure is post-hoc.** It was read off this table. What is *not* post-hoc is the
+  physical prior above, which motivates a bound somewhere in the 3.5–5 m region without
+  reference to these numbers. A real threshold still has to be chosen on held-out
+  calibrations against a pre-registered bar — the discipline applied to `seen_frac` this
+  week, and the reason no number is proposed here.
+
+### One decision this already justified
+
+Section 7 of the `seen_frac` evidence nominated `court_pts_refined` and `eala_pts_auto` as
+the held-out clips for the replacement-bar sweep. They were rejected on exactly this ground
+before any sweep ran, and this table is the quantified version of that call: they are two of
+the only three files in the repo that fit an implausible camera, and the third is the clip
+that defines T23.
