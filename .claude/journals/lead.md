@@ -415,3 +415,35 @@ mismatches (fp32 fires, int8 does not), since a refusal signal that also predict
 worth more than one that does not.
 
 **Not authorised:** shipping, changing the decode's behaviour, or quoting a coverage number.
+
+---
+
+## PRE-REGISTRATION — least-squares over ALL line correspondences. 2026-09-04, before any run
+
+**The target, from STATE's joint-correspondence row (measured 2026-08-29):** given the
+**TRUE** line-to-model assignment, the solver's reconstruction is a median **17.1 px@640**
+against the shipped **8.1 px**. Cause named there: a homography from exactly **four line
+intersections** amplifies each line's error where the court is most foreshortened. That row
+names two untested continuations; this is the first. The second (why `verify_court` rejects a
+correct court) was taken up separately on 2026-09-04 and is now its own row.
+
+**Why this is decisive either way, and worth a run:** it is tested **given the true
+correspondence**, so it isolates the FIT from the SEARCH. If least-squares over all matched
+lines cannot beat the exact-4-point fit when handed the right answer, then no improvement in
+correspondence search can rescue the solver, and **the whole joint-correspondence branch dies
+on a fit ceiling rather than on a matching problem**. That is worth knowing before anyone
+spends another run on C6's 12.6x cost or on the 22-of-30 die-before-scoring.
+
+**PRE-REGISTERED BAR** — same clips, same true assignments, one variable (the fit only):
+- **PASS:** median reconstruction **<= 10.0 px@640**, i.e. it closes most of the 17.1 -> 8.1
+  gap, on the same clip set the 17.1 px was measured over.
+- **FAIL:** median > 13.0 px — less than half the gap closed. **Then the branch dies on the
+  fit ceiling** and that verdict goes in STATE as such.
+- **INDETERMINATE:** 10.0-13.0 px. Reported as indeterminate; nothing is built on it.
+- **Mandatory control:** report the exact-4-point fit's median **recomputed in the same run**,
+  not quoted from the 2026-08-29 row. If the control does not reproduce ~17.1 px, the harness
+  is not measuring what that row measured and **nothing else in the run is trusted**.
+- Report per clip, not only pooled; a pooled median can hide a split.
+
+**Not authorised:** shipping, changing the shipped court path, or reopening the correspondence
+SEARCH (C6's cost, the 22-of-30 kills). This is the fit and only the fit.
