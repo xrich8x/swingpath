@@ -59,6 +59,8 @@ was done instead so the blocker is not also idle time.
 > is a **top-2 margin refusal signal**, which is chain-side, protects both graphs, and directly
 > attacks the failure's defining property (a confident wrong lock with no refusal signal).
 > That is not a fourth precision arm and rule 6 does not close it.
+>
+> **MEASURED 2026-09-04, and it complicates option 1.** The margin refusal PASSES its screen on **fp32** (5/5 caught, 2.1% collateral, null p<=0.001) but **FAILS on int8 at every threshold**: on the frames int8 gets wrong its own margin is *wide* - up to 1.00 with no runner-up - because quantisation resolved the race instead of leaving it close. **So the refusal signal is computable only from the fp32 graph, which is exactly the graph mobile does not ship.** Shipping int8 therefore forfeits the cheap safety net, and that is a real cost to weigh against fp32's 4x size. It is also only a SCREEN: refusal precision is 31%, so it discards ~2 correct answers per error avoided.
 
 
 **Status: measured out. Not blocked on anything technical — this is a product call.**
