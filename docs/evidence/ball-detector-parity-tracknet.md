@@ -615,3 +615,65 @@ backend/.venv/Scripts/python.exe mobile/export_int8_lastconv_fp32.py
 `decode-int8` + `compare-int8` on `am_hard_utr` reproduces 2026-09-02's numbers exactly —
 170/178, 53 both-fire, median 0.163 px, max 70.831 px — so the `onnx-run-var` / `decode-var`
 additions did not disturb the measurement they sit beside.
+
+
+---
+
+## The third mitigation, measured: THERE IS NO PRECISION BOUNDARY TO INSTALL. 2026-09-04
+
+Founder ruling 2026-09-04 ("yes to all") authorised option 3 of `DECISIONS_PENDING` item 0 —
+*a per-layer activation diff to find where the erosion first appears, then a precision
+boundary above it.* Run. **The premise is false, and the arm is dead before it is built.**
+
+**Method.** Both graphs expose the **same 36 Relu/BatchNormalization output tensor names** —
+verified against the ONNX graphs, not assumed. Each was re-exported with those tensors added
+as graph outputs and both were run on the **same real input tensor**. Nothing was trained,
+tuned or scored; this is instrumentation of two fixed graphs.
+
+**The control is what makes this a finding.** The diff was run on the failing frame `0147`
+(70.8 px) **and on two frames that decode identically in both graphs** (`0012`, `0016`).
+Without those, "error peaks at the bottleneck" would have been a fact about int8 in general
+masquerading as an explanation of the failure.
+
+| layer | 0147 (FAILS) | 0012 (agrees) | 0016 (agrees) | ratio 0147 / mean(control) |
+|---|---|---|---|---|
+| 0 `relu` | 0.0239 | 0.0238 | 0.0238 | **1.000** |
+| 13 `getitem_18` | 0.2137 | 0.2142 | 0.2078 | **1.013** |
+| **19 `getitem_27` (peak)** | **0.2821** | **0.2813** | **0.2612** | **1.040** |
+| 27 `getitem_39` | 0.1688 | 0.1726 | 0.1924 | 0.925 |
+| 35 `getitem_51` (output) | 0.0705 | 0.0811 | 0.1386 | **0.642** |
+
+Relative L2 error rises monotonically through the encoder, peaks at the **512-channel
+bottleneck (layer 19)** and then *falls* through the decoder — and it does so **identically on
+all three frames**. Peak magnitudes: 0.282 / 0.281 / 0.261. The failing frame is within **4%**
+of the controls across the entire encoder and is **35% QUIETER than a control** at the output.
+
+> **Quantisation error is not elevated on the failing frame at any layer.** There is no point
+> where its erosion "first appears", because it has no anomalous erosion. It carries the same,
+> frame-typical quantisation noise as frames that decode perfectly.
+
+### What actually breaks, restated
+
+The frame fails because the **fp32 decision was already a near-tie** — the two-blob
+`area x peak` margin was ~5% (3300 vs 3146). Ordinary, unremarkable quantisation noise is
+enough to flip an already-marginal decision. This corroborates, from the activations, what the
+blob analysis said from the output: *the quantisation exposed a fragility that was already
+there.*
+
+**Consequence — the whole framing of item 0 changes.** A precision boundary installed anywhere
+would be raising precision against a noise level that is **identical on frames that decode
+correctly**, so it cannot separate the failing case. That is why Arm C recovered 1 px of area
+out of 13: not because the boundary was in the wrong place, but because there is no place.
+
+**int8 is not the disease.** The exposure is the fp32 model's own top-2 decision margin. Two
+things follow, and neither is a quantisation flag:
+
+1. **A refusal signal on a close top-2 blob margin** — cheap, chain-side, and it would protect
+   the **fp32** path too, which the ~5% margin shows is one bad frame from the same error. The
+   current failure mode's defining property is that it is a confident wrong lock with *no
+   refusal signal*; this attacks exactly that.
+2. **A better-separated detector** — the standing answer, and rule 6 closes detector work.
+
+**Option 3 is measured out. Do not fund a fourth precision-boundary arm**; three arms
+(`per_channel`, final-conv-fp32, per-layer boundary) have now failed, the third by refuting
+the premise the other two shared.

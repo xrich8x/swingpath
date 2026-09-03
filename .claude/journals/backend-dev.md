@@ -23,9 +23,43 @@ NOT-THIS-RUN: change 0.5, adopt any t, add clips, edit STATE, git commit.
 
 ## STATE — 2026-09-04
 
-REUSING the lead's 5 seed runs (do NOT recompute): scratchpad/holdout/s{0..4}.json,
-commit bce6678 (= HEAD), clips exactly the four, arm random, defaults, n 1200.
-Same temp session id as mine (ccc041b7-...), so they are directly readable.
+REUSED the lead's 5 seed runs + ran seeds 5-9 => 10 seeds in
+scratchpad/holdout/s{0..9}.json. Analysis scripts: scratchpad/repaired_bar.py,
+scratchpad/tables.py (tables.md = emitted markdown).
+
+STALE-STAMP CAUGHT: s0-s4 stamp commit `bce6678`, s5-s9 stamp `7dc81c6`, but the tool
+was UNCOMMITTED at the lead's run time, so bce6678 is stale. PROVED equivalent: re-ran
+seed 0 at HEAD -> `results` JSON identical to s0.json. Pooling the 10 is legitimate.
+
+RESULTS (10 seeds, mean margin pts):
+- seen_frac unrestricted: 4/4 clips >=+10 only at t=0.85 (cov 26.5% of shipped accepts)
+  and t=0.90 (15.4%, sweep edge so plateau not evaluable). Last t meeting the 60% floor
+  is 0.65 (69.4%) at 0/4. => **NONE ADMISSIBLE**. Holds for ANY floor above 26.5%;
+  0.85 only becomes admissible at a floor <=25%. Floor is NOT load-bearing.
+- seen_frac shipped_shot: max 1/4 anywhere => NONE at every floor incl. 20%.
+- court_cov unrestricted: 4/4 at EVERY t, +38.6..+43.3, spread 4.69 on mean 40.7
+  (11.5%); passes floor easily => admissible by the LETTER, rejected by the flatness
+  clause. Mechanism evidence: precision already 0.887 at t=0.20 and only 0.933 at 0.90
+  (all discrimination is at court_cov~0; 53.6% of rows sit below 0.20), and on
+  shipped_shot (drops 33.8% of rows, the out-of-range speeds) the margin collapses to
+  +1.3..+25 with only 1/4 (2/4 at t>=0.80) clearing.
+- Reject inspection: at t=0.85 seen_frac REFUSES 76.8% of all accurate shots (21.6% at
+  t=0.5) to buy precision 0.556 -> 0.621.
+
+## LOG — this task
+
+- 2026-09-04 **DELIVERABLE SHIPPED**: section "The repaired bar, EXECUTED" appended to
+  docs/evidence/does-seen-frac-predict-speed-error.md (file now 919 lines). Contains the
+  three-condition per-threshold tables for both metrics x both populations, the
+  NONE-ADMISSIBLE verdict, the floor-sensitivity table (20/25/30/40/50/60/70/80%), the
+  reject inspection, and a section 5 criticising the bar itself (flat-margin clause has
+  NO NUMERIC DEFINITION -> must be fixed before reuse; 60% floor arbitrary but not
+  decisive). Nothing adopted, 0.5 untouched, no commit, STATE not edited.
+- 2026-09-04 **TASK COMPLETE.** Memory updated: speed-error-is-geometry-not-detection
+  (gate CLOSED, not just weak), traps (stale `git rev-parse HEAD` when the tool is
+  uncommitted), null-controls (precision bar with no coverage floor is degenerate-
+  satisfiable; report an arbitrary constant as a sensitivity; "flat" needs a number),
+  + MEMORY.md line 20. Working tree touched: the evidence file + journal + memory only.
 
 ---
 

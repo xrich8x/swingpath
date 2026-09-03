@@ -46,6 +46,21 @@ was done instead so the blocker is not also idle time.
 
 ## 0. The shipped int8 ball graph fails its parity bar on half the gold clips — ship it, or not?
 
+> **UPDATE 2026-09-04 — option 3 was authorised, run, and is MEASURED OUT.** The per-layer
+> activation diff refuted its own premise: the failing frame carries the **same** quantisation
+> noise as frames that decode correctly (peak rel L2 0.282 vs 0.281 / 0.261; within 4% across
+> the encoder, 35% *quieter* at the output). There is no layer where erosion "first appears",
+> so there is no precision boundary to install. **The choice is now genuinely between options
+> 1 and 2 only**, and both still turn on an unmeasured A13 fps.
+>
+> **But the finding reframes both:** int8 is not the disease. The exposure is the fp32 model's
+> own ~5% top-2 blob margin, which ordinary noise flips — so **fp32 is one bad frame from the
+> same error** and option 2 buys less safety than it appears to. The cheap fix this points at
+> is a **top-2 margin refusal signal**, which is chain-side, protects both graphs, and directly
+> attacks the failure's defining property (a confident wrong lock with no refusal signal).
+> That is not a fourth precision arm and rule 6 does not close it.
+
+
 **Status: measured out. Not blocked on anything technical — this is a product call.**
 
 Six gold clips, 178 contiguous frames each, the shipped `tracknet_ball.int8.onnx` against
