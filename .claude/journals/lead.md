@@ -115,7 +115,8 @@ affordability) both wait here, and nothing dispatchable is on that path.
    hours get spent twice. Hardcourt + Clay only.
 6. **Re-label 8 court gold frames** (~1 min). Rule 9 — recorded, never quietly fixed, so
    permanently the founder's. Lowest urgency; court is not v1-blocking.
-7. **Is the score layer settled in scope?** It flipped out 2026-08-20, back in 2026-08-27.
+7. ~~**Is the score layer settled in scope?**~~ **ANSWERED - not a founder question.** CLAUDE.md rule 12
+   (2026-08-27) rules it IN, and that is the later ruling. Do not re-ask; the real blocker is ground truth.
 8. **Is a Mac weeks or months away?** A sequencing input, not a nudge — pm would build a
    different plan for a months-long gap.
 
