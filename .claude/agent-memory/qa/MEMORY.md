@@ -50,6 +50,15 @@ this agent's system prompt — read it first; it is the authoritative copy.
   seeing the 5 failures — "all 5 are close races" is NOT threshold-robust (2/5 at 0.05),
   while "0 close races in the 2 clean clips" IS robust across 0.05-0.30.
 
+- **seen_frac gate evidence verified 2026-09-03, positive control partially passes.**
+  [seen-frac-gate-positive-control.md](seen-frac-gate-positive-control.md) — headline
+  (gate doesn't predict error, INDETERMINATE, accept-precision≈base-rate) CONFIRMED via
+  independent rebuild; positive control shows the harness responds to an injected true
+  correlation on all 3 clips but weakly/saturates on 2 of 3 camera geometries; band-ratio
+  DIGITS diverge from backend-dev's (one clip flips sign) — see
+  [synth-truth-harness-reproducibility.md](synth-truth-harness-reproducibility.md) for
+  the general lesson (classifier-shape numbers reproduce, fine per-clip ratios don't).
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is

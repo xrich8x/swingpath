@@ -158,3 +158,28 @@ The backward pass is a second look at the evidence the forward gate already got 
 
 Full method, per-clip distributions, the null control and the provenance of every number:
 [smoother-gate-backward-readmit-separation.md](smoother-gate-backward-readmit-separation.md).
+
+
+---
+
+## The bar this whole row is counted against does not predict accuracy. 2026-09-03
+
+Every shot count in this file — "106 of 120 → 69", "37 shots lose their speed to the chain" —
+is a count of shots falling under `seen_frac >= 0.5` (`pipeline.py:1873`). That constant was
+never tested. It has been now, against synth truth, and **it does not predict speed accuracy**:
+accept-precision 0.500–0.501 against a 0.469–0.473 base rate, reproduced from an independent
+qa rebuild. It refuses shots whose error is less than half the median of what it accepts.
+
+**This does not erase this row's numbers — it reframes them.** The per-stage coverage costs
+(`smooth_forecast` −11.0 / −8.1, `suppress_false_locks` −5.2 / −4.4) are still real drops in
+`seen_frac`, and `seen_frac` is still what the product currently gates on. But "37 shots lose
+their speed" is a count of shots crossing a line that turns out not to separate accurate
+speeds from inaccurate ones, so **the size of the prize is not yet established** — some of
+those refusals were accurate speeds being thrown away, and some of the shots the gate keeps
+are wrong.
+
+Read the caveats before acting on this: the synthetic dropout is drawn independently of the
+flight, so it answers the causal question only, and the adjacent-band ratios are not stable
+to three digits across implementations. Full verdict and limits:
+[does-seen-frac-predict-speed-error.md](does-seen-frac-predict-speed-error.md),
+verified in [seen-frac-gate-qa-verification.md](seen-frac-gate-qa-verification.md).

@@ -13,7 +13,46 @@ findings go in `docs/STATE.md` + `docs/evidence/`. Do not duplicate those here.
 
 ---
 
-## TASK — what I was asked to do (NEW, 2026-09-03)
+## TASK — DONE 2026-09-03 (second task today)
+
+Verified backend-dev's seen_frac-vs-speed-error gate evidence. Deliverable
+FILED: docs/evidence/seen-frac-gate-qa-verification.md.
+
+VERDICT: headline stands, one narrowing caveat. Positive control (check 1)
+CONFIRMED with caveat: rebuilt harness (scratchpad/positive_control.py,
+full_check.py — backend-dev's own script is in a DIFFERENT agent session's
+temp dir, inaccessible, so this is an independent rebuild from the evidence
+file's §2/§3 prose, not their literal code) responds in the expected
+direction to an injected dropout~max_z correlation (rho -0.86) on all 3
+clips, so the harness is not blind by construction -- but the response is
+weak/camera-dependent: 2 of 3 clips (am_hard_utr, yt_court) barely move past
+1.0-1.14x even under extreme injected correlation, because error saturates
+near a -100% ceiling once court-coverage collapses (mechanism: cap_court_jumps
++ smooth_and_fill flat-fill on a mostly-empty span). G still refused in every
+arm I ran (never >=2/3 clips at >=1.5x). Check 2: pipeline.py:1762 citation
+imprecise (MIN_SPEED_KMH check is at 1759; 1761-1762 is the disp/250 check,
+conditional on not-serve, unstated) -- minor. My rebuild's band-ratio DIGITS
+diverge from theirs (mine 1.58/0.91/1.05 primary, 1.18/1.46/1.89 armB vs their
+1.35/0.86/0.76, 1.11/1.21/0.97) -- yt_court even FLIPS direction (0.97 theirs
+= no effect, 1.89 mine = closest-to-G of any number either harness produced).
+Flagged as borderline, human/researcher should see raw yt_court rows. Check 3
+(classifier/reject numbers): CONFIRMED closely -- accept-precision 0.500/0.501
+vs base rate 0.469/0.473 (theirs: 0.500/0.472), refused-but-accurate ~39% both
+ways -- independent rebuild reproduces the "gate is at chance" shape almost
+exactly despite different code/RNG/N. Check 4 (court-coverage rival):
+CONFIRMED shape (-0.82/-0.54 vs -0.08/-0.09, same huge gap as their
+-0.749/-0.098) but flagged as PARTLY DEFINITIONAL -- shot_speed_kmh sums over
+exactly the court-coverage-surviving points, so the correlation is partly
+mechanical (built into how the estimate is computed), not a fully independent
+diagnostic; the file's own §7 already declines to propose it as a
+replacement, this check adds WHY that caution is necessary. Check 5 (scope
+honesty): CONFIRMED clean -- no replacement threshold named, yt_match40/
+demo30 only in EXCLUDED list (no numbers cited), HUD only cited as barred,
+residuals (1.4/0.7/2.1 px) verified byte-exact against docs/calibration.md.
+No NEEDS DISPATCH filed -- reproducibility gap on check 2 written up as
+borderline/human-should-look, not a blocking dependency.
+
+## PRIOR TASK (DONE 2026-09-03, kept for history)
 
 Verify int8 ball-graph parity claims (5/528 pooled, 3/6 clips fail cond3,
 close-race mechanism at 0.15 threshold, Arm B/C mitigation rejections). Writing
