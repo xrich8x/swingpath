@@ -181,3 +181,31 @@ Sheet written to `data/output/corner_audit/eala_segment_corners.png`. A sheet re
 `eala_swiatek.mp4` frame 30 was **deleted rather than kept**: that frame is a "MATCH
 HIGHLIGHTS" title card, so the corners sat over a blurred graphic and the image would have
 read as a gross miscalibration to anyone reviewing the folder.
+
+### The correction is corroborated by a measure, not just by my eye
+
+I corrected the camera-height claim off **one rendered frame**, having already had to walk
+back a claim once that day. So it was checked against an independent quantity before being
+allowed to stand: `eala_pts_auto`'s own **white-line coverage**, sampled across the segment.
+
+| frame | coverage | visible | centrality | `verify_court` |
+|---|---|---|---|---|
+| 30 | 0.921 | 1.000 | 0.944 | True |
+| 200 | 0.918 | 1.000 | 0.944 | True |
+| 400 | 0.908 | 1.000 | 0.944 | True |
+| 600 | 0.910 | 1.000 | 0.944 | True |
+| 800 | 0.912 | 1.000 | 0.944 | True |
+
+**0.908–0.921 across the whole 900-frame segment** — among the highest coverage in the repo,
+beside `flexi_franz_p01` (0.996) and `mpc_tuesday_p01` (0.987), and stable rather than a lucky
+frame. Its projected court lands on real white pixels nine times in ten. That is independent
+of the corner rendering and of my judgement of it, and it says the calibration is right.
+
+**A nuance this forces, in fairness to the coverage statistic.** Coverage is not blind: it
+scores the correct `eala` at 0.91 and the wrong `yt_match40` at 0.436 — it *does* order those
+two correctly. The failure is that the **0.40 bar is far too low to act on that ordering**.
+But raising it does not rescue the gate either: at 0.60 it would reject `yt_match40` (0.436)
+and also `HoHxFSX_gLk_s1` (0.426), `sAjkpeRq4P4` (0.464), `CYqapSq5llo` (0.328) and
+`HoHxFSX_gLk_s3` (0.245) — **four correct courts for one wrong one.** So the conclusion above
+stands unchanged: correct and incorrect courts overlap in coverage, and no single threshold
+separates them. What is corrected is only the sharper claim that coverage carries *no* signal.
