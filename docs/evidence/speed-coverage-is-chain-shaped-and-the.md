@@ -166,9 +166,12 @@ Full method, per-clip distributions, the null control and the provenance of ever
 
 Every shot count in this file — "106 of 120 → 69", "37 shots lose their speed to the chain" —
 is a count of shots falling under `seen_frac >= 0.5` (`pipeline.py:1873`). That constant was
-never tested. It has been now, against synth truth, and **it does not predict speed accuracy**:
-accept-precision 0.500–0.501 against a 0.469–0.473 base rate, reproduced from an independent
-qa rebuild. It refuses shots whose error is less than half the median of what it accepts.
+never tested. It has been now, against synth truth, and **it is too weak to be worth what it costs**: on the shipped
+2.5 m config over 10 seeds its accept-precision margin over base rate is **+4.96 / +3.11
+points against a pre-registered >=10-point bar, clearing it on 0 of 10 seeds**. Corrected
+2026-09-04: the gate is *not* "at chance" and does *not* refuse the more accurate shots -
+refused shots are worse by +39.9 / +13.0 points of median error. It is directionally right
+and far too weak. **33-38% of what it refuses is nonetheless accurate.**
 
 **This does not erase this row's numbers — it reframes them.** The per-stage coverage costs
 (`smooth_forecast` −11.0 / −8.1, `suppress_false_locks` −5.2 / −4.4) are still real drops in

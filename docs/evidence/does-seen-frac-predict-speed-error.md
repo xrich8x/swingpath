@@ -528,3 +528,78 @@ tested: seed-average the ratio over >= 20 seeds and report its spread, or replac
 of medians with a paired design (the same flight simulated at two dropout levels), which
 removes the between-flight variance that is drowning the effect. §7's pre-registration for a
 replacement bar stands as written and is unaffected by any of this.
+
+
+---
+
+## Definitive numbers on the faithful config. 2026-09-04 (lead, run directly)
+
+The agent briefed for this was killed by a session limit before doing any work. The harness
+had been promoted to `tools/seen_frac_speed_error.py` an hour earlier, so the lead ran it
+directly — which is the payoff for promoting it out of a scratchpad.
+
+**Configuration:** shipped runoff **2.5 m** (`pipeline.py:1352`) — *not* the 4.0 m that
+produced §§4-5. **10 seeds x 2 arms**, because this file's own instability finding is that a
+single seed is not evidence. `--arm correlated` is qa's positive control.
+
+**The instrument is the classifier margin, not the band ratio.** That choice is forced by the
+evidence already in this file: the band ratio's bootstrap CIs all contain 1.0, while under an
+injected effect the margin moves and the ratio does not. **The bar — accept-precision minus
+base rate >= +10.0 points — is the one pre-registered in §7**, written before this number
+existed and not adjusted after seeing it.
+
+| population | arm | margin (pts) | sd | seeds >= +10 | verdict |
+|---|---|---|---|---|---|
+| unrestricted | **shipped gate** | **+4.96** | 1.00 | **0/10** | **FAIL** |
+| unrestricted | positive control | +12.49 | 0.78 | 10/10 | PASS |
+| shipped_shot | **shipped gate** | **+3.11** | 0.71 | **0/10** | **FAIL** |
+| shipped_shot | positive control | +4.58 | 0.57 | 0/10 | FAIL |
+
+### What this establishes
+
+**The shipped gate fails the usefulness bar, stably.** +4.96 and +3.11 points against +10,
+on 0 of 10 seeds in both populations, with sd ~1.0 and ~0.7. This is not a knife-edge result
+and it does not depend on a seed.
+
+**On the `unrestricted` population that FAIL is meaningful**, because the control reaches
++12.49 (10/10 seeds) — the instrument can see a real effect there, and separates control from
+shipped by **+7.53 points**.
+
+### What this does NOT establish, and it is the important half
+
+**On the `shipped_shot` population — the one that matches what the pipeline actually emits —
+the positive control itself FAILS, reaching only +4.58 against the same +10 bar, and clearing
+it on 0 of 10 seeds.** Control minus shipped is **+1.47 points**. So on the population that
+matters most, this experiment can barely distinguish a strong injected effect from none.
+
+> **The `shipped_shot` FAIL is UNDERPOWERED, not a clean negative.** A verdict is only worth
+> what its control says, and here the control says the instrument is nearly blind on that
+> population. Reporting the FAIL without this would be quoting a result the experiment was
+> not powerful enough to produce.
+
+### TWO EARLIER CLAIMS IN THIS FILE ARE WITHDRAWN
+
+Both came from the 4.0 m defect and both were repeated into `docs/STATE.md` by the lead.
+
+1. **WITHDRAWN — "the gate refuses shots whose median error is less than half that of what it
+   accepts".** Under the faithful config **the opposite is true**: refused shots are *worse*,
+   by **+39.9 points** median absolute error (85.4% refused vs 45.4% accepted) on
+   `unrestricted` and **+13.0 points** (39.8% vs 26.8%) on `shipped_shot`. **The gate is
+   directionally correct.** It does refuse the worse shots; it is simply not strong enough to
+   be worth what it costs.
+2. **WITHDRAWN — "the gate is at chance".** It is not. Accept-precision sits **~3-5 points
+   above base rate**, consistently and on every seed. That is weak, far under the +10 bar, and
+   not worth the coverage it spends — but "weakly predictive and below the usefulness bar" is
+   a different and more accurate claim than "at chance", and only the first is supported.
+
+**What survives unchanged:** a substantial share of what the gate throws away is accurate —
+**33.0%** of refused shots on `unrestricted`, **37.8%** on `shipped_shot`, are in the accurate
+half. That is the real cost and it was not an artefact of the defect.
+
+**Superseded by this section:** every accept-precision, base-rate, refused-but-accurate and
+median-error figure in §§4-5, and the two withdrawn claims above. The INDETERMINATE verdict on
+the band ratio stands and is reinforced. No threshold was changed and none is named.
+
+Raw per-seed JSON: 20 runs under the lead's scratchpad `sf/`, each stamping its resolved
+config and the calibration hashes. Reproduce with
+`tools/seen_frac_speed_error.py --seed <n> --arm <random|correlated>`.
