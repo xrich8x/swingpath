@@ -69,11 +69,30 @@ Then, before doing anything else, read in this order:
 
 **An autonomous /loop, self-paced, working `docs/STATE.md`'s Open table.** Founder
 instruction 2026-09-02: *keep going, do not ask questions, record decisions for later.*
-So nothing below is a request — it is a queue to hand over when asked.
+Nothing below is a request — it is a queue to hand over when asked.
+
+**Live child: `researcher`** — the point-boundary label protocol
+(`docs/evidence/point-boundary-label-protocol.md`). It unblocks 3-6 h of queued founder
+labelling that is explicitly gated on it, and the score layer is v1 scope per CLAUDE.md
+rule 12. One direct child at a time; dispatch the next on its return.
+
+**Closed this session (2026-09-03):**
+- Lane 1, int8 ball graph — `28ead70`. 3 of 6 clips fail; both named mitigations rejected.
+  The remainder is a product call, in DECISIONS_PENDING item 0. Do not surface it unasked.
+- Smoother-gate backward-pass re-admit — `1fbcb6f`. FAIL, 0 of 3 clips, null p=0.526.
+  **Third negative in that family; rule 3 now bars a fourth, cross-detector variant included.**
+
+**Queue, re-sorted after the smoother negative** (the negative deleted the obvious follow-up,
+which is the point of re-sorting on every return):
+1. `suppress_false_locks` is now the largest ATTACKABLE speed-coverage cost (-5.2 / -4.4)
+   — the smoother is bigger but its gate family is closed.
+2. Court search problem (STATE rows: right court / wrong width, indoor shell, AGREE_PX on 4K)
+   — all three are downstream of the same unsolved search.
+3. Off-machine backup — still open; note pushes are barred, so this needs a non-push route.
 
 **If you are a fresh context reading this after a reset: resume the loop.** Re-read
-`docs/STATE.md` Open first, then `docs/DECISIONS_PENDING.md`. Do NOT re-derive the
-closed branches listed in "What has not worked" — 13 hypotheses died there this week.
+`docs/STATE.md` Open first, then `docs/DECISIONS_PENDING.md`. Do NOT re-derive the closed
+branches in "What has not worked" — 16 hypotheses have died there now.
 
 
 ## PARKED — work that was started and stopped
