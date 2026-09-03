@@ -44,12 +44,13 @@ KEY REUSE DECISION: ball/court gold precedent is `data/gold/<clip>.labels.json` 
 gold should mirror that shape (`data/gold/<clip>.points.json`) but NOT reuse schema.py's
 Rally dataclass — kept separate, reasons in the deliverable §6.
 
-Writing docs/evidence/point-boundary-label-protocol.md now, single complete Write (all
-research/legwork done, low risk of mid-section kill from here). Will then update
-agent-memory point-boundary-ground-truth.md with a pointer, then report. One
-DECISIONS_PENDING-worthy item (Shell/Grass footage gap) goes in the FINAL REPORT TEXT
-for the lead to append — NOT written directly, since DECISIONS_PENDING.md is outside my
-write allowlist (journal / agent-memory / docs/evidence only).
+## STATE — DONE 2026-09-03
+
+docs/evidence/point-boundary-label-protocol.md WRITTEN, all 6 items + founder step
+sequence + hours estimate (~5.6h worst case inside 3-6h budget) + "what this cannot fix"
+section. agent-memory point-boundary-ground-truth.md updated with full pointer/summary.
+DECISIONS_PENDING text (Shell/Grass footage gap) handed to the lead in the final report,
+not written directly (outside write allowlist). Nothing else pending on this task.
 
 ## STATE — DONE 2026-08-29 (prior task, unrelated)
 

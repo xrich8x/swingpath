@@ -474,3 +474,47 @@ The signal: each rejected detection's distance to the FINAL RTS-smoothed traject
 
 **NOT authorised by this:** changing `smooth_forecast`, shipping anything, or quoting a
 coverage gain. A separating signal earns a build brief and a product gate, nothing more.
+
+---
+
+## PRE-REGISTRATION — does `seen_frac >= 0.5` actually predict speed error?
+Written 2026-09-03 BEFORE any run.
+
+**The gap.** The whole speed-coverage target is defined by one hardcoded constant:
+`speed_confident = (seen_frac >= 0.5 and ...)` at `backend/swingvision/pipeline.py:1873`.
+Every "37 shots lose their speed to the chain" number is a count of shots falling under
+**that** bar. STATE has no row validating it. **The bar has never been tested against
+whether it predicts anything.**
+
+**Why this is the right question and not a nitpick.** This project has already paid for
+this exact mistake once: `scale_ok` gated speeds and turned out to hide the MORE accurate
+ones. The lesson recorded from it is *always test whether a gate predicts error*. `seen_frac`
+is the same shape of gate, on the same quantity, and has had no such test. If it does not
+predict error, coverage is being spent for nothing and the chain cost is partly an artefact
+of the bar rather than of the chain.
+
+**Measured against `tools/synth_truth.py` — the project's ONLY absolute speed reference.**
+NOT the HUD: rule 11 permits `hud_ocr.py` as a declared exception but a HUD number is
+agreement with another estimator, not accuracy, and must not decide a threshold.
+
+**PRE-REGISTERED BARS.**
+- **G — the gate PREDICTS error (the bar is doing its job, leave it alone):** median absolute
+  speed error for shots in `seen_frac` **[0.35, 0.50)** is **>= 1.5x** that of shots in
+  **[0.50, 0.65)**, on **>= 2 of 3** clips. Bands are adjacent and equal-width by
+  construction so the comparison is local to the threshold, not a whole-range trend; 1.5x
+  is the smallest ratio that would justify refusing a whole band of shots.
+- **N — the gate does NOT predict error:** the ratio is **<= 1.1x** on **>= 2 of 3** clips.
+  That is a real finding: the bar is costing coverage without buying accuracy.
+- **I — INDETERMINATE:** anything between, including a split across clips. Reported as
+  indeterminate; **no threshold is moved on an indeterminate result.**
+- **Mandatory sample-size floor:** >= 15 shots in EACH band on a clip for that clip to count.
+  A clip below the floor is reported with its n and excluded from the >=2-of-3 tally, and if
+  fewer than 2 clips clear the floor the whole result is UNDERPOWERED, not a verdict.
+
+**NO NEW THRESHOLD MAY BE CHOSEN FROM THIS DATA.** I was corrected today for exactly this
+(a close-race threshold picked after seeing which frames failed, which qa showed collapsed
+under sweep). If N passes, the deliverable is the finding plus a pre-registration for
+picking a replacement bar on clips NOT used here. Proposing a number now would repeat the
+mistake in the same session it was caught.
+
+**Not authorised by this:** changing the constant, shipping, or quoting a coverage gain.

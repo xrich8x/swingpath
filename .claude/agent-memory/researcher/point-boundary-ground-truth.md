@@ -58,7 +58,26 @@ not 15. That collapses the line item.
   (DICTA 2017, 5 broadcast matches) publishes dense event annotations and a tool, but no
   agreement study and no annotation-hour figures.
 
-## Priced 2026-08-28 (overnight R-task) — see `[[audio-hit-detection-mobile-port]]` for the audio-screen half
+## **Labelling protocol WRITTEN 2026-09-03** — `docs/evidence/point-boundary-label-protocol.md`.
+Full spec: boundary definitions (start = first-serve contact, a fault does not start a
+new point; end = the event that decides the point, 5-reason enum), REFUSAL for lets,
+no-decision rallies, off-screen gaps, stoppages; minimum field set tagged by consumer
+(scoring/clip-seg/dead-time); footage = the same 9 raw files (7 Hardcourt + 2 Clay, 0
+Shell/Grass) priced below, stopping rule "3h soft / 4.5h hard" instead of a fixed clip
+list; verification = single-labeller self-relabel of a FIXED 15-20 min segment (not a
+random 10%) against a 1.0 s median-disagreement bar (Sigurdsson's own noise floor, not
+tighter); leak guard `assert_no_point_boundary_gold_leak` proposed in `tools/_goldset.py`,
+flags that 4 of the 9 raw files are ALREADY ball gold under the same basename
+(`L73ep7JHiJ4`, `sAjkpeRq4P4`, `UHf0LeMU2pg`, `uR5q2cSM6AY`) — different task, same match,
+named so nobody tunes a boundary heuristic against one and evaluates on the other's ball
+numbers without noticing; file format `data/gold/<clip>.points.json`, deliberately NOT
+`schema.py`'s `Rally` (computed-output shape, would risk gold being wired into the
+product's own load path). Hours: 45 min scrub + <=4.5h labelling + ~20 min self-relabel
+= ~5.6h worst case, inside the 3-6h budget only because the hard-stop was set below the
+priced range's own top end. One DECISIONS_PENDING text handed to the lead, not written
+directly (Shell/Grass footage gap — not currently blocking anything).
+
+Priced 2026-08-28 (overnight R-task) — see `[[audio-hit-detection-mobile-port]]` for the audio-screen half
 
 The evaluation-only set is now costed against actual repo contents, not just the
 literature. **Only 9 files in the repo qualify as continuous, full-length source

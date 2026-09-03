@@ -50,6 +50,25 @@ independently recomputed the pooled numbers and corrected the close-race explana
 
 ---
 
+## 0b. Shell and Grass have NO eligible footage for point-boundary ground truth
+
+**Status: not blocking anything today. Recorded so it is not discovered later as a surprise.**
+
+The point-boundary protocol priced 9 eligible raw files — **7 Hardcourt, 2 Clay, 0 Shell,
+0 Grass**. The queued labelling session only ever targeted Hardcourt + Clay, so nothing
+stalls. But it means the score layer will be measurable on two surfaces and **unmeasured on
+the other two, indefinitely**, and Shell is the project's largest footage folder (64 clips).
+
+This is a **recording gap, not a protocol gap** — no labelling instruction can fix it.
+
+**Becomes a decision only if Shell or Grass point-boundary numbers are ever wanted.** Then:
+record new continuous match footage on those surfaces, or accept they stay unmeasured on
+this layer. Cost to unblock: a decision, plus filming if the answer is the first one.
+
+Source: §3 of `docs/evidence/point-boundary-label-protocol.md`.
+
+---
+
 ## 1. A push is required before the Core ML export can ever run — and pushes are barred
 
 **Status: the job is ready and cannot be triggered.**
