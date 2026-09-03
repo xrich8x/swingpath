@@ -149,3 +149,27 @@ Unchanged and still founder-only. Ranked there by leverage:
 - **Court mask sweep needs a qa gate run.** `data/output/court_mask_sweep.json` shows
   12 accepted vs baseline 11, deliberately NOT claimed: the gate is >=12 of 20 AND
   zero accepted court beyond 20 px, and an accept count alone cannot clear it.
+
+## The speed-confidence bar `seen_frac >= 0.5` has not been shown to predict speed error
+
+Raised by backend-dev 2026-09-03. Evidence:
+`docs/evidence/does-seen-frac-predict-speed-error.md` (verdict INDETERMINATE; the
+"gate predicts error" bar G is refuted in all four populations tested; as a classifier of
+accuracy the gate's accept-precision is 0.500 against a 0.472 base rate).
+
+**The decision, which is a product/sequencing call and not mine:** the whole speed-coverage
+target ("37 shots lose their speed to the chain") is a count of shots under this bar. Three
+options, none taken:
+
+1. **Leave it.** The bar is unvalidated but not shown harmful; coverage work continues to
+   be scored against it as today.
+2. **Run the §7 replacement pre-registration** (held-out clips, swept not point-picked,
+   >=10-point precision margin over base rate, plus a real-footage confirmation arm). This
+   is a fresh measurement run, not a code change.
+3. **Re-scope the coverage target** so it is stated against something measured — §6 finds
+   court-coverage fraction carries rho -0.749 against speed error where `seen_frac` carries
+   -0.098. That is a candidate, explicitly NOT a proposal, and it must face the same
+   held-out swept bar before anything is swapped.
+
+No threshold has been changed and no replacement value has been named; the
+pre-registration forbids picking one from this data.

@@ -17,3 +17,5 @@ monolithic file; nothing was dropped.
 - [Smoother: two metrics, opposite verdicts](smoother-two-metrics-opposite-verdicts.md) — ghosts/recall are detector-PAIRING dependent, speed coverage is NOT; coasted frames are why
 - [Perception cache families](perception-cache-families.md) — three incompatible families in data/output/; only detector_ab/ is a one-variable detector pair
 - [int8 ball-graph mitigations, both rejected](int8-per-channel-is-a-noop-for-conv.md) — per_channel is a silent no-op (byte-identical graph); last-conv-in-fp32 barely moves it, the erosion starts upstream
+- [Speed error is geometry, not detection](speed-error-is-geometry-not-detection.md) — court-coverage predicts speed error at rho -0.749; `seen_frac` at -0.098, and its gate is at chance
+- [synth_truth as a paired-error rig](synth-truth-as-a-paired-error-rig.md) — the only compliant per-shot absolute speed error, and the recipe that keeps it faithful to the shipped chain

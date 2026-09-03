@@ -518,3 +518,28 @@ picking a replacement bar on clips NOT used here. Proposing a number now would r
 mistake in the same session it was caught.
 
 **Not authorised by this:** changing the constant, shipping, or quoting a coverage gain.
+
+### `seen_frac` gate result — PROVISIONAL, held out of STATE pending qa. 2026-09-03
+
+backend-dev returned **INDETERMINATE** by the pre-registered bar, with **G refuted in all
+four populations** (max ratio 1.48; no clip reaches 1.5x anywhere). Adjacent-band ratios
+1.35 / 0.86 / 0.76 on its first population, 1.11 / 1.21 / 0.97 on the shipped shot
+definition. n=2557, every clip clears the n>=15 floor by 5x.
+
+The load-bearing claim is not the ratio, it is the classifier: the gate **refuses 173 shots
+at 11.8% median error** - less than half the **24.7%** of what it accepts - and **accepts
+639 at 55.9%**, with accept-precision **0.500 against a 0.472 base rate**. If that survives,
+the bar is not merely unvalidated, it is worthless, and the rival predictor is geometric:
+court-coverage Spearman **-0.749** vs `seen_frac`'s **-0.098**.
+
+**NOT WRITTEN TO STATE YET, DELIBERATELY.** The harness draws dropout `U(0.05, 0.80)`
+**independently of the flight**, so `seen_frac` may be uninformative BY CONSTRUCTION OF THE
+GENERATOR rather than as a fact about the gate. backend-dev disclosed this as its largest
+gap. qa is running the **positive control**: inject a dropout process correlated with flight
+difficulty and check the harness then DOES show an effect. If even a strong injected
+correlation shows nothing, the harness cannot answer the question and **the whole result is
+void** - which is why no STATE row and no commit of the finding until that lands.
+
+Discipline noted for the record: backend-dev got N first, found its population included
+flights the pipeline never emits as shots, re-ran, got I, and **reported the weaker reading**.
+That is the pre-registration working.
