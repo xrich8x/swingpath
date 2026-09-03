@@ -68,31 +68,34 @@ Then, before doing anything else, read in this order:
 ## NOW — what is running
 
 **An autonomous /loop, self-paced, working `docs/STATE.md`'s Open table.** Founder
-instruction 2026-09-02: *keep going, do not ask questions, record decisions for later.*
-Nothing below is a request — it is a queue to hand over when asked.
+instruction 2026-09-02: keep going, do not ask, record decisions for later.
 
-**Live child: `researcher`** — the point-boundary label protocol
-(`docs/evidence/point-boundary-label-protocol.md`). It unblocks 3-6 h of queued founder
-labelling that is explicitly gated on it, and the score layer is v1 scope per CLAUDE.md
-rule 12. One direct child at a time; dispatch the next on its return.
+**Closed 2026-09-03/04:**
+- Lane 1 int8 — `28ead70`. 3 of 6 clips fail; pooled **5/528 both-fire frames (0.95%)**;
+  both named mitigations rejected. Independently re-reproduced 2026-09-04, numbers exact.
+- Smoother backward-pass re-admit — `1fbcb6f`. FAIL 0/3. **Rule 3 bars a fourth in that family.**
+- Point-boundary label protocol — `79c381d`. Founder's 3-6 h session unblocked.
+- `seen_frac` gate — `6013653`, CORRECTED `cf556a5`, restated `bbe954b`, swept `7195e32`.
 
-**Closed this session (2026-09-03):**
-- Lane 1, int8 ball graph — `28ead70`. 3 of 6 clips fail; both named mitigations rejected.
-  The remainder is a product call, in DECISIONS_PENDING item 0. Do not surface it unasked.
-- Smoother-gate backward-pass re-admit — `1fbcb6f`. FAIL, 0 of 3 clips, null p=0.526.
-  **Third negative in that family; rule 3 now bars a fourth, cross-detector variant included.**
+**A shell died mid-run 2026-09-04** (exit 107 on every command, `echo` included). It came
+back on the next session with **every artifact intact** — all 5 sweep seeds and all three
+orphaned int8 clips had finished. Check for finished output before re-running anything after
+a shell death; I re-ran the int8 compares needlessly and only got a free reproducibility check
+out of it.
 
-**Queue, re-sorted after the smoother negative** (the negative deleted the obvious follow-up,
-which is the point of re-sorting on every return):
-1. `suppress_false_locks` is now the largest ATTACKABLE speed-coverage cost (-5.2 / -4.4)
-   — the smoother is bigger but its gate family is closed.
-2. Court search problem (STATE rows: right court / wrong width, indoor shell, AGREE_PX on 4K)
-   — all three are downstream of the same unsolved search.
-3. Off-machine backup — still open; note pushes are barred, so this needs a non-push route.
+**Live child: `backend-dev`** — executing the REPAIRED replacement-bar sweep. I wrote that bar
+(it adds the >=60% coverage floor the defective §7 test lacked), so I am deliberately not the
+one running it: writing and running a bar in one breath is the post-hoc error this whole lane
+exists to avoid.
 
-**If you are a fresh context reading this after a reset: resume the loop.** Re-read
-`docs/STATE.md` Open first, then `docs/DECISIONS_PENDING.md`. Do NOT re-derive the closed
-branches in "What has not worked" — 16 hypotheses have died there now.
+**Queue, re-sorted:**
+1. The court SEARCH problem — the biggest cluster of open rows (right-court/wrong-width,
+   indoor shell, `AGREE_PX` on 4K) all sit downstream of that one unsolved thing.
+2. `suppress_false_locks`, the second-largest coverage cost (-5.2 / -4.4).
+3. Off-machine backup — still open, and pushes are barred, so it needs a non-push route.
+
+**Blocked, do not surface unasked:** the int8 ship call and the speed-gate replacement both
+need a real-footage absolute speed reference, which no compliant source currently provides.
 
 
 ## PARKED — work that was started and stopped
