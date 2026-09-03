@@ -1,0 +1,63 @@
+{
+ "arm": "C",
+ "role": "int8 dynamic quantisation with the FINAL Conv kept in fp32",
+ "produced_by": "mobile/export_int8_lastconv_fp32.py",
+ "produced_utc": "2026-09-03T04:42:20Z",
+ "quantize_dynamic_kwargs": {
+  "weight_type": "QInt8",
+  "nodes_to_exclude": [
+   "node_conv2d_17"
+  ]
+ },
+ "one_variable_vs_control": "nodes_to_exclude: [] -> [node_conv2d_17]",
+ "final_conv_identified_by": "graph topology: the unique Conv with no other Conv downstream of it on the path to the graph output 'heatmap'",
+ "final_conv_evidence": {
+  "weights": "base.conv18.block.0.weight",
+  "downstream_to_output": [
+   "Relu",
+   "BatchNormalization",
+   "Reshape",
+   "ArgMax"
+  ]
+ },
+ "all_final_conv_candidates": [
+  "node_conv2d_17"
+ ],
+ "n_conv_in_fp32_graph": 18,
+ "quantised_op_counts": {
+  "Reshape": 18,
+  "DynamicQuantizeLinear": 17,
+  "Mul": 34,
+  "ConvInteger": 17,
+  "Cast": 17,
+  "Add": 17,
+  "Relu": 18,
+  "BatchNormalization": 18,
+  "MaxPool": 3,
+  "Resize": 3,
+  "Conv": 1,
+  "ArgMax": 1
+ },
+ "conv_nodes_left_unquantised": [
+  "node_conv2d_17"
+ ],
+ "source_fp32": {
+  "path": "mobile/models/tracknet_ball.onnx",
+  "sha256": "dd5570b7ef312414eb3a0d86317d75d635e265d192b0696aed1aa15431ec7e8b",
+  "bytes": 43018419
+ },
+ "control_arm_int8": {
+  "path": "mobile/models/tracknet_ball.int8.onnx",
+  "sha256": "601bba24a8cb81af329cd598bfabd94f1bf1722cc7845cd700913c0fce896035",
+  "bytes": 10918923,
+  "note": "NOT modified by this script"
+ },
+ "output": {
+  "path": "mobile/models/tracknet_ball.int8.lastconv_fp32.onnx",
+  "sha256": "3e672b09b75d782f437713b9a33b58ff3d4e9f29c1d698314911527ae08bbbf6",
+  "bytes": 11361976
+ },
+ "onnxruntime_version": "1.27.0",
+ "git_commit": "46f2e6dc36b585d05642da772720f332161265f3",
+ "quantize_seconds": 2.3
+}

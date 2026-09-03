@@ -9,3 +9,5 @@ STOP-WHEN:
 STOP-WHEN: ~10 tool calls
 2026-09-03 01:29:13 DENY-BRIEF deliv=2 stop=2 general-purpose — Nesting test spawn attempt
 2026-09-03 01:35:34 CHECK6-NESTING PASS cc=2.1.251 — inner Agent call refused at harness: "No such tool available: Agent. Agent is disabled for this session, in subagents as well as here." (depth block, not DENY-CAP/DENY-BUDGET/DENY-BRIEF)
+2026-09-03 09:45:23 DENY-BRIEF deliv=2 stop=2 general-purpose — Nesting test: haiku agent attempts inner spawn
+2026-09-03 09:47:20 CHECK6-NESTING PASS cc=2.1.251 — inner Agent call refused at harness: "No such tool available: Agent. Agent is disabled for this session, in subagents as well as here." (depth block, not DENY-CAP/DENY-BUDGET/DENY-BRIEF; confirms prior 01:35:34 result)

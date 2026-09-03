@@ -148,11 +148,125 @@ function decodeInt8Phase() {
   console.log(`decode-int8: processed ${updates.length} triples (${missing} missing int8_heat files)`);
 }
 
+// ARM-B (variant) phases — 2026-09-03, backend-dev. Separate from
+// decodeInt8Phase() on purpose: the int8 path is the CONTROL arm of a
+// pre-registered A/B and must stay reproducible, so the treatment gets its own
+// mode rather than a mutated control.
+//
+//   decode-var : decode <BALL_PARITY_PREFIX>_heat_<tag>.bin with the REAL,
+//                unmodified _decode(), writing `<prefix>_xy` per tag.
+//   blobs-var  : diagnostic dump of EVERY blob (area, peak, area*peak,
+//                centroid) the decode considers, for the fp32 heatmap and the
+//                variant heatmap, on the tags given. This enumerates blobs a
+//                second time rather than calling _decode (which returns only
+//                the winner), so it is GUARDED: the top-scoring blob's centroid
+//                must equal what the real _decode() returns on the same heat,
+//                and the dump records that check. If the guard ever fails the
+//                dump is wrong, not the detector.
+const PREFIX = process.env.BALL_PARITY_PREFIX || "var";
+const TAGS = (process.env.BALL_PARITY_TAGS || "").split(",").map((t) => t.trim()).filter(Boolean);
+
+function readHeat(file) {
+  if (!fs.existsSync(file)) return null;
+  const buf = fs.readFileSync(file);
+  const heat = new Uint8Array(buf.buffer, buf.byteOffset, buf.length);
+  if (heat.length !== HW) throw new Error(`heat length ${heat.length} != ${HW} for ${file}`);
+  return heat;
+}
+
+function decodeVarPhase() {
+  const py = readResultsJson();
+  const updates = [];
+  let missing = 0;
+  for (const r of py.results) {
+    const { tag } = r;
+    if (TAGS.length && !TAGS.includes(tag)) continue;
+    const heat = readHeat(path.join(OUT, `${PREFIX}_heat_${tag}.bin`));
+    if (!heat) { missing++; continue; }
+    const bd = new BallDetector(null);
+    const px = bd._decode(heat); // REAL method, unmodified
+    updates.push({ tag, [`${PREFIX}_xy`]: px ? [px[0], px[1]] : null });
+  }
+  mergeJsResults(updates);
+  console.log(`decode-var[${PREFIX}]: processed ${updates.length} tags (${missing} missing ${PREFIX}_heat files)`);
+}
+
+// Blob enumeration mirroring _decode's 8-connected BFS at the SAME threshold
+// instance field. Diagnostic only — see the guard note above.
+function enumerateBlobs(heat, threshold) {
+  const n = heat.length;
+  const visited = new Uint8Array(n);
+  const blobs = [];
+  const stack = [];
+  for (let start = 0; start < n; start++) {
+    if (visited[start] || heat[start] < threshold) continue;
+    let count = 0, sx = 0, sy = 0, peak = 0;
+    stack.length = 0;
+    stack.push(start);
+    visited[start] = 1;
+    while (stack.length) {
+      const idx = stack.pop();
+      const y = (idx / IN_W) | 0, x = idx % IN_W;
+      count++; sx += x; sy += y;
+      if (heat[idx] > peak) peak = heat[idx];
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || nx >= IN_W || ny < 0 || ny >= IN_H) continue;
+          const nIdx = ny * IN_W + nx;
+          if (visited[nIdx] || heat[nIdx] < threshold) continue;
+          visited[nIdx] = 1;
+          stack.push(nIdx);
+        }
+      }
+    }
+    blobs.push({ area: count, peak, score: count * peak, cx: sx / count, cy: sy / count });
+  }
+  blobs.sort((a, b) => b.score - a.score);
+  return blobs;
+}
+
+function blobsVarPhase() {
+  const bd = new BallDetector(null);
+  const out = {};
+  for (const tag of TAGS) {
+    const sources = {
+      fp32: path.join(OUT, `onnx_heat_${tag}.bin`),
+      int8_control: path.join(OUT, `int8_heat_${tag}.bin`),
+      [PREFIX]: path.join(OUT, `${PREFIX}_heat_${tag}.bin`),
+    };
+    out[tag] = {};
+    for (const [name, file] of Object.entries(sources)) {
+      const heat = readHeat(file);
+      if (!heat) { out[tag][name] = null; continue; }
+      const blobs = enumerateBlobs(heat, bd.threshold);
+      const winner = bd._decode(heat); // REAL method — the guard reference
+      const top = blobs[0] || null;
+      const guard_ok = (winner === null && top === null) ||
+        (winner !== null && top !== null &&
+         Math.abs(winner[0] - top.cx) < 1e-9 && Math.abs(winner[1] - top.cy) < 1e-9);
+      out[tag][name] = {
+        threshold: bd.threshold,
+        n_blobs: blobs.length,
+        top_blobs: blobs.slice(0, 6),
+        real_decode_xy: winner,
+        guard_top_blob_equals_real_decode: guard_ok,
+      };
+    }
+  }
+  const p = path.join(OUT, `blobs_${PREFIX}.json`);
+  fs.writeFileSync(p, JSON.stringify(out, null, 1));
+  console.log(`blobs-var[${PREFIX}]: wrote ${p} for tags ${TAGS.join(",")}`);
+}
+
 const mode = process.argv[2];
 if (mode === "build-decode") buildDecodePhase();
 else if (mode === "decode-onnx") decodeOnnxPhase();
 else if (mode === "decode-int8") decodeInt8Phase();
+else if (mode === "decode-var") decodeVarPhase();
+else if (mode === "blobs-var") blobsVarPhase();
 else {
-  console.error("usage: node verify_ball_detector.js <build-decode|decode-onnx|decode-int8>");
+  console.error("usage: node verify_ball_detector.js <build-decode|decode-onnx|decode-int8|decode-var|blobs-var>");
   process.exit(1);
 }

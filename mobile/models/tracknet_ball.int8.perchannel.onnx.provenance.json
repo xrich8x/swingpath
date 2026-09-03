@@ -1,0 +1,30 @@
+{
+ "arm": "B",
+ "role": "per-channel dynamic int8 sibling of the shipped ball graph",
+ "produced_by": "mobile/export_int8_perchannel.py",
+ "produced_utc": "2026-09-03T04:21:49Z",
+ "quantize_dynamic_kwargs": {
+  "weight_type": "QInt8",
+  "per_channel": true
+ },
+ "one_variable_vs_control": "per_channel: False -> True",
+ "source_fp32": {
+  "path": "mobile/models/tracknet_ball.onnx",
+  "sha256": "dd5570b7ef312414eb3a0d86317d75d635e265d192b0696aed1aa15431ec7e8b",
+  "bytes": 43018419
+ },
+ "control_arm_int8": {
+  "path": "mobile/models/tracknet_ball.int8.onnx",
+  "sha256": "601bba24a8cb81af329cd598bfabd94f1bf1722cc7845cd700913c0fce896035",
+  "bytes": 10918923,
+  "note": "NOT modified by this script"
+ },
+ "output": {
+  "path": "mobile/models/tracknet_ball.int8.perchannel.onnx",
+  "sha256": "601bba24a8cb81af329cd598bfabd94f1bf1722cc7845cd700913c0fce896035",
+  "bytes": 10918923
+ },
+ "onnxruntime_version": "1.27.0",
+ "git_commit": "46f2e6dc36b585d05642da772720f332161265f3",
+ "quantize_seconds": 2.1
+}

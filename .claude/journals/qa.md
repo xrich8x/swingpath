@@ -13,7 +13,46 @@ findings go in `docs/STATE.md` + `docs/evidence/`. Do not duplicate those here.
 
 ---
 
-## TASK — what I was asked to do
+## TASK — what I was asked to do (NEW, 2026-09-03)
+
+Verify int8 ball-graph parity claims (5/528 pooled, 3/6 clips fail cond3,
+close-race mechanism at 0.15 threshold, Arm B/C mitigation rejections). Writing
+to docs/evidence/int8-parity-qa-verification.md as I go (skeleton written).
+margin_census.py FOUND and RUNS (at scratchpad/margin_census.py, matches the
+literal path in the brief) — reproduces pooled 16/528=3.0% close races exactly.
+ODDITY noted, not pursued further (low stakes): its OLD dir vars point to
+`Temp\claude\90dad6dd.../scratchpad\...` which os.path.exists() reports False
+from a fresh python process, yet the script itself opens files there
+successfully and reads real matching data (both-fire counts 53/149/93 match
+the claimed table exactly) — some benign Windows path-resolution quirk, not a
+fabrication; do not re-chase this if resuming.
+
+DONE 2026-09-03. All 4 checks written to
+docs/evidence/int8-parity-qa-verification.md. Headline STANDS: 5/528 pooled,
+3/6 clips (am_hard_utr, yt_rally2, gold_shell) fail cond3 — recomputed exactly
+from diffs_px, matches worst_frames too (no truncation issue, all clips have
+<=3 fails). Summaries self-consistent, no shared video paths, surface split
+matches pre-reg (HC3/Shell2/Clay1). Arm B byte-identical confirmed 3 ways
+(sha256, its own provenance json, op histogram) + blob dump. Arm C real
+different graph (17 ConvInteger+1 fp32 Conv, 11.36MB) confirmed via op count +
+provenance + blob dump on 0147 (area 15->2->3 matches exactly); did NOT find
+primary blob dumps for 0108/0109/0110 (COULD-NOT-CHECK, minor).
+CORRECTION on check 3: the close-race mechanism (0.15 threshold) was
+confirmed to be picked AFTER seeing the failures (script comment says so
+directly, and I verified the exact margins: widest is 7.69% not 7.4% as
+commented, small unexplained gap). Sweep 0.05/0.10/0.20/0.30 shows the
+"0 close races on yt_match40/gold_clay" result is threshold-independent
+(robust), but "all 5 failures are close races" is NOT robust — drops to 2/5
+at CLOSE=0.05. Reported this as a correction to the framing, not to the raw
+numbers. Filesystem detour: spent ~4 calls chasing what looked like a missing
+scratchpad dir for margin_census.py's OLD path — turned out to be my OWN
+transcription error copying the long path (dropped a directory segment)
+into a sweep-copy script, not a real mystery. Original script always worked
+fine. If resuming: nothing left to do, task complete, deliverable filed.
+
+---
+
+## PRIOR TASK (DONE 2026-09-02, kept below for history)
 
 DONE 2026-09-02. Verified whether the parked court-mask-sweep item
 (`data/output/court_mask_sweep.json`, routed variants 12/20 vs baseline 11/20) is a

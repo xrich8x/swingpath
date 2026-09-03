@@ -10,6 +10,46 @@ was done instead so the blocker is not also idle time.
 
 ---
 
+## 0. The shipped int8 ball graph fails its parity bar on half the gold clips — ship it, or not?
+
+**Status: measured out. Not blocked on anything technical — this is a product call.**
+
+Six gold clips, 178 contiguous frames each, the shipped `tracknet_ball.int8.onnx` against
+the fp32 reference, both through the real mobile decode. **3 of 6 clips fail** the
+pre-registered no-frame-over-10px condition: 70.8 px, 75.4 px (three consecutive frames)
+and **185.1 px**. Pooled **5 bad frames in 528** where both graphs fire — call it 1 in 100.
+Aggregates are excellent everywhere and always were: medians 0.000–0.163 px, null agreement
+95.5–99.4%. The failure is a confident wrong lock with no refusal signal, not a wobble.
+
+**Both named mitigations are spent, and neither is a near miss.** `per_channel=True`
+produces a byte-identical graph (ORT's `ConvInteger` has no per-channel path at all).
+Keeping the final conv in fp32 is a real change that still fails 3 of 4 test frames, and
+its failure localises the fault upstream of the output layer — so a third attempt is a
+per-layer investigation, not a flag.
+
+**The three options, with what each costs:**
+
+1. **Ship int8 as-is.** ~1 wrong lock per 100 both-fire frames, and on `yt_rally2` they
+   came in a 3-frame run, which is long enough to survive the smoother's innovation gate
+   rather than be rejected as an outlier. 10.9 MB.
+2. **Ship fp32 instead.** 43.0 MB versus 10.9 — **4x** — and no on-device fps has ever been
+   measured on an A13, so nobody can say today whether fp32 is affordable there. That
+   measurement is itself blocked on absent hardware (see the Mac/A13 item).
+3. **Fund a third mitigation.** A per-layer activation diff to find where the erosion first
+   appears, then a precision boundary above it. Real work, no guarantee, and it is
+   detector-side — which rule 6's stopping rule may or may not cover, since this is a
+   deployment-precision question rather than a detector-accuracy one. **That ambiguity is
+   itself worth one sentence from the founder.**
+
+**Cost to unblock: one sentence.** Nothing else in the lane is waiting on it.
+
+**Done instead, so the blocker was not idle time:** `yt_match40`'s abandoned pass finished,
+three new clips added (the rate exists now and did not before), both mitigations built and
+measured to rejection, the mechanism confirmed on every reject inspected, and qa
+independently recomputed the pooled numbers and corrected the close-race explanation.
+
+---
+
 ## 1. A push is required before the Core ML export can ever run — and pushes are barred
 
 **Status: the job is ready and cannot be triggered.**

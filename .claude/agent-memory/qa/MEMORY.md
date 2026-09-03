@@ -43,6 +43,13 @@ this agent's system prompt — read it first; it is the authoritative copy.
   one tool call instead; hit this on the court-mask-sweep task, coordinator had to
   intervene.
 
+- **int8 ball-graph parity headline verified 2026-09-03, close-race mechanism corrected.**
+  [int8_parity_verified_but_close_race_threshold_is_post_hoc.md](int8_parity_verified_but_close_race_threshold_is_post_hoc.md)
+  — 5/528, 3/6 clips CONFIRMED exactly; Arm B/C mitigation rejections CONFIRMED from
+  hashes+op counts+blob dumps; but the "close race" 0.15px threshold was picked after
+  seeing the 5 failures — "all 5 are close races" is NOT threshold-robust (2/5 at 0.05),
+  while "0 close races in the 2 clean clips" IS robust across 0.05-0.30.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is

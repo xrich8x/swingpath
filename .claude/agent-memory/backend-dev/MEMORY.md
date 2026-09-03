@@ -16,3 +16,4 @@ monolithic file; nothing was dropped.
 - [Null controls and pre-registered populations](null-controls-and-pre-registered-populations.md) - a FAILING null control is what makes a failed gate clean; a population described two ways is two sets
 - [Smoother: two metrics, opposite verdicts](smoother-two-metrics-opposite-verdicts.md) — ghosts/recall are detector-PAIRING dependent, speed coverage is NOT; coasted frames are why
 - [Perception cache families](perception-cache-families.md) — three incompatible families in data/output/; only detector_ab/ is a one-variable detector pair
+- [int8 ball-graph mitigations, both rejected](int8-per-channel-is-a-noop-for-conv.md) — per_channel is a silent no-op (byte-identical graph); last-conv-in-fp32 barely moves it, the erosion starts upstream

@@ -428,3 +428,190 @@ the `yt_rally2` run and not the video var, so it wrote `yt_rally2`'s numbers int
 `..._summary__am_hard_utr.json`, **overwriting the real one**. Both have been
 regenerated with the env correctly set. Recorded because a mislabelled evidence file is
 worse than a missing one — it is wrong and it looks right.
+
+---
+
+## Six clips, both named mitigations, and a rate at last. 2026-09-03 (lead + backend-dev + qa)
+
+Picking up the three things the previous section left open: `yt_match40`'s unfinished int8
+pass, the absence of a real cross-clip rate, and an untested mitigation against the named
+mechanism. **The bar is the one pre-registered 2026-09-02 and is unchanged** — null/non-null
+agreement >=90%, median disagreement <=2 px when both fire, no single frame >10 px. The
+six-clip set, the rate's definition and both mitigation arms were written into
+`.claude/journals/lead.md` **before any of them ran**.
+
+### The six-clip result
+
+Full 178 contiguous frames per clip, same probe, same span (source frames 0-179), int8 and
+fp32 both decoded by the real `mobile/ball_detector.js` `_decode()`.
+
+| clip | surface | cond 1 null-agree | cond 2 median | cond 3 max | **>10 px** | null mism. | verdict |
+|---|---|---|---|---|---|---|---|
+| `am_hard_utr` | Hardcourt | 170/178 (95.5%) | 0.163 px | **70.831 px** | 1/53 | 8 | **FAIL** |
+| `yt_rally2` | Shell | 176/178 (98.9%) | 0.144 px | **75.393 px** | 3/149 | 2 | **FAIL** |
+| `yt_match40` | Hardcourt | 170/178 (95.5%) | 0.000 px | 1.362 px | 0/93 | 8 | PASS |
+| `gold_clay` | Clay | 175/178 (98.3%) | 0.000 px | 0.960 px | 0/77 | 3 | PASS |
+| `gold_am` | Hardcourt | 173/178 (97.2%) | 0.137 px | 0.688 px | 0/67 | 5 | PASS |
+| `gold_shell` | Shell | 177/178 (99.4%) | 0.000 px | **185.066 px** | 1/89 | 1 | **FAIL** |
+
+**3 of 6 clips fail. Pooled: 5 failing frames / 528 both-fire frames = 0.95%.** Conditions 1
+and 2 pass on every clip without exception — six clips on, the outlier condition is still
+the only one that ever fires, and it is the only reason anyone knows there is a problem.
+
+`gold_shell` produced the worst disagreement measured anywhere in this work, **185.066 px**,
+and did it while posting the *best* null agreement (99.4%) and a **0.000 px median**. That
+single clip is the clearest statement of why condition 3 exists.
+
+### The reject, inspected (rule 10)
+
+`gold_shell` tag 0097, blobs dumped from the real heatmaps, guarded (the top-scoring blob's
+centroid must equal what the real `_decode()` returned — it does, on every arm):
+
+```
+fp32 : true  13 x 220 = 2860   <- wins by 6.9%      | false 11 x 242 = 2662
+int8 : false 12 x 242 = 2904   <- wins by 24.2%     | true  10 x 220 = 2200
+```
+
+Margin throughout this section is `(winner - runner_up) / winner`. Stating it matters: an
+earlier draft of this file, and backend-dev's Arm C write-up, divided by the *runner-up*
+instead and so quoted 7.4% where the winner-relative figure is 6.9%. qa caught it. The
+five failing frames' fp32 margins, computed the one way: **0147 4.67%, 0108 7.69%,
+0109 6.92%, 0110 0.00% (exact tie), 0097 6.92%** — widest **7.69%**.
+
+Same mechanism as `am_hard_utr` 0147, now doing **both halves at once**: quantisation erodes
+the true blob (13 -> 10 px) *and* grows the false one (11 -> 12 px). Neither peak moves.
+**Area is the lever, on every failure examined.**
+
+Two corrections to the mechanism as previously written here, from the blob dumps:
+`yt_rally2` **0108 is erosion, not the "mirror image" growth** — its true blob is deleted
+outright while the false blob sits unchanged at fp32's own 12x242=2904; and **0110's fp32
+answer is an exact 2640-vs-2640 tie** broken only by raster scan order, which makes 0110 the
+weakest of the five failures, not a clean one.
+
+### Both named mitigations: REJECTED
+
+Pre-registered screen for each: the 4 known-failing frames (`am_hard_utr` 0147, `yt_rally2`
+0108/0109/0110) must all land within 10 px of fp32. A screen pass buys only the right to a
+full run; a screen failure rejects the arm and no full run is paid for. One variable per arm.
+
+**Arm B — `per_channel=True`. REJECTED, and the reason is the finding.** The graph it
+produces is **byte-identical to the shipped one** — same sha256, same 10,918,923 bytes.
+`quantize_dynamic` forces `QuantizationMode.IntegerOps`, which maps Conv to **`ConvInteger`**,
+and ORT's `ConvInteger` operator class **has no per-channel branch at all**; only
+`QLinearConv` (static) and `QDQConv` consult `is_per_channel()`. TrackNet is 18 Convs and
+nothing else quantisable, so the flag touched zero weights — all 18 `*_weight_scale`
+initializers came out scalar with `per_channel=True` set. **Per-channel int8 for this graph
+is unreachable through `quantize_dynamic`**; reaching it needs static QDQ plus a calibration
+set, which is a second variable and therefore a different experiment.
+
+**Arm C — `nodes_to_exclude=[final Conv]`, keeping the heatmap-writing convolution in fp32.
+REJECTED, 3 of 4 screen frames still fail.** Unlike Arm B this is a real change (11.36 MB vs
+10.92; 17 `ConvInteger` + exactly 1 fp32 `Conv`). The final Conv was identified by graph
+topology, not by name — of 18 Convs exactly one has no Conv downstream
+(`node_conv2d_17 -> Relu -> BatchNormalization -> Reshape -> ArgMax`) — and the exporter
+aborts rather than guess if that count is ever != 1.
+
+| clip | tag | dist, shipped int8 | dist, Arm C |
+|---|---|---|---|
+| `am_hard_utr` | 0147 | 70.831 px | **70.989 px** (0.16 px *worse*) |
+| `yt_rally2` | 0108 | 74.493 px | **74.493 px** (bit-identical) |
+| `yt_rally2` | 0109 | 75.393 px | **75.355 px** |
+| `yt_rally2` | 0110 | 74.996 px | 0.000 px |
+
+The one frame it fixes is 0110 — the tie-break frame flagged above as the weakest instance.
+Blobs on 0147 show why: the true blob's area went **15 (fp32) -> 2 (shipped) -> 3 (Arm C)**
+against a target of 15. **Arm C recovered one pixel of area.**
+
+> **The negative localises the fault: the erosion is already present in the int8 features
+> ARRIVING at the final convolution. Output-layer precision is the wrong lever.**
+
+That is worth more than a passing arm would have been — it rules out a whole class of fix
+and points at where the next one would have to act. Reported, not gating: Arm C costs
++0.44 MB (+4.1%) and changed the null/non-null answer on none of the four frames.
+
+### What the rate is a rate OF
+
+`0.95% of both-fire frames` is a true number with a misleading denominator. The failure
+needs a close two-blob race in the **fp32** heatmap; it cannot occur without one. Counting
+fp32 frames whose runner-up blob scores >=85% of the winner (same threshold, same
+8-connected components, same `area x peak` scoring as the shipped decode; guarded against
+the real `_decode()`'s own answer, **0 guard failures in 528 frames**):
+
+| clip | both-fire | close races | % | failures |
+|---|---|---|---|---|
+| `am_hard_utr` | 53 | 4 | 7.5% | 1 |
+| `yt_rally2` | 149 | 9 | 6.0% | 3 |
+| `yt_match40` | 93 | **0** | 0.0% | 0 |
+| `gold_clay` | 77 | **0** | 0.0% | 0 |
+| `gold_am` | 67 | 1 | 1.5% | 0 |
+| `gold_shell` | 89 | 2 | 2.2% | 1 |
+| **pooled** | **528** | **16** | **3.0%** | **5** |
+
+**All 5 failures fall inside those 16 frames, and both clips that pass cleanly contain zero
+close races.** So the defensible rate is **5 of 16 close races (31%)**, and what varies by
+clip is how often the footage produces a close race at all.
+
+**The honest weakness, and qa's correction to it.** The 0.15 threshold was chosen *after*
+seeing which frames failed (widest failing fp32 margin **7.69%**, plus headroom), so it is
+not independent of the result it explains. qa swept it
+([int8-parity-qa-verification.md](int8-parity-qa-verification.md)) and the two halves of
+the claim came apart:
+
+| CLOSE | pooled close/both | am_hard_utr | yt_rally2 | gold_am | gold_shell | yt_match40 | gold_clay |
+|---|---|---|---|---|---|---|---|
+| 0.05 | 7/528 (1.3%) | 2/53 | 3/149 | 1/67 | 1/89 | **0/93** | **0/77** |
+| 0.10 | 16/528 (3.0%) | 4/53 | 9/149 | 1/67 | 2/89 | **0/93** | **0/77** |
+| 0.15 | 16/528 (3.0%) | 4/53 | 9/149 | 1/67 | 2/89 | **0/93** | **0/77** |
+| 0.20 | 17/528 (3.2%) | 4/53 | 10/149 | 1/67 | 2/89 | **0/93** | **0/77** |
+| 0.30 | 20/528 (3.8%) | 4/53 | 13/149 | 1/67 | 2/89 | **0/93** | **0/77** |
+
+- **SURVIVES:** *the two cleanly-passing clips contain zero close races* holds at **every**
+  threshold from 0.05 to 0.30, not just the chosen one. That is a real signal about the
+  footage, not an artefact of where the line was drawn.
+- **DOES NOT SURVIVE:** *all five failures are close races* is threshold-dependent — at
+  CLOSE=0.05 only **2 of 5** remain (`am_hard_utr` 0147 and the exact-tie `yt_rally2` 0110);
+  0108, 0109 and 0097 fall outside. So "31% of close races flip" is **not** a rate to quote:
+  it is the ratio at one post-hoc threshold, and the threshold was drawn around the
+  numerator. The pooled and per-clip parity numbers in the table above are unaffected —
+  they never depended on this — but the *explanation* is weaker than it first looked.
+
+### The derived candidate — NOT measured, NOT shipped
+
+The close race is visible in the fp32 heatmap **at decode time**, before any quantisation
+question arises. A decode that refuses when the margin is below threshold would convert a
+confident wrong lock into a null, which the smoother already absorbs. The cost is
+computable from the table above and is not obviously worth paying: at CLOSE=0.15 it refuses
+**16** frames to prevent **5** wrong locks, so **11 of the 16 refusals remove detections int8
+currently gets right** — and per the sweep, a threshold tight enough to refuse only 7 frames
+catches only 2 of the 5. Rule 5 applies — this is a chain-level claim and gets scored at the
+chain or not at all. It is recorded here as the next candidate, not as a result, and any run
+of it must pre-register the threshold **before** looking at which frames it catches.
+
+### Reproduce (the 2026-09-03 additions)
+
+```
+# one clip, all stages. SET BOTH ENV VARS — setting only BALL_PARITY_DIR once wrote one
+# clip's numbers into another clip's summary file and overwrote a real result.
+export BALL_PARITY_DIR=<scratch>/ball_parity_<clip>
+export BALL_PARITY_VIDEO=<repo>/data/incoming/<Surface>/<clip>.mp4
+backend/.venv/Scripts/python.exe backend/ball_detector_parity_probe.py extract
+node mobile/verify_ball_detector.js build-decode
+backend/.venv/Scripts/python.exe backend/ball_detector_parity_probe.py onnx-run
+node mobile/verify_ball_detector.js decode-onnx
+backend/.venv/Scripts/python.exe backend/ball_detector_parity_probe.py onnx-run-int8   # ~10 s/frame, resumable
+node mobile/verify_ball_detector.js decode-int8      # RE-RUN THIS after widening the int8 pass —
+                                                    # compare-int8 silently skips frames whose JS decode is stale
+backend/.venv/Scripts/python.exe backend/ball_detector_parity_probe.py compare-int8
+
+# close-race census across clips (no inference, reads the fp32 heatmaps already dumped)
+backend/.venv/Scripts/python.exe backend/ball_parity_margin_census.py     am_hard_utr=<dir> yt_rally2=<dir> ... [--close 0.15]
+
+# the two rejected mitigation graphs
+backend/.venv/Scripts/python.exe mobile/export_int8_perchannel.py
+backend/.venv/Scripts/python.exe mobile/export_int8_lastconv_fp32.py
+```
+
+**Control path re-verified after the harness gained its variant modes:** re-running
+`decode-int8` + `compare-int8` on `am_hard_utr` reproduces 2026-09-02's numbers exactly —
+170/178, 53 both-fire, median 0.163 px, max 70.831 px — so the `onnx-run-var` / `decode-var`
+additions did not disturb the measurement they sit beside.

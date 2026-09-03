@@ -341,6 +341,60 @@ def onnx_run_int8():
           f"this call ({skipped} already done, resumed)")
 
 
+def onnx_run_var():
+    """ARM-B (variant) sibling of onnx_run_int8() — 2026-09-03, backend-dev.
+
+    Deliberately a SEPARATE function so the int8 control path above is not
+    edited and stays byte-for-byte reproducible: an A/B whose control arm was
+    modified to run the treatment is not an A/B.
+
+    Runs an ARBITRARY quantised graph (BALL_PARITY_GRAPH) on JS's own
+    _buildInput() tensors and dumps heatmaps as <BALL_PARITY_PREFIX>_heat_<tag>.bin
+    for `node verify_ball_detector.js decode-var` to decode with the REAL
+    unmodified _decode(). Optional BALL_PARITY_TAGS (comma-separated) restricts
+    the run to a handful of frames — int8 is ~10 s/frame on this desktop x86 CPU
+    (no int8 HW accel), so a cheap 4-frame screen must not walk all 178.
+    """
+    import onnxruntime as ort
+
+    graph = os.environ.get("BALL_PARITY_GRAPH")
+    prefix = os.environ.get("BALL_PARITY_PREFIX")
+    if not graph or not prefix:
+        print("FATAL: set BALL_PARITY_GRAPH and BALL_PARITY_PREFIX for onnx-run-var")
+        sys.exit(1)
+    if not os.path.isabs(graph):
+        graph = os.path.join(ROOT, graph)
+    only = os.environ.get("BALL_PARITY_TAGS", "").strip()
+    tags = set(t.strip() for t in only.split(",") if t.strip()) if only else None
+
+    print(f"variant graph : {graph}")
+    print(f"out prefix    : {prefix}")
+    print(f"parity dir    : {OUT}")
+    print(f"tags          : {sorted(tags) if tags else 'ALL'}")
+    sess = ort.InferenceSession(graph, providers=["CPUExecutionProvider"])
+    with open(os.path.join(OUT, "python_results.json")) as f:
+        py = json.load(f)
+    n = skipped = 0
+    for r in py["results"]:
+        tag = r["tag"]
+        if tags is not None and tag not in tags:
+            continue
+        jf = os.path.join(OUT, f"js_input_{tag}.bin")
+        if not os.path.exists(jf):
+            continue
+        outf = os.path.join(OUT, f"{prefix}_heat_{tag}.bin")
+        if os.path.exists(outf):
+            skipped += 1
+            continue
+        js_input = np.fromfile(jf, dtype=np.float32).reshape(1, 9, IN_H, IN_W)
+        heat = sess.run(None, {"frames": js_input})[0][0]
+        heat.astype(np.uint8).tofile(outf)
+        n += 1
+        print(f"  var {tag} done ({n} this call, {skipped} already had)", flush=True)
+    print(f"onnx_run_var: ran {os.path.basename(graph)} on {n} JS-built input tensors "
+          f"this call ({skipped} already done)")
+
+
 def compare_int8():
     """TASK 4: int8 vs fp32 through the (now-fixed, real) JS decode, on the
     same 178 real frames. fp32-through-JS was already proven identical to
@@ -434,7 +488,8 @@ def compare_int8():
 
 
 if __name__ == "__main__":
-    modes = ("extract", "compare", "onnx-run", "onnx-run-int8", "compare-int8")
+    modes = ("extract", "compare", "onnx-run", "onnx-run-int8", "compare-int8",
+             "onnx-run-var")
     if len(sys.argv) < 2 or sys.argv[1] not in modes:
         print(__doc__)
         sys.exit(1)
@@ -444,6 +499,8 @@ if __name__ == "__main__":
         onnx_run()
     elif sys.argv[1] == "onnx-run-int8":
         onnx_run_int8()
+    elif sys.argv[1] == "onnx-run-var":
+        onnx_run_var()
     elif sys.argv[1] == "compare-int8":
         compare_int8()
     else:

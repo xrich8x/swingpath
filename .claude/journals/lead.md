@@ -251,3 +251,153 @@ affordability) both wait here, and nothing dispatchable is on that path.
 - **Two lead errors worth not repeating:** sent execution work to `researcher`, which has
   no `Bash` by design; and claimed an agent was running without calling `ListAgents`.
   Match the task to the agent's `tools:` first, and verify state before asserting it.
+
+---
+
+## PRE-REGISTRATION — int8 ball-graph parity, Lane 1. Written 2026-09-03 BEFORE any run
+
+Written before `yt_match40`'s int8 pass finished, before any new clip was extracted, and
+before any mitigation graph existed. A failed bar stays failed.
+
+**The bar is UNCHANGED from 2026-09-02.** It is not being re-derived or re-tuned; it is
+being applied to more clips and to a candidate fix. Per comparison (one clip, its full
+178-frame span, int8-through-JS-decode vs fp32-through-JS-decode):
+
+1. null/non-null agreement **>= 90%**
+2. median position disagreement when both fire **<= 2 px**
+3. **no single frame > 10 px**
+
+### (b) Cross-clip rate — pre-registered definitions
+
+- **Clip set, fixed now, before any of them is run:** the 6 gold clips
+  `am_hard_utr`, `yt_rally2`, `yt_match40`, `gold_clay`, `gold_am`, `gold_shell`.
+  Chosen for surface spread (Hardcourt 3 / Shell 2 / Clay 1) and because they are the
+  gold registry's own members - not selected on any int8 result. Same 180-source-frame
+  span (0-179) for every clip, the probe's existing default. **No clip is dropped after
+  the fact**, including one that yields few both-fire frames; a low-n clip is reported
+  with its n, not excluded.
+- **Reported rate = failing frames / both-fire frames, pooled across the 6 clips**, plus
+  the per-clip numerator/denominator, plus **clips failing condition 3 / clips run**.
+- **A "failing frame" is one with disagreement > 10 px** - the same threshold as
+  condition 3, not a new one.
+- No pass/fail attaches to the rate itself. It is a characterisation; the pass/fail is
+  condition 3 per clip.
+
+### (c) Mitigation — pre-registered, ONE variable
+
+Shipped graph = `quantize_dynamic(fp32, weight_type=QInt8)`, `per_channel` defaulting
+to False. **Arm B changes exactly one argument: `per_channel=True`.** Nothing else -
+same source fp32 graph, same weight type, same op set, same export script path.
+
+- **Cheap SCREEN first (a necessary condition, not the bar):** run Arm B on the 4 known
+  failing frames only - `am_hard_utr` 0147, `yt_rally2` 0108/0109/0110. All 4 must come
+  within 10 px of fp32. **If any of the 4 still fails, Arm B is REJECTED and no full run
+  is paid for.** A screen that passes proves nothing on its own - it only buys the right
+  to run the full bar.
+- **The bar, if the screen passes:** conditions 1-3 above on the FULL 178 frames of
+  **both** currently-failing clips (`am_hard_utr`, `yt_rally2`). Arm B ships only if
+  condition 3 passes on both. Passing on one is a failure.
+- **Reported, not gating** (named now so it cannot be quietly dropped later): the
+  null-mismatch count per clip (shipped int8: 8 on `am_hard_utr`, 2 on `yt_rally2`) and
+  the file size. A fix that buys condition 3 by losing detections is a trade to state,
+  not a win.
+- If Arm B is rejected, the second named mitigation (final conv kept in higher
+  precision) is the next candidate and gets this same screen-then-bar treatment. Only
+  one mitigation is required by the task; a second is only run if time allows.
+
+### What would make this whole lane wrong
+The probe substitutes desktop `onnxruntime` CPU for `onnxruntime-react-native`. Every
+number here is quantisation effect measured through that substitution. It stays true.
+
+### Arm B REJECTED, and Arm C pre-registered. 2026-09-03, BEFORE Arm C ran
+
+**Arm B (`per_channel=True`) is REJECTED — and the reason is not that it lost.** The graph
+it produced is **byte-identical to the shipped control** (same sha256, same 10,918,923
+bytes). `quantize_dynamic` forces `QuantizationMode.IntegerOps`, mapping Conv to
+`ConvInteger`, and ORT's `ConvInteger` operator class has **no per-channel branch at all** -
+only `QLinearConv` (static) and `QDQConv` consult `is_per_channel()`. TrackNet is 18 Convs
+and nothing else quantisable, so the flag touched zero weights; all 18 `*_weight_scale`
+initializers came out scalar. 4/4 screen frames failed at exactly the control's distances.
+**Per-channel int8 for this graph is unreachable through `quantize_dynamic`** - reaching it
+needs static QDQ plus a calibration set, which is a second variable and therefore a
+different experiment, not this one.
+
+**Arm C, pre-registered now, before it is built or run. ONE variable versus the shipped
+export:** `nodes_to_exclude=[<the final Conv>]`, keeping the heatmap-producing convolution
+in fp32. Everything else identical - same source fp32 graph, same `QuantType.QInt8`, same
+op set, `per_channel` back at its default False (Arm B proved it inert here, so carrying it
+would add a knob that provably does nothing while muddying the diff).
+
+Rationale against the named mechanism: the failure is **area erosion in the heatmap**, and
+the final Conv is what writes the heatmap. Arm B could not touch it. Arm C can.
+
+Same treatment as Arm B, unchanged:
+- **SCREEN** (necessary, not sufficient): the 4 known-failing frames - `am_hard_utr` 0147,
+  `yt_rally2` 0108/0109/0110 - all within 10 px of fp32. Any failure REJECTS Arm C with no
+  full run paid for.
+- **BAR** if the screen passes: conditions 1-3 on the FULL 178 frames of BOTH failing
+  clips. Passing one clip is a failure.
+- **Reported, not gating:** null-mismatch count, file size (excluding a conv gives back
+  size), and per-frame latency.
+
+**One correction to the mechanism as previously written, from Arm B's blob dump.** STATE
+records `yt_rally2` as "the mirror image - int8 grows the false blob". That is true of
+0109 only. **0108 is the same erosion as 0147** (the true blob is deleted outright; the
+false one is unchanged), and **0110's fp32 answer is an exact 2640-vs-2640 tie** resolved
+only by raster scan order - a weak instance of the bar, and worth naming before anyone
+counts it as a strong one.
+
+### RESULTS AS THEY LAND (written during, not after)
+
+- **Arm B `per_channel=True`: REJECTED** - byte-identical graph, 4/4 screen frames fail. See above.
+- **Arm C `nodes_to_exclude=[final Conv]`: REJECTED** - a real change (11.36 MB vs 10.92,
+  17 ConvInteger + 1 fp32 Conv) but 3 of 4 screen frames still fail. 0147 got 0.16 px
+  WORSE; 0108 bit-identical to the control; only 0110 passed and 0110 is the tie-break
+  frame flagged as the weak instance. Blob dump on 0147: the true blob's area went
+  **15 -> 2 (control) -> 3 (Arm C)** against a target of 15. **The negative localises the
+  fault: erosion is already present in the int8 features ARRIVING at the final conv, so
+  output-layer precision is the wrong lever.** Both named mitigations are now spent.
+- **`yt_match40` full 178: PASSES all three bars.** null agreement 170/178 (95.5%),
+  both-fire 93, median **0.000 px**, max **1.362 px**, 8 null mismatches. First clip to
+  pass. Its failing-frame count is **0 of 93**.
+- **`gold_clay` full 178: PASSES all three bars.** 175/178 (98.3%) null agreement,
+  both-fire 77, median 0.000 px, max **0.960 px**, 3 null mismatches. **0 of 77** failing.
+- **`gold_am` full 178: PASSES.** 173/178, both-fire 67, median 0.137, max **0.688 px**, 5 null mm. 0 of 67.
+- **`gold_shell` full 178: FAILS, and it is the WORST outlier yet - 185.066 px** (tag 0097).
+  177/178 null agreement, both-fire 89, median 0.000, 1 null mm. **1 of 89.**
+  Blob dump on 0097 - the same mechanism, doing BOTH things at once:
+  fp32 true 13x220=2860 vs false 11x242=2662 (margin 7.4%); int8 erodes the true blob
+  13->10 (2200) AND grows the false one 11->12 (2904). False wins by 32%.
+
+**CROSS-CLIP RATE, 6 clips, all pre-registered before any ran:**
+`5 failing frames / 528 both-fire frames = 0.95%`, and **3 of 6 clips FAIL condition 3.**
+Per clip (>10px / both-fire): am_hard_utr 1/53, yt_rally2 3/149, yt_match40 0/93,
+gold_clay 0/77, gold_am 0/67, gold_shell 1/89.
+
+**The rate has a much better denominator, and it makes the failure PREDICTABLE.**
+`margin_census.py` (scratchpad; guarded - the top blob's centroid must equal what the real
+`_decode()` returned, 0 guard failures in 528 frames) counts fp32 frames where the
+runner-up blob scores >=85% of the winner:
+
+| clip | both-fire | close races | % |
+|---|---|---|---|
+| am_hard_utr | 53 | 4 | 7.5% |
+| yt_rally2 | 149 | 9 | 6.0% |
+| yt_match40 | 93 | **0** | 0.0% |
+| gold_clay | 77 | **0** | 0.0% |
+| gold_am | 67 | 1 | 1.5% |
+| gold_shell | 89 | 2 | 2.2% |
+| **pooled** | **528** | **16** | **3.0%** |
+
+**All 5 failures are inside those 16 frames, and the two clips that pass cleanly have
+ZERO close races.** So the honest rate is not 0.95% of frames - it is **5 of 16 close
+races (31%)**, and the close-race rate is what varies by clip. The 0.15 threshold was
+chosen AFTER seeing the failures (widest failing fp32 margin 7.4%, plus headroom), so it
+is NOT independent of them - qa is checking whether the zero-on-passing-clips result
+survives other thresholds. Until that lands, treat the split as suggestive, not measured.
+
+**Derived candidate, NOT measured, NOT proposed as done:** the close race is visible in the
+fp32 heatmap at decode time, so a decode that REFUSES when the margin is under threshold
+converts a confident wrong lock into a null the smoother already handles. Cost, computable
+from the table: it refuses 16 frames to prevent 5 wrong locks - **11 of those 16 refusals
+are frames int8 currently gets RIGHT**. Rule 5 says score it at the CHAIN or not at all.
