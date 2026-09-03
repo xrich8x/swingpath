@@ -374,3 +374,44 @@ its partly-mechanical confound restated at the point of reporting.
 
 **Nothing ships from this.** An admissible `t` earns a real-footage confirmation arm (§7 item
 4), which no compliant reference currently supports.
+
+---
+
+## PRE-REGISTRATION — top-2 blob margin as a REFUSAL signal. 2026-09-04, before any run
+
+**Where this came from:** the activation diff (`2110964`) established that int8 is not the
+disease — the failing frames carry the same quantisation noise as frames that decode
+correctly, and what actually breaks is the fp32 model's own **~5% top-2 `area x peak` margin**.
+The failure's defining property is a **confident wrong lock with no refusal signal**. So the
+lead is not another precision arm (three have failed, rule 3 bars a fourth); it is giving the
+decode a way to say "I don't know".
+
+**Chain-side, so rule 6 does not close it.** It also protects the **fp32** path, which the ~5%
+margin shows is one bad frame from the same error.
+
+**The signal:** at decode time both blobs are already computed — `margin = 1 - (score_2 /
+score_1)` over the connected components' `area x peak`. No new model, no retraining, no extra
+inference. Cost is a comparison.
+
+**PRE-REGISTERED BAR.** Measured on the 6-clip parity set already committed (528 both-fire
+frames, 5 of them disagreeing by >10 px):
+- **PASS:** some margin threshold flags **>= 4 of the 5** known bad frames while refusing
+  **<= 5%** of correctly-decoded both-fire frames. Both halves required — a signal that
+  catches every failure by refusing everything is the degenerate answer the seen_frac sweep
+  just caught, and it is barred here in advance.
+- **FAIL:** anything else. A failed bar stays failed.
+- **Mandatory null control**, seeded, 1000 draws: permute the bad/good labels and report what
+  fraction of permutations reach the same catch rate at the same collateral. Without it a
+  5-frame result is uninterpretable.
+
+**POWER IS THIN AND IS NAMED IN ADVANCE, not after: n = 5 failing frames.** That is a ceiling,
+not a choice — it is every >10 px frame in the whole 6-clip set. **A PASS here is a screen,
+not a verdict**, and earns a wider run on more clips; it does NOT earn a ship. If the null
+control cannot separate at n=5, say so and report the branch as UNDERPOWERED rather than
+passed — that is the honest outcome and I will take it.
+
+**Also measure, reported not gating:** the same margin on the 8 + 2 + 8 + 3 + 5 + 1 null
+mismatches (fp32 fires, int8 does not), since a refusal signal that also predicts dropout is
+worth more than one that does not.
+
+**Not authorised:** shipping, changing the decode's behaviour, or quoting a coverage number.
