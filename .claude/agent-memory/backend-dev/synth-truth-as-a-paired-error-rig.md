@@ -12,15 +12,24 @@ accuracy reference. `tools/synth_truth.py` is the only compliant absolute speed 
 **Why:** any question of the form "does gate X predict speed error?" needs truth paired
 per shot, and this is the only rig that produces it.
 
-**How to apply — the recipe that makes it faithful** (built and run 2026-09-03; the
-harness itself lives only in scratchpad, so this is the reproduction note):
+**THE RIG IS NOW A COMMITTED TOOL: `tools/seen_frac_speed_error.py`** (promoted
+2026-09-03). Do not rebuild it. Clips and seed are arguments; its defaults reproduce
+`docs/evidence/does-seen-frac-predict-speed-error.md` exactly, and four flags
+(`--runoff-m 2.5 --min-alive 6 --rng-scheme split --track-mode compressed`) reproduce qa's
+independent rebuild exactly. `--arm correlated` is the positive control. Pinned by
+`backend/tests/test_seen_frac_speed_error.py`.
+
+**How to apply — the recipe that makes it faithful** (the reproduction note behind it):
 
 - Import `synth_truth.simulate` / `truth_of`; do NOT use `synth_truth.measure()` for a
   pipeline-fidelity question. `measure()` simply DELETES dropped samples, whereas the
   shipped pipeline REPLACES them with smoother forecasts and integrates over the filled
   track. Mirror the shipped chain instead: `ball.smooth_forecast(res_scale=h/720)` then
-  `calibration.image_to_court` + the +/-4 m runoff-box test then `ball.cap_court_jumps`
+  `calibration.image_to_court` + the runoff-box test then `ball.cap_court_jumps`
   then `ball.smooth_and_fill(window=7, polyorder=2)` then `analytics.shot_speed_kmh`.
+- **The runoff box is 2.5 m** (`RUNOFF_M`, `pipeline.py:1352`). The first version of this
+  rig used 4.0 and that was a fidelity defect, caught by qa. Read the constant, do not
+  remember it.
 - **Compare against `avg_ground_kmh`**, not `launch_kmh`. Launch carries the shared -21.7%
   drag bias into every shot and compresses any between-group ratio toward 1.
 - **Apply the pipeline's own shot filters** (`5 < speed < 250`, and `speed <= 160` when the

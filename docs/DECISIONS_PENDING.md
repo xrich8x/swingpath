@@ -173,3 +173,30 @@ options, none taken:
 
 No threshold has been changed and no replacement value has been named; the
 pre-registration forbids picking one from this data.
+
+---
+
+## `seen_frac` gate — one addition after qa verification (backend-dev, 2026-09-03)
+
+The INDETERMINATE verdict and the options above are unchanged. One fact found while
+reconciling qa's rebuild changes what a re-run would have to look like, and it is a founder
+call whether to spend the run:
+
+**The adjacent-band ratio the test was pre-registered on is not a stable estimator.** Across
+seeds 0-9 it has sd 0.17-0.45 per clip and bootstrap 95% CIs 0.69-2.47 wide that all contain
+1.0 (`docs/evidence/does-seen-frac-predict-speed-error.md` §8.3). Under the
+shipped-fidelity configuration (`--runoff-m 2.5`, which the original harness got wrong at
+4.0) the "gate predicts error" bar would have **passed on 4 of 10 reseeds**. That does not
+establish the bar and no threshold is being moved — it means the experiment as designed
+cannot decide the question at this sample size, which reinforces INDETERMINATE.
+
+The decision: **option 2 above (run the §7 replacement pre-registration) is still the right
+next step, but it must not reuse the ratio-of-medians estimator.** §7 already specifies
+accept-precision vs base rate with a >= 10-point margin, which the positive control shows is
+sensitive enough to detect an effect the band ratio misses entirely (+14.8 pts vs a band
+ratio that moved 1.046 -> 1.142). No change to §7 is needed; this is a note that its choice
+of metric was the load-bearing one, and that any future test which reverts to a band ratio
+should be refused.
+
+Tooling is no longer a blocker: `tools/seen_frac_speed_error.py` reproduces both prior
+implementations exactly and carries `--arm correlated` as the positive control.

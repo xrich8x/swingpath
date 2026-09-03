@@ -77,10 +77,17 @@ In the harness a flight spans launch (frame 0) to the bounce (`truth_of`'s `i_bo
   `avg_ground_kmh`.
 - Estimate: the shipped chain, mirrored stage-for-stage from `pipeline.analyze`:
   `ball.smooth_forecast` (`res_scale = h/720`) then `calibration.image_to_court` + the
-  +/-4 m runoff-box test (`pipeline.py:1464-1477`) then `ball.cap_court_jumps(max_step_m =
+  runoff-box test (`pipeline.py:1471-1472`) then `ball.cap_court_jumps(max_step_m =
   84/fps)` then `ball.smooth_and_fill(window=7, polyorder=2)` then
   `analytics.shot_speed_kmh`.
 - Error: `abs(100 * (est - avg_ground_kmh) / avg_ground_kmh)`.
+
+**CORRECTION 2026-09-03 (§8):** the harness ran that runoff box at **+/-4.0 m**. The
+**shipped** value is **2.5 m** (`RUNOFF_M`, `pipeline.py:1352`). That is a fidelity defect in
+this harness, not a design choice, and it is the one place where the faithful configuration
+differs materially from what §4/§5 report. `tools/seen_frac_speed_error.py --runoff-m 2.5`
+is the faithful setting; §8.2 ablates it (it moves each clip's ratio by <= 0.06 on its own)
+and §8.4 states the one conclusion that does turn on it.
 
 **Comparator fixed before any numbers existed** (journal, 2026-09-03): `avg_ground_kmh`,
 which is synth_truth's error-budget component 3 — *"the only part that is our error"*.
@@ -109,7 +116,8 @@ correlate in the wild. That is a real gap and it is what §7's pre-registration 
 | perception cache used | **none** — this is synthetic; no detector was run, no `data/output/` cache read |
 | truth generator | `tools/synth_truth.py` (`simulate`, `truth_of`), unmodified, imported not copied |
 | shipped code exercised | `swingvision.ball.smooth_forecast` / `cap_court_jumps` / `smooth_and_fill`, `swingvision.calibration.image_to_court` + `homography_from_landmarks`, `swingvision.analytics.shot_speed_kmh` |
-| harness | `scratchpad/seen_frac_vs_error.py` + `analyse.py`, output `paired.json`. **Uncommitted** — writing it to `tools/` would be a code change, which this brief bars. See NOT ESTABLISHED. |
+| harness | **`tools/seen_frac_speed_error.py`** (promoted 2026-09-03; was `scratchpad/seen_frac_vs_error.py` + `analyse.py`). Defaults reproduce every number in §4/§5 exactly, including band counts — see §8.1. |
+| runoff box | **4.0 m** in this file's numbers; **shipped is 2.5 m** (`pipeline.py:1352`) — see the correction in §2 and the ablation in §8.2 |
 | seed | 0, every clip |
 | flights requested / usable | 1200 per clip; 892 / 803 / 862 usable = **2557** |
 | runtime env | `backend/.venv-train/Scripts/python.exe` |
@@ -153,10 +161,24 @@ G: 0 of 3 clips >= 1.5x. N: 2 of 3 clips <= 1.1x. **Reads N.**
 Neither secondary metric reaches G on any clip.
 
 **RESTRICTED ARMS.** The primary population contains flights the shipped pipeline would
-never have emitted as a shot at all: `pipeline.py:1762` drops `speed < MIN_SPEED_KMH` (5)
-and `speed > 250`, and the gate's own conjunction requires `speed <= PLAUSIBLE_KMH` (160).
-Omitting those filters was an oversight in fidelity, not a design choice, so the restricted
-arms are reported alongside — **the bar is unchanged in all of them.**
+never have emitted as a shot at all. **Corrected citation (was `pipeline.py:1762` for both
+cuts, which conflated two lines and omitted a condition — qa, 2026-09-03):**
+
+```python
+1759:  if speed < MIN_SPEED_KMH:                              # 5.0, unconditional
+1760:      continue
+1761:  if not is_serve and (disp < 0.8 or speed > 250.0):     # NOT applied to serves
+1762:      continue
+```
+
+So the `> 250` cut is **conditional on `not is_serve`**, and the same conjunction also
+carries `disp < 0.8`, which the arms below do not apply either. The gate's own conjunction
+separately requires `speed <= PLAUSIBLE_KMH` (160) and `not is_serve`. This harness has no
+serve/rally distinction, so Arms A/B apply the non-serve branch to every flight — a
+population slightly **stricter** than the pipeline's, stated rather than hidden. It does not
+change what the arms show. Omitting these filters from the primary population was an
+oversight in fidelity, not a design choice, so the restricted arms are reported alongside —
+**the bar is unchanged in all of them.**
 
 | arm | population | n | yt_rally2 | am_hard_utr | yt_court | reads |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -288,19 +310,221 @@ value has been looked at, and to be executed on clips NOT used above.**
    held-out, swept, pre-registered bar rather than be swapped in on the strength of a
    correlation found here. Naming it is not proposing it.
 
+   **And the correlation is PARTLY MECHANICAL, not purely diagnostic** (qa, 2026-09-03 —
+   stated here because §6 did not say it plainly). `analytics.shot_speed_kmh` integrates the
+   path over **exactly the points that survived court projection**: the runoff-box gate and
+   `cap_court_jumps` delete points, `smooth_and_fill` bridges the hole flat, and the path
+   integral therefore collapses toward zero *by construction* as court-coverage falls. A
+   large negative rho between court-coverage and error is thus partly a restatement of how
+   the estimate is computed, not an independent discovery that court-coverage predicts
+   error. That is a second, independent reason not to swap it in as a gate: a gate must be
+   evaluated against an error measured over a span the gate did not itself define. The
+   -0.749-vs-0.098 gap is still a real and large asymmetry — `seen_frac` is *also* a
+   coverage statistic and does not enjoy the same mechanical advantage — but the magnitude
+   of -0.749 must not be read as a clean effect size.
+
 ## NOT ESTABLISHED THIS RUN
 
 - **Whether `seen_frac` predicts speed error on REAL footage.** Only the causal
   (random-dropout) form of the question is answered. In real clips dropout is caused by the
   shot, so `seen_frac` could still carry predictive information this design cannot see.
   This is the single largest gap and item 4 of §7 exists for it.
-- **Why the two populations disagree.** Restricting to shipped-shot speeds moves
-  `yt_rally2` 1.35 -> 1.11 and `am_hard_utr` 0.86 -> 1.21. The mechanism is presumably the
-  near-zero-speed collapse landing differently in the two bands, but it was not isolated.
+- ~~**Why the two populations disagree.**~~ **ANSWERED 2026-09-03 — see §8. The
+  population-to-population moves quoted here (1.35 -> 1.11, 0.86 -> 1.21) are inside the
+  ratio's own sampling noise and should not be given a mechanism.**
 - **The other three conjuncts of `speed_confident`** (`real_landing`, `is_serve`,
   `PLAUSIBLE_KMH`) are untested. Only `seen_frac` was under test.
-- **The harness is uncommitted** (`scratchpad/seen_frac_vs_error.py`, `analyse.py`,
-  `paired.json`). Promoting it to `tools/` is a code change and this brief bars code
-  changes and STATE edits; §2 and §3 describe it precisely enough to rebuild.
+- ~~**The harness is uncommitted.**~~ **RESOLVED 2026-09-03: promoted to
+  `tools/seen_frac_speed_error.py`, which reproduces this file's numbers AND qa's rebuild
+  exactly, from flags. See §8.**
+- **The band ratio's sensitivity ceiling on 2 of 3 cameras** (qa's positive control, §8.4).
+  A real but weak `seen_frac` effect could go undetected on `am_hard_utr` / `yt_court` by
+  this exact band window, because error saturates before the window can resolve it. The
+  harness is demonstrably not blind in general; it is blind to *small* effects on those two
+  geometries.
 - **No `docs/STATE.md` row was written** (barred by the brief). STATE still has no row for
   this question.
+
+---
+
+## 8. Reconciliation with qa's rebuild — why the two implementations disagreed
+
+Added 2026-09-03, after `docs/evidence/seen-frac-gate-qa-verification.md` reported that an
+independent rebuild produced materially different band ratios, flipping `yt_court` to the
+other side of 1.0. **The verdict is unchanged. What changes is how many digits of the band
+ratio anyone — qa or me — is entitled to quote: the answer is roughly none.**
+
+### 8.1 The harness is now in the repo, and it reproduces BOTH implementations exactly
+
+`tools/seen_frac_speed_error.py`. Clips and seed are arguments; defaults are the exact
+configuration that produced §4's numbers; qa's correlated-dropout positive control is
+`--arm correlated`, an option rather than a fork, because the control is part of the
+experiment now. Provenance is stamped from the resolved argparse namespace, never a preset
+table.
+
+The refactor proof is two-sided — one file, two flag sets, both prior results land on the
+digit *and on the band counts*, which is the stronger check:
+
+| what | command | result | previously published |
+| --- | --- | --- | --- |
+| §4 primary | `--n 1200` | 1.346 (155/201) / 0.855 (132/171) / 0.756 (143/197), n=2557 | 1.35 / 0.86 / 0.76, same counts, n=2557 |
+| §5 Arm A | `--n 1200` (shipped_shot block) | 1.110 (126/163) / 1.223 (84/100) / 1.017 (98/120) | 1.11 / 1.22 / 1.02, same counts |
+| §5 Arm B | `--n 1200 --max-speed-kmh 160` | 1.114 (125/163) / 1.207 (78/97) / 0.969 (97/118) | 1.11 / 1.21 / 0.97, same counts |
+| **qa's rebuild** | `--n 800 --runoff-m 2.5 --min-alive 6 --rng-scheme split --track-mode compressed` | **1.180 (81/95) / 1.465 (38/54) / 1.893 (55/66)** | qa: **1.18 (81/95) / 1.46 (38/54) / 1.89 (55/66)** |
+
+**qa's positive control reproduces exactly too**, `--n 500 --runoff-m 2.5 --min-alive 6
+--rng-scheme split --track-mode compressed --arm {random,correlated}`, unrestricted
+population — every band count and every median lands on qa's:
+
+| clip | `--arm random` | `--arm correlated` (dropout ranked onto `max_z`) |
+| --- | --- | --- |
+| yt_rally2 | 1.583 (62/65) | 1.763 (85/84) |
+| am_hard_utr | 0.905 (53/59) | 1.000 (56/80) |
+| yt_court | 1.046 (59/62) | 1.142 (72/83) |
+
+qa's published values: 1.58 / 0.91 / 1.05 and 1.76 / 1.00 / 1.14, same counts.
+
+**And running the control through the tool surfaces something qa's write-up did not: the
+band ratio is the WEAK instrument, and the classifier framing is the sensitive one.** On the
+same two arms, pooled:
+
+| arm | accept-precision | base rate | margin | refused-but-accurate |
+| --- | --- | --- | --- | --- |
+| random | 0.500 | 0.462 | **+3.8 pts** | 36.4% of refused |
+| correlated | 0.501 | 0.353 | **+14.8 pts** | 4.5% of refused |
+
+Under the injected correlation the gate becomes genuinely informative and would **clear §7's
+pre-registered >= 10-point replacement bar**, while the band ratio on two of three clips
+barely moves off 1.0 (0.905 -> 1.000, 1.046 -> 1.142). Same injected effect, same rows: one
+metric sees it plainly, the other does not. This is direct evidence that the ratio-of-medians
+estimator — not the harness, and not the data — is what is failing to resolve an effect, and
+it reinforces §8.3's conclusion and §7's choice of accept-precision as the acceptance metric
+for any future bar.
+
+One detail that was load-bearing for exact reproduction and is called out in the tool: the
+original harness `continue`d on `alive.sum() < MIN_ALIVE` **before** drawing pixel noise, so
+a rejected flight consumed no `normal()` draws and shifted every later flight's stream
+position. An implementation that draws noise unconditionally is not wrong; it is a different
+sample.
+
+### 8.2 One framing error, then five real differences — and none of them is the cause
+
+**Framing error first, so it is not mistaken for a mechanism.** The comparison as circulated
+put my **Arm B** (`5 < est < 160`, 1.11 / 1.21 / 0.97) against qa's **Arm A** (`5 < est <
+250`, 1.18 / 1.46 / 1.89). Like for like, my Arm A is 1.110 / 1.223 / **1.017**. So a little
+of the `yt_court` gap is a population mismatch — but only 0.05 of it.
+
+The five genuine implementation differences, each ablated as **one variable** from the
+default, Arm A, `--seed 0 --n 1200`:
+
+| change | yt_rally2 | am_hard_utr | yt_court | move on yt_court |
+| --- | --- | --- | --- | --- |
+| *(baseline = §5 Arm A)* | 1.110 | 1.223 | 1.017 | — |
+| `--runoff-m 2.5` (qa's, and **the shipped value**) | 1.144 | 1.231 | 1.038 | +0.02 |
+| `--min-alive 6` (qa's) | 1.015 | 1.559 | 0.961 | -0.06 |
+| `--rng-scheme split` (qa's separate streams) | 1.232 | 1.018 | 1.013 | -0.00 |
+| `--track-mode compressed` (qa drops None frames before Sav-Gol) | 1.246 | 1.306 | 0.965 | -0.05 |
+| all four, `--n 1200` | 1.742 | 1.020 | 1.369 | +0.35 |
+| all four, `--n 800` (**= qa exactly**) | 1.180 | 1.465 | **1.893** | +0.88 |
+
+**No single implementation choice moves `yt_court` by more than 0.06.** The largest
+single-flag move anywhere in the table is `--min-alive 6` on `am_hard_utr` (1.223 -> 1.559).
+The four flags together do shift the central tendency up (§8.3 puts that at roughly +0.3 in
+the mean), but the flags cannot account for a 1.02 -> 1.89 flip, and neither can the change
+in `n`: the *same* qa configuration at `--n 1200` gives 1.369, not 1.893, on the same seed.
+
+So it is **not** seeding scheme, **not** band membership at the boundary — though that one
+deserves a warning rather than a dismissal. `seen_frac` is a ratio of small integers, and
+**74 of 2557 rows (2.9%) sit exactly on 0.50**, which is also the gate's own threshold. Both
+implementations happen to use the same half-open convention (`[0.35,0.50)` / `[0.50,0.65)`,
+so an exact 0.50 is ACCEPTED, matching `seen_frac >= 0.5` in `pipeline.py`), and the band
+counts in §8.1 match exactly, which they could not if the convention differed. But a future
+implementation that flips one `<` to `<=` would move ~3% of the sample across the boundary
+in the direction that flatters the gate. It is not the cause here; it is a live trap.
+Next, **not** the serve condition in the shot filter (§5's
+corrected citation: it changes which flights are in the population, and both Arm A and Arm B
+were re-run above), and **not** float accumulation in the path integral (identical code,
+`analytics.shot_speed_kmh`, invoked not re-derived).
+
+### 8.3 The cause: the adjacent-band ratio is not a stable quantity
+
+Seeds 0-9, Arm A ratio, both configurations:
+
+| config | clip | mean | sd | min | max |
+| --- | --- | --- | --- | --- | --- |
+| this file's default, `--n 1200` | yt_rally2 | 1.312 | 0.338 | 0.826 | 1.944 |
+| | am_hard_utr | 1.070 | 0.256 | 0.554 | 1.377 |
+| | yt_court | 1.088 | 0.166 | 0.924 | 1.395 |
+| qa's, `--n 800` | yt_rally2 | 1.715 | 0.445 | 0.962 | 2.274 |
+| | am_hard_utr | 1.394 | 0.352 | 0.800 | 1.972 |
+| | yt_court | 1.304 | 0.404 | 0.623 | 1.893 |
+
+`yt_court`'s 1.893 is that configuration's **maximum over ten seeds**, and 0.623 is its
+minimum. A single clip's ratio moves by more than 1.2 across innocuous reseeds. Non-parametric
+bootstrap (4000 resamples within each band, `--seed 0`) says the same thing about a single
+run's own uncertainty:
+
+| config | clip | point | bootstrap 95% CI | width |
+| --- | --- | --- | --- | --- |
+| default, n=1200 | yt_rally2 | 1.110 | [0.85, 1.68] | 0.83 |
+| | am_hard_utr | 1.223 | [0.80, 1.67] | 0.87 |
+| | yt_court | 1.017 | [0.80, 1.49] | 0.69 |
+| qa's, n=1200 | yt_rally2 | 1.742 | [0.89, 3.37] | 2.47 |
+| | am_hard_utr | 1.020 | [0.76, 1.55] | 0.79 |
+| | yt_court | 1.369 | [0.85, 2.02] | 1.18 |
+
+**Every interval contains 1.0.** No clip's band ratio, in either implementation, is
+distinguishable from "no effect" at its own sample size. The estimator is a ratio of two
+medians of a heavy-tailed, ceiling-saturating error distribution over n ~ 40-160 per band;
+it has no business being read to two decimals, let alone three.
+
+**This is the finding, and it is more useful than a reconciled digit: the adjacent-band
+ratio was never a quantity worth quoting to three digits by anyone, including this file.**
+§4 and §5 should be read as "no clip separated the bands", not as the specific numbers they
+report. Both harnesses were correct. They drew different samples.
+
+### 8.4 The one thing this does change, stated rather than buried
+
+Under **qa's configuration — which is the more faithful one, because `--runoff-m 2.5` is the
+shipped value at `pipeline.py:1352` and this file's harness used 4.0, a fidelity defect on my
+side** — the pre-registered G would have **passed on 4 of 10 seeds** (seeds 2, 3, 6 and 9
+each put >= 2 clips at >= 1.5x). Under this file's default configuration G passes on 0 of 10.
+
+This does **not** establish G, and the bar is not being moved: a pre-registered bar that
+passes on 4 of 10 reseeds of the same experiment has not been met, it has been shown to be
+undecidable by this experiment at this sample size. The correct reading is that the
+**INDETERMINATE verdict is reinforced**, and that the specific claim "G fails on every clip
+in every arm" is true of *the seeds that were run* but is not robust to reseeding under the
+faithful configuration. Anyone re-running this must sweep seeds; a single-seed G-refusal
+from this harness is not evidence.
+
+What is *not* affected: **G was never passed by anybody**, in any run, at any seed, in the
+sense the pre-registration required of a single pre-registered execution; and the two
+independent implementations agree on every claim that does not go through the band ratio.
+
+### 8.5 What is safe to quote to three digits, and what is not
+
+**Safe.** These reproduced across two independently written implementations with different
+sample sizes, different RNG streams and different chain-assembly details:
+
+- **The gate is at chance as a classifier of accuracy.** Accept-precision **0.500-0.501**
+  against a base rate of **0.467-0.473**, on both implementations, on both populations, at
+  every configuration in §8.2's table. A ~3-point margin, where §7's pre-registered
+  replacement bar demands >= 10.
+- **Refused-but-accurate is ~38-39% of the refused set** in every run either of us made.
+- **The court-coverage / `seen_frac` asymmetry as a *shape*** (a large negative rho versus a
+  near-zero one) — with §7's mechanical-correlation caveat attached to its magnitude.
+- **Every whole-range Spearman for `seen_frac` is small and negative.** The sign and the
+  order of magnitude reproduce; the third digit does not.
+
+**Not safe.** Any individual adjacent-band ratio, to any precision beyond "near 1"; any
+statement that one clip's ratio is above or below another's; and any mechanism offered for a
+population-to-population move in §4/§5 of less than about 0.5 (which is all of them). The
+"why do the two populations disagree" question in NOT ESTABLISHED is withdrawn rather than
+answered: those moves are noise and do not have a mechanism.
+
+**If this question is ever reopened**, the estimator has to change before the bar can be
+tested: seed-average the ratio over >= 20 seeds and report its spread, or replace the ratio
+of medians with a paired design (the same flight simulated at two dropout levels), which
+removes the between-flight variance that is drowning the effect. §7's pre-registration for a
+replacement bar stands as written and is unaffected by any of this.
