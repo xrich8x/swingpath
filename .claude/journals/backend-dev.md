@@ -21,32 +21,38 @@ STOP-WHEN: verdict + null control written, or ~35 tool calls.
 NOT-THIS-RUN: change ball_detector.js/ball.py, ship, 4th precision arm, re-run int8
 inference, edit docs/STATE.md, git commit.
 
-## STATE — 2026-09-04
+## STATE — 2026-09-04 — TASK COMPLETE
 
-KEY ASSET FOUND, do not re-derive: `backend/ball_parity_margin_census.py` already
-implements the exact blob scoring (threshold 127, 8-connected, area*peak) with a
-GUARD that the top blob centroid == what the real _decode recorded in
-js_results.json. On the 6-clip run guard failures were 0/528.
+DELIVERABLE SHIPPED: docs/evidence/top2-margin-refusal-signal.md (7 sections, full).
 
-PARITY DIRS (all present on disk, each has js_results.json + onnx_heat_<tag>.bin):
-  am_hard_utr  C:\Users\richm\AppData\Local\Temp\claude\E--Claude-Outputs-Cowork-Tasks-Swing-Vision\90dad6dd-87a4-4ac2-a50e-c4dab20c69f4\scratchpad\ball_parity
-  yt_match40   ...\90dad6dd-...\scratchpad\ball_parity_yt_match40
-  yt_rally2    ...\90dad6dd-...\scratchpad\ball_parity_yt_rally2
-  gold_am      ...\ccc041b7-...\scratchpad\ball_parity_gold_am
-  gold_clay    ...\ccc041b7-...\scratchpad\ball_parity_gold_clay
-  gold_shell   ...\ccc041b7-...\scratchpad\ball_parity_gold_shell
-Bad-frame identity comes from data/output/ball_detector_int8_parity_summary__<clip>.json
-(worst_frames[].dist_px > 10) + null_mismatch_tags.
-
-PRIOR KNOWLEDGE from the census docstring (qa swept it 2026-09-03): "all five int8
-failures are close races" holds at close=0.15 but drops to 2/5 at 0.05. Widest of the
-five failures' margins is 7.69%. yt_match40 and gold_clay contain ZERO close races.
+VERDICT: **PASS on fp32 (as a SCREEN, not a verdict). FAIL on int8.**
+- fp32 t=0.10: catch 5/5, collateral 11/523 = 2.1%. Any t in [0.077,0.30] passes
+  (plateau); t=0.077 excluded as post-hoc (= widest bad margin 0.0769).
+- int8: no t reaches 4/5 anywhere. On frames int8 gets WRONG its own margin is WIDE
+  (0.86; 1.0000 = single blob). Quantisation RESOLVED the race rather than leaving one.
+  => the signal is only computable on the fp32 graph. A real constraint, not a footnote.
+- Guard failures 0/528 on BOTH heatmaps.
+NULL CONTROLS all separate (so NOT underpowered): A pre-registered free permutation
+  p=0.0000 (exact hypergeom P(>=5)=1.30e-08); B selection-adjusted (each draw searches
+  the same grid) 0.0000; C cluster-preserving within-clip circular shift catch>=4
+  p=0.0010, >=5 0.0000.
+NULL MISMATCHES (27): fp32 margin median 1.0000, min 0.4421, 0% below 0.15 => margin has
+  ZERO dropout signal. Mechanism: a dropout frame has no runner-up to argue with.
+REJECT INSPECTION (the real qualifier): the 11 refused good frames decode PERFECTLY
+  (max 0.318 px, three at exactly 0.000). At IDENTICAL margin incl. an exact 0.0000 tie
+  the decode is right 3 of 4. Refusal precision 5/16 = 31%. Only 37/528 frames have 2+
+  blobs. => the margin identifies the POPULATION AT RISK; it does not predict WHICH
+  member flips.
+Scripts live in the ephemeral scratchpad (top2_margin.py, top2_null.py) — promotion
+question appended to docs/DECISIONS_PENDING.md.
+Working tree touched: evidence file, DECISIONS_PENDING.md, journal, memory. No commit,
+no STATE row, no code change.
 
 ## LOG — this task
 
 - CARRIED FORWARD: `python` is a broken Store shim. Use backend/.venv/Scripts/python.exe
 - CARRIED FORWARD: `grep -rn` across repo root TIMES OUT — use the Grep tool.
 - CARRIED FORWARD: long markdown via heredoc FAILS; use the Write tool for long docs.
-- 2026-09-04 Located all 6 parity dirs + the existing census script. Next: write a
-  margin-extraction script into scratchpad that dumps per-frame margins (fp32 AND int8
-  heatmaps) + labels, then sweep t, then null control.
+- CARRIED FORWARD: bash `/tmp` is NOT visible to the Windows python.exe. Never hand a
+  /tmp path to the venv interpreter; use the scratchpad absolute path.
+- 2026-09-04 TASK COMPLETE. Every number is in STATE above and in the evidence file.

@@ -177,10 +177,182 @@ discovered later.
 
 ---
 
-## 4. Null control (MANDATORY) — (pending)
+## 4. Null control (MANDATORY)
 
-## 5. Null mismatches — reported, not gating — (pending)
+Seeded, 1000 draws, `numpy.random.default_rng`, base seed `20260904`. Script:
+`scratchpad/top2_null.py`. Run on the fp32 margins at the fixed representative
+`t = 0.10`, where 16 of 528 both-fire frames are refused (5 bad + 11 good).
 
-## 6. Inspecting the rejects (rule 10) — (pending)
+Three nulls were run, least to most conservative. **The pre-registered one is A**; B and C
+are additions, not replacements, and both are harder to beat.
 
-## 7. What is NOT established — (pending)
+| null | what is permuted | catch >= 5 | catch >= 4 |
+|---|---|---|---|
+| **A. Pre-registered** | free permutation of the 5 bad labels over all 528 both-fire frames, fixed `t` | **0.0000** | **0.0000** |
+| **B. Selection-adjusted** | as A, but every draw may search the same `t`-grid and keep its best catch subject to collateral <= 5% | **0.0000** | **0.0000** |
+| **C. Cluster-preserving** | within-clip circular shift of the label vector — keeps `yt_rally2`'s 3-frame run intact *and* keeps each clip's bad-frame count | **0.0000** | **0.0010** |
+
+Null A summary: permuted catch mean **0.151**, max **2** in 1000 draws — no permutation
+reached even 3. The exact hypergeometric for the same statistic is
+**P(catch >= 5) = 1.30e-08**, **P(catch >= 4) = 2.79e-06**, confirming the Monte Carlo
+zero is a real tail and not a resolution limit of 1000 draws.
+
+Null B exists because **`t` was chosen after seeing the sweep**, and a null that fixes `t`
+gives the observed result a freedom it denies the permutations. Granting each permutation
+the identical search: mean best-catch **0.194**, max **2**. The selection did not
+manufacture the result.
+
+Null C exists because **the 5 bad frames are not 5 independent events.**
+`yt_rally2/0108`, `/0109` and `/0110` are consecutive frames of one failure — the same
+cluster structure the parity work already recorded at `e52a39f`. Treating them as
+exchangeable singletons inflates significance. Preserving both the run and the per-clip
+counts, `catch >= 4` still occurs in only **1 of 1000** draws and `catch >= 5` in **0**.
+(`catch >= 3` occurs in 7 of 1000.)
+
+**Conclusion on power: the null control DOES separate at n = 5, on all three nulls
+including the cluster-preserving one.** The branch is therefore reported as PASS, not
+UNDERPOWERED. The separation is driven not by the count of bad frames but by how *rare*
+low margins are: only 37 of 528 both-fire frames have a second blob at all, and only 16
+fall below `t = 0.10`. A random 5 landing inside 16-of-528 is genuinely improbable
+regardless of how few bad frames there are.
+
+**What the null control does NOT license.** It says the association between low fp32
+margin and int8 failure is not chance. It does not say the *rate* is estimable: with 5
+events the catch rate's own confidence interval spans most of the unit interval, and
+section 6 shows the association is far weaker than 5/5 makes it look.
+
+---
+
+## 5. Null mismatches — reported, not gating
+
+The 27 frames where **fp32 fires and int8 does not**. fp32 margin:
+
+| clip | n | median | min | frac <= 0.05 | frac <= 0.15 |
+|---|---|---|---|---|---|
+| `am_hard_utr` | 8 | 1.0000 | 1.0000 | 0.0% | 0.0% |
+| `yt_match40` | 8 | 1.0000 | 0.9203 | 0.0% | 0.0% |
+| `yt_rally2` | 2 | 1.0000 | 1.0000 | 0.0% | 0.0% |
+| `gold_am` | 5 | 1.0000 | 1.0000 | 0.0% | 0.0% |
+| `gold_clay` | 3 | 1.0000 | 0.4421 | 0.0% | 0.0% |
+| `gold_shell` | 1 | 1.0000 | 1.0000 | 0.0% | 0.0% |
+| **POOLED** | **27** | **1.0000** | **0.4421** | **0.0%** | **0.0%** |
+
+**The margin has no signal on dropout, in either direction.** Not one of the 27 null
+mismatches falls below `0.44`; 25 of 27 sit at exactly `1.0000` (single blob). The
+answer to the lead's "worth more if it also predicts dropout" is **it does not** — and the
+mechanism is clean: a dropout frame is one where fp32 found *one* faint blob and int8's
+erosion pushed it under the `>=128` threshold entirely. There was never a runner-up to
+argue with, so there is nothing for a top-2 margin to see.
+
+This is a genuinely useful negative: the margin covers exactly one failure mode (the
+confident wrong lock) and is blind to the other (dropout). Any future refusal design needs
+a second, different signal for dropout — plausibly the winner's absolute `area x peak`,
+which is not tested here.
+
+---
+
+## 6. Inspecting the rejects (rule 10) — and this is the part that qualifies the PASS
+
+### 6.1 The 11 correctly-decoded frames refused at `t = 0.10`
+
+True fp32-vs-int8 pixel error recomputed directly from `js_results.json`
+(`onnx_xy` vs `int8_xy`), not read from the top-10 `worst_frames` list:
+
+| clip | tag | fp32 margin | blobs | true error |
+|---|---|---|---|---|
+| `am_hard_utr` | 0119 | 0.0714 | 2 | 0.258 px |
+| `am_hard_utr` | 0146 | 0.0769 | 2 | 0.287 px |
+| `am_hard_utr` | 0149 | 0.0083 | 2 | 0.000 px |
+| `gold_am` | 0178 | 0.0152 | 2 | 0.166 px |
+| `gold_shell` | 0176 | 0.0000 | 2 | 0.000 px |
+| `yt_rally2` | 0024 | 0.0571 | 2 | 0.226 px |
+| `yt_rally2` | 0025 | 0.0667 | 2 | 0.000 px |
+| `yt_rally2` | 0034 | 0.0769 | 2 | 0.278 px |
+| `yt_rally2` | 0118 | 0.0000 | 2 | 0.144 px |
+| `yt_rally2` | 0140 | 0.0667 | 2 | 0.318 px |
+| `yt_rally2` | 0141 | 0.0000 | 2 | 0.196 px |
+
+**These are not near-misses. They are perfect decodes.** Max error 0.318 px, three of them
+exactly 0.000. Refused-good median error 0.196 px vs kept-good 0.000 px — a difference
+with no product meaning at all (the whole good population's max is 1.362 px).
+
+### 6.2 The mechanism the margin cannot see, stated plainly
+
+Read the two tables together:
+
+- `yt_rally2/0034` has margin **0.0769** and decodes at **0.278 px**.
+  `yt_rally2/0108` has margin **0.0769** and decodes at **74.5 px**.
+- `yt_rally2/0141`, `/0118` and `gold_shell/0176` have margin **0.0000** — an exact
+  `area x peak` tie — and decode at 0.196, 0.144 and 0.000 px.
+  `yt_rally2/0110` has margin **0.0000** and decodes at **75.0 px**.
+
+**At identical margin, including an exact tie, the decode is correct three times out of
+four.** The margin identifies the *population at risk*; it does not predict *which member
+of that population flips*. Whether quantisation noise tips a tie one way or the other is,
+on this evidence, a coin toss that the margin has no view on — which is exactly what the
+activation diff would predict, since the noise is the same on failing and passing frames.
+
+Quantitatively: only **37 of 528** both-fire frames have a second blob at all. `t = 0.10`
+refuses **16** of those 37, of which **5** are the failures. **Refusal precision is
+5/16 = 31%**; 11 of every 16 refusals throw away a perfect answer. That 31% is the same
+number the `ball_parity_margin_census.py` docstring warns must not be quoted as a rate,
+and the warning still applies — it is quoted here only as the cost side of the refusal,
+never as a property of close races in general.
+
+### 6.3 Missed bad frames
+
+None at `t >= 0.077`. At `t = 0.05` the signal catches 2 of 5 and misses
+`yt_rally2/0108` (0.0769), `/0109` (0.0692) and `gold_shell/0097` (0.0692) — i.e. the
+whole result depends on the band `[0.05, 0.077]`, which contains three of the five
+failures and no plateau boundary. The plateau above `0.077` is wide and flat, but the
+*catch* transition is a single 2.7-point-wide step. With n = 5 that step is one frame's
+worth of luck away from a different verdict.
+
+### 6.4 What this means for the verdict
+
+The PASS is real against the bar as written, and the bar was written before the run. But
+what has actually been shown is the weaker, honest statement: **every int8 failure in this
+set is a close race, and close races are rare (7% of both-fire frames).** It has *not*
+been shown that a low margin predicts failure — inside the close-race set it does not
+(section 6.2). A refusal built on this would be a **conservative risk gate that discards
+roughly two correct answers for every error it avoids**, not a failure detector.
+
+Whether that trade is worth taking is a product decision about how a refused frame is
+handled downstream (coasted? interpolated? dropped?), and it is not answered here.
+
+---
+
+## 7. What is NOT established this run
+
+1. **Any coverage or chain-level number.** Not measured, not authorised. Refusing 2.1% of
+   both-fire frames is not the same as losing 2.1% of anything the user sees; the smoother
+   coasts, and the effect on ghosts, speed coverage or rendered output is unknown.
+2. **That the margin predicts failure within the close-race set.** Section 6.2 shows it
+   does not, on the evidence available.
+3. **Generalisation past six clips and 528 frames.** The PASS is a screen and earns a
+   wider run; it is explicitly not a ship. n = 5 is a ceiling on this set, and the three
+   `yt_rally2` frames are one event, so the effective event count is nearer 3.
+4. **Anything about a threshold value to adopt.** `t = 0.10` is a representative interior
+   point of a plateau, quoted for reporting. No threshold is proposed, and `t = 0.077` is
+   excluded as post-hoc by construction.
+5. **A dropout signal.** Section 5 is a clean negative; a second signal would be needed.
+6. **Behaviour on the fp32-only path in production.** Every number here compares fp32
+   against int8. The claim that the fp32 path is "one bad frame from the same error" rests
+   on the margin distribution, not on an observed fp32 failure — no fp32 ground-truth
+   failure exists in this set to test against.
+7. **Cost on device.** Asserted as "a comparison" in the pre-registration; not measured.
+   The blob decomposition is already computed, but nothing here timed it on an A13.
+
+---
+
+## Reproduce
+
+```
+backend/.venv/Scripts/python.exe scratchpad/top2_margin.py   # extraction + sweep
+backend/.venv/Scripts/python.exe scratchpad/top2_null.py     # 3 nulls + rejects
+```
+
+(`scratchpad` = `C:\Users\richm\AppData\Local\Temp\claude\e--Claude-Outputs-Cowork-Tasks-Swing-Vision\ccc041b7-c8c5-43e5-a593-d06a07ec5983\scratchpad`.
+Both scripts load only `.bin` heatmaps and JSON already on disk; neither loads a model or
+runs inference. Seeds: `20260904`, `+1`, `+2` for nulls A, B, C.)
+

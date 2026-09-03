@@ -137,3 +137,47 @@ the held-out clips for the replacement-bar sweep. They were rejected on exactly 
 before any sweep ran, and this table is the quantified version of that call: they are two of
 the only three files in the repo that fit an implausible camera, and the third is the clip
 that defines T23.
+
+
+---
+
+## CORRECTION, same day: the camera-height screen is a MOUNT-TYPE test, not a correctness test
+
+The section above called the camera-height fit a screen candidate on the strength of three
+flagged files, only one of which was verified. I rendered the corner sheet for one of the two
+unverified ones. **It is correct, and that changes what the screen means.**
+
+`eala_pts_auto` had no corner sheet because `render_corner_audit.py` derives the video from
+the tag and there is no `eala.mp4` — the footage is `data/incoming/Grass/eala_segment.mp4`.
+Rendered directly (clicked corners and their quad only, never a projected court, which would
+be circular): **the four corners track the doubles court properly on real match footage.**
+
+So its **8.89 m is a real camera** — this is Wimbledon broadcast footage and that is a
+broadcast gantry, not a bad fit.
+
+> **The camera-height screen would FALSE-REJECT a correct calibration.** It does not separate
+> *correct* from *wrong*; it separates **amateur mounts from elevated cameras**. On broadcast
+> footage a high camera is the right answer.
+
+**What survives.** For this product the screen may still be useful, because the target footage
+is amateur phone video on a fence or tripod, where `calibration.py`'s own prior (fence clamp
+~2.5 m, tripod ~1.5 m) holds and a 9–12 m fit really does indicate a bad solve. But it must be
+described as a **mount-type prior conditional on target footage**, never as a correctness
+screen — and on the two clips it would flag, one is correct.
+
+That leaves the positive class at **n = 1** (`yt_match40`) and now a known **false reject at
+n = 1** (`eala_pts_auto`). `court_pts_refined` remains unverifiable: there is no `court*.mp4`
+anywhere in the repo, so its sheet can never be rendered.
+
+### Two things noticed while looking, both rule-11 relevant
+
+`eala_segment.mp4` carries a **burned-in scoreboard** (EALA/SWIATEK, games and points) **and a
+"111 mph" speed readout**. Rule 11 bars both as training target, ground-truth reference and
+tuning signal. Recorded here so nobody reaches for that clip as a convenient speed reference —
+it is exactly the trap the rule exists for, and it is the only absolute-looking speed number
+sitting in the footage tree.
+
+Sheet written to `data/output/corner_audit/eala_segment_corners.png`. A sheet rendered from
+`eala_swiatek.mp4` frame 30 was **deleted rather than kept**: that frame is a "MATCH
+HIGHLIGHTS" title card, so the corners sat over a blurred graphic and the image would have
+read as a gross miscalibration to anyone reviewing the folder.

@@ -249,3 +249,22 @@ should be refused.
 
 Tooling is no longer a blocker: `tools/seen_frac_speed_error.py` reproduces both prior
 implementations exactly and carries `--arm correlated` as the positive control.
+
+---
+
+## Top-2 margin refusal signal: promote the analysis scripts? (backend-dev, 2026-09-04)
+
+`docs/evidence/top2-margin-refusal-signal.md` is reproducible only from two scripts that
+currently live in an ephemeral agent scratchpad (`top2_margin.py`, `top2_null.py`), because
+promoting them to `tools/` would be a code change and this run was barred from touching
+`docs/STATE.md`. They are small and load no model. **Decision needed:** promote them
+alongside `backend/ball_parity_margin_census.py` in a run that is allowed a STATE row, or
+accept the evidence file as a frozen result. Until then the numbers are re-derivable only
+by rewriting the scripts.
+
+**Related, and larger:** the PASS in that file is a *screen*. Section 6.2 shows the margin
+identifies the population at risk but does not predict which member flips (at an exact
+`area x peak` tie the decode is correct 3 times in 4), and section 5 shows it is blind to
+dropout. Whether a refusal that discards ~2 correct answers per error avoided is worth
+taking is a **product decision about downstream handling of a refused frame**, not a
+measurement — it is not answered by this run and should not be assumed.
