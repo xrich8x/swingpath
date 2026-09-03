@@ -4,55 +4,63 @@
 
 ---
 
-## TASK — CURRENT (started 2026-09-04)
+## TASK — CURRENT (started 2026-09-04, second task of the day)
 
-Execute the lead's PRE-REGISTRATION "top-2 blob margin as a REFUSAL signal" (last
-section of .claude/journals/lead.md). margin = 1 - score_2/score_1 over connected
-components' area*peak.
-BAR (pre-registered, unchanged): some threshold flags >=4 of the 5 known >10px bad
-frames AND refuses <=5% of correctly-decoded both-fire frames. Both halves required.
-Mandatory seeded null control: 1000 permutations of bad/good labels.
-Also report margin on the null mismatches (fp32 fires, int8 does not; 8/2/8/3/5/1).
-Ask the question of the fp32 heatmap (the graph that ships), not only int8.
-n=5 is a CEILING. PASS = screen not verdict. If null can't separate at n=5 =>
-report UNDERPOWERED, not passed. Inspect the rejects (rule 10).
-DELIVERABLE: docs/evidence/top2-margin-refusal-signal.md
-STOP-WHEN: verdict + null control written, or ~35 tool calls.
-NOT-THIS-RUN: change ball_detector.js/ball.py, ship, 4th precision arm, re-run int8
-inference, edit docs/STATE.md, git commit.
+Execute lead PRE-REGISTRATION "least-squares over ALL line correspondences"
+(last section of .claude/journals/lead.md).
+Target: STATE joint-correspondence row — given the TRUE line-to-model assignment the
+solver reconstructs a median 17.1 px@640 vs shipped 8.1 px. Test whether line-based
+least squares over ALL matched lines beats the exact-4-point fit, ONE VARIABLE (fit only).
+BAR: PASS <=10.0 px@640 median; FAIL >13.0 px (=> branch dies on a FIT CEILING);
+INDETERMINATE 10.0-13.0. Per clip AND pooled.
+MANDATORY CONTROL that gates everything: recompute the exact-4-point median in the SAME
+run on the same clips/assignments. If it does not reproduce ~17.1 px -> SAY SO AND STOP.
+DELIVERABLE: docs/evidence/least-squares-court-fit.md
+STOP-WHEN: verdict+control written, or ~40 tool calls.
+NOT-THIS-RUN: correspondence SEARCH (C6 cost, 22-of-30 kills), shipped court path,
+shipping, editing docs/STATE.md, git commit.
 
 ## STATE — 2026-09-04 — TASK COMPLETE
 
-DELIVERABLE SHIPPED: docs/evidence/top2-margin-refusal-signal.md (7 sections, full).
+DELIVERABLE SHIPPED: docs/evidence/least-squares-court-fit.md (full, 6 sections + a
+"what this closes" + "NOT ESTABLISHED").
 
-VERDICT: **PASS on fp32 (as a SCREEN, not a verdict). FAIL on int8.**
-- fp32 t=0.10: catch 5/5, collateral 11/523 = 2.1%. Any t in [0.077,0.30] passes
-  (plateau); t=0.077 excluded as post-hoc (= widest bad margin 0.0769).
-- int8: no t reaches 4/5 anywhere. On frames int8 gets WRONG its own margin is WIDE
-  (0.86; 1.0000 = single blob). Quantisation RESOLVED the race rather than leaving one.
-  => the signal is only computable on the fp32 graph. A real constraint, not a footnote.
-- Guard failures 0/528 on BOTH heatmaps.
-NULL CONTROLS all separate (so NOT underpowered): A pre-registered free permutation
-  p=0.0000 (exact hypergeom P(>=5)=1.30e-08); B selection-adjusted (each draw searches
-  the same grid) 0.0000; C cluster-preserving within-clip circular shift catch>=4
-  p=0.0010, >=5 0.0000.
-NULL MISMATCHES (27): fp32 margin median 1.0000, min 0.4421, 0% below 0.15 => margin has
-  ZERO dropout signal. Mechanism: a dropout frame has no runner-up to argue with.
-REJECT INSPECTION (the real qualifier): the 11 refused good frames decode PERFECTLY
-  (max 0.318 px, three at exactly 0.000). At IDENTICAL margin incl. an exact 0.0000 tie
-  the decode is right 3 of 4. Refusal precision 5/16 = 31%. Only 37/528 frames have 2+
-  blobs. => the margin identifies the POPULATION AT RISK; it does not predict WHICH
-  member flips.
-Scripts live in the ephemeral scratchpad (top2_margin.py, top2_null.py) — promotion
-question appended to docs/DECISIONS_PENDING.md.
-Working tree touched: evidence file, DECISIONS_PENDING.md, journal, memory. No commit,
-no STATE row, no code change.
+CONTROL PASSES: exact-4-point recomputed = 17.10 px@640, n=13, survivor SET identical to
+data/output/corr_attrib.json, max per-clip |diff| = 0.00 px. Harness is faithful.
+
+VERDICT: **FAIL** against the pre-registered bar (>13.0 px).
+  exact 4-point 17.10 | LS-geom 19.80 | LS-DLT 73.50   (bar applied to the BETTER = LS-geom)
+  TUNE n=8: 19.00 / 23.50 / 123.37   SHELL n=5: 6.39 / 6.79 / 73.50 — both pools fail.
+  LS-geom better on 7, worse on 5, tied 1; paired Wilcoxon p=0.97 (no direction at all).
+MECHANISM (the part that closes it): LS-geom lowers the line objective below the exact
+  fit on 13/13 AND below the HUMAN homography on 13/13 (3.01 vs 6.44 px rms). The
+  detected lines do not agree with the true court better than ~6.4 px, so the best fit to
+  those lines is NOT the true court. The ceiling is the LINE EVIDENCE, one stage upstream
+  of the fit. => joint-correspondence branch dies on a fit ceiling; C6 cost and the
+  22-of-30 (both SEARCH problems) are no longer worth paying for.
+Artifacts: eval/corr_ls_fit.py (new), data/output/corr_ls_fit.json (new).
+No STATE row (lead's), no commit, no shipped-path change.
 
 ## LOG — this task
 
 - CARRIED FORWARD: `python` is a broken Store shim. Use backend/.venv/Scripts/python.exe
-- CARRIED FORWARD: `grep -rn` across repo root TIMES OUT — use the Grep tool.
+- CARRIED FORWARD: `grep -rn` across repo ROOT times out (it walks .venv) — grep with an
+  explicit dir list (eval/ tools/ backend/swingvision/ docs/) is fast.
+- CARRIED FORWARD: Grep/Glob TOOLS have returned false "no matches" this session; bash grep.
 - CARRIED FORWARD: long markdown via heredoc FAILS; use the Write tool for long docs.
-- CARRIED FORWARD: bash `/tmp` is NOT visible to the Windows python.exe. Never hand a
-  /tmp path to the venv interpreter; use the scratchpad absolute path.
-- 2026-09-04 TASK COMPLETE. Every number is in STATE above and in the evidence file.
+- CARRIED FORWARD: bash /tmp is NOT visible to Windows python.exe — use scratchpad abs path.
+- eval/ is OUTSIDE the mobile audit scope (desktop harness) — fine to edit for measurement.
+- Harness written: eval/corr_ls_fit.py. CONTROL REPRODUCES PER-CLIP EXACTLY vs
+  data/output/corr_attrib.json (am_classB 5.57, am_usta45 12.88, CYqapSq5llo 50.49,
+  hillsborough_p02 4.51). Trustworthy.
+- v1 objective was BROKEN: point-on-line using the world segment ENDPOINTS blows up when
+  an endpoint projects near/behind the horizon — rms under the TRUE homography was 204 px
+  on hillsborough_p02. An objective the truth does not minimise cannot test anything.
+  FIX: reverse the direction — project the MODEL line into the image (l_i = H^-T l_w,
+  always finite) and measure distance from sample points on the FRAME-CLIPPED DETECTED
+  line. Depth-safe, and uses evidence only where the line was actually seen.
+  Acceptance test for the objective itself: rms_truth must be a few px, not 200.
+- CYqapSq5llo has 2/2 matched lines so LS == exact by construction (50.49 both). Internal
+  control that the two arms share the same assignment.
+- Full run: 40 clips, 11 s, 13 survivors. Numbers in STATE above.
+- TASK COMPLETE 2026-09-04.

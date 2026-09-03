@@ -21,3 +21,4 @@ monolithic file; nothing was dropped.
 - [synth_truth as a paired-error rig](synth-truth-as-a-paired-error-rig.md) — the only compliant per-shot absolute speed error, and the recipe that keeps it faithful to the shipped chain
 - [Band ratio of medians is a weak instrument](band-ratio-of-medians-is-a-weak-instrument.md) — seed-unstable enough to flip a sign; use accept-precision vs base rate, and seed-sweep before quoting
 - [Top-2 margin is a risk gate, not a detector](top2-margin-is-a-risk-gate-not-a-detector.md) — passes on fp32, FAILS on int8, blind to dropout; at an exact tie the decode is right 3 of 4
+- [Court fit ceiling is the LINES](court-fit-ceiling-is-the-lines.md) — all-lines least squares FAILS at 19.80 px; it out-fits the human homography, so the evidence floor is upstream of the fit
