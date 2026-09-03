@@ -401,3 +401,14 @@ fp32 heatmap at decode time, so a decode that REFUSES when the margin is under t
 converts a confident wrong lock into a null the smoother already handles. Cost, computable
 from the table: it refuses 16 frames to prevent 5 wrong locks - **11 of those 16 refusals
 are frames int8 currently gets RIGHT**. Rule 5 says score it at the CHAIN or not at all.
+
+**LANE 1 CLOSED 2026-09-03, commit `28ead70` (committed to master, NOT pushed).** All three
+asks done: `yt_match40` finished (PASS), cross-clip rate exists (5/528, 3 of 6 clips fail),
+both named mitigations measured to rejection. qa verified independently and corrected the
+close-race framing; corrections are in the evidence file, not just here. The one thing left
+is a product call and it is in `docs/DECISIONS_PENDING.md` item 0 - **do not surface it
+unless the founder asks** (reporting rule, 2026-09-02).
+
+Next candidate if this lane reopens: a per-layer activation diff to find where the erosion
+first appears. Arm C proved the final conv is not it. That is a new experiment and needs its
+own pre-registration.
