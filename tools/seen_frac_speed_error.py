@@ -88,6 +88,47 @@ CLIPS = {
 }
 DEFAULT_CLIPS = ["yt_rally2", "am_hard_utr", "yt_court"]
 
+#: These three are BURNED for the replacement-bar question — the verdict in
+#: docs/evidence/does-seen-frac-predict-speed-error.md was measured on them, so a
+#: threshold chosen on them would be chosen on its own training set. The §7
+#: pre-registration requires held-out clips, hence resolve_clip() below.
+BURNED_CLIPS = frozenset(DEFAULT_CLIPS)
+
+
+def resolve_clip(name):
+    """(keypoint file, w, h) for any audited calibration, not just the three above.
+
+    Resolution comes from the calibration's own ``_audit.img_wh`` stamp rather than a
+    hardcoded table, so a clip cannot silently be run at the wrong resolution — every
+    pixel threshold in this project scales with frame height, and `img_wh_source`
+    records whether the stamp read the real clip or assumed a default.
+
+    REFUSES a calibration this project has already judged unusable, rather than
+    letting a caller pass one by name: DEGENERATE stamps, `yt_match40` (T23 — all four
+    corner clicks off any court line, so its homography cannot carry a speed) and
+    `demo30` (docs/STATE.md: its speeds are never citable).
+    """
+    if name in CLIPS:
+        return CLIPS[name]
+    fn = f"{name}_pts.json" if not name.endswith(".json") else name
+    # RAW load, deliberately: _load_kp strips `_`-prefixed keys (mirroring
+    # pipeline.calibrate_video), which would drop the very `_audit` stamp this
+    # function exists to read.
+    raw = json.loads((REPO / "data" / fn).read_text(encoding="utf-8"))
+    audit = raw.get("_audit") or {}
+    verdict = str(audit.get("verdict", "")).upper()
+    stem = fn.replace("_pts.json", "").replace(".json", "")
+    if stem in ("yt_match40", "demo30"):
+        raise SystemExit(f"{stem}: excluded by name — see this function's docstring")
+    if verdict == "DEGENERATE":
+        raise SystemExit(f"{fn}: stamped DEGENERATE ({audit.get('fit_residual_px')} px); refused")
+    if not verdict:
+        raise SystemExit(f"{fn}: no _audit stamp — run tools/validate_new_clip.py --audit --stamp")
+    wh = audit.get("img_wh")
+    if not wh:
+        raise SystemExit(f"{fn}: _audit carries no img_wh; cannot resolve resolution")
+    return (fn, int(wh[0]), int(wh[1]))
+
 # The pre-registered bands, from the end of .claude/journals/lead.md. Do not edit
 # these to fit a result: a failed bar stays failed.
 BAND_LO = (0.35, 0.50)
@@ -260,7 +301,7 @@ def _measure(f, H, a, w, h):
 
 
 def run_clip(name, a):
-    fn, w, h = CLIPS[name]
+    fn, w, h = resolve_clip(name)
     kp = _load_kp(fn)
     H = calibration.homography_from_landmarks({c: kp[c] for c in CORNERS})
     hfov = a.hfov if a.hfov else _hfov_for(kp, H, w, h)
@@ -333,6 +374,72 @@ def classifier_table(rows):
     )
 
 
+def sweep_table(rows, lo=0.20, hi=0.90, step=0.05):
+    """Accept-precision across candidate `seen_frac` thresholds — the §7 sweep.
+
+    THE ACCURACY LABEL IS FIXED ACROSS THE SWEEP, and that is the whole point.
+    `classifier_table` above defines "accurate" relative to the ACCEPTED set, which is
+    fine at one fixed threshold but makes a sweep meaningless: the label would move with
+    every candidate `t`, so precisions at different `t` would not be comparable. Here
+    "accurate" is `<= the median abs% error of the WHOLE population`, computed ONCE. The
+    base rate is then ~0.50 by construction and identical at every step, so the
+    >=10-point margin means the same thing everywhere on the curve.
+
+    Pre-registered in .claude/journals/lead.md before this ran. Do not "improve" this to
+    a moving label to make a curve look better.
+    """
+    if len(rows) < 2:
+        return None
+    thr = float(np.median([r["abs_pct_err"] for r in rows]))
+    ok = lambda r: r["abs_pct_err"] <= thr  # noqa: E731
+    base = sum(1 for r in rows if ok(r)) / len(rows)
+    out = []
+    t = lo
+    while t <= hi + 1e-9:
+        acc = [r for r in rows if r["seen_frac"] >= t]
+        ref = [r for r in rows if r["seen_frac"] < t]
+        if acc and ref:
+            prec = sum(1 for r in acc if ok(r)) / len(acc)
+            out.append(dict(t=round(t, 2), n_accepted=len(acc), n_refused=len(ref),
+                            accept_precision=prec, margin_pts=100.0 * (prec - base)))
+        else:
+            out.append(dict(t=round(t, 2), n_accepted=len(acc), n_refused=len(ref),
+                            accept_precision=None, margin_pts=None))
+        t += step
+    return dict(fixed_accurate_threshold_abs_pct=thr, base_rate=base, curve=out)
+
+
+def sweep_table_court_cov(rows, lo=0.20, hi=0.90, step=0.05):
+    """The identical sweep on court-coverage instead of `seen_frac`.
+
+    §7 requires the leading alternative to face the SAME held-out, swept, pre-registered
+    bar rather than be swapped in on a correlation. NAMING IT IS NOT PROPOSING IT, and
+    its correlation with error is PARTLY MECHANICAL: `analytics.shot_speed_kmh`
+    integrates the path over exactly the points that survived court projection, so the
+    estimate collapses toward zero by construction as court-coverage falls. Read any
+    strong showing here with that confound in front of you.
+    """
+    if len(rows) < 2 or "court_cov" not in rows[0]:
+        return None
+    thr = float(np.median([r["abs_pct_err"] for r in rows]))
+    ok = lambda r: r["abs_pct_err"] <= thr  # noqa: E731
+    base = sum(1 for r in rows if ok(r)) / len(rows)
+    out = []
+    t = lo
+    while t <= hi + 1e-9:
+        acc = [r for r in rows if r["court_cov"] >= t]
+        ref = [r for r in rows if r["court_cov"] < t]
+        if acc and ref:
+            prec = sum(1 for r in acc if ok(r)) / len(acc)
+            out.append(dict(t=round(t, 2), n_accepted=len(acc), n_refused=len(ref),
+                            accept_precision=prec, margin_pts=100.0 * (prec - base)))
+        else:
+            out.append(dict(t=round(t, 2), n_accepted=len(acc), n_refused=len(ref),
+                            accept_precision=None, margin_pts=None))
+        t += step
+    return dict(fixed_accurate_threshold_abs_pct=thr, base_rate=base, curve=out)
+
+
 def _spearman(x, y):
     from scipy.stats import spearmanr
     rho, p = spearmanr(x, y)
@@ -343,6 +450,7 @@ def analyse(rows_by_clip, a):
     out = {}
     for pop_name in ("unrestricted", "shipped_shot"):
         per_clip, pooled = {}, []
+        sw_sf, sw_cc = {}, {}
         for clip, rows in rows_by_clip.items():
             pop = populations(rows, a)[pop_name]
             pooled += pop
@@ -353,6 +461,12 @@ def analyse(rows_by_clip, a):
                     [r["seen_frac"] for r in pop], [r["abs_pct_err"] for r in pop])
                 entry["spearman_court_cov_vs_abs_pct"] = _spearman(
                     [r["court_cov"] for r in pop], [r["abs_pct_err"] for r in pop])
+            # §7 sweep, per clip (the §7 bar is ">= 3 of the held-out CLIPS", so a
+            # pooled curve would let one clip carry the others). Computed here from
+            # `pop` rather than by stashing rows on the entry, which would bloat the
+            # JSON with one record per synthetic flight.
+            sw_sf[clip] = sweep_table(pop)
+            sw_cc[clip] = sweep_table_court_cov(pop)
             per_clip[clip] = entry
         clears_G = [c for c, e in per_clip.items()
                     if e["band"] and e["band"]["ratio"] >= a.gate_g]
@@ -367,6 +481,10 @@ def analyse(rows_by_clip, a):
                      else "G" if len(clears_G) >= 2
                      else "N" if len(clears_N) >= 2 else "I"),
             classifier=classifier_table(pooled),
+            # §7 sweep. Per-clip, because the §7 bar is ">= 3 of the held-out
+            # CLIPS" — a pooled curve would let one clip carry the others.
+            sweep_seen_frac=sw_sf,
+            sweep_court_cov=sw_cc,
         )
     return out
 
@@ -382,7 +500,7 @@ def provenance(a):
         commit = "unknown"
     calib = {}
     for name in a.clips:
-        fn = CLIPS[name][0]
+        fn = resolve_clip(name)[0]
         calib[name] = hashlib.sha256(
             (REPO / "data" / fn).read_bytes()).hexdigest()[:16]
     return dict(tool="tools/seen_frac_speed_error.py", commit=commit,
@@ -395,7 +513,9 @@ def provenance(a):
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("--clips", nargs="+", default=DEFAULT_CLIPS, choices=list(CLIPS))
+    p.add_argument("--clips", nargs="+", default=DEFAULT_CLIPS,
+                   help="clip names; any audited calibration, not just the "
+                        "three burned defaults (see resolve_clip)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--n", type=int, default=1200, help="flights REQUESTED per clip")
     p.add_argument("--arm", choices=("random", "correlated"), default="random",

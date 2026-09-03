@@ -603,3 +603,82 @@ the band ratio stands and is reinforced. No threshold was changed and none is na
 Raw per-seed JSON: 20 runs under the lead's scratchpad `sf/`, each stamping its resolved
 config and the calibration hashes. Reproduce with
 `tools/seen_frac_speed_error.py --seed <n> --arm <random|correlated>`.
+
+
+---
+
+## §7's held-out sweep, EXECUTED — and §7's own bar is defective. 2026-09-04 (lead)
+
+Ran the §7 pre-registration. Two things had to be settled first, both recorded in
+`.claude/journals/lead.md` **before** the sweep ran.
+
+**§7's own named held-out clips were rejected, before seeing any result they'd produce.**
+§7 nominated `court_pts_refined` and `eala_pts_auto`. Their `_audit` stamps fit camera
+heights of **12.28 m** and **8.89 m** — the exact signature that exposed `yt_match40`, which
+was stamped PASS at 0.9 px and was grossly wrong, and which STATE records the camera-height
+fit as *"the one screen that isolates"*. Every sane clip here fits 1.3–3.4 m. Substituted
+four PASS calibrations at 2.0–2.9 m, residual ≤1.4 px, `img_wh` read from the real clip:
+`L73ep7JHiJ4`, `mpc_tuesday_p01`, `flexi_franz_p01`, `tc8CGFxyRE8` — four distinct venues.
+
+**The accuracy label was fixed across the sweep.** `classifier_table` defines "accurate"
+relative to the *accepted* set, which is fine at one threshold but makes a sweep meaningless.
+For the sweep, "accurate" is the median error of the **whole** population, computed once, so
+base rate is identical at every step and the ≥10-point margin means the same thing everywhere.
+
+### The result: a threshold IS admissible by the letter of §7 — and must not be adopted
+
+`seen_frac` sweep, mean of 5 seeds, margin over base rate (points):
+
+| t | L73ep7JHiJ4 | mpc_tuesday_p01 | flexi_franz_p01 | tc8CGFxyRE8 | clips ≥+10 | **shots accepted** |
+|---|---|---|---|---|---|---|
+| 0.50 (shipped) | +6.31 | +5.13 | +5.00 | +4.59 | 0/4 | **71.3%** |
+| 0.75 | +10.73 | +8.04 | +7.97 | +6.75 | 1/4 | 32.7% |
+| 0.85 | +13.52 | +10.82 | +10.54 | +10.66 | **4/4** | **18.7%** |
+| 0.90 | +12.83 | +10.73 | +11.41 | +11.76 | 4/4 | 10.8% |
+
+`t = 0.85` clears +10 on **4 of 4** clips and passes the plateau test (neighbours within
+1.0–1.9 points). By §7's letter it is admissible.
+
+> **It is not a fix, and §7's bar is what is broken.** The margin rises **monotonically** with
+> `t` for one boring reason: raising the threshold keeps only the best-covered shots. **§7 has
+> no coverage floor**, so it is satisfied by raising `t` until almost nothing is accepted —
+> `t = 0.85` accepts **18.7% of shots against the shipped gate's 71.3%**. Adopting it would
+> destroy exactly the coverage the whole speed-coverage target exists to recover, while
+> scoring as a pass. **A bar that a degenerate answer satisfies is a defective bar.**
+
+**On `shipped_shot` — the population matching what the pipeline emits — NO threshold is
+admissible at any step.** That is not a clean negative either: the faithful-config section
+above showed the positive control itself fails on that population (+4.58 against the same
++10 bar), so it is underpowered, not informative.
+
+### Court-coverage: the sweep §7 demanded, and it refutes the candidate
+
+| t | 0.50 | 0.65 | 0.75 | 0.85 | 0.90 |
+|---|---|---|---|---|---|
+| margin (pts), all 4 clips | +39 to +42 | +41 to +44 | +42 to +44 | +42 to +45 | +43 to +45 |
+
+Clears +10 on 4/4 at **every** threshold, by 4x the bar, **flat across the entire sweep**.
+That is not a predictor passing a test — **a margin that large and that flat is the signature
+of a definitional relationship.** `analytics.shot_speed_kmh` integrates the path over exactly
+the points that survived court projection, so high court-coverage implies an accurate speed
+close to by construction. §7 required this be measured rather than adopted; measured, it
+**disqualifies itself**. Naming it was never proposing it, and this is why.
+
+### Verdict
+
+**No replacement threshold is proposed, and none may be adopted from this run.** What this
+establishes is that **§7's acceptance test needs repair before it can be executed
+meaningfully** — it rewards precision with no floor on what fraction of shots survive.
+
+**NEW PRE-REGISTRATION, for a future run, not executed here** (writing and running a bar in
+one breath is the post-hoc error this file exists to avoid): a replacement `t` is admissible
+only if it clears **≥10 points of margin on ≥3 of 4 held-out clips**, passes the ±0.05
+plateau test, **AND accepts ≥60% of the shots the shipped `t=0.5` accepts** — a coverage
+floor, so a threshold cannot pass by refusing almost everything. Any candidate gate whose
+margin is flat across the whole sweep is to be treated as mechanically confounded and
+rejected, not adopted.
+
+Tooling: `tools/seen_frac_speed_error.py` now resolves **any** audited calibration (resolution
+read from its own `_audit.img_wh`, refusing DEGENERATE stamps, `yt_match40` and `demo30` by
+name) and carries `sweep_table` / `sweep_table_court_cov`. The change is a **proven no-op** on
+the three burned clips: seed 0's full results are byte-identical before and after.
