@@ -264,3 +264,20 @@ T24. **Trusting a tool's own docstring about whether it has been RUN.** `eval/mo
    a stale *cache*, this is trusting a stale *docstring*. Related: T21 (trusting a copy of a
    rule over the source).
 
+
+T25. **Treating a search tool's "no matches" as evidence something does not exist.** Twice on
+   2026-09-04, the harness `Grep`/`Glob` tools returned *no matches* for content that is
+   plainly in the repo. The researcher hit it first — Grep/Glob "would not search directories
+   in this session", working only when `path` pointed at a single known file — and burned tool
+   calls rediscovering it. The lead then hit the same thing hunting `verify_court`: `Grep` for
+   `verify_court` returned **"No files found"**, and for `def verify_court` **"No matches
+   found"**, for a function that is defined at `backend/swingvision/calibration.py:1087`, is
+   called from five sites, and is named in `docs/STATE.md`. The lead had already started
+   writing up "the STATE row names a criterion that does not exist in the code" as a finding.
+   `grep` via Bash found it immediately.
+   **A negative from a search tool is a claim about the tool, not about the repo.** Before
+   reporting that something is absent, missing, renamed or deleted, confirm with a *second*
+   mechanism — `grep` via Bash, `git log -S`, or an import — because absence is exactly the
+   result that a broken searcher and a true fact produce identically. Prefer Bash `grep` in
+   this repo. Related: T24 (a stale docstring is a claim about the past), T02 (a stale cache) —
+   all three are the same failure of trusting one witness that has no way to say "I don't know".
