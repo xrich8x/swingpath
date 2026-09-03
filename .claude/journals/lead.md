@@ -447,3 +447,40 @@ spends another run on C6's 12.6x cost or on the 22-of-30 die-before-scoring.
 
 **Not authorised:** shipping, changing the shipped court path, or reopening the correspondence
 SEARCH (C6's cost, the 22-of-30 kills). This is the fit and only the fit.
+
+---
+
+## PRE-REGISTRATION — an int8-COMPUTABLE refusal signal. 2026-09-04, before any run
+
+**The gap this closes.** The top-2 margin refusal PASSES on fp32 (5/5 caught, 2.1%
+collateral, three nulls at p<=0.001) and **FAILS on int8 at every threshold**, because on the
+frames int8 gets wrong its own margin is *wide* — 0.86, and 1.00 with no runner-up at all.
+Quantisation did not leave a close race, it **resolved** it. So the one cheap safety net is
+computable only from the graph **mobile does not ship**, and that is now a stated cost against
+int8 in `DECISIONS_PENDING` item 0.
+
+**The question:** is there ANY quantity the int8 graph itself produces that flags its own bad
+frames? Candidates visible in its own heatmap, all free at decode time: the winning blob's
+**absolute area**, its **peak** value, the **blob count**, and the winner's **area x peak**
+score in absolute terms. On `am_hard_utr/0147` the int8 true blob fragmented to area 2 + 1,
+and on `yt_rally2/0108` int8 produced a **single** blob — so "small winner" and "exactly one
+blob where fp32 saw two" are the mechanically-motivated candidates, named before looking.
+
+**PRE-REGISTERED BAR** — same 6-clip parity set, 528 both-fire frames, 5 bad:
+- **PASS:** some single int8-computable quantity, at some threshold, catches **>= 4 of 5** bad
+  frames at **<= 5%** collateral on correctly-decoded frames. Both halves required.
+- **FAIL:** anything else. Then **int8 cannot police itself**, and that is the finding — it
+  makes the fp32-only refusal a hard constraint on the ship decision rather than an
+  inconvenience.
+- **Mandatory seeded null control**, 1000 draws, as before. And because several candidates are
+  being tried, a **selection-adjusted null** is required too: each draw must search the same
+  candidate x threshold grid, or the multiple-comparison advantage is unpriced.
+- **Report refusal PRECISION, not only catch and collateral.** The fp32 signal passed its
+  screen at **31% precision** and the honest reading was "a risk gate, not a detector". Any
+  int8 candidate gets the same treatment and the same wording.
+
+**Power is thin and named in advance: n = 5 bad frames, effective n ~3** (`yt_rally2`
+0108-0110 is one consecutive event). A PASS is a SCREEN and earns a wider run, never a ship.
+
+**Not authorised:** changing the decode, shipping, a fourth precision arm, re-running int8
+inference (~10 s/frame; the heatmaps are on disk).
