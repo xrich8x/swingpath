@@ -13,17 +13,45 @@ findings go in `docs/STATE.md` + `docs/evidence/`. Do not duplicate those here.
 
 ---
 
-## TASK — what I was asked to do
+## TASK — what I was asked to do (2026-09-03, NEW TASK, prior one below is DONE/unrelated)
 
-Founder ONE question, framed deliberately as one: "What is left to try at the FAR END of
-the court — for the player and for the ball — and which of it has a chain-level reason to
-reach the rendered output?" Must test the one-problem framing (same root cause wearing two
-hats, or two different problems — say which and why), rank what's left with mechanism +
-why-not-dead-already + chain justification for ball items, pre-register a gate for the top
-item, name what's now CLOSED, use WebSearch for outside literature and flag footage
-mismatches. Write docs/evidence/*.md + ONE STATE row text. No code writes.
+Write a point-boundary LABELLING PROTOCOL (not code, not the scoring state machine) at
+docs/evidence/point-boundary-label-protocol.md. Six required items: (1) a boundary
+definition precise enough for agreement + refusal option, (2) minimum field set with
+purpose tags, (3) footage + n with a justified claim, (4) verification with no 2nd
+labeller, (5) leak guard spec (name fn, don't write it), (6) file format vs schema.py.
+Ends with founder's literal step sequence + hours vs the 3-6h budget. Blocks ~3-6h of
+founder labelling time (DECISIONS_PENDING item 4) — cost of vagueness is founder hours,
+not a re-run. STOP-WHEN ~30 tool calls.
 
-## STATE — DONE 2026-08-29
+## STATE — IN PROGRESS 2026-09-03
+
+Read: prior journal (unrelated, done), point-boundary-ground-truth.md (memory),
+audio-hit-detection-mobile-port.md (memory), the-score-and-rally-count-stop-pretending.md,
+using-a-burned-in-scoreboard-as-ground.md, telling-labellers-the-rule-instead-of-
+enforcing.md, DECISIONS_PENDING.md, backend/swingvision/schema.py, tools/_goldset.py,
+backend/swingvision/audio.py, data/incoming/README.md (stale but has the gold table),
+docs/evidence/audio-impact-screen-blocked-by-tooling-plus-gt-cost.md (has the 9 raw-file
+table verbatim: 7 Hardcourt + 2 Clay, 0 Shell/Grass — reused directly, not re-derived).
+
+TOOLING NOTE: Grep/Glob do not work with a directory `path` in this session (return "No
+files found" even for dirs known to have matches) — only work when `path` points at a
+single known file. Worked around entirely via Read on guessed/known paths. Flag for
+next session: don't burn calls re-discovering this.
+
+KEY REUSE DECISION: ball/court gold precedent is `data/gold/<clip>.labels.json` +
+`train_ballnet.gold_source_videos` (leak guard, keys on basename per T17). Point-boundary
+gold should mirror that shape (`data/gold/<clip>.points.json`) but NOT reuse schema.py's
+Rally dataclass — kept separate, reasons in the deliverable §6.
+
+Writing docs/evidence/point-boundary-label-protocol.md now, single complete Write (all
+research/legwork done, low risk of mid-section kill from here). Will then update
+agent-memory point-boundary-ground-truth.md with a pointer, then report. One
+DECISIONS_PENDING-worthy item (Shell/Grass footage gap) goes in the FINAL REPORT TEXT
+for the lead to append — NOT written directly, since DECISIONS_PENDING.md is outside my
+write allowlist (journal / agent-memory / docs/evidence only).
+
+## STATE — DONE 2026-08-29 (prior task, unrelated)
 
 Read: journal (prior task DONE, unrelated), full STATE.md, agent-memory (player-detection-
 negatives, ball-negatives, open-questions, coreml-ane-budget, project-method-rules), and

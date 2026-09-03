@@ -77,3 +77,12 @@ metadata:
 
 Related: [[calibration-trap-check-corners-first]], [[ios-architecture-rules]],
 [[ball-detector-choice-is-split]], [[chain-gate-mechanism-findings]].
+
+**A repo-root walk-up loop hangs forever from the scratchpad.** The idiom
+`REPO = Path(__file__).resolve()` then `while not (REPO / "backend").is_dir(): REPO = REPO.parent`
+spins at 100% CPU with no output when the script lives OUTSIDE the repo, because a drive
+root's `.parent` is itself. It looks exactly like a slow numerical job — three backgrounded
+runs and ~25 minutes were spent before it was diagnosed, and it left four hung processes.
+**Hardcode the repo path in any scratchpad script.** Corollary: a run that prints nothing at
+all is stuck BEFORE the first print — profile the module import, not the algorithm.
+

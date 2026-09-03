@@ -412,3 +412,46 @@ unless the founder asks** (reporting rule, 2026-09-02).
 Next candidate if this lane reopens: a per-layer activation diff to find where the erosion
 first appears. Arm C proved the final conv is not it. That is a new experiment and needs its
 own pre-registration.
+
+---
+
+## PRE-REGISTRATION — smoother innovation gate: is a BACKWARD-pass re-admit separating?
+Written 2026-09-03 BEFORE anything ran, before the code was read in detail.
+
+**Target:** the speed-coverage row - `smooth_forecast` costs **-11.0 / -8.1 pts** under
+TrackNet and is the largest single-stage cost. Mechanism already measured: its innovation
+gate deletes **14-17% of surviving REAL detections** in every arm.
+
+**Why a new attempt is allowed at all.** Rule 3 - every dead smoother idea in STATE changed
+what the FORWARD gate admits (`max_gap_s` both directions, `reset_after`, the `blocked`
+mask, `bounce_reset`, `bounce_hypothesis` v1/v2). The evidence file states the requirement
+outright: *a third attempt needs a mechanism that SEPARATES real from false, not one that
+admits more of both.* The smoother is **non-causal** (Kalman + RTS, offline by design), so
+the backward pass holds information the forward gate did not have when it rejected. Nothing
+in STATE has tested whether that information separates. This is a NEW question, not a
+re-proposal.
+
+**MEASURE THE SEPARATION BEFORE BUILDING ANY FIX.** No fix is authorised by this
+pre-registration - only the measurement of whether the signal has power.
+
+The population: detections the forward innovation gate REJECTS. Each is adjudicated
+**against human gold clicks** (1851 clicks / 308 no-ball frames, TEST-only) - real if within
+the gold tolerance of a click, ghost otherwise. Never against the smoother's own output;
+that would be a model grading its own homework.
+
+The signal: each rejected detection's distance to the FINAL RTS-smoothed trajectory.
+
+- **PASS (the signal separates, worth building):** the two distributions separate at
+  **>= 3:1** real-to-ghost at the best single threshold - i.e. some cut re-admits >=3 real
+  detections per ghost re-admitted - on **>= 2 of 3** clips, AND a **shuffled-label null
+  control** (same distances, labels permuted, seeded, 1000 draws) passes at under 5%.
+  3:1 is chosen against the project's own precedent: `bounce_hypothesis` was allowed to
+  claim separation at 9:1 but its product gate still failed, and the ~7:1 structural
+  exchange rate is the number this project keeps hitting. A mechanism below 3:1 cannot
+  survive a product gate, so measuring further would be wasted.
+- **FAIL:** anything else. **A failed bar stays failed and this branch closes** - it would
+  be the third measured negative in the smoother-gate family, and rule 3 then bars a fourth.
+- The null control is MANDATORY, not optional. Without it a positive is uninterpretable.
+
+**NOT authorised by this:** changing `smooth_forecast`, shipping anything, or quoting a
+coverage gain. A separating signal earns a build brief and a product gate, nothing more.

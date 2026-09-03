@@ -127,3 +127,34 @@ contradiction**, and a fix for one is not automatically a fix for the other.
 Artifacts: `data/output/speed_coverage/*.json` (per-arm, with resolved provenance);
 tool `tools/eval_speed_coverage_chain.py`; hook pinned by
 `backend/tests/test_speed_coverage_span_sink.py`.
+
+
+---
+
+## The backward-pass re-admit is measured and DEAD. 2026-09-03 (backend-dev)
+
+This file's own requirement — *"a third attempt needs a mechanism that SEPARATES real from
+false, not one that admits more of both"* — was taken up and the first candidate that met it
+on paper has now failed on the bench.
+
+The smoother is non-causal, so the RTS backward pass holds information the forward
+innovation gate did not have when it rejected a detection. That looked like a separating
+signal rather than a looser gate. **It is not: 0 of 3 clips, against a bar of 2 of 3.**
+Best real-to-ghost exchange at any threshold was 1.14 / 2.00 / 0.56 : 1 against a >=3:1 bar,
+pooled 0.93:1, and the seeded shuffled-label null control is matched or beaten by 526 of
+1000 permutations — chance.
+
+**Why, and it matters more than the number.** A ghost that continues the motion model's
+stale prediction sits *on* the smoothed path, while a real detection fails a 99.9%
+chi-square gate essentially only when the model is already stale — and RTS is blocked at
+segment boundaries, so that frame's smoothed estimate comes off **the same stale model**.
+The backward pass is a second look at the evidence the forward gate already got wrong.
+
+> **Consequence for this row's target: any future re-admit signal must come from OUTSIDE the
+> motion model** — appearance, detector confidence, cross-detector agreement. But this is the
+> third measured negative in the smoother-gate family, so **rule 3 bars a fourth**, the
+> cross-detector variant included. Attacking the -11.0 / -8.1 pt cost now means attacking a
+> different stage, not this gate.
+
+Full method, per-clip distributions, the null control and the provenance of every number:
+[smoother-gate-backward-readmit-separation.md](smoother-gate-backward-readmit-separation.md).
