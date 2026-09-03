@@ -315,3 +315,59 @@ Seed 0, faithful config, already in hand: accept-precision **0.500** vs base rat
 (unrestricted) and **0.500** vs **0.466** (shipped-shot) — a margin of **+3.3 / +3.4 points**
 against a >=10 bar. One seed is not evidence, which is the whole lesson of the run before
 this; 10 seeds x 2 arms are running now.
+
+---
+
+## PRE-REGISTRATION — the §7 held-out replacement-bar sweep. 2026-09-04, BEFORE it runs
+
+Executing the pre-registration in §7 of `does-seen-frac-predict-speed-error.md`. Two things
+§7 could not have known, both settled here BEFORE any sweep runs.
+
+**1. §7's own named candidate clips are the two WORST available, and are rejected.** It named
+`court_pts_refined` and `eala_pts_auto`. Their audit stamps fit camera heights of **12.28 m**
+and **8.89 m**. That is the exact signature that exposed `yt_match40` - stamped PASS at 0.9 px
+while grossly wrong, and STATE records the camera-height fit as *"the one screen that isolates
+it"* (every sane clip fits 1.3-3.4 m). Using either would repeat T23 knowingly. **Rejected on
+that ground, before seeing any result they would produce.**
+
+**Held-out clips used instead** - all `_audit` verdict PASS, residual <=1.4 px, camera height
+in the plausible court-side band, `img_wh` read from the actual clip (not assumed, which
+`yt_court` is), and none used in the burned experiment:
+
+| clip | residual | camera h | resolution |
+|---|---|---|---|
+| `L73ep7JHiJ4` | 0.7 px | 2.89 m | 1920x1080 |
+| `mpc_tuesday_p01` | 0.9 px | 2.79 m | 3840x2160 |
+| `flexi_franz_p01` | 0.2 px | 2.50 m | 3840x2160 |
+| `tc8CGFxyRE8` | 1.4 px | 2.00 m | 1920x1080 |
+
+Four distinct venues, exceeding §7's minimum of 3. `mpc_tuesday_p07` (0.5 px, 2.81 m) is
+available as a fifth but is **the same venue as p01**, so it is not independent and is not
+counted toward the >=3-of-N tally. Excluded and why: `sAjkpeRq4P4` (PASS 2.8 px but its corner
+sheet is one of the two the lead could not settle), `uR5q2cSM6AY` (PASS but 9.3 px).
+
+**2. The accuracy label must be FIXED across the sweep, and currently is not.**
+`classifier_table` defines "accurate" as `<= median abs% error of the ACCEPTED set`. That is
+defensible at a single fixed threshold - it scores the gate against the population it creates -
+but it makes a **sweep meaningless**, because the label moves with every candidate `t` and
+precisions at different `t` are then not comparable.
+
+**For the sweep, and only the sweep, "accurate" is `<= the median abs% error of the WHOLE
+clip population`, computed once, independent of `t`.** Base rate is then ~0.50 by
+construction and identical at every step, so the >=10-point margin means the same thing
+everywhere on the curve. The single-point table keeps its existing definition unchanged; the
+two are reported separately and never mixed.
+
+**Bar, unchanged from §7:** a replacement `t` is admissible only if on **>= 3 of the 4
+held-out clips** (a) accept-precision at `t` beats the fixed base rate by **>= 10 points**,
+and (b) both neighbours `t +/- 0.05` are within 3 points of `t`'s precision - the plateau
+test. Sweep [0.20, 0.90] step 0.05, FULL curve reported.
+
+**Multi-seed or it does not count.** >= 5 seeds; a `t` admissible on a single seed is not
+admissible. This file's own instability finding is the reason.
+
+**Court-coverage faces the identical sweep, as §7 requires** - named, not adopted, and with
+its partly-mechanical confound restated at the point of reporting.
+
+**Nothing ships from this.** An admissible `t` earns a real-footage confirmation arm (§7 item
+4), which no compliant reference currently supports.
