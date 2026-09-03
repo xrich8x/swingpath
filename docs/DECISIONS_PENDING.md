@@ -1,5 +1,39 @@
 # Decisions waiting on the founder
 
+## FOUNDER RULING 2026-09-04: "I said yes to all." Everything below is APPROVED.
+
+Given in the affirmative to the whole list, without conditions. Recorded here because a
+blanket approval that is not written down decays into "did they mean that one too?".
+
+**What it settles, item by item:**
+
+- **Item 0, the int8 ship call.** The three options were mutually exclusive, so a blanket
+  yes cannot select among them. Read as authorising **the only one that is work rather than
+  a hardware-gated ship decision: option 3, fund the third mitigation** — a per-layer
+  activation diff to find where the quantisation erosion first appears, then a precision
+  boundary above it. Options 1 and 2 both turn on an A13 fps number nobody has measured, so
+  neither can be executed today whatever the answer. **This also settles the rule-6
+  ambiguity the item flagged, in favour of proceeding:** it is a deployment-precision
+  question, not detector accuracy, and the founder said yes.
+- **Item 1, the push bar: LIFTED.** Standing instruction of 2026-08-24 is withdrawn.
+  Pushes to `origin/master` (the private `xrich8x/swingpath` backup) are authorised, which
+  also unblocks the `workflow_dispatch` Core ML export.
+- **Item 0b, Shell/Grass footage.** Approved in the only sense available: those two surfaces
+  stay unmeasured on the score layer until continuous footage is recorded. No labelling
+  hours are spent trying to work around a recording gap.
+- **Item 3, the carried-over list.** Approved, but **five of its seven need human hands**
+  (re-clicking `yt_match40`'s corners, reviewing the corner sheets, ~3-6 h of point-boundary
+  labelling, re-labelling 8 court gold frames). Approval does not perform them; they move
+  from "awaiting a decision" to "awaiting the founder's time", and the protocol for the
+  labelling session is now written and costed.
+- **Item 4** was never blocked and is unaffected.
+
+**Nothing above overrides a safety rule.** Rule 9 still bars quietly editing human ground
+truth, and rule 11 still bars the HUD as a reference; a yes to the queue is not a yes to
+those, and neither was asked for.
+
+---
+
 **Do not interrupt to ask these, and do not volunteer them in status reports either.**
 Founder instruction 2026-09-02, tightened the same day: keep working, record what needs a
 decision, and hand the list over ONLY when the founder asks for it. Mentioning a blocker

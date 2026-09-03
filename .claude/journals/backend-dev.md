@@ -4,7 +4,32 @@
 
 ---
 
-## TASK — CURRENT (started 2026-09-03, follows the seen_frac run + qa verification)
+## TASK — CURRENT (started 2026-09-04)
+
+EXECUTE the REPAIRED bar written at the end of §"§7's held-out sweep, EXECUTED" (lead
+wrote it; I execute it — authorship/execution deliberately separated).
+Bar (pre-registered, unchanged): a replacement `t` is admissible iff
+ (1) >=10 pts margin on >=3 of 4 held-out clips, AND
+ (2) +/-0.05 plateau (both neighbours within 3 pts), AND
+ (3) accepts >=60% of the shots shipped t=0.5 accepts (COVERAGE FLOOR).
+ Flat-margin-across-whole-sweep => mechanically confounded => rejected.
+Held-out clips FIXED: L73ep7JHiJ4, mpc_tuesday_p01, flexi_franz_p01, tc8CGFxyRE8.
+>=5 seeds, both populations. Also run court-coverage. Also: sensitivity of the verdict
+to the 60% floor value (does 50% vs 70% flip it? then the floor is itself arbitrary).
+DELIVERABLE: section "The repaired bar, executed" appended to
+  docs/evidence/does-seen-frac-predict-speed-error.md
+STOP-WHEN: verdict + floor-sensitivity written; or ~35 calls.
+NOT-THIS-RUN: change 0.5, adopt any t, add clips, edit STATE, git commit.
+
+## STATE — 2026-09-04
+
+REUSING the lead's 5 seed runs (do NOT recompute): scratchpad/holdout/s{0..4}.json,
+commit bce6678 (= HEAD), clips exactly the four, arm random, defaults, n 1200.
+Same temp session id as mine (ccc041b7-...), so they are directly readable.
+
+---
+
+## TASK — DONE 2026-09-03 (kept for context)
 
 A. Promote the seen_frac harness into `tools/` (args: clips, seed; defaults = evidence
    config; qa's correlated-dropout positive control as an OPTION not a fork).
