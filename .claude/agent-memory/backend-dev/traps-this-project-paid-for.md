@@ -14,6 +14,11 @@ metadata:
 - **Stale caches and stale stamps.** Perception caches are calibration- and
   settings-dependent. **The provenance stamp must read the RESOLVED configuration, not a
   static preset table** — read defaults back out of the function's own signature.
+  **`git rev-parse HEAD` is a STALE stamp whenever the tool is uncommitted** (hit
+  2026-09-04: two seed batches of the same experiment stamped different commits purely
+  because the tool was committed between them). Before pooling artifacts across stamps,
+  re-run one seed under the current code and diff the results block — cheap, and it
+  converts an apparent version mismatch into a proven no-op.
 - **`match["video"]["fps"]` is the EFFECTIVE (processed) rate, not the source rate.**
   `processed_index = round(t_hit_s * fps_eff)` indexes the perception-cache arrays;
   `source_frame = processed_index * frame_step` is the frame to decode. Conflating them

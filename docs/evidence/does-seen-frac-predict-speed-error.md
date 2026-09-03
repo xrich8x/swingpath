@@ -682,3 +682,238 @@ Tooling: `tools/seen_frac_speed_error.py` now resolves **any** audited calibrati
 read from its own `_audit.img_wh`, refusing DEGENERATE stamps, `yt_match40` and `demo30` by
 name) and carries `sweep_table` / `sweep_table_court_cov`. The change is a **proven no-op** on
 the three burned clips: seed 0's full results are byte-identical before and after.
+
+
+---
+
+## The repaired bar, EXECUTED. 2026-09-04 (backend-dev)
+
+The lead wrote the repaired bar at the end of the section above and did not execute it;
+this section executes it unchanged. Authorship and execution were separated deliberately —
+writing and running a bar in one breath is the post-hoc error this file exists to avoid.
+
+**The bar, quoted, not paraphrased:**
+
+> A replacement `t` is admissible only if it clears **>=10 points of margin on >=3 of 4
+> held-out clips**, passes the **+/-0.05 plateau test** (both neighbours within 3 points),
+> **AND accepts >=60% of the shots the shipped `t=0.5` accepts** — the coverage floor.
+> Any candidate gate whose margin is flat across the whole sweep is treated as
+> mechanically confounded and rejected, not adopted.
+
+**Inputs.** `tools/seen_frac_speed_error.py`, arm `random`, all tool defaults
+(`runoff 2.5`, `min_alive 5`, `n 1200` requested/clip), the four held-out calibrations
+fixed in advance — `L73ep7JHiJ4`, `mpc_tuesday_p01`, `flexi_franz_p01`, `tc8CGFxyRE8` —
+and **10 seeds (0-9)**. Seeds 0-4 are the lead's existing runs, reused rather than
+recomputed. Pooled n = 3477 rows/seed mean (unrestricted), 2303 (`shipped_shot`). Every
+margin below is a mean over the 10 seeds; "accurate" is fixed at the whole-population
+median abs% error, so the base rate is 0.500 at every step of every curve and the
++10-point margin means the same thing everywhere.
+
+*Provenance note, stated because it is exactly the trap this project has been bitten by:*
+seeds 0-4 stamp commit `bce6678` and seeds 5-9 stamp `7dc81c6`. **That is a stale stamp,
+not a code difference** — the tool change was still uncommitted in the working tree when
+the lead ran seeds 0-4, so `git rev-parse HEAD` recorded the commit *before* it. Verified
+rather than assumed: seed 0 re-run at `7dc81c6` produces a `results` block **identical**
+to the stored `s0.json`. Pooling the ten is legitimate.
+
+### 1. `seen_frac`, unrestricted population — **NONE ADMISSIBLE**
+
+Margin over base rate (points, mean of 10 seeds) per held-out clip. `cov` = shots accepted
+**relative to what the shipped `t=0.5` accepts** — this is the column the coverage floor
+tests. `% pop` = accepted share of the whole population, for reference.
+
+| t | L73ep7JHiJ4 | mpc_tuesday_p01 | flexi_franz_p01 | tc8CGFxyRE8 | clips >=+10 | cov vs t=0.50 | % pop | plateau |
+|---|---|---|---|---|---|---|---|---|
+| 0.20 | +0.49 | +0.42 | +0.41 | +0.40 | 0/4 | 140.1% | 98.8% | edge |
+| 0.25 | +1.35 | +1.12 | +1.11 | +1.12 | 0/4 | 136.4% | 96.2% | pass |
+| 0.30 | +2.42 | +2.01 | +1.91 | +1.81 | 0/4 | 130.7% | 92.2% | pass |
+| 0.35 | +3.33 | +2.88 | +2.80 | +2.56 | 0/4 | 123.9% | 87.4% | pass |
+| 0.40 | +4.34 | +3.69 | +3.70 | +3.48 | 0/4 | 116.1% | 81.9% | pass |
+| 0.45 | +5.34 | +4.62 | +4.61 | +4.40 | 0/4 | 107.5% | 75.8% | pass |
+| **0.50 (shipped)** | +6.29 | +5.51 | +5.38 | +5.21 | 0/4 | 100.0% | 70.6% | pass |
+| 0.55 | +7.05 | +5.82 | +5.79 | +5.34 | 0/4 | 89.1% | 62.9% | pass |
+| 0.60 | +8.04 | +6.56 | +6.69 | +6.36 | 0/4 | 80.1% | 56.5% | pass |
+| 0.65 | +8.54 | +7.17 | +7.19 | +6.82 | 0/4 | 69.4% | 48.9% | pass |
+| 0.70 | +9.09 | +7.72 | +7.86 | +7.67 | 0/4 | 58.9% | 41.6% | pass |
+| 0.75 | +9.80 | +8.18 | +8.14 | +7.77 | 0/4 | 46.4% | 32.7% | pass |
+| 0.80 | +11.63 | +9.53 | +9.90 | +9.84 | 1/4 | 36.3% | 25.6% | pass |
+| 0.85 | +13.41 | +11.20 | +11.41 | +12.49 | **4/4** | **26.5%** | 18.7% | pass |
+| 0.90 | +14.85 | +12.88 | +13.77 | +14.91 | **4/4** | **15.4%** | 10.9% | edge |
+
+("edge" = at the end of the swept range, so the +/-0.05 plateau test has no neighbour on
+one side and is not evaluable. Nothing below turns on how "edge" is scored: both edge rows
+fail the coverage floor by a wide margin anyway.)
+
+**VERDICT: NONE ADMISSIBLE.** No threshold satisfies all three conditions.
+
+- The only thresholds clearing +10 on >=3 of 4 clips are `t=0.85` (**26.5%** coverage) and
+  `t=0.90` (**15.4%**). The floor requires 60%.
+- The last threshold that meets the 60% floor is `t=0.65` (69.4%); its margins are +6.8 to
+  +8.5 and it clears +10 on **0 of 4** clips. `t=0.70` is already below the floor at 58.9%.
+- **The two conditions are in direct, monotone conflict.** Margin rises monotonically with
+  `t`; coverage falls monotonically with `t`; there is no `t` where both hold, and the
+  crossing region (`0.70`-`0.85`) is populated — `0.75` and `0.80` are in the table at
+  1/4 clips and 46%/36% coverage. This is not a resolution artifact of the 0.05 grid.
+
+**What that means, stated plainly: `seen_frac` cannot be rescued by re-tuning its
+threshold.** Any `t` strong enough to separate accurate from inaccurate shots achieves it
+only by discarding three quarters of the shots — the opposite of what a speed-coverage
+target needs. The gate needs **replacing, not moving**.
+
+**Inspect the rejects (rule 10).** The precision `seen_frac` buys is small and it is bought
+by refusing accurate shots, not by finding inaccurate ones. Pooled over 10 seeds:
+
+| t | accept-precision | share of ALL accurate shots that get REFUSED |
+|---|---|---|
+| 0.50 (shipped) | 0.556 | 21.6% |
+| 0.70 | 0.581 | 51.7% |
+| 0.85 | 0.621 | 76.8% |
+| 0.90 | 0.641 | 86.1% |
+
+Moving 0.50 -> 0.85 buys **6.5 points of precision** and throws away **more than three
+quarters of the accurate shots**. That is the trade the coverage floor exists to refuse,
+and it refuses it.
+
+### 2. Floor sensitivity — the verdict does **not** hinge on the 60% constant
+
+The 60% floor is one session old and was written in the same file as the defect it
+patches, so it is fair to ask whether the verdict is an artifact of that number. It is not.
+Thresholds satisfying **all three** conditions, as the floor is varied:
+
+| coverage floor | admissible thresholds (`seen_frac`, unrestricted) |
+|---|---|
+| >= 20% | 0.85 |
+| >= 25% | 0.85 |
+| >= 30% | **none** |
+| >= 40% | **none** |
+| >= 50% | **none** |
+| >= 60% (as written) | **none** |
+| >= 70% | **none** |
+| >= 80% | **none** |
+
+The verdict is NONE ADMISSIBLE for **every floor above 26.5%** — it could be set to 50%,
+60% or 70% and the answer would not move. Only by dropping the floor below 26.5%, i.e. by
+permitting a gate that rejects three quarters of what the shipped gate accepts, does
+`t=0.85` come back. **So the 60% constant is not load-bearing on this run.** It remains
+unjustified in the sense that no measurement chose 60 over 50 or 70, and it must not be
+quoted as if calibrated; the defensible phrasing is *"the verdict holds for any floor above
+27%"*, never *"it failed the 60% floor"* — the latter invites moving the floor.
+
+### 3. `seen_frac`, `shipped_shot` population — NONE ADMISSIBLE, and weaker still
+
+| t | L73ep7JHiJ4 | mpc_tuesday_p01 | flexi_franz_p01 | tc8CGFxyRE8 | clips >=+10 | cov vs t=0.50 | plateau |
+|---|---|---|---|---|---|---|---|
+| 0.50 (shipped) | +4.37 | +2.98 | +2.10 | +2.12 | 0/4 | 100.0% | pass |
+| 0.60 | +5.55 | +3.64 | +2.80 | +3.13 | 0/4 | 81.0% | pass |
+| 0.70 | +5.75 | +4.08 | +3.28 | +3.06 | 0/4 | 60.4% | pass |
+| 0.80 | +7.57 | +4.35 | +2.74 | +2.85 | 0/4 | 38.2% | pass |
+| 0.85 | +8.26 | +4.72 | +2.91 | +2.54 | 0/4 | 28.6% | pass |
+| 0.90 | +11.55 | +6.90 | +6.00 | +5.29 | 1/4 | 16.8% | edge |
+
+On the population matching what the pipeline actually emits, `seen_frac` never clears +10
+on more than **1 of 4** clips at any threshold, at any coverage, so it is NONE ADMISSIBLE
+at every floor tested including 20%. The margin also stops being monotone here
+(`flexi_franz_p01` peaks at +3.28 at `t=0.70` and falls to +2.74 at `t=0.80`), so the
+degenerate pass does not even occur. **Caveat carried forward and not to be dropped:** the
+faithful-config section above showed the *positive control itself* fails on this population
+(+4.58 against the same +10 bar), so this is a negative from an underpowered test. It adds
+nothing on top of section 1 and must not be quoted as independent confirmation.
+
+### 4. Court-coverage — passes the letter of the bar, rejected by the flatness clause
+
+Unrestricted population, same 10 seeds, same fixed accuracy label:
+
+| t | L73ep7JHiJ4 | mpc_tuesday_p01 | flexi_franz_p01 | tc8CGFxyRE8 | clips >=+10 | cov vs t=0.50 | % pop | plateau |
+|---|---|---|---|---|---|---|---|---|
+| 0.20 | +38.03 | +37.92 | +39.46 | +39.44 | 4/4 | 117.5% | 46.4% | edge |
+| 0.30 | +38.46 | +37.85 | +39.26 | +39.48 | 4/4 | 108.6% | 42.9% | pass |
+| 0.40 | +38.84 | +38.26 | +39.64 | +40.26 | 4/4 | 103.6% | 40.9% | pass |
+| 0.50 | +39.37 | +38.72 | +40.27 | +41.42 | 4/4 | 100.0% | 39.5% | pass |
+| 0.60 | +40.41 | +39.62 | +41.04 | +42.59 | 4/4 | 96.2% | 38.0% | pass |
+| 0.70 | +41.86 | +40.65 | +41.93 | +43.54 | 4/4 | 90.9% | 35.9% | pass |
+| 0.80 | +43.19 | +41.94 | +43.10 | +44.20 | 4/4 | 81.4% | 32.2% | pass |
+| 0.85 | +43.34 | +42.17 | +42.91 | +44.17 | 4/4 | 75.3% | 29.7% | pass |
+| 0.90 | +43.30 | +42.40 | +43.12 | +44.32 | 4/4 | 63.0% | 24.9% | edge |
+
+Court-coverage clears +10 on **4 of 4 clips at every threshold in the sweep**, at roughly
+4x the bar, and **passes the coverage floor comfortably** (96.2% at `t=0.60`; 13 thresholds
+satisfy conditions (1)-(3) at any floor from 20% to 70%, 12 at 80%). **By the letter of the
+repaired bar it is admissible. It is rejected anyway under the bar's own flat-margin
+clause**, and this run replaces the earlier suspicion-from-size argument with two direct
+mechanism tests:
+
+- **The margin is nearly threshold-independent.** Mean margin ranges **+38.59 to +43.28**
+  across the whole sweep — a spread of **4.7 points on a ~41-point effect (11.5%)** —
+  against `seen_frac`'s 13.7-point spread on a ~6-point effect. More sharply: accept
+  precision is already **0.887 at `t=0.20`** and reaches only **0.933 at `t=0.90`**. Almost
+  all of the discrimination happens at court-coverage ~= 0 — **53.6% of rows sit below
+  0.20** — so where you put the threshold inside [0.2, 0.9] is nearly irrelevant. A
+  "predictor" that does not respond to its own threshold is not being tuned; it is
+  reporting a partition that already exists.
+- **The effect dies when the degenerate shots are removed.** On `shipped_shot` — which
+  drops rows whose estimated speed left `5..250 km/h`, **33.8% of rows** (3477 -> 2303) —
+  the identical sweep collapses:
+
+| t | L73ep7JHiJ4 | mpc_tuesday_p01 | flexi_franz_p01 | tc8CGFxyRE8 | clips >=+10 |
+|---|---|---|---|---|---|
+| 0.50 | +16.17 | +6.42 | +2.12 | +2.70 | 1/4 |
+| 0.70 | +19.03 | +8.41 | +3.93 | +5.14 | 1/4 |
+| 0.90 | +25.01 | +12.76 | +7.87 | +9.99 | 2/4 |
+
+  Three quarters of the margin disappears with those rows, and court-coverage **fails
+  condition (1) outright on the shipped population at every threshold** (never more than
+  2 of 4 clips). The removed rows are exactly the shots whose speed estimate collapsed
+  toward zero because the path barely projected onto the court — the mechanism
+  `analytics.shot_speed_kmh` makes unavoidable, since it integrates the path over exactly
+  the points that survived court projection. **Court-coverage's headline margin is largely
+  a measurement of which shots it broke.**
+
+So: admissible by the letter, disqualified by the clause written to catch precisely this,
+and now disqualified on a mechanism rather than on the size of the number. **Naming it was
+never proposing it; it has now been measured and rejected.**
+
+### 5. Is the repaired bar itself sound? Two defects, neither decisive here
+
+Asked directly, and answered without deference to its author. The bar is a real improvement
+on §7's: the coverage floor is the condition that refuses the degenerate `t=0.85` answer,
+and it does that job. Two criticisms stand and should be fixed before the bar is reused:
+
+1. **The flat-margin clause has no numeric definition.** "Flat across the whole sweep" was
+   applied here by judgement — court-coverage's spread is 4.7 pts on a 41-pt effect (11.5%)
+   and was called flat; `seen_frac`'s is 13.7 pts on a 6-pt effect and was not. Those are
+   far apart enough that the call is not close, and the independent mechanism test in
+   section 4 does not depend on the clause at all. But a future candidate landing between
+   them would have no rule to appeal to, and "flat" would then be decided after seeing the
+   result — the exact failure mode this file documents. If the bar is reused, fix a number
+   (spread as a fraction of mean margin is the natural one) **before** the sweep runs.
+2. **The 60% floor is arbitrary, though not load-bearing on this run** (section 2). Report
+   the sensitivity, not the constant.
+
+A third point, in the bar's favour rather than against it: **the coverage floor should be
+stated as relative-to-the-shipped-gate, which is how it is written and how it was applied
+here.** Measured against the whole population instead, `t=0.85` accepts 18.7% and `t=0.5`
+accepts 70.6%, and a floor phrased against the population would have to be re-derived every
+time the shipped constant moves.
+
+Neither criticism changes the verdict. **`seen_frac` is not rescuable by retuning `t`, and
+court-coverage is not its replacement.**
+
+### Verdict, in one place
+
+- `seen_frac`, unrestricted: **NONE ADMISSIBLE** — robust to any coverage floor above 26.5%.
+- `seen_frac`, `shipped_shot`: **NONE ADMISSIBLE** at every floor, but from an underpowered
+  test; no independent weight.
+- Court-coverage: admissible by the letter, **REJECTED** under the flat-margin clause, with
+  two independent mechanism tests supporting the confound.
+- Nothing was adopted. The shipped `t = 0.5` is untouched and no replacement is proposed.
+  The live question is no longer *what threshold* but *what signal* — `seen_frac`'s
+  measured ceiling here is ~6 points of accept-precision at usable coverage.
+
+### Provenance
+
+`tools/seen_frac_speed_error.py` @ `7dc81c6` (behaviourally identical to the `bce6678`-
+stamped runs, verified by identical re-run of seed 0), python 3.14.3 / numpy 2.5.0, arm
+`random`, seeds 0-9, `--clips L73ep7JHiJ4 mpc_tuesday_p01 flexi_franz_p01 tc8CGFxyRE8`, all
+other args at tool defaults; each seed JSON carries its resolved-config stamp and the
+per-clip calibration hashes. No code was changed by this run, `docs/STATE.md` was not
+touched, and no threshold was adopted.

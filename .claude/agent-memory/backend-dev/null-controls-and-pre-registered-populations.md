@@ -52,5 +52,24 @@ Lessons from executing the far-player MOTION gate (2026-08-29, FAILED). These ar
   median 11.71 with a floor of 6.04, while |dL| bottoms out at 0.11 and never reaches the
   surround's own SD of L*.)
 
+**Added 2026-09-04, from executing a threshold-sweep bar someone else wrote:**
+
+- **A precision bar with no COVERAGE floor is satisfiable by a degenerate answer.** Raising
+  any accept-threshold keeps only the easiest cases, so accept-precision rises
+  monotonically; a bar reading "clear +10 points on >=3 of 4 clips" was cleared by a
+  threshold accepting 26% of what the shipped gate accepts. Any acceptance test on a gate
+  needs a floor on what survives, stated **relative to the shipped constant** (so it does
+  not need re-deriving when that constant moves), not as a share of the population.
+  **How to apply:** when handed a sweep bar, check the direction of the trivial answer
+  first. If margin is monotone in the knob, the bar is testing the knob, not the signal.
+- **Report a threshold-y constant as a SENSITIVITY, not as a pass/fail.** "Nothing is
+  admissible at any floor above 26.5%" is a finding; "it failed the 60% floor" invites
+  moving the floor. Sweep the arbitrary constant and print the verdict as a function of it.
+- **"Flat across the sweep" needs a NUMBER before the run.** A qualitative
+  disqualification clause is decided after seeing the result by definition. Fix it as
+  spread-as-a-fraction-of-mean-margin up front — and back it with an independent mechanism
+  test (here: the confounded metric's margin collapsed once the rows it had broken were
+  removed) so the verdict does not rest on the clause at all.
+
 Related: [[traps-this-project-paid-for]], [[data-limits-far-end-contacts]],
-[[calibration-trap-check-corners-first]].
+[[calibration-trap-check-corners-first]], [[speed-error-is-geometry-not-detection]].
