@@ -196,6 +196,49 @@ highest-leverage founder minute available and it is not hours of work.
 
 ---
 
+## 0d. FOUNDER DIRECTION 2026-09-06: court setup should be PROACTIVE, SwingVision-style
+
+**Founder, before sleeping:** *"court detection needs to be a little proactive, so can use
+SwingVision as a sample wherein they ask the user to set up the court and then the green
+outlines just snap to the lines for tennis."*
+
+Recorded as a direction, not a question. **Two facts the morning needs before acting on it, so
+a run is not spent rediscovering them:**
+
+**1. The tool already exists and already does this.** `tools/court_setup_server.py` describes
+itself as *"the SwingVision-style ADJUSTABLE OVERLAY calibration tool"* — it auto-detects and
+snaps at startup (`--no-auto` opts out), draws an adjustable overlay, and has a temporal
+clean-plate. It is what the founder re-clicked `yt_match40` in today. So the direction may be
+**"make the existing snap better / more visible"** rather than "build this" — worth one
+sentence from the founder to disambiguate, because those are very different runs.
+
+**2. SNAPPING ONTO DETECTED LINES IS A MEASURED FAILURE HERE, and it made things WORSE, not
+just no better.** From `docs/STATE.md` "What has not worked":
+
+> median distance from truth: seed **9.8** → refiner **8.4** → **snap 70.5**
+
+Snap took a near-correct court **8.4 px** from truth and pushed it to **70.5 px**. The refiner
+helps; the snap actively destroys. STATE records the diagnosis: it needs **joint line-to-model
+assignment**, and that was then built and measured on 2026-08-29 — it fails three ways, and on
+2026-09-04 the whole branch died on a **fit ceiling**: the detected lines themselves disagree
+with the true court by ~6.4 px rms, which is the same order as human click noise (~5.8 px).
+
+**So "snap to the lines" cannot be made to work by trying harder at snapping** — the lines it
+would snap to are not accurate enough to snap to. That is measured, not assumed, and rule 3
+bars re-proposing it in that form.
+
+**What is NOT barred, and is probably what the founder actually wants:** the *interaction* —
+the overlay appearing already roughly placed, moving as a whole, guiding the user — rather than
+the *algorithm* of snapping to detected lines. Today's live setup criterion
+(`net_tape_clearance`) is exactly that kind of proactive guidance and it is real: it runs on
+every preview frame, needs no image content, and tells the user **where to stand** before any
+calibration exists.
+
+**Cost to unblock: one sentence** — is the ask (a) make the existing overlay's auto-place and
+drag feel better, (b) something new, or (c) the live guidance already built today?
+
+---
+
 ## 1. A push is required before the Core ML export can ever run — and pushes are barred
 
 **Status: the job is ready and cannot be triggered.**
