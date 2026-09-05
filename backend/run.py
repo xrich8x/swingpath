@@ -146,6 +146,21 @@ def _cmd_check(args: argparse.Namespace) -> int:
         print(f"          ~{angle['reliable_frac'] * 100:.0f}% of the court is measurable "
               f"(reliable to ~{angle['reliable_to_m']:.1f} m of {court.LENGTH:.1f} m)")
 
+    # The DERIVED setup criterion (docs/evidence/live-setup-criterion.md). A tennis
+    # net is 0.914 m tall; below ~2.0-2.2 m of mount height its white tape projects
+    # ABOVE the far baseline, the two overlap, and NO calibration of that view can
+    # be verified afterwards - which is why five verification gates failed. Printed
+    # as a number and a sentence, never a refusal: it tells you where to put the
+    # phone BEFORE you record, which is the only point at which it is fixable.
+    if angle.get("net_clearance_px") is not None:
+        px = angle["net_clearance_px"]
+        tag = {"good": "OK", "marginal": "TIGHT", "poor": "OVERLAP"}[
+            angle["net_clearance_level"]]
+        print("")
+        print(f"  Setup   [{tag}] far baseline vs net tape: {px:+.0f} px "
+              f"(at 720p; positive = clear)")
+        print(f"          {angle['net_clearance_msg']}")
+
     call_pct, floor = angle.get("call_accuracy_pct"), angle.get("call_floor_pct")
     if call_pct is not None:
         print(f"\n  Calls   ~{call_pct:.0f}% of close calls correct at this mount height")

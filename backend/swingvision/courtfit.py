@@ -1010,6 +1010,17 @@ def setup_verdict(frame, named, calibration, court):
     frac, until = calibration.reliable_court_span(H)
     angle = {"reliable_frac": round(float(frac), 3),
              "reliable_to_m": round(float(until), 1)}
+
+    # The DERIVED setup criterion: is the far baseline clear of the net tape, and
+    # by how many pixels? GUIDANCE, NOT A GATE - it is reported alongside the
+    # angle numbers and never changes `level`, because it answers "where should I
+    # put the phone", not "is this footage acceptable".
+    # docs/evidence/live-setup-criterion.md
+    clr = calibration.net_tape_clearance(H, (w, h))
+    angle["net_clearance_px"] = (None if clr is None
+                                 else round(clr.margin_px_720, 1))
+    angle["net_clearance_level"] = None if clr is None else clr.level
+    angle["net_clearance_msg"] = None if clr is None else clr.message
     if fit is None:
         angle.update(level="poor", height_m=None, hfov_deg=None, roll_deg=None,
                      msg="This shape isn't a real camera's view of a court - "

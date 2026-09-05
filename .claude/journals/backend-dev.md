@@ -118,3 +118,47 @@ STOP-WHEN: code question answered + sweep written up, or ~35 tool calls.
   hillsborough p02/p08 = 71.6/80.1 (h 1.64/1.63); flexi_franz p01/p07 = 60.6/59.6
   STRADDLING the 60 bound on one camera. Scatter is comparable to the WIDTH of the
   60-90 window -> that is the deeper reason no bound works.
+- CARRIED FORWARD: `python` broken Store shim -> backend/.venv/Scripts/python.exe.
+  grep -rn at repo ROOT times out (walks .venv) - grep explicit dirs. run.py is
+  backend/run.py, not repo root.
+- GEOMETRY REPRODUCED. Prototype (scratchpad/proto.py) rebuilds the lead's synthetic
+  pinhole and gets margin = tape_row - far_row at 3 m/80deg/720p:
+    1.40 -15.0 | 1.64 -9.5 | 2.00 -1.3 | 2.50 +10.0 | 3.00 +21.2 | 4.00 +43.1
+  vs the doc's own differences -15.0/-9.5/-1.4/+10.1/+21.4/+44.1. Agrees <=1 px.
+  So my +10 px pre-registered "good" band IS the doc's 2.50 m row, exactly.
+- PRIMITIVE CHOICE: focal_from_homography(H, img_wh) self-calibrates f from the FOUR
+  CORNERS - no hfov assumption, no free parameter. My earlier hfov-scatter finding is
+  click noise on the same determined quantity, not an extra unknown. Then
+  project_court_3d(H, img_wh, [(X_CENTER, NET_Y, NET_HEIGHT_CENTER)], hfov).
+- *** SWEEP DONE (scratchpad/sweep.py -> data/output/net_clearance_sweep.json).
+  ASK2 HEADLINE: derivation gives far/near ratio ~0.12 (range .088-.189) at the
+  crossover, .126 (.091-.189) at +10px. SHIPPED 0.28 corresponds to a camera height of
+  8.5-10.0 m - a BROADCAST TOWER, not a phone. 0.28 is ~2.3x too strict.
+  BUT the bigger ASK2 finding: the ratio is NOT monotone in camera height. HoHxFSX_s1 at
+  1.71 m has elev 0.262; L73ep7JHiJ4 at 2.89 m has 0.215. Standoff+lens dominate. poor
+  clips span elev .106-.268, good clips .190-.233 -> COMPLETE OVERLAP. No threshold on
+  the width ratio works, so "0.28 is wrong by X" understates it.
+  ASK3: 34 unique files, 32 scored. good 9 / marginal 6 / poor 17 (pre-dedupe counts
+  were 11/7/18 with dupes). 4 stamped DEGENERATE are in there and must be split out.
+  yt_court_pts_doubles: NO PHYSICAL CAMERA FITS (project_court_3d None) - graceful.
+  Cross-check vs brief: yt_match40 -8.9, am_hard_utr -7.8, demo30 -10.2, flexi_joy_p01
+  -19.6 all POOR; L73ep7JHiJ4 +12.0, UHf0LeMU2pg +24.5, sAjkpeRq4P4 +16.1 all GOOD.
+  Every one of the 7 named clips lands on the side the brief predicted.
+- CODE SHIPPED. calibration.py: CLEARANCE_GOOD_PX, _net_height_at_x, NetClearance,
+  net_tape_clearance(H, img_wh, hfov_deg=None) + framing_report gains clearance_px_720 /
+  clearance_level and a message (can hold good->warn, NEVER produces poor).
+  courtfit.setup_verdict angle[] gains net_clearance_px/_level/_msg (does NOT touch level).
+  backend/run.py prints a "Setup [OK|TIGHT|OVERLAP]" block. PARSER UNTOUCHED.
+- TRAP: writing `\n` inside an f-string through a bash heredoc python script turned into a
+  REAL newline and broke run.py's f-string. Use print("") instead of embedding \n.
+- TESTS: backend/tests/test_net_tape_clearance.py, 32 tests. FULL SUITE 571/571 PASS
+  (was 539). No pre-existing test moved -> rule 8 satisfied.
+- run.py check on demo_30s.mp4 prints "[OVERLAP] -13 px". NOTE it reads the SHAPE-LOCKED H
+  (1.49 m) not the stamped corners (1.38 m), so it differs slightly from the sweep table.
+- DELIVERABLE docs/evidence/live-setup-criterion.md WRITTEN IN FULL (all sections).
+- DECISIONS_PENDING appended: delete min_elevation? / no-fence fallback? / one eye-check at
+  +5 px (mpc_tuesday_p01).
+- TASK COMPLETE 2026-09-05. STATE.md row NOT written (NOT-THIS-RUN); lead must add:
+  "Live setup criterion: net-tape clearance in px replaces the guessed min_elevation proxy;
+  16/28 calibrations OVERLAP, derivation gives ratio 0.12 vs shipped 0.28 --
+  docs/evidence/live-setup-criterion.md". No git commit (NOT-THIS-RUN).

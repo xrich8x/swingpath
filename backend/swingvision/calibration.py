@@ -1109,6 +1109,117 @@ _CORNER_PRETTY = {"far_bl_doubles": "far-left", "far_br_doubles": "far-right",
                   "near_bl_doubles": "near-left", "near_br_doubles": "near-right"}
 
 
+# --- Net-tape clearance: the setup criterion, DERIVED rather than guessed ----
+#
+# A tennis net is 0.914 m tall at the centre strap. At a low mount that height
+# projects to MORE image rows than the entire far half of the court occupies, so
+# the net's white tape rises ABOVE the far baseline in the image and the two
+# OVERLAP - not "hard to separate", unseparable. Below roughly 2.0-2.2 m of
+# camera height the information that would distinguish a correct calibration
+# from one clicked on the NET is not in the frame at all, which is why five
+# after-the-fact verification gates and three careful frame-reads all failed.
+# See docs/evidence/setup-envelope-net-occludes-far-baseline.md.
+#
+# THIS IS GUIDANCE, NOT A GATE. The user is holding the phone and can move, so
+# we can ask for a framing BEFORE any calibration exists - a far easier question
+# than verifying an arbitrary one afterwards. It therefore returns a MARGIN IN
+# PIXELS that degrades gracefully, and a sentence to show. Nothing here refuses
+# anybody's footage, and no caller should make it do so.
+
+CLEARANCE_GOOD_PX = 10.0
+"""Pixels of daylight (at 720p) between the far baseline and the net tape that
+count as a comfortable setup. Pre-registered before the clip sweep, taken from
+the derivation's own "clears it by 10 px" row - which is a 2.50 m mount, 3 m
+back, 80 deg lens. Not tuned to any clip."""
+
+
+def _net_height_at_x(x_m: float) -> float:
+    """Net height (m) at court x. 0.914 at the centre strap rising to 1.07 at the
+    posts; linear, which is close enough to the real catenary for a few pixels."""
+    span = court.X_RIGHT_POST - court.X_CENTER
+    frac = min(1.0, abs(float(x_m) - court.X_CENTER) / span) if span > 0 else 0.0
+    return court.NET_HEIGHT_CENTER + frac * (court.NET_HEIGHT_POST
+                                             - court.NET_HEIGHT_CENTER)
+
+
+@dataclass
+class NetClearance:
+    """How far the far baseline sits ABOVE the net tape in the image, in pixels.
+
+    `margin_px > 0` means the far baseline is clear of the tape, so a human - or
+    a detector - can tell the two lines apart. `<= 0` means they overlap and no
+    amount of careful clicking, and no gate, can separate them.
+
+    `margin_px_720` is the same number normalised to 720p, because every pixel
+    threshold in this project scales by frame_height/720. `worst_margin_px_720`
+    repeats the measurement at both doubles sidelines, where the net is taller
+    (1.07 m at the posts) and the occlusion is therefore slightly worse.
+    """
+    margin_px: float
+    margin_px_720: float
+    worst_margin_px_720: float
+    level: str            # good | marginal | poor
+    tape_row: float
+    far_row: float
+    hfov_deg: float
+    message: str
+
+    @property
+    def clear(self) -> bool:
+        """True when the two lines are geometrically separated at the centre."""
+        return self.margin_px_720 > 0.0
+
+
+def net_tape_clearance(H: np.ndarray, img_wh: Sequence[float], *,
+                       hfov_deg: Optional[float] = None,
+                       good_px: float = CLEARANCE_GOOD_PX
+                       ) -> Optional[NetClearance]:
+    """Pixels of daylight between the far baseline and the top of the net tape.
+
+    Pure geometry: it needs the four corners and the frame size, nothing from the
+    image, so it can run on every preview frame while the user is still moving
+    the phone. `hfov_deg` defaults to the focal SELF-CALIBRATED from `H` itself
+    (`focal_from_homography`), so the criterion has no free parameter - the four
+    corners determine it. Returns None when no physical camera fits the quad.
+    """
+    w, h = float(img_wh[0]), float(img_wh[1])
+    if hfov_deg is None:
+        f = focal_from_homography(H, img_wh)
+        hfov_deg = hfov_from_focal(f, w) if f else 70.0
+    scale = 720.0 / h if h > 0 else 1.0
+    xs = (court.X_CENTER, court.X_LEFT_DOUBLES, court.X_RIGHT_DOUBLES)
+    tape = project_court_3d(H, img_wh,
+                            [(x, court.NET_Y, _net_height_at_x(x)) for x in xs],
+                            hfov_deg)
+    if tape is None:
+        return None
+    far = court_to_image(H, [(x, court.Y_FAR_BASELINE) for x in xs])
+    margins = [float(tape[i][1] - far[i][1]) for i in range(len(xs))]
+    m_px = margins[0]
+    m720 = m_px * scale
+    worst = min(m * scale for m in margins)
+
+    if m720 >= good_px:
+        level = "good"
+        msg = (f"Far baseline is {m720:.0f} px clear of the net tape - high enough "
+               f"that the two lines cannot be confused.")
+    elif m720 > 0.0:
+        level = "marginal"
+        msg = (f"Only {m720:.0f} px between the far baseline and the net tape. "
+               f"Raise the camera a little - clamping to the fence (~2.5 m) gives "
+               f"{good_px:.0f} px or more.")
+    else:
+        level = "poor"
+        msg = (f"The net tape and the far baseline OVERLAP in this view (the far "
+               f"baseline is {-m720:.0f} px BEHIND the tape), so they cannot be "
+               f"told apart. Raise the camera: a fence clamp at ~2.5 m clears it, "
+               f"a standing tripod at ~1.5 m does not.")
+    return NetClearance(margin_px=m_px, margin_px_720=m720,
+                        worst_margin_px_720=worst, level=level,
+                        tape_row=float(tape[0][1]), far_row=float(far[0][1]),
+                        hfov_deg=float(hfov_deg), message=msg)
+
+
 @dataclass
 class FramingReport:
     """Plain-English quality grade of a court setup, so the app can guide framing
@@ -1120,6 +1231,11 @@ class FramingReport:
     coverage: float           # lines land on real white pixels
     elevation: float          # far/near baseline width ratio; low => flat/low camera
     messages: list
+    # Pixels of daylight between the far baseline and the net tape, at 720p.
+    # <= 0 means they OVERLAP and no calibration of this view can be verified.
+    # None when no physical camera fits the quad. See net_tape_clearance.
+    clearance_px_720: Optional[float] = None
+    clearance_level: Optional[str] = None    # good | marginal | poor
 
     @property
     def ok(self) -> bool:
@@ -1128,7 +1244,8 @@ class FramingReport:
 
 def framing_report(frame: np.ndarray, H: np.ndarray, *,
                    min_coverage: float = 0.40, min_centrality: float = 0.60,
-                   min_elevation: float = 0.28) -> FramingReport:
+                   min_elevation: float = 0.28,
+                   min_clearance_px: float = CLEARANCE_GOOD_PX) -> FramingReport:
     """Grade how well a clip is framed for reliable analysis, given a court
     calibration H (auto-detected or manual). Checks SwingVision's canonical-setup
     requirements: all 4 corners in frame, court centred, camera high enough (the
@@ -1168,16 +1285,29 @@ def framing_report(frame: np.ndarray, H: np.ndarray, *,
         msgs.append("Court lines are hard to detect - set the corners manually, or "
                     "improve lighting/framing.")
 
+    # The DERIVED height requirement. `min_elevation` above is a guessed proxy on
+    # a width ratio; this is the thing the ratio was standing in for, measured in
+    # pixels of the actual image. Advisory: it can hold a setup back from "good"
+    # and always explains itself, but it never produces "poor" and never refuses.
+    clr = net_tape_clearance(H, (w, h))
+    clr_ok = True
+    if clr is not None and clr.margin_px_720 < min_clearance_px:
+        clr_ok = False
+        msgs.append(clr.message)
+
     if n_vis < 3:
         level = "poor"   # can't even see the court -> a real framing problem
     elif (n_vis == 4 and cen >= min_centrality and elev >= min_elevation
-          and cov >= min_coverage):
+          and cov >= min_coverage and clr_ok):
         level = "good"
         msgs.insert(0, "Framing looks good - whole court visible, centred, lines clear.")
     else:
         level = "warn"   # usable, but a fixable issue (corner, angle, or faint lines)
     return FramingReport(level=level, corners_visible=n_vis, centrality=cen,
-                         coverage=cov, elevation=elev, messages=msgs)
+                         coverage=cov, elevation=elev, messages=msgs,
+                         clearance_px_720=(None if clr is None
+                                           else clr.margin_px_720),
+                         clearance_level=(None if clr is None else clr.level))
 
 
 _AM_CORNER_NAMES = ("far_bl_doubles", "far_br_doubles",

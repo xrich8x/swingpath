@@ -1,0 +1,344 @@
+[
+ {
+  "clip": "A7vXlWIlyrI_pts",
+  "camera_height_m": 1.69,
+  "elevation": 0.19888211018285354,
+  "margin_px_720": -10.034132361676862,
+  "worst_px_720": -15.74871365684324,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "CYqapSq5llo_pts",
+  "camera_height_m": 1.98,
+  "elevation": 0.21391701856755066,
+  "margin_px_720": -6.668385604213086,
+  "worst_px_720": -14.575006156430465,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "HoHxFSX_gLk_s1_pts",
+  "camera_height_m": 1.71,
+  "elevation": 0.26155499736030463,
+  "margin_px_720": -13.991490688300246,
+  "worst_px_720": -20.930142972449932,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "HoHxFSX_gLk_s2_pts",
+  "camera_height_m": 1.59,
+  "elevation": 0.17013253135000211,
+  "margin_px_720": -8.730405045889256,
+  "worst_px_720": -14.496034242176165,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "HoHxFSX_gLk_s3_pts",
+  "camera_height_m": 1.6,
+  "elevation": 0.20827784512201222,
+  "margin_px_720": -11.269332893141382,
+  "worst_px_720": -17.97303507061527,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "L73ep7JHiJ4_pts",
+  "camera_height_m": 2.89,
+  "elevation": 0.2152992052328464,
+  "margin_px_720": 12.025139000516521,
+  "worst_px_720": 5.828589319971854,
+  "level": "good",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "UHf0LeMU2pg_pts",
+  "camera_height_m": 3.35,
+  "elevation": 0.21840213126573177,
+  "margin_px_720": 24.54910468146274,
+  "worst_px_720": 16.748044354516782,
+  "level": "good",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "am_hard_utr_pts",
+  "camera_height_m": 1.74,
+  "elevation": 0.18178450008439664,
+  "margin_px_720": -7.846618207240529,
+  "worst_px_720": -13.536445010290283,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "court_pts",
+  "camera_height_m": 14.62,
+  "elevation": 0.6249999999999998,
+  "margin_px_720": 1153.9822173921098,
+  "worst_px_720": 886.2549320934046,
+  "level": "good",
+  "audit_verdict": "DEGENERATE"
+ },
+ {
+  "clip": "court_pts",
+  "camera_height_m": 14.62,
+  "elevation": 0.6249999999999998,
+  "margin_px_720": 1153.9822173921098,
+  "worst_px_720": 886.2549320934046,
+  "level": "good",
+  "audit_verdict": "DEGENERATE"
+ },
+ {
+  "clip": "court_pts_refined",
+  "camera_height_m": 12.28,
+  "elevation": 0.6487629550656475,
+  "margin_px_720": 1341.6498260014891,
+  "worst_px_720": 1014.5361510949971,
+  "level": "good",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "court_pts_refined",
+  "camera_height_m": 12.28,
+  "elevation": 0.6487629550656475,
+  "margin_px_720": 1341.6498260014891,
+  "worst_px_720": 1014.5361510949971,
+  "level": "good",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "demo30_pts",
+  "camera_height_m": 1.38,
+  "elevation": 0.10580992469975284,
+  "margin_px_720": -10.239265524898542,
+  "worst_px_720": -15.138862333798215,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "e8T34KoJzOw_s2_pts",
+  "camera_height_m": 1.76,
+  "elevation": 0.16740206302151697,
+  "margin_px_720": -7.41118158373888,
+  "worst_px_720": -12.939681552498692,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "eala_pts_auto",
+  "camera_height_m": 8.89,
+  "elevation": 0.5636445454338705,
+  "margin_px_720": 7.197548740819087,
+  "worst_px_720": -0.2328591920920644,
+  "level": "marginal",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "flexi_franz_p01_pts",
+  "camera_height_m": 2.5,
+  "elevation": 0.2634140791520059,
+  "margin_px_720": 1.1365677100776186,
+  "worst_px_720": -6.344417315030796,
+  "level": "marginal",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "flexi_franz_p07_pts",
+  "camera_height_m": 2.51,
+  "elevation": 0.26930691354275577,
+  "margin_px_720": 0.8198265830992189,
+  "worst_px_720": -7.204218250249785,
+  "level": "marginal",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "flexi_joy_p01_pts",
+  "camera_height_m": 1.36,
+  "elevation": 0.2477599070124468,
+  "margin_px_720": -19.589489454499507,
+  "worst_px_720": -26.32431078529911,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "flexi_joy_p07_pts",
+  "camera_height_m": 1.36,
+  "elevation": 0.23628058131248492,
+  "margin_px_720": -18.387447821738267,
+  "worst_px_720": -25.011541136708463,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "hillsborough_p02_pts",
+  "camera_height_m": 1.64,
+  "elevation": 0.26795524261503245,
+  "margin_px_720": -13.50441257602597,
+  "worst_px_720": -19.543073543279736,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "hillsborough_p08_pts",
+  "camera_height_m": 1.63,
+  "elevation": 0.24181216278017198,
+  "margin_px_720": -11.540928138097645,
+  "worst_px_720": -17.110131651915175,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "mpc_mixed_p02_pts",
+  "camera_height_m": 1.64,
+  "elevation": 0.20703899104646495,
+  "margin_px_720": -10.174569811549114,
+  "worst_px_720": -15.517187637948382,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "mpc_mixed_p08_pts",
+  "camera_height_m": 1.63,
+  "elevation": 0.2056488283635188,
+  "margin_px_720": -10.057892179150636,
+  "worst_px_720": -15.616358978799326,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "mpc_tuesday_p01_pts",
+  "camera_height_m": 2.79,
+  "elevation": 0.26681640513935034,
+  "margin_px_720": 5.3548325061303785,
+  "worst_px_720": -3.790297359994952,
+  "level": "marginal",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "mpc_tuesday_p07_pts",
+  "camera_height_m": 2.81,
+  "elevation": 0.27217481544487565,
+  "margin_px_720": 5.447568186345544,
+  "worst_px_720": -3.8446247745623623,
+  "level": "marginal",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "sAjkpeRq4P4_pts",
+  "camera_height_m": 3.33,
+  "elevation": 0.23253178693786852,
+  "margin_px_720": 16.123216286702018,
+  "worst_px_720": 10.180390497805963,
+  "level": "good",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "tc8CGFxyRE8_pts",
+  "camera_height_m": 2.0,
+  "elevation": 0.2083035278451845,
+  "margin_px_720": -6.6281277896232496,
+  "worst_px_720": -16.94150461985987,
+  "level": "poor",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "uR5q2cSM6AY_pts",
+  "camera_height_m": 3.32,
+  "elevation": 0.21737012981752177,
+  "margin_px_720": 14.810068747866428,
+  "worst_px_720": 3.7734315651339707,
+  "level": "good",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "yt_court_pts",
+  "camera_height_m": 2.42,
+  "elevation": 0.22840432385352083,
+  "margin_px_720": 1.6019522021914554,
+  "worst_px_720": -6.73546068703007,
+  "level": "marginal",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "yt_court_pts",
+  "camera_height_m": 2.42,
+  "elevation": 0.22840432385352083,
+  "margin_px_720": 1.6019522021914554,
+  "worst_px_720": -6.73546068703007,
+  "level": "marginal",
+  "audit_verdict": "PASS"
+ },
+ {
+  "clip": "yt_court_pts_doubles",
+  "camera_height_m": 3.78,
+  "elevation": 0.15631787380661932,
+  "margin_px_720": null,
+  "worst_px_720": null,
+  "level": null,
+  "audit_verdict": "NO PHYSICAL CAMERA FITS (DEGENERATE)"
+ },
+ {
+  "clip": "yt_court_pts_doubles",
+  "camera_height_m": 3.78,
+  "elevation": 0.15631787380661932,
+  "margin_px_720": null,
+  "worst_px_720": null,
+  "level": null,
+  "audit_verdict": "NO PHYSICAL CAMERA FITS (DEGENERATE)"
+ },
+ {
+  "clip": "yt_court_pts_refined",
+  "camera_height_m": 7.09,
+  "elevation": 0.7185075197186288,
+  "margin_px_720": -60.975052937069904,
+  "worst_px_720": -60.975052937069904,
+  "level": "poor",
+  "audit_verdict": "DEGENERATE"
+ },
+ {
+  "clip": "yt_court_pts_refined",
+  "camera_height_m": 7.09,
+  "elevation": 0.7185075197186288,
+  "margin_px_720": -60.975052937069904,
+  "worst_px_720": -60.975052937069904,
+  "level": "poor",
+  "audit_verdict": "DEGENERATE"
+ },
+ {
+  "clip": "yt_court_pts_singles",
+  "camera_height_m": 3.33,
+  "elevation": 0.15496705571508954,
+  "margin_px_720": 71.4404935843337,
+  "worst_px_720": -57.80751404819779,
+  "level": "good",
+  "audit_verdict": "DEGENERATE"
+ },
+ {
+  "clip": "yt_court_pts_singles",
+  "camera_height_m": 3.33,
+  "elevation": 0.15496705571508954,
+  "margin_px_720": 71.4404935843337,
+  "worst_px_720": -57.80751404819779,
+  "level": "good",
+  "audit_verdict": "DEGENERATE"
+ },
+ {
+  "clip": "yt_match40_pts",
+  "camera_height_m": 1.64,
+  "elevation": 0.1900565329262089,
+  "margin_px_720": -8.915155021597798,
+  "worst_px_720": -14.112127331938723,
+  "level": "poor",
+  "audit_verdict": "LOW-CAMERA"
+ },
+ {
+  "clip": "yt_rally2_pts",
+  "camera_height_m": 3.31,
+  "elevation": 0.1896547796203639,
+  "margin_px_720": 18.225385864833555,
+  "worst_px_720": 13.06729708678185,
+  "level": "good",
+  "audit_verdict": "PASS"
+ }
+]

@@ -478,3 +478,30 @@ note what you had to do to get up there. Two reasons it outranks everything else
 **Unaffected, stated so no session is spent re-screening for it:** the ~3–6 h
 point-boundary labelling. A point boundary is a **time, not a place** — it consumes no
 homography, so mount height is irrelevant and low-mount clips are fine labelling material.
+
+---
+
+## The live setup criterion is shipped — three calls it hands back (backend-dev, 2026-09-05)
+
+`calibration.net_tape_clearance` now measures, in pixels, whether the far baseline is clear
+of the net tape, and `run.py check` prints it. Full evidence and the per-clip sweep:
+`docs/evidence/live-setup-criterion.md`. Three things it raises and does not decide.
+
+- **Should `min_elevation = 0.28` be DELETED from `framing_report`?** The derivation says the
+  crossover corresponds to a far/near width ratio of **~0.12**, not 0.28, and that 0.28 implies
+  a camera **8.5–10.0 m up** — a broadcast tower, while the message it prints advises a 2.5 m
+  fence clamp that could never satisfy it. Worse, the ratio does not measure what it claims:
+  **Spearman(ratio, clearance) = +0.189** against **Spearman(camera height, clearance) =
+  +0.937** over 28 calibrations, and the ratios of "poor" and "good" clips overlap completely.
+  I **left 0.28 untouched** — deleting a shipped check is a behaviour change and not this
+  run's call — but on this evidence no value of it is defensible. Removal is a one-line change
+  plus the two `test_selfcheck` framing tests.
+- **What does the app say to a user who cannot reach 2.5 m?** 16 of 28 existing calibrations
+  (57%) are below the crossover, all 16 of them phone-height mounts. The criterion tells them
+  to clamp to a fence. If no fence exists, there is currently no second answer, and "record
+  anyway, results unverifiable" is a product decision rather than a geometric one.
+- **One eye-check, cheap and specific.** The criterion locates the *geometric* crossover, not
+  the *perceptual* one. Nobody has looked at a frame from a clip near **+5 px** (e.g.
+  `mpc_tuesday_p01`, 2.79 m) to confirm the two lines are actually distinguishable there. If
+  they are not, the good band belongs higher than +10 px — and that would be a finding, not a
+  reason to retune. Rule: the bands stay as pre-registered until an eye says otherwise.
