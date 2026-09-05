@@ -395,3 +395,39 @@ tape; the tape is 0.914 m up and must image higher.
 **Not blocking anything.** The verdict is AGREE with or without these two, and no
 fitted height is being changed either way. What they buy is knowing whether the
 residual few-percent spread is net sag or calibration.
+
+---
+
+## Net-post detector: FAILED its bar. Two eye-checks, and one keep-or-cut call. 2026-09-05 (backend-dev)
+
+The net post was ranked the #1 next off-plane calibration reference
+(`independent-calibration-references.md`). It is built, swept over the corpus, and it
+**FAILS its pre-registered bar: 3 of 11 confident clips within 10% of the fitted
+height, against a 2/3 bar.** The tape scores 13/15 on the same corpus with the same
+constants. Full write-up: `docs/evidence/net-post-detector.md`. Nothing was gated,
+nothing was rejected, no fitted height changed.
+
+**Only an eye can settle these two**, and they are the mechanism behind the whole
+failure — I inferred it from numbers alone and flagged it as inferred:
+
+- **`bump_ntrp30`** — **is there a horizontal fence rail behind BOTH net posts?**
+  Both posts locked their "top" at `h' ~ 3.46` m above the net line, agreeing with each
+  other to 1.5 px, and produced a confident −69.1% camera height. A rail spanning both
+  posts at one height is the parsimonious explanation, and if it is right then the
+  two-post cross-check (P5) is confounded by exactly the confuser it was built to catch —
+  which is a structural objection to the post as an instrument, not a tuning problem.
+  Frame: `data/output/corner_audit/bump_ntrp30_netanchor.png`.
+- **`UHf0LeMU2pg`** — **same question**: both posts locked at `h' ~ 1.97` m, agreeing to
+  2.1 px, giving a confident −45.8%. Frame:
+  `data/output/corner_audit/UHf0LeMU2pg_netanchor.png`.
+
+**And one product call that is not mine.** `tools/net_post_height.py` and the
+`render_corner_audit.py --net-anchors --post-height` flag are shipped but OFF by default
+and documented as a failed diagnostic. **Keep them as a negative result others can
+re-run and extend, or cut them?** I kept them because a priced negative is cheaper to
+re-read than to rebuild, and because the `%/px` pricing in the tool is reusable by any
+future off-plane candidate. Cutting is defensible too.
+
+**Not blocking anything.** The tape remains the only working off-plane reference and is
+unchanged. Do NOT show a post-implied height to a user: on this corpus it would have
+told someone their 3.73 m camera was at 1.16 m.

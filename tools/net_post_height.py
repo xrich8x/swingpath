@@ -88,6 +88,7 @@ import argparse
 import json
 import pathlib
 import sys
+import warnings
 
 import numpy as np
 
@@ -130,7 +131,12 @@ def _perp_samples(plate, pts, s):
     def band(k0, k1):
         acc = [nth._bilinear(plate, p[:, 0] + k * n[:, 0], p[:, 1] + k * n[:, 1])
                for k in range(k0, k1 + 1)]
-        return np.nanmean(np.stack(acc, 0), axis=0)
+        st = np.stack(acc, 0)
+        # An all-NaN column is a legitimate off-frame sample, not an error; NaN is
+        # the intended answer and P1 counts them.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            return np.nanmean(st, axis=0)
 
     on = band(-w_on, w_on)
     right = band(bg_in, bg_out)

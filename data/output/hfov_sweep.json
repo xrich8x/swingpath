@@ -1,0 +1,538 @@
+{
+ "clips": [
+  {
+   "tag": "A7vXlWIlyrI_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 81.20264533914451,
+   "h_m": 1.6864773220955351,
+   "fit_px": 0.8895510438977949,
+   "roll": -0.40669585374814693,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.69
+  },
+  {
+   "tag": "am_hard_utr_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 86.10346755826755,
+   "h_m": 1.7432715371399956,
+   "fit_px": 0.6501321190672005,
+   "roll": 0.43648858704261856,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.74
+  },
+  {
+   "tag": "court_pts.json",
+   "wh": [
+    1280,
+    720
+   ],
+   "wh_found": false,
+   "hfov": 8.797909668699113,
+   "h_m": 14.621329282066023,
+   "fit_px": 38.06262232881795,
+   "roll": 0.012543039098689222,
+   "stamped": "DEGENERATE",
+   "stamp_h": 14.62
+  },
+  {
+   "tag": "court_pts_refined.json",
+   "wh": [
+    1280,
+    720
+   ],
+   "wh_found": false,
+   "hfov": 12.32151360084903,
+   "h_m": 12.275586568227745,
+   "fit_px": 2.2535838410108724,
+   "roll": -0.17762934971154323,
+   "stamped": "PASS",
+   "stamp_h": 12.28
+  },
+  {
+   "tag": "CYqapSq5llo_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 66.9052003872023,
+   "h_m": 1.9802553633916447,
+   "fit_px": 1.5218920352947898,
+   "roll": 0.005428086631260698,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.98
+  },
+  {
+   "tag": "demo30_pts.json",
+   "wh": [
+    1280,
+    720
+   ],
+   "wh_found": true,
+   "hfov": 104.16344174618553,
+   "h_m": 1.3753712918640677,
+   "fit_px": 0.5104633330293284,
+   "roll": -0.1988186159872148,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.38
+  },
+  {
+   "tag": "e8T34KoJzOw_s2_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 86.44364862707104,
+   "h_m": 1.7573684413692738,
+   "fit_px": 0.04819103486057962,
+   "roll": -0.0576904590635991,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.76
+  },
+  {
+   "tag": "eala_pts_auto.json",
+   "wh": [
+    1280,
+    720
+   ],
+   "wh_found": false,
+   "hfov": 23.44156688792953,
+   "h_m": 8.88576715063363,
+   "fit_px": 3.7234232414010675,
+   "roll": 1.0547009986876041,
+   "stamped": "PASS",
+   "stamp_h": 8.89
+  },
+  {
+   "tag": "flexi_franz_p01_pts.json",
+   "wh": [
+    3840,
+    2160
+   ],
+   "wh_found": true,
+   "hfov": 60.573096761499926,
+   "h_m": 2.50302455636659,
+   "fit_px": 0.1568593852781791,
+   "roll": 0.06988213277373306,
+   "stamped": "PASS",
+   "stamp_h": 2.5
+  },
+  {
+   "tag": "flexi_franz_p07_pts.json",
+   "wh": [
+    3840,
+    2160
+   ],
+   "wh_found": true,
+   "hfov": 59.58827542591371,
+   "h_m": 2.5085664300458617,
+   "fit_px": 2.4508722698600525,
+   "roll": 0.16721521072867354,
+   "stamped": "PASS",
+   "stamp_h": 2.51
+  },
+  {
+   "tag": "flexi_joy_p01_pts.json",
+   "wh": [
+    3840,
+    2160
+   ],
+   "wh_found": true,
+   "hfov": 67.43435792729693,
+   "h_m": 1.3618206107811885,
+   "fit_px": 0.45240470673140176,
+   "roll": 0.03522329783467674,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.36
+  },
+  {
+   "tag": "flexi_joy_p07_pts.json",
+   "wh": [
+    3840,
+    2160
+   ],
+   "wh_found": true,
+   "hfov": 71.27574025680227,
+   "h_m": 1.3611381925891517,
+   "fit_px": 0.37161244010237465,
+   "roll": 0.2534443663190662,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.36
+  },
+  {
+   "tag": "hillsborough_p02_pts.json",
+   "wh": [
+    3840,
+    2160
+   ],
+   "wh_found": true,
+   "hfov": 71.64244822314551,
+   "h_m": 1.6380281814782998,
+   "fit_px": 0.75499132549411,
+   "roll": -0.09120750110357839,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.64
+  },
+  {
+   "tag": "hillsborough_p08_pts.json",
+   "wh": [
+    3840,
+    2160
+   ],
+   "wh_found": true,
+   "hfov": 80.0675190127125,
+   "h_m": 1.6321399534100012,
+   "fit_px": 0.00021783160067805887,
+   "roll": -0.23914139916063673,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.63
+  },
+  {
+   "tag": "HoHxFSX_gLk_s1_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 65.08490089364223,
+   "h_m": 1.7102372706682454,
+   "fit_px": 0.31057276649497856,
+   "roll": -0.26257613857599776,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.71
+  },
+  {
+   "tag": "HoHxFSX_gLk_s2_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 94.27471969109874,
+   "h_m": 1.5910260715825526,
+   "fit_px": 1.0126604467307674,
+   "roll": 1.1386105531760826,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.59
+  },
+  {
+   "tag": "HoHxFSX_gLk_s3_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 83.0638824838378,
+   "h_m": 1.5972368396618521,
+   "fit_px": 0.0008356739826968947,
+   "roll": 0.8764491324945832,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.6
+  },
+  {
+   "tag": "L73ep7JHiJ4_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 80.4351554962066,
+   "h_m": 2.8877906502573314,
+   "fit_px": 0.6823806787219231,
+   "roll": 0.36397000184493555,
+   "stamped": "PASS",
+   "stamp_h": 2.89
+  },
+  {
+   "tag": "mpc_mixed_p02_pts.json",
+   "wh": [
+    3840,
+    2160
+   ],
+   "wh_found": true,
+   "hfov": 85.68529879043042,
+   "h_m": 1.6360550858163871,
+   "fit_px": 1.9944777062346983,
+   "roll": -0.5517984325707534,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.64
+  },
+  {
+   "tag": "mpc_mixed_p08_pts.json",
+   "wh": [
+    3840,
+    2160
+   ],
+   "wh_found": true,
+   "hfov": 86.35171534692024,
+   "h_m": 1.6284260543831302,
+   "fit_px": 1.228493708919074,
+   "roll": -0.5695417763815868,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.63
+  },
+  {
+   "tag": "mpc_tuesday_p01_pts.json",
+   "wh": [
+    3840,
+    2160
+   ],
+   "wh_found": true,
+   "hfov": 68.46770785437165,
+   "h_m": 2.793967580723896,
+   "fit_px": 0.8997833841258203,
+   "roll": -1.3298052213353773,
+   "stamped": "PASS",
+   "stamp_h": 2.79
+  },
+  {
+   "tag": "mpc_tuesday_p07_pts.json",
+   "wh": [
+    3840,
+    2160
+   ],
+   "wh_found": true,
+   "hfov": 67.5719430126746,
+   "h_m": 2.81331255752089,
+   "fit_px": 0.5349529105746396,
+   "roll": -1.1432700272605578,
+   "stamped": "PASS",
+   "stamp_h": 2.81
+  },
+  {
+   "tag": "sAjkpeRq4P4_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 83.13056346580676,
+   "h_m": 3.3286140932919155,
+   "fit_px": 2.7733489891770806,
+   "roll": 0.5722026004084353,
+   "stamped": "PASS",
+   "stamp_h": 3.33
+  },
+  {
+   "tag": "tc8CGFxyRE8_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 62.04527200019257,
+   "h_m": 2.00359720172247,
+   "fit_px": 1.4076962725012068,
+   "roll": 1.5051911858899532,
+   "stamped": "PASS",
+   "stamp_h": 2.0
+  },
+  {
+   "tag": "UHf0LeMU2pg_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 72.75965766678735,
+   "h_m": 3.34888069711021,
+   "fit_px": 2.737487424234449,
+   "roll": -0.6407523417290323,
+   "stamped": "PASS",
+   "stamp_h": 3.35
+  },
+  {
+   "tag": "uR5q2cSM6AY_pts.json",
+   "wh": [
+    1920,
+    1080
+   ],
+   "wh_found": true,
+   "hfov": 86.20629352645979,
+   "h_m": 3.31989014076105,
+   "fit_px": 9.298236184053227,
+   "roll": -2.9997726225886487,
+   "stamped": "PASS",
+   "stamp_h": 3.32
+  },
+  {
+   "tag": "yt_court_pts.json",
+   "wh": [
+    1280,
+    720
+   ],
+   "wh_found": false,
+   "hfov": 60.01715021956538,
+   "h_m": 2.420021022154824,
+   "fit_px": 2.105175059510214,
+   "roll": 0.08471509744517906,
+   "stamped": "PASS",
+   "stamp_h": 2.42
+  },
+  {
+   "tag": "yt_court_pts_doubles.json",
+   "wh": [
+    1280,
+    720
+   ],
+   "wh_found": false,
+   "hfov": -165.6816871533301,
+   "h_m": 3.7772812407033483,
+   "fit_px": 54.46969540313212,
+   "roll": -0.7431732575176777,
+   "stamped": "DEGENERATE",
+   "stamp_h": 3.78
+  },
+  {
+   "tag": "yt_court_pts_refined.json",
+   "wh": [
+    1280,
+    720
+   ],
+   "wh_found": false,
+   "hfov": 12.735557337771585,
+   "h_m": 7.090247992576272,
+   "fit_px": 48.34973533696386,
+   "roll": 2.9999999963164425,
+   "stamped": "DEGENERATE",
+   "stamp_h": 7.09
+  },
+  {
+   "tag": "yt_court_pts_singles.json",
+   "wh": [
+    1280,
+    720
+   ],
+   "wh_found": false,
+   "hfov": -168.79414901994622,
+   "h_m": 3.3343667529584664,
+   "fit_px": 90.94708285498922,
+   "roll": -2.999988287019619,
+   "stamped": "DEGENERATE",
+   "stamp_h": 3.33
+  },
+  {
+   "tag": "yt_match40_pts.json",
+   "wh": [
+    1280,
+    720
+   ],
+   "wh_found": true,
+   "hfov": 91.04403181160347,
+   "h_m": 1.6414796407116246,
+   "fit_px": 0.00014749101621396542,
+   "roll": 0.1800109907675509,
+   "stamped": "LOW-CAMERA",
+   "stamp_h": 1.64
+  },
+  {
+   "tag": "yt_rally2_pts.json",
+   "wh": [
+    1280,
+    720
+   ],
+   "wh_found": true,
+   "hfov": 93.70620509701948,
+   "h_m": 3.314573573183224,
+   "fit_px": 1.383342274147116,
+   "roll": -0.7848200610066997,
+   "stamped": "PASS",
+   "stamp_h": 3.31
+  }
+ ],
+ "compression": [
+  {
+   "tag": "yt_match40_pts.json",
+   "alpha": 0.0,
+   "hfov": 91.04403181160347,
+   "h_m": 1.6414796407116246,
+   "fit_px": 0.00014749101621396542
+  },
+  {
+   "tag": "yt_match40_pts.json",
+   "alpha": 0.15,
+   "hfov": 55.28295167188268,
+   "h_m": 1.661172672438099,
+   "fit_px": 0.08034009940522484
+  },
+  {
+   "tag": "yt_match40_pts.json",
+   "alpha": 0.3,
+   "hfov": 34.40576421541494,
+   "h_m": 1.6614202100737518,
+   "fit_px": 0.08806002050606118
+  },
+  {
+   "tag": "yt_match40_pts.json",
+   "alpha": 0.5,
+   "hfov": 18.273548104202735,
+   "h_m": 1.665190641307586,
+   "fit_px": 0.07103841176437722
+  },
+  {
+   "tag": "yt_match40_pts.json",
+   "alpha": 0.7,
+   "hfov": 8.673667308646728,
+   "h_m": 1.6665910403534392,
+   "fit_px": 0.04462417698099787
+  },
+  {
+   "tag": "yt_match40_pts.json",
+   "alpha": 0.9,
+   "hfov": 2.4331626284366097,
+   "h_m": 1.1976054571476258,
+   "fit_px": 2.9887474127611067
+  },
+  {
+   "tag": "flexi_franz_p01_pts.json",
+   "alpha": 0.0,
+   "hfov": 60.573096761499926,
+   "h_m": 2.50302455636659,
+   "fit_px": 0.1568593852781791
+  },
+  {
+   "tag": "flexi_franz_p01_pts.json",
+   "alpha": 0.15,
+   "hfov": 38.19376520434936,
+   "h_m": 2.523663512339473,
+   "fit_px": 0.7349147439386577
+  },
+  {
+   "tag": "flexi_franz_p01_pts.json",
+   "alpha": 0.3,
+   "hfov": 24.751307165971127,
+   "h_m": 2.5458404996072037,
+   "fit_px": 0.9053070019346787
+  },
+  {
+   "tag": "flexi_franz_p01_pts.json",
+   "alpha": 0.5,
+   "hfov": 13.702890013418425,
+   "h_m": 2.5502413723740727,
+   "fit_px": 0.8476029617473197
+  },
+  {
+   "tag": "flexi_franz_p01_pts.json",
+   "alpha": 0.7,
+   "hfov": 6.679987630244752,
+   "h_m": 2.5345261639155847,
+   "fit_px": 0.5062029903546608
+  },
+  {
+   "tag": "flexi_franz_p01_pts.json",
+   "alpha": 0.9,
+   "hfov": 5.46865058963639,
+   "h_m": 0.9957193049928563,
+   "fit_px": 123.4377129278803
+  }
+ ]
+}

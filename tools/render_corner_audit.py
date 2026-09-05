@@ -161,8 +161,32 @@ def render(pts_path, frame_index, out_dir):
             "residual_px": resid, "camera_h_m": camh, "off_frame": off, "flag": flag}
 
 
+def post_height_row(video, kp, img_wh, hfov):
+    """The NET-POST camera height, for the caption. Imported lazily so this
+    module keeps working if the post tool is absent.
+
+    THE POST NUMBER FAILED ITS PRE-REGISTERED BAR - 3 of 11 confident clips within
+    10% of the fitted height, against a 2/3 bar, with confident rows off by up to
+    +261.7% (docs/evidence/net-post-detector.md). It is carried here as a
+    diagnostic beside the tape, never as a gate and never as something to show a
+    user. The tape (13/15) is the number that works."""
+    try:
+        import net_post_height as nph
+        import net_tape_height as nth
+    except Exception:                                # noqa: BLE001
+        return None
+    plate = nth.clean_plate(video)
+    if plate is None:
+        return None
+    w, h = img_wh
+    h_fit = nth.fitted_height(kp, w, h)
+    if h_fit is None:
+        return None
+    return nph.measure_post_height(plate[0], kp, img_wh, hfov, h_fit)
+
+
 def render_net_anchors(pts_path, frame_index, out_dir, tag_override=None,
-                       video_tag=None):
+                       video_tag=None, post_height=False):
     """The NET-ANCHOR check, rendered to its OWN image.
 
     Deliberately a separate PNG from the corner sheet above. The corner sheet's
@@ -194,6 +218,7 @@ def render_net_anchors(pts_path, frame_index, out_dir, tag_override=None,
 
     hfov = net_anchor_check.hfov_for(kp, w, h)
     meas, geo = net_anchor_check.measure(frame, kp, (w, h), hfov)
+    post = post_height_row(video, kp, (w, h), hfov) if post_height else None
     rows = [
         (f"{tag}   {video.name}   frame {frame_index}   {w}x{h}   "
          + (f"hfov {hfov:.0f}deg (fitted)" if hfov else "hfov UNKNOWN"), WHITE),
@@ -209,9 +234,23 @@ def render_net_anchors(pts_path, frame_index, out_dir, tag_override=None,
         ("Do NOT read the GREEN ground line against the tape - that is the apples-to-"
          "oranges error; the tape is 0.914 m up and MUST image higher.", AMBER),
     ]
+    if post is not None:
+        rows.append(
+            (f"POST-implied camera height {post.get('post_H_m')} m "
+             f"({post.get('pct_per_px_post')} %/px)  vs fitted "
+             f"{audit.get('camera_height_m')} m"
+             + (f"   REFUSED: {post['refused']}" if post.get("refused") else ""), GREY))
+        rows.append(
+            ("The POST number FAILED its pre-registered bar (3/11 within 10%; "
+             "docs/evidence/net-post-detector.md). Diagnostic only - do not show a user.",
+             AMBER))
     out = out_dir / f"{tag}_netanchor.png"
     cv2.imwrite(str(out), net_anchor_check.draw(frame, geo, meas, rows))
-    return {"tag": tag, "status": "rendered", "out": out.name,
+    extra = {} if post is None else {
+        "post_H_m": post.get("post_H_m"), "post_refused": post.get("refused"),
+        "pct_per_px_post": post.get("pct_per_px_post"),
+        "pct_per_px_tape": post.get("pct_per_px_tape")}
+    return {"tag": tag, "status": "rendered", "out": out.name, **extra,
             "verdict": audit.get("verdict"),
             "residual_px": audit.get("fit_residual_px"),
             "camera_h_m": audit.get("camera_height_m"),
@@ -229,6 +268,13 @@ def main():
                          "stem (for auditing a .bak or a variant file)")
     ap.add_argument("--video-tag", default=None,
                     help="clip tag to find the frame under, when --tag is not it")
+    ap.add_argument("--post-height", action="store_true",
+                    help="with --net-anchors, also measure the NET POSTS and print "
+                         "the post-implied camera height in the caption. Off by "
+                         "default: it costs a second decode for the clean plate, and "
+                         "the number FAILED its pre-registered bar - it is a "
+                         "diagnostic, never something to show a user. See "
+                         "docs/evidence/net-post-detector.md")
     ap.add_argument("--net-anchors", action="store_true",
                     help="render the NET-ANCHOR check instead: the net line and "
                          "both net posts, none of which is one of the four fitted "
@@ -244,7 +290,8 @@ def main():
     rows = []
     for f in files:
         try:
-            rows.append(fn(f, args.frame, out_dir, args.tag, args.video_tag)
+            rows.append(fn(f, args.frame, out_dir, args.tag, args.video_tag,
+                           args.post_height)
                         if args.net_anchors else fn(f, args.frame, out_dir))
         except Exception as e:                       # noqa: BLE001
             rows.append({"tag": f.stem, "status": "ERROR", "note": repr(e)[:110]})
