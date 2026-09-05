@@ -343,3 +343,22 @@ identifies the population at risk but does not predict which member flips (at an
 dropout. Whether a refusal that discards ~2 correct answers per error avoided is worth
 taking is a **product decision about downstream handling of a refused frame**, not a
 measurement — it is not answered by this run and should not be assumed.
+
+## Net-anchor check: two calibrations need a human eye (backend-dev, 2026-09-05)
+
+`tools/render_corner_audit.py --net-anchors` now renders the net TAPE (z=0.914 m)
+and both net POSTS over frame 0 of every calibration. The quantitative half
+(`band_ratio`) FAILED its pre-registered bars and was not replaced, so two files
+cannot be settled by machine:
+
+- `data/output/corner_audit/am_hard_utr_netanchor.png`
+- `data/output/corner_audit/sAjkpeRq4P4_netanchor.png`
+
+**Question for the founder:** does the yellow TAPE line lie along the real white
+net tape, and do the red sticks stand on the real net posts, in those two images?
+Nothing else in the repo can answer it — the corner sheets passed both, and the
+texture instrument that would decide them is the one that failed.
+
+Do NOT read the GREEN ground line against the tape: the tape is 0.914 m up and
+must image higher. That comparison is what produced the withdrawn "yt_match40 is
+still wrong" claim. See `docs/evidence/net-anchor-calibration-check.md` sec 1.

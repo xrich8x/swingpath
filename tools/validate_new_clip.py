@@ -9,6 +9,12 @@ Two checks:
      left/right swapped, and every court line projects as one contiguous in-frame run
      (no horizon crossing). The degenerate data/yt_court_pts_doubles.json failed all
      of these and silently broke the court overlay + ball gating all session.
+  3) NET ANCHORS (--net-anchors) - the only check here that is INDEPENDENT of the
+     four clicked corners. Checks 0 and 2 are computed from those corners alone, so
+     they can only ask whether the four points form a plausible court, never whether
+     they are the RIGHT four points. The net line, the net TAPE (0.914 m up) and the
+     two net posts (0.914 m outside the doubles sideline) are none of them fitted.
+     docs/evidence/net-anchor-calibration-check.md.
 
   # gate a new clip (+ optional calibration)
   cd backend && ../backend/.venv/Scripts/python.exe ../tools/validate_new_clip.py \
@@ -16,12 +22,17 @@ Two checks:
 
   # audit existing calibration files (no video needed for the corners geometry check)
   ../backend/.venv/Scripts/python.exe ../tools/validate_new_clip.py --audit ../data/*_pts.json
+
+  # ... plus the independent net-anchor rows (and render them:
+  #     tools/render_corner_audit.py --net-anchors)
+  ../backend/.venv/Scripts/python.exe ../tools/validate_new_clip.py --audit       ../data/<clip>_pts.json --net-anchors
 """
 from __future__ import annotations
 import argparse, glob, json, sys, time
 from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
+sys.path.insert(0, str(REPO / "tools"))
 import numpy as np
 from swingvision import calibration, court, overlay
 
@@ -79,6 +90,52 @@ def frame_size_for(kp_path, default):
 
 MAX_FIT_PX = 10.0   # beyond this the corners are not any real camera's view
 MAX_CAM_H = 15.0    # above this it is not a court-side mount
+
+
+def net_anchor_report(kp_path, img_wh):
+    """The NET-ANCHOR check, printed alongside the geometry audit.
+
+    Everything above this point is computed from the four clicked corners and
+    from nothing else, so it can only ask whether those four points form a
+    plausible court - never whether they are the RIGHT four points. The net line,
+    the net tape and the two net posts are at known court coordinates that no
+    clicked corner touches, so they are independent evidence. See
+    tools/net_anchor_check.py and docs/evidence/net-anchor-calibration-check.md.
+
+    Prints numbers only; the picture is the verdict, and
+    `render_corner_audit.py --net-anchors` draws it.
+    """
+    import net_anchor_check as nac
+    tag = Path(kp_path).name.split("_pts")[0]
+    kp = json.loads(Path(kp_path).read_text(encoding="utf-8"))
+    if any(n not in kp for n in CORN):
+        return
+    hfov = nac.hfov_for(kp, img_wh[0], img_wh[1])
+    geo = nac.net_anchor_geometry(kp, img_wh, hfov)
+    print(f"[net]   horizon row {geo['horizon_row']}   net GROUND row "
+          f"{geo['net_ground_row']}   net TAPE row {geo['net_tape_row']}"
+          + ("" if hfov is None else f"   (hfov {hfov:.0f}deg, fitted)"))
+    print("[net]   the TAPE row is what a human sees. Comparing the GROUND row to "
+          "the white tape is apples to oranges - the tape is 0.914 m up.")
+    for name, base in geo["post_bases"].items():
+        top = geo["post_tops"].get(name)
+        inside = 0 <= base[0] < img_wh[0] and 0 <= base[1] < img_wh[1]
+        print(f"[net]   {name}: base ({base[0]:.0f}, {base[1]:.0f})"
+              + ("" if top is None else f" top ({top[0]:.0f}, {top[1]:.0f})")
+              + ("" if inside else "   OFF-FRAME (normal on a low wide mount)"))
+    from render_corner_audit import find_video, grab_frame
+    vid = find_video(tag)
+    if vid is None:
+        print("[net]   no clip found - rows only, no image measurement")
+        return
+    frame = grab_frame(vid, 0)
+    if frame is None:
+        return
+    meas, _ = nac.measure(frame, kp, img_wh, hfov)
+    print(f"[net]   band_ratio {meas['band_ratio']} (best {meas['ratio_best']} at "
+          f"dy {meas['dy_best']} px, net {meas['net_px_height']} px tall)")
+    print("[net]   NOTE: the band_ratio/dy bars FAILED validation on this corpus "
+          "(they invert on yt_match40). Reported, not trusted - open the PNG.")
 
 
 def camera_fit(kp, img_wh):
@@ -190,6 +247,10 @@ def main():
     ap.add_argument("--keypoints", help="court corners JSON to sanity-check")
     ap.add_argument("--audit", nargs="*", help="calibration files to audit (geometry only)")
     ap.add_argument("--img-wh", default="1280x720", help="frame size for the calib geometry check")
+    ap.add_argument("--net-anchors", action="store_true",
+                    help="also report the NET-ANCHOR check: the net line, the net "
+                         "TAPE row and both net posts, none of which is one of the "
+                         "four fitted corners, so it is independent of the fit")
     ap.add_argument("--stamp", action="store_true",
                     help="write the verdict back into each audited file as an "
                          "\"_audit\" key, so a degenerate calibration announces "
@@ -206,6 +267,8 @@ def main():
     if args.keypoints:
         results.append(calib_sanity(args.keypoints, (fw, fh), args.stamp,
                                     img_wh_from_clip=bool(args.video)))
+        if args.net_anchors:
+            net_anchor_report(args.keypoints, (fw, fh))
     for f in (args.audit or []):
         # Each audited file gets ITS OWN clip's frame size where we can find it —
         # one --img-wh for a mixed 720p/1080p batch mis-measures every camera.
@@ -213,6 +276,8 @@ def main():
         if not found:
             print(f"[calib] {Path(f).name}: no data/<tag>.mp4 — assuming {wh[0]}x{wh[1]}")
         results.append(calib_sanity(f, wh, args.stamp, img_wh_from_clip=found))
+        if args.net_anchors:
+            net_anchor_report(f, wh)
     if not results:
         ap.error("give a video, --keypoints, and/or --audit")
     print(f"\nSUMMARY: {results.count('PASS')} pass, {results.count('WEAK')} weak, "

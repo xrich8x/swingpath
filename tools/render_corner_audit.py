@@ -161,7 +161,8 @@ def render(pts_path, frame_index, out_dir):
             "residual_px": resid, "camera_h_m": camh, "off_frame": off, "flag": flag}
 
 
-def render_net_anchors(pts_path, frame_index, out_dir):
+def render_net_anchors(pts_path, frame_index, out_dir, tag_override=None,
+                       video_tag=None):
     """The NET-ANCHOR check, rendered to its OWN image.
 
     Deliberately a separate PNG from the corner sheet above. The corner sheet's
@@ -171,12 +172,12 @@ def render_net_anchors(pts_path, frame_index, out_dir):
     the NET land on the net? See tools/net_anchor_check.py for why that is not
     circular and what the two pre-registered bars are.
     """
-    tag = pts_path.stem.replace("_pts", "")
+    tag = tag_override or pts_path.stem.replace("_pts", "")
     blob = json.loads(pts_path.read_text(encoding="utf-8"))
     kp = {k: blob[k] for k in CORNERS if k in blob}
     if len(kp) < 4:
         return {"tag": tag, "status": "SKIP", "note": f"only {len(kp)}/4 named corners"}
-    video = find_video(tag)
+    video = find_video(video_tag or tag)
     if video is None:
         return {"tag": tag, "status": "NO VIDEO", "note": "no matching .mp4 found"}
     frame = grab_frame(video, frame_index)
@@ -223,6 +224,11 @@ def main():
     ap.add_argument("--pts", nargs="*", default=None)
     ap.add_argument("--frame", type=int, default=0)
     ap.add_argument("--out-dir", default="data/output/corner_audit")
+    ap.add_argument("--tag", default=None,
+                    help="name this run something other than the filename "
+                         "stem (for auditing a .bak or a variant file)")
+    ap.add_argument("--video-tag", default=None,
+                    help="clip tag to find the frame under, when --tag is not it")
     ap.add_argument("--net-anchors", action="store_true",
                     help="render the NET-ANCHOR check instead: the net line and "
                          "both net posts, none of which is one of the four fitted "
@@ -238,7 +244,8 @@ def main():
     rows = []
     for f in files:
         try:
-            rows.append(fn(f, args.frame, out_dir))
+            rows.append(fn(f, args.frame, out_dir, args.tag, args.video_tag)
+                        if args.net_anchors else fn(f, args.frame, out_dir))
         except Exception as e:                       # noqa: BLE001
             rows.append({"tag": f.stem, "status": "ERROR", "note": repr(e)[:110]})
         r = rows[-1]

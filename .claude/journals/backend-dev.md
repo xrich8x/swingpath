@@ -58,3 +58,10 @@ NOT-THIS-RUN: editing any calibration file; verify_court thresholds; docs/STATE.
   redo the lead's arithmetic from the PNG without repeating the mistake.
 - FULL SWEEP RESULT (27 rendered of 29; court/yt_court have no video) saved at
   data/output/corner_audit/net_index.json
+- SHIPPED + VERIFIED. 513/513 backend tests pass (incl. 7 new in
+  backend/tests/test_net_anchor_geometry.py and the JS parity 6).
+  Wired: render_corner_audit.py --net-anchors (+ --tag/--video-tag) and
+  validate_new_clip.py --audit --net-anchors. Doc:
+  docs/evidence/net-anchor-calibration-check.md. DECISIONS_PENDING appended
+  (am_hard_utr + sAjkpeRq4P4 need a human eye on their _netanchor.png).
+  Memory: net-ground-vs-net-tape.md. TASK COMPLETE 2026-09-05.
