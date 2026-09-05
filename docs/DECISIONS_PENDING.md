@@ -365,3 +365,33 @@ texture instrument that would decide them is the one that failed.
 Do NOT read the GREEN ground line against the tape: the tape is 0.914 m up and
 must image higher. That comparison is what produced the withdrawn "yt_match40 is
 still wrong" claim. See `docs/evidence/net-anchor-calibration-check.md` sec 1.
+
+---
+
+## Two frames only an eye can settle — the net-tape height check, 2026-09-05
+
+`tools/net_tape_height.py` measured the white net tape automatically on 15 of 27
+calibrations and compared the implied camera height with the fitted one. The
+pre-registered bar came out **AGREE** (13/15 within 10%, directions 8+/7-, median
++0.3%) — see `docs/evidence/net-tape-camera-height-consistency.md`. Two clips are
+outside it and neither can be closed by machine.
+
+- **`sAjkpeRq4P4`** — **which row is the white tape, 407 or 438?** qa's hand
+  brightness profile (`net-anchor-qa-verification.md` sec 3) puts it at 406-409;
+  this run's matched filter locks at 437.8, within 0.3 px of where the calibration
+  projects it. The two independent measurements of the same object are ~30 px
+  apart. At 407 this clip is -33% (worst in the corpus); at 438 it is +5.4%
+  (passing). Frame: `data/output/corner_audit/sAjkpeRq4P4_netanchor.png`.
+- **`L73ep7JHiJ4`** — **is the bright band 21 px ABOVE the projected tape the real
+  net tape, or something else** (a fence rail, a wall line, the far court edge)?
+  Strong, tight, repeatable response (z 11.6, ranges agree to 2.0 px) on a clip
+  where a pixel is only 1.2% of height, so this is a genuine geometric
+  disagreement, not measurement noise. Implied height 2.245 m vs fitted 2.888 m.
+  Frame: `data/output/corner_audit/L73ep7JHiJ4_netanchor.png`.
+
+Same caution as the entry above: do NOT read the GREEN ground line against the
+tape; the tape is 0.914 m up and must image higher.
+
+**Not blocking anything.** The verdict is AGREE with or without these two, and no
+fitted height is being changed either way. What they buy is knowing whether the
+residual few-percent spread is net sag or calibration.

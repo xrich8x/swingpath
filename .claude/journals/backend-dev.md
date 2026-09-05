@@ -65,3 +65,40 @@ NOT-THIS-RUN: editing any calibration file; verify_court thresholds; docs/STATE.
   docs/evidence/net-anchor-calibration-check.md. DECISIONS_PENDING appended
   (am_hard_utr + sAjkpeRq4P4 need a human eye on their _netanchor.png).
   Memory: net-ground-vs-net-tape.md. TASK COMPLETE 2026-09-05.
+- Run2. net_index.json ALREADY has per-clip horizon_row/net_ground_row/net_tape_row/
+  camera_h_m/hfov. Verified lead's formula reproduces camera_h_m exactly on A7vXlWIlyrI
+  (t=0.4582 -> H=1.687 vs stamped 1.69). So the MODEL side is free; only the OBSERVED
+  tape row needs measuring.
+- KEY REPARAMETRISATION: for a pinhole, a point h above ground at the net images at
+  row(x) = horizon(x) + (ground(x)-horizon(x))*(1-h/H). So "constant height above the
+  net line" is a ONE-PARAMETER family t = 1 - h/H, the SAME t at every column. Search t,
+  not rows -> perspective/roll handled exactly, H = h/(1-t).
+- PRE-REGISTERED DETECTOR THRESHOLDS (written before running the sweep):
+  clean plate = per-pixel median of 7 frames; 3 disjoint column ranges inside the CENTRAL
+  50% of the net span (h=0.914 there to <1%); score(t) = min(on-above, on-below) on a
+  bright-band matched filter, windows scaled by frame_height/720;
+  REFUSE unless: >=3 ranges valid & >=20 columns each; peak score >= 4.0 gray levels;
+  robust z >= 4.0; 2nd local peak (>=5px away) <= 0.75*best; spread of the 3 ranges'
+  peak rows <= 3px*scale. Refusals get reported, not dropped (rule 10).
+- TOOL WORKS: tools/net_tape_height.py. Smoke: yt_match40 tape 1.752 vs fit 1.641 (+6.7%);
+  am_hard_utr tape 1.678 vs fit 1.743 (-3.7%). BOTH within 10%.
+- *** THE HEADLINE. My automated tape row for am_hard_utr centre = 528.0. qa's eyeball
+  profile said 522, and 522 is EXACTLY the row that yields the lead's briefed 1.52 m
+  (-12.8%). Six pixels. Sensitivity: dH/drow = H^2/(h*(ground-horizon)) = 1.8%/px at
+  1080p on am_hard_utr, 3.2%/px at 720p on yt_match40. The pre-registered 10% bar is
+  ~3 px of tape row at 720p. This is a PRECISION-LIMITED instrument and that is the
+  finding, whichever way the sweep lands.
+- yt_match40: mine 293.8, model 291.9, qa/lead's ~295 -> 1.84 (+12.2%). Same 2-3 px story.
+- SWEEP DONE (27 clips, 2 no-video). 15 confident, 12 refused. 13/15 within 10%
+  => AGREE on the pre-registered bar. Directions 8+/7-, median +0.3% => NO systematic
+  sign. Outliers: demo30 +75.4% (720p, 47.9px net span, 5.5%/px - BELOW the
+  instrument's resolution) and L73ep7JHiJ4 -22.3% (real, strong, 20.9px above model).
+- CONFLICT TO REPORT, not smooth: on sAjkpeRq4P4 qa's hand profile says tape row
+  406-409, my matched filter says 437.8 (=model 437.5 to 0.3px). ~30px apart. At 407
+  it is -33%; at 438 it is +5.4%. Verdict holds either way (12/15 still clears 2/3).
+- 4 courts appear twice: each pair agrees in sign and to <=2.6pp => the estimator is
+  REPEATABLE; the spread is court-specific (net sag), not per-frame noise.
+- SHIPPED: tools/net_tape_height.py, backend/tests/test_net_tape_height.py (12 tests),
+  docs/evidence/net-tape-camera-height-consistency.md, DECISIONS_PENDING appended.
+  525/525 backend tests pass. TASK COMPLETE 2026-09-05. docs/STATE.md row NOT written
+  (NOT-THIS-RUN, lead's) - lead must add one.

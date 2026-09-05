@@ -23,3 +23,4 @@ monolithic file; nothing was dropped.
 - [Top-2 margin is a risk gate, not a detector](top2-margin-is-a-risk-gate-not-a-detector.md) — passes on fp32, FAILS on int8, blind to dropout; at an exact tie the decode is right 3 of 4
 - [Court fit ceiling is the LINES](court-fit-ceiling-is-the-lines.md) — all-lines least squares FAILS at 19.80 px; it out-fits the human homography, so the evidence floor is upstream of the fit
 - [Net GROUND vs net TAPE](net-ground-vs-net-tape.md) — two rows, 0.914 m apart; confusing them condemned a CORRECT calibration, and band_ratio is a FAILED instrument
+- [Net tape height is precision-limited](net-tape-height-is-precision-limited.md) — AGREES with the fitted heights; the 10% bar is ~3 px of tape row at 720p, so eyeball reads say nothing
