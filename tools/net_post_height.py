@@ -204,6 +204,8 @@ def measure_post(plate, geo, name, img_wh, hfov_deg, h_fitted, px_per_m, s):
     j = int(np.nanargmax(resp))
     best_hp, best = float(grid[j]), float(resp[j])
     out["peak_edge"] = round(best, 2)
+    out["peak_h_prime_m"] = round(best_hp, 3)
+    out.update(_diagnose(grid, resp, px_per_m))
     fin = resp[np.isfinite(resp)]
     out["z"] = round(nth._robust_z(fin, best), 2)
     far = np.abs((grid - best_hp) * px_per_m) >= RIVAL_SEP_PX
@@ -226,6 +228,32 @@ def measure_post(plate, geo, name, img_wh, hfov_deg, h_fitted, px_per_m, s):
     return out
 
 
+def _diagnose(grid, resp, px_per_m):
+    """POST-HOC DIAGNOSTICS. Never read by any refusal rule and never by the
+    height. They answer the one question a pass/fail cannot: does a post produce
+    a detectable step AT ALL at the place the calibration itself predicts? That
+    reference is the fitted height, so nothing here is evidence ABOUT the fitted
+    height - it is instrument characterisation only."""
+    fin = np.isfinite(resp)
+    if not fin.any():
+        return {}
+    j = int(np.argmin(np.abs(grid - _court.NET_HEIGHT_POST)))
+    if not fin[j]:
+        return {"diag_true_on_grid": False}
+    vals = resp[fin]
+    d = {"diag_true_on_grid": True,
+         "diag_edge_at_predicted": round(float(resp[j]), 2),
+         "diag_z_at_predicted": round(nth._robust_z(vals, float(resp[j])), 2),
+         "diag_pctile_at_predicted": round(100.0 * float((vals < resp[j]).mean()), 1)}
+    idx = np.where(fin)[0]
+    r = resp[idx]
+    loc = idx[1:-1][(r[1:-1] > r[:-2]) & (r[1:-1] > r[2:])]
+    if len(loc):
+        d["diag_px_to_nearest_local_max"] = round(
+            float(np.min(np.abs(grid[loc] - grid[j])) * px_per_m), 1)
+    return d
+
+
 def measure_post_height(plate, kp, img_wh, hfov_deg, h_fitted):
     """Both posts, then the clip-level combination and P5."""
     w, h = img_wh
@@ -241,6 +269,14 @@ def measure_post_height(plate, kp, img_wh, hfov_deg, h_fitted):
         return out
     px_per_m = abs(gr - hz) / float(h_fitted)          # rows per metre of height
     out["horizon_row"], out["net_ground_row"] = hz, gr
+    # PRICE THE INSTRUMENT, reported whether or not the clip is confident:
+    # dH/drow = H^2 / (h * (ground - horizon)); as a percentage of H that is
+    # 100 * H / (h * (ground - horizon)). Post h = 1.07, tape h = 0.914, so the
+    # post is 0.914/1.07 = 0.854x the tape PER PIXEL of row error.
+    out["pct_per_px_post"] = round(
+        100.0 * h_fitted / (_court.NET_HEIGHT_POST * abs(gr - hz)), 2)
+    out["pct_per_px_tape"] = round(
+        100.0 * h_fitted / (_court.NET_HEIGHT_CENTER * abs(gr - hz)), 2)
 
     for name in sorted(_court.NET_POST_BASES):
         out["posts"].append(measure_post(plate, geo, name, img_wh, hfov_deg,
@@ -262,9 +298,6 @@ def measure_post_height(plate, kp, img_wh, hfov_deg, h_fitted):
             return out
     out["n_posts"] = len(ok)
     out["post_H_m"] = round(float(np.mean([p["post_H_m"] for p in ok])), 3)
-    # px-sensitivity of THIS clip's instrument, dH/drow at the post
-    H = out["post_H_m"]
-    out["pct_per_px"] = round(100.0 * H / (_court.NET_HEIGHT_POST * abs(gr - hz)), 2)
     return out
 
 

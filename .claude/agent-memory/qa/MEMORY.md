@@ -59,6 +59,18 @@ this agent's system prompt — read it first; it is the authoritative copy.
   [synth-truth-harness-reproducibility.md](synth-truth-harness-reproducibility.md) for
   the general lesson (classifier-shape numbers reproduce, fine per-clip ratios don't).
 
+- **Ground-plane-blindness claim tested via synthetic corruption, 2026-09-05.**
+  [ground-plane-blindness-narrows.md](ground-plane-blindness-narrows.md) — NARROWS: the
+  claim's own anchoring anecdote (yt_match40 residual 0.0/height 1.64/coverage 0.944) was
+  itself WITHDRAWN as a correct calibration the same hour it was written — no confirmed
+  wrong court in this repo has ever scored well on ground-plane stats, and the camera-height
+  screen DID catch the one real confirmed-wrong case (11.3 m). But the core mechanism
+  reproduces synthetically: depth-anisotropic corner compression is invisible to every
+  SHIPPED gate across the full tested range on 2 clips, while isotropic scale IS caught by
+  coverage (confirms researcher's aniso/iso distinction) — and a computed-but-unused
+  quantity (fitted hfov from the same cam_fit_quad call) would catch the compression at
+  ~15% severity, so "blind by construction" overstates a reporting gap as a geometric law.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is

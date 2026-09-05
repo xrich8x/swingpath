@@ -13,7 +13,33 @@ findings go in `docs/STATE.md` + `docs/evidence/`. Do not duplicate those here.
 
 ---
 
-## TASK — DONE 2026-09-05 (net-anchor check verification)
+## TASK — DONE 2026-09-05 (ground-plane-blindness test, second task today)
+
+Verified researcher's ground-plane-blindness claim via synthetic corruption sweep
+(NOT the net-anchor task below, a different task same day). Deliverable FILED:
+docs/evidence/ground-plane-blindness-test.md. Verdict: NARROWS. Big finding: the
+claim's own anchoring anecdote (yt_match40 residual 0.0/height 1.64/coverage 0.944)
+belongs to a calibration verify-court-false-rejects.md ITSELF WITHDREW as CORRECT
+the same hour — no confirmed wrong court in this repo actually scored well on
+ground-plane stats; the one confirmed-wrong yt_match40 (.bak, 11.3m) WAS caught by
+the camera-height screen. Built corrupt_sweep.py (scratchpad), corrupted 4 clicked
+corners in memory for yt_match40 + flexi_franz_p01 across 5 families (depth-aniso
+compress, isotropic scale, sideways shift, rotate, asym-scale), computed shipped
+ground-plane stats (coverage/centrality/verify_court/cam_fit_quad residual+height)
++ off-plane (net tape). Result: depth-anisotropic compression IS invisible to every
+shipped gate across the full tested range (alpha 0.15-0.90, both clips) -- the real
+core of the claim survives. But NOT invisible-by-construction: fitted hfov (same
+cam_fit_quad output, unused) collapses 91->55->34->18->9->2 deg with compression,
+would flag at ~15% if read -- it's a reporting gap not a geometric law. Isotropic
+scale (researcher's requested control) IS caught by coverage (0.94->0.31, verify_court
+correctly FAILS) on yt_match40, confirming the aniso/iso distinction sharply -- though
+masked on flexi_franz_p01 by its very high baseline margin (0.996). Off-plane tape
+notices earliest (alpha=0.15, either clear disagreement or honest refusal, never a
+false pass). Did not touch data/*_pts*.json (read-only in-memory corruption). No
+DECISIONS_PENDING entry added -- this is a correction/finding, not an open founder
+decision. ~30 tool calls used.
+
+## PRIOR TASK — DONE 2026-09-05 (net-anchor check verification)
 
 Verified backend-dev's net-anchor calibration check (4 items). Deliverable FILED:
 docs/evidence/net-anchor-qa-verification.md. Headline: render/constants half is
