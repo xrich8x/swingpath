@@ -4,44 +4,32 @@
 
 ---
 
-## TASK — CURRENT (started 2026-09-04, second task of the day)
+## TASK - CURRENT (started 2026-09-04, THIRD task of the day)
 
-Execute lead PRE-REGISTRATION "least-squares over ALL line correspondences"
-(last section of .claude/journals/lead.md).
-Target: STATE joint-correspondence row — given the TRUE line-to-model assignment the
-solver reconstructs a median 17.1 px@640 vs shipped 8.1 px. Test whether line-based
-least squares over ALL matched lines beats the exact-4-point fit, ONE VARIABLE (fit only).
-BAR: PASS <=10.0 px@640 median; FAIL >13.0 px (=> branch dies on a FIT CEILING);
-INDETERMINATE 10.0-13.0. Per clip AND pooled.
-MANDATORY CONTROL that gates everything: recompute the exact-4-point median in the SAME
-run on the same clips/assignments. If it does not reproduce ~17.1 px -> SAY SO AND STOP.
-DELIVERABLE: docs/evidence/least-squares-court-fit.md
-STOP-WHEN: verdict+control written, or ~40 tool calls.
-NOT-THIS-RUN: correspondence SEARCH (C6 cost, 22-of-30 kills), shipped court path,
-shipping, editing docs/STATE.md, git commit.
+Lead PRE-REG "an int8-COMPUTABLE refusal signal" (last section of .claude/journals/lead.md).
+Q: does ANY int8-graph-computable quantity flag its own bad frames? Candidates named before
+looking: winner absolute AREA, winner PEAK, BLOB COUNT, winner AREA x PEAK.
+BAR: PASS = some single quantity, some threshold, catches >=4/5 bad at <=5% collateral on
+the 523 correctly-decoded both-fire frames. Both halves. FAIL = anything else => int8 cannot
+police itself.
+MANDATORY: (1) seeded 1000-draw null; (2) SELECTION-ADJUSTED null - each draw searches the
+SAME candidate x threshold grid. REPORT PRECISION too (fp32 passed at 31% = risk gate).
+Power: n=5 bad, effective ~3. PASS is a SCREEN not a ship.
+DELIVERABLE: section "Can int8 police itself?" appended to
+docs/evidence/top2-margin-refusal-signal.md
+STOP-WHEN: candidates + both nulls measured & written, or ~35 tool calls.
+NOT-THIS-RUN: decode/shipped changes, shipping, 4th precision arm, re-running int8 inference,
+editing docs/STATE.md, git commit.
 
-## STATE — 2026-09-04 — TASK COMPLETE
+## STATE - 2026-09-04 - IN PROGRESS
 
-DELIVERABLE SHIPPED: docs/evidence/least-squares-court-fit.md (full, 6 sections + a
-"what this closes" + "NOT ESTABLISHED").
+Reusing scratchpad/top2_margin.py + top2_null.py (this session scratchpad, both intact).
+Plan: new script int8_self.py -> extract int8 blob features (area1,peak1,k8,score1) with the
+SAME decode guard (top blob centroid == int8_xy in js_results.json), exhaustive threshold
+sweep both directions, then nulls A (fixed t) + B (selection-adjusted over the FULL grid
+actually searched, incl. both directions).
 
-CONTROL PASSES: exact-4-point recomputed = 17.10 px@640, n=13, survivor SET identical to
-data/output/corr_attrib.json, max per-clip |diff| = 0.00 px. Harness is faithful.
-
-VERDICT: **FAIL** against the pre-registered bar (>13.0 px).
-  exact 4-point 17.10 | LS-geom 19.80 | LS-DLT 73.50   (bar applied to the BETTER = LS-geom)
-  TUNE n=8: 19.00 / 23.50 / 123.37   SHELL n=5: 6.39 / 6.79 / 73.50 — both pools fail.
-  LS-geom better on 7, worse on 5, tied 1; paired Wilcoxon p=0.97 (no direction at all).
-MECHANISM (the part that closes it): LS-geom lowers the line objective below the exact
-  fit on 13/13 AND below the HUMAN homography on 13/13 (3.01 vs 6.44 px rms). The
-  detected lines do not agree with the true court better than ~6.4 px, so the best fit to
-  those lines is NOT the true court. The ceiling is the LINE EVIDENCE, one stage upstream
-  of the fit. => joint-correspondence branch dies on a fit ceiling; C6 cost and the
-  22-of-30 (both SEARCH problems) are no longer worth paying for.
-Artifacts: eval/corr_ls_fit.py (new), data/output/corr_ls_fit.json (new).
-No STATE row (lead's), no commit, no shipped-path change.
-
-## LOG — this task
+## LOG - previous task (least-squares court fit, COMPLETE)
 
 - CARRIED FORWARD: `python` is a broken Store shim. Use backend/.venv/Scripts/python.exe
 - CARRIED FORWARD: `grep -rn` across repo ROOT times out (it walks .venv) — grep with an
@@ -64,3 +52,28 @@ No STATE row (lead's), no commit, no shipped-path change.
   control that the two arms share the same assignment.
 - Full run: 40 clips, 11 s, 13 survivors. Numbers in STATE above.
 - TASK COMPLETE 2026-09-04.
+
+## LOG - this task (int8 self-policing)
+
+- Prior task COMPLETE: LS court fit FAIL 19.80 px, ceiling is the LINE EVIDENCE. Shipped.
+- fp32 rows already on disk: scratchpad/top2_rows.json (has m32/k32/top1/area1/peak1 for fp32
+  only). int8 features NOT in it -> re-extract from int8_heat_*.bin (cheap, no model).
+- EXTRACTION DONE. 528 both-fire, 5 bad, int8 guard failures 0. Files:
+  scratchpad/int8_self.py, int8_self_null.py, int8_self_rows.json.
+- RESULT: area1 / peak1 / score1 all FAIL flat (0 catch at <=5% collat). Bad frames sit AT
+  the median of every one: area1 12-13 (med 12), peak1 242 (= the MAX and the mode), score1
+  2904-3146 (med 2904). "Small winner" is REFUTED.
+- k8 <= 1 (the PRE-REGISTERED mechanistic direction) FAILS hardest: 1/5 at 95.2% collateral,
+  because ~94% of both-fire frames have exactly one blob.
+- k8 >= 2 (OPPOSITE direction) PASSES: 4/5, 25/523 = 4.78% collat, precision 13.8%.
+  Misses yt_rally2/0108 - exactly the frame the pre-reg named as the single-blob case.
+- CORRECTION to sec 3.2 of the doc: the earlier "int8 margin FAILS at every threshold" used
+  the fp32-inherited grid that STOPS AT 0.30. Wider sweep: m8<=0.90 catches 4/5 at 3.82%
+  collat, precision 16.7% -> PASSES. m8<=0.99 is EXACTLY k8>=2. Same mechanism: a runner-up
+  EXISTS, not that the race is close.
+- NULLS all separate: A exact hypergeom 3.6e-5 (k8) / 1.6e-5 (m8<=0.90), perm p=0.0000;
+  B selection-adjusted 108-rule grid p=0.0000; B' extended 148-rule grid p=0.0000;
+  C cluster-preserving fixed-rule p=0.0010 (max 4 in 1000), C' extended p=0.0000.
+- CONFOUND to report: k8>=2 rate is 11.3%/10.7% on the two clips holding the failures vs
+  1.1-3.4% on the other four. Null C prices per-clip counts and still separates.
+- NEXT: write sections 8-15 into docs/evidence/top2-margin-refusal-signal.md.

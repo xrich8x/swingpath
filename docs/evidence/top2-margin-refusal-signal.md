@@ -22,6 +22,13 @@ section 4 for the null control, section 6 for what the pass does not cover.)*
 only computable on the graph that ships. That asymmetry is a finding, not a footnote —
 section 3.2.
 
+> **CORRECTED 2026-09-04, same day, second run — read section 10.3 before quoting the line
+> above.** That int8 FAIL was measured on the threshold grid `[0.01 … 0.30]` inherited from
+> the fp32 sweep. One bad frame's int8 margin is 0.86 and lies above the top of that grid.
+> On a wider grid **`margin_int8 <= 0.90` catches 4 of 5 at 3.82% collateral and passes the
+> bar.** The defensible statement is "fails at every threshold **<= 0.30**". Sections 8-15
+> carry the corrected result and its nulls.
+
 ---
 
 ## 1. What was measured, and on what
@@ -356,3 +363,331 @@ backend/.venv/Scripts/python.exe scratchpad/top2_null.py     # 3 nulls + rejects
 Both scripts load only `.bin` heatmaps and JSON already on disk; neither loads a model or
 runs inference. Seeds: `20260904`, `+1`, `+2` for nulls A, B, C.)
 
+
+
+---
+
+# Can int8 police itself?
+
+**DELIVERABLE (restated):** PASS / FAIL / UNDERPOWERED per candidate against the bar
+pre-registered in `.claude/journals/lead.md` §"PRE-REGISTRATION - an int8-COMPUTABLE
+refusal signal, 2026-09-04, before any run"; the catch / collateral / **precision** for the
+best threshold of each candidate; both mandatory null-control results; and a plain
+statement of what it means for the ship decision.
+
+Author: backend-dev, 2026-09-04. Second run on the same artifacts. **Nothing here ships,
+no decode is changed, no int8 inference was re-run** - every number reads `.bin` heatmaps
+and JSON already on disk from the 2026-09-03 six-clip parity run.
+
+## 8. Verdict
+
+**PASS on ONE candidate — blob COUNT — and only in the direction OPPOSITE the one the
+mechanism predicted. A SCREEN, not a ship.**
+
+| candidate (int8-computable) | best rule at <= 5% collateral | catch | collateral | precision | verdict |
+|---|---|---|---|---|---|
+| winner absolute **area** | `area1 <= 1` | 0/5 | 10 (1.9%) | 0.0% | **FAIL** |
+| winner **peak** | `peak1 <= 135` | 0/5 | 2 (0.4%) | 0.0% | **FAIL** |
+| winner **area x peak** | `score1 <= 135` | 0/5 | 1 (0.2%) | 0.0% | **FAIL** |
+| **blob count**, pre-registered direction | `k8 <= 1` | 1/5 | 498 (95.2%) | 0.2% | **FAIL** |
+| **blob count**, opposite direction | `k8 >= 2` | **4/5** | 25 (**4.78%**) | **13.8%** | **PASS** |
+
+**And a correction that has to be stated plainly** (section 10.3): the earlier claim in
+section 3.2 — *"the int8 margin FAILS at every threshold"* — was searched on the grid
+inherited from the fp32 sweep, which **stops at t = 0.30**. On a wider grid the int8 margin
+also passes: `margin_int8 <= 0.90` catches **4/5** at **3.82%** collateral, precision
+**16.7%**. The correct statement is "fails at every threshold **<= 0.30**", not "at every
+threshold". That is narrower and it changes the conclusion — see 10.3 and 14.
+
+Both passing rules are **the same mechanism**: `margin_int8 <= 0.99` is *identical* to
+`k8 >= 2` (a single-blob frame is assigned margin 1.0 by construction). What is informative
+on int8 is that **a runner-up blob exists at all** — not that the race is close.
+
+**Nulls:** all three separate. Exact hypergeometric P(catch >= 4) = **3.6e-5** for
+`k8 >= 2`, **1.6e-5** for `margin <= 0.90`; the selection-adjusted null over the full
+108-rule grid actually searched gives **p = 0.0000** (best of 1000 draws = 3); the
+cluster-preserving null gives **p = 0.0010** (one draw in 1000 reached 4).
+
+**But the precision is 13.8-17.4%, worse than the fp32 signal's 31%.** In plain words:
+**this is a conservative risk gate, not a failure detector.** At its best threshold it
+discards about **five correct answers for every error it avoids**. And n = 5 with an
+effective event count near 3 means the PASS is a screen that earns a wider run, exactly as
+the pre-registration said. It is not a ship.
+
+---
+
+## 9. The candidates, and what was actually searched
+
+The four candidates were named in the pre-registration before anything was looked at: the
+winning blob's **absolute area**, its **peak**, the **blob count**, and the winner's
+absolute **area x peak**. All four are read off the int8 heatmap alone — nothing here needs
+the fp32 graph, which is the whole point.
+
+**Search space, stated so the multiple-comparison cost is visible:** 4 candidates x 2
+directions (`<= t` and `>= t`) x **every distinct value** the feature takes = **108 rules**.
+Both directions were swept because the pre-registration's own mechanism sketch pointed both
+ways: on `am_hard_utr/0147` the int8 true blob *fragmented* into area 2 + 1 (which raises
+the count) while on `yt_rally2/0108` int8 produced a *single* blob (which lowers it). The
+selection-adjusted null (section 12) is run over exactly this grid, and over the extended
+148-rule grid once the margin was added.
+
+**Method and guard, unchanged from sections 1-2.** Same decode rule (`threshold(heat,127)`,
+8-connected, `score = area * peak`), same artifacts, **no inference re-run and no model
+loaded**. The guard is the same one: the top-scoring int8 blob's centroid must equal what
+the real `_decode()` recorded in `js_results.json` as `int8_xy`, to within 0.01 px.
+**int8 guard failures: 0 of 528.** Populations are identical to section 1: 528 both-fire,
+5 bad (> 10 px), 523 correctly-decoded.
+
+---
+
+## 10. Results per candidate
+
+### 10.1 The five bad frames, in int8's own numbers
+
+| clip | tag | dist_px | `area1` | `peak1` | `k8` | `score1` | (fp32 `k32`) |
+|---|---|---|---|---|---|---|---|
+| `am_hard_utr` | 0147 | 70.8 | 13 | 242 | 3 | 3146 | 2 |
+| `yt_rally2` | 0108 | 74.5 | 12 | 242 | **1** | 2904 | 2 |
+| `yt_rally2` | 0109 | 75.4 | 13 | 242 | 2 | 3146 | 2 |
+| `yt_rally2` | 0110 | 75.0 | 13 | 242 | 2 | 3146 | 2 |
+| `gold_shell` | 0097 | 185.1 | 12 | 242 | 2 | 2904 | 2 |
+
+Against the both-fire distribution:
+
+| feature | min | p05 | p25 | **median** | p75 | p95 | max |
+|---|---|---|---|---|---|---|---|
+| `area1` | 1 | 7 | 12 | **12** | 13 | 15 | 19 |
+| `peak1` | 135 | 220 | 242 | **242** | 242 | 242 | 242 |
+| `k8` | 1 | 1 | 1 | **1** | 1 | 2 | 3 |
+| `score1` | 135 | 1779 | 2662 | **2904** | 3146 | 3630 | 4598 |
+
+**"Small winner" is refuted, and not narrowly.** On every bad frame the int8 winner is a
+*completely ordinary* blob: area 12-13 against a median of 12, peak **242 which is the
+maximum and the mode of the whole distribution**, score 2904-3146 straddling the median.
+There is nothing weak about int8's wrong answer. To catch 4 of 5 on `area1` you must refuse
+**81.6%** of correct frames; on `peak1`, **100%**; on `score1`, **83.2%**. These are not
+near misses — the candidates carry no signal at all in either direction.
+
+This is the same fact the fp32 section reported from the other side. Quantisation did not
+leave a hesitant detector; it produced a **confident wrong winner** that is
+indistinguishable, by size or by strength, from a confident right one.
+
+### 10.2 Blob count — the one that works, in the wrong direction
+
+The pre-registered mechanistic direction was *"exactly one blob where fp32 saw two"*.
+As a rule it is worthless: **`k8 <= 1` catches 1 of 5 at 95.2% collateral (precision
+0.2%)** — because **~94% of all both-fire frames have exactly one blob**. The observation
+that motivated it was true of `yt_rally2/0108`; the rule built on it refuses almost the
+whole set.
+
+The opposite direction passes. **`k8 >= 2` refuses 29 frames: 4 bad, 25 correct.**
+Catch 4/5, collateral **25/523 = 4.78%**, precision **13.8%**.
+
+**The one it misses is `yt_rally2/0108` — precisely the frame the pre-registration named
+as the single-blob case.** The candidate that passes and the frame that motivated the
+candidate are on opposite sides of the same rule. That is worth stating rather than
+smoothing over: the mechanism sketch was right about what happened on two frames and wrong
+about which way the population runs.
+
+**Headroom is one frame.** 5.0% of 523 is 26.15 frames. The rule uses 25. One more
+multi-blob correct frame anywhere in the set and this PASS becomes a FAIL.
+
+**A confound that the numbers should not hide.** The `k8 >= 2` rate is not uniform:
+
+| clip | n | `k8>=2` | rate | bad frames |
+|---|---|---|---|---|
+| `am_hard_utr` | 53 | 6 | 11.3% | 1 |
+| `yt_match40` | 93 | 1 | 1.1% | 0 |
+| `yt_rally2` | 149 | 16 | 10.7% | 3 |
+| `gold_am` | 67 | 2 | 3.0% | 0 |
+| `gold_clay` | 77 | 1 | 1.3% | 0 |
+| `gold_shell` | 89 | 3 | 3.4% | 1 |
+
+The two clips carrying 4 of the 5 failures are also the two clips where int8 fragments most
+often. Part of what `k8 >= 2` "detects" is therefore **which clip you are on**, not which
+frame. Null control C (section 12) is the one that prices this — it holds the per-clip bad
+count fixed — and the rule still separates, but with visibly less margin (p = 0.0010, and
+one draw in 1000 matched the observed catch).
+
+### 10.3 CORRECTION: the int8 margin was not searched far enough
+
+Section 3.2 of this document reports the int8 top-2 margin as failing "at every threshold".
+That was searched on the grid `[0.01 ... 0.30]`, inherited from the fp32 sweep where the
+whole discriminating band was `[0.05, 0.077]`. The int8 bad-frame margins are 0.86, 1.00,
+0.16, 0.16, 0.24 — **one of them sits above the top of the grid that was searched.**
+
+Extended sweep, same population, same guard:
+
+| t | catch | collateral | coll % | precision |
+|---|---|---|---|---|
+| 0.30 | 3/5 | 13 | 2.49% | 18.8% |
+| 0.70 | 3/5 | 13 | 2.49% | 18.8% |
+| 0.85 | 3/5 | 19 | 3.63% | 13.6% |
+| **0.90** | **4/5** | **20** | **3.82%** | **16.7%** |
+| 0.95 | 4/5 | 24 | 4.59% | 14.3% |
+| 0.99 | 4/5 | 25 | 4.78% | 13.8% |
+
+So **`margin_int8 <= 0.90` passes the bar**, on slightly better collateral and slightly
+better precision than `k8 >= 2`. The honest amendment to section 3.2: the int8 margin fails
+at every threshold **<= 0.30**, which is where it was looked for. It does not fail
+everywhere.
+
+`t = 0.90` is quoted as a representative interior point of the 0.90-0.99 plateau.
+The exact-fit threshold `t = 0.8601398...` (the bad frame's own margin, catch 4 at 3.63%
+collateral) is **excluded as post-hoc by construction**, on the same rule that excluded
+`t = 0.077` in section 3.
+
+**These two passing rules are one rule.** `margin <= 0.99` and `k8 >= 2` refuse the
+identical 29 frames. What passes here is *"does the int8 heatmap contain a runner-up blob
+at all"*, with `t = 0.90` shaving off five correct frames whose runner-up is very weak.
+The int8 signal is a **presence** test, not a **closeness** test — the opposite of the fp32
+signal, whose entire content sat below margin 0.077.
+
+---
+
+## 11. Null control A — pre-registered, seeded, 1000 draws
+
+Free permutation of the 5 bad labels among the 528 both-fire frames, fixed rule,
+`seed = 20260904`.
+
+| rule | refuses | observed catch | permuted P(catch >= 4) | perm mean | perm max | exact hypergeometric |
+|---|---|---|---|---|---|---|
+| `k8 >= 2` | 29 | 4 | **0.0000** | 0.257 | 3 | **3.568e-05** |
+| `margin <= 0.90` | 24 | 4 | **0.0000** | 0.222 | 3 | **1.609e-05** |
+
+In 1000 draws no random label set of the same size reached 4 catches on either rule.
+
+---
+
+## 12. Null control B — selection-adjusted, and C — cluster-preserving
+
+**B (mandatory).** Every draw gets the same freedom this run had: it searches the **whole
+grid** and keeps its best catch subject to collateral <= 5%. Without this the
+multiple-comparison advantage is unpriced and a PASS is not interpretable.
+
+| grid searched per draw | rules | P(best-catch >= 4) | P(>= 5) | mean | max |
+|---|---|---|---|---|---|
+| pre-registered 4 candidates x 2 directions | 108 | **0.0000** | 0.0000 | 0.357 | 3 |
+| extended, + the int8 margin of 10.3 | 148 | **0.0000** | 0.0000 | 0.467 | 3 |
+
+Both grids are priced; the second is reported because section 10.3 added a quantity after
+the fact and the null must reflect what was actually searched, not what was planned.
+
+**C (reported, not mandated — and it is the one that bites).** `yt_rally2` 0108-0110 is one
+consecutive event, so the 5 labels are not 5 independent draws. Each draw circularly shifts
+the label vector **within each clip**, preserving both the temporal run and the **per-clip
+bad count** — which is also what removes the clip-level confound of section 10.2.
+
+| variant | P(catch >= 4) | mean | max |
+|---|---|---|---|
+| C, fixed rule `k8 >= 2` | **0.0010** | 0.467 | 4 |
+| C, + selection over the 108-rule grid | **0.0010** | 0.414 | 4 |
+| C', + selection over the 148-rule grid | **0.0000** | 0.635 | 3 |
+
+Under the hardest null a random relabelling reached the observed catch **once in 1000**.
+That is a real separation and it is two to three orders of magnitude weaker than under A.
+The difference between "3.6e-5" and "1 in 1000" is exactly the price of the temporal
+clustering and the per-clip concentration, and the second number is the one to quote.
+
+**Seed stability:** A and B were re-run at 5 seeds (`20260904`-`20260908`, 300 draws each);
+p = 0.0000 on every seed for both. The result is not seed-dependent.
+
+---
+
+## 13. Precision, and the rejects
+
+**The bar asks for catch and collateral. It does not ask for precision, and precision is
+where both passing rules look much less like a detector.**
+
+| rule | refuses | catches | precision | correct answers discarded per error avoided |
+|---|---|---|---|---|
+| fp32 `margin <= 0.10` (section 3) | 16 | 5 | 31.3% | 2.2 |
+| int8 `margin <= 0.90` | 24 | 4 | **16.7%** | **5.0** |
+| int8 `k8 >= 2` | 29 | 4 | **13.8%** | **6.3** |
+
+**Plain wording, the same as was applied to fp32: this is a conservative risk gate, not a
+failure detector.** It is a *worse* gate than the fp32 one — roughly half the precision —
+and it misses one of the five failures the fp32 gate caught.
+
+**The rejects, inspected rather than the keeps.** Of the 25 correct frames refused by
+`k8 >= 2`, the four whose true disagreement is recorded are at 0.81, 0.50, 1.10 and 1.36 px
+— i.e. **the rule refuses frames int8 got essentially exactly right**. The remaining 21 are
+outside the summary's worst-10 list, so their disagreement is bounded below the clip's
+10th-worst frame but not individually known; none is a failure. 16 of the 25 are in
+`yt_rally2` and 6 in `am_hard_utr`, which is the concentration section 10.2 describes.
+Their int8 margins span the full range (0.000 to 0.963), so **within the multi-blob set the
+margin does not order good from bad** — the same negative the fp32 section found inside its
+close-race set (section 6.2), reproduced here on the other graph.
+
+---
+
+## 14. What this means for the ship decision
+
+1. **int8 is not blind to its own failures, which is a change from what section 3.2 said.**
+   A single quantity available free at decode time on the int8 graph — *does the heatmap
+   contain a second blob* — catches 4 of the 5 known failures at under 5% collateral, and
+   survives a selection-adjusted and a cluster-preserving null. The statement in
+   `DECISIONS_PENDING` item 0 that the cheap safety net is computable **only** on the fp32
+   graph is **too strong and should be amended** to the narrower, still-true claim below.
+
+2. **The narrower true claim.** The fp32 signal is a *closeness* test that fires on 3.0% of
+   frames at 31% precision and catches **5 of 5**. The int8 signal is a *presence* test that
+   fires on 4.5-5.5% of frames at 14-17% precision and catches **4 of 5**. int8 can police
+   itself, but **less accurately and at roughly double the cost in discarded correct
+   frames** — and it misses the failure mode where quantisation collapses the true ball and
+   its confuser into a single blob (`yt_rally2/0108`), which is the failure it would most
+   want to catch.
+
+3. **This does not settle the int8-vs-fp32 decision, and it must not be used as if it
+   did.** What it removes is one *absolute* argument against int8 ("it cannot police
+   itself"). What replaces it is a *quantitative* argument ("its self-policing is about
+   half as precise and 80% as complete"), which is weaker and which is measured on 5 events.
+
+4. **Nothing here is a threshold to adopt.** `t = 0.90` and `k8 >= 2` are reporting points
+   on a plateau, measured on 6 clips. A refusal rule that fires on ~5% of both-fire frames
+   has a downstream cost — coasted, interpolated or dropped — that **has not been measured
+   at all**, on either graph.
+
+5. **Power is the binding limit, and it was named in advance.** n = 5, effective event
+   count ~3, and the whole PASS rests on 4 frames of which 3 are one consecutive event in
+   one clip. Under the cluster-preserving null the p-value moves from 3.6e-5 to 1e-3 on
+   exactly that account. **A wider clip set is the prerequisite for any use of this, and it
+   is a cheap one** — the extraction reads heatmaps already produced by any parity run and
+   loads no model.
+
+---
+
+## 15. NOT ESTABLISHED THIS RUN
+
+1. **Any coverage or chain-level number**, on either graph. Unchanged from section 7.1.
+2. **That the signal generalises past 6 clips / 528 frames / 5 events.** The PASS is a
+   screen. Section 10.2's per-clip table is direct evidence that the fire rate is
+   clip-dependent (1.1% to 11.3%), so the collateral figure in particular should not be
+   expected to transfer.
+3. **A threshold to adopt.** See 14.4.
+4. **Whether the *combination* of fp32 and int8 signals does better than either.** Not
+   tested; it is also not available on a device that ships only one graph.
+5. **A dropout signal on the int8 side.** The null-mismatch population (fp32 fires, int8
+   does not) was not re-examined here; section 5's negative stands and was not extended.
+6. **Cost on device.** The blob decomposition is already computed by `_decode`, so the
+   count is free by inspection, but nothing here timed anything on an A13.
+7. **Whether the 21 refused frames with unrecorded `dist_px` are all genuinely correct.**
+   They are below their clip's 10th-worst disagreement and so cannot be > 10 px failures,
+   but their individual error is not known. This bounds them; it does not measure them.
+8. **Anything about why `am_hard_utr` and `yt_rally2` fragment ~4x more often than the
+   other four clips.** That is the mechanism behind both the signal and its confound, and
+   it is unexamined.
+
+---
+
+## Reproduce (section 8-15)
+
+```
+backend/.venv/Scripts/python.exe scratchpad/int8_self.py        # extraction + 108-rule sweep
+backend/.venv/Scripts/python.exe scratchpad/int8_self_null.py   # nulls A, B, C + seed sweep
+```
+
+Same `scratchpad` root as the section-7 reproduce block. Both scripts load only `.bin`
+heatmaps and JSON already on disk; **neither loads a model and neither runs inference.**
+Seeds: `20260904` (A), `+1` (B), `+2` (C), `+11`/`+12` (extended-grid B'/C').
+Artifacts written: `int8_self_rows.json`, `int8_self_specs.json`, `int8_self_masks.npy`.
