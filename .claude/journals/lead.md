@@ -554,3 +554,38 @@ blob where fp32 saw two" are the mechanically-motivated candidates, named before
 
 **Not authorised:** changing the decode, shipping, a fourth precision arm, re-running int8
 inference (~10 s/frame; the heatmaps are on disk).
+
+---
+
+## PRE-REGISTRATION — the net tape as an INDEPENDENT camera-height estimator. 2026-09-05
+
+**Where this came from.** qa measured the real net tape row on two clips by brightness
+profile. Inverting the projection - `H = h / (1 - (tape-horizon)/(ground-horizon))` - turns
+that row into a camera height that does **not** come from the four clicked corners. On the
+three clips with a measured tape it disagrees with the fitted height by **-12.8%, -33.3%,
++12.2%**.
+
+**Why this is not a footnote.** Camera height is the largest accuracy lever in this project
+and the close-call table is indexed by it: **54.0% at 1.0 m, ~69% at 3 m, ~81% at 8 m**,
+against a **56.2%** majority-class floor. A 13-33% height error moves which row of that table
+a clip belongs in, so every quoted call-accuracy figure inherits it.
+
+**Neither estimator is ground truth**, and the brief must not pretend otherwise. The fitted
+height comes from the four corner clicks; the tape height assumes a regulation net (0.914 m at
+centre) and a correctly measured tape row. **This is a CONSISTENCY check: disagreement proves
+at least one is wrong, not which.**
+
+**PRE-REGISTERED BAR**, over every clip with a visible net:
+- **AGREE:** `|tape-implied H - fitted H| <= 10%` of fitted, on **>= 2/3** of clips measured.
+  Then the fitted heights stand and this closes.
+- **DISAGREE:** anything else. Then **the accuracy table's height axis is in question**, and
+  the next step is a tiebreaker, not a correction - do not "fix" heights on the strength of
+  the tape alone.
+- **Mandatory:** report the **direction** per clip. A consistent sign is a systematic bias
+  (a modelling error); mixed signs point at measurement noise in the tape row. Those imply
+  different next moves and the distinction must not be blurred.
+- **Minimum n:** >= 6 clips with a confidently measured tape, or the result is UNDERPOWERED.
+  Three is what prompted this and three is not enough to conclude anything.
+
+**Not authorised:** editing any calibration; changing any fitted height; restating the
+close-call table. This measures a disagreement, it does not resolve it.
