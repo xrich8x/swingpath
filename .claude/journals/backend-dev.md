@@ -102,3 +102,53 @@ NOT-THIS-RUN: editing any calibration file; verify_court thresholds; docs/STATE.
   docs/evidence/net-tape-camera-height-consistency.md, DECISIONS_PENDING appended.
   525/525 backend tests pass. TASK COMPLETE 2026-09-05. docs/STATE.md row NOT written
   (NOT-THIS-RUN, lead's) - lead must add one.
+- PRE-REGISTERED, 2026-09-05, BEFORE ANY POST-DETECTOR CODE WAS WRITTEN OR RUN.
+  MEASURAND: the image row of the POST TOP (z=NET_HEIGHT_POST=1.07) at the predicted post
+  column (X_LEFT_POST -0.914 / X_RIGHT_POST 11.884, y=NET_Y). Same h' reparametrisation as
+  the tape: sweep a fake height h', project (X_POST,NET_Y,h') under the FITTED pose, the
+  response peak converts to H = 1.07*H_fitted/h'. Post BASE is on z=0 and carries NO
+  off-plane information - reported for framing only, never used in the height.
+  SIGNAL: "postness" p(h') = max( min(on-left,on-right), min(left-on,right-on) ) - a
+  vertical bar brighter than BOTH neighbours OR darker than both (posts are dark against
+  sky and light against a dark fence; sign is not knowable a priori). Column windows are
+  the tape's, rotated 90 deg and scaled by frame_height/720.
+  TOP = step edge in p: R(h') = mean(p just BELOW h') - mean(p just ABOVE h'), window
+  +-4 px scaled. Peak of R over the sweep = post top.
+  REFUSAL RULES (report every refusal, rule 10):
+   P0 no camera pose / degenerate horizon-vs-net-ground rows.
+   P1 >=60% of the swept grid samples on-frame AND the +-4px window at the peak fully
+      on-frame, for that post.
+   P2 peak edge response >= 4.0 grey levels (same bar as the tape's MIN_SCORE).
+   P3 robust z of the peak over the sweep >= 4.0 (same as tape MIN_Z).
+   P4 best rival peak >= 5.0 px away scores <= 0.75 of the best (same as tape R4).
+   P5 if BOTH posts pass P1-P4 their implied top rows must agree to <= 3.0 px * scale
+      (same as tape R5). If they disagree the CLIP is refused - two rigid posts that
+      disagree is exactly the case where I cannot say which is the post.
+   P6 RESOLVABILITY: predicted post pixel length (base row -> top row under the fit)
+      >= 10 px, ABSOLUTE not scaled. Deliberately absolute: an edge measured on a 6 px
+      bar is not measurable at any sensor resolution. This is the rule demo30 (47.9 px
+      net span, 5.5%/px) should have hit in the tape run and did not.
+   Clip estimate = mean of the passing posts. 0 passing = clip refused.
+  BAR (the tape's own, reused verbatim from independent-calibration-references.md
+  "second falsifier"): AGREE if |post-implied - fitted| <= 10% of fitted on >= 2/3 of
+  confident clips, with n >= 6 confident clips. Fewer than 6 confident = NO VERDICT,
+  which is a legitimate outcome and will be reported as such, not softened.
+  SECONDARY, pre-registered as a DESCRIPTION not a gate: post-vs-tape on clips confident
+  in both. Where they agree with each other, that corroborates the fitted height. Where
+  they disagree, sag can only make the CENTRE tape read LOW (tape sags DOWN -> larger
+  (row-horizon) -> smaller (H-h)/H is wrong... sign to be derived in the doc from the
+  formula, not asserted here) - so the sign of the disagreement is the discriminator.
+  NO FIFTH GATE. This is a diagnostic number for a human, and the doc will say so.
+- SHIPPED tools/net_post_height.py. SMOKE ON 3 CLIPS: ALL THREE REFUSE.
+  yt_match40 P3 (z 1.5 / 2.8); am_hard_utr P5 posts disagree 46.9 px; yt_rally2 P5
+  posts disagree 55.8 px. post_px 39-65 so P6 is not the binding rule.
+  DIAGNOSIS (not a tuning excuse): the step-edge peak lands at h' well ABOVE the post -
+  yt_rally2 right h'=2.03 m and left h'=3.59 m above the net ground point, with peak_edge
+  119 grey levels and z 18. There is far more vertical structure (fence tops, wall edges)
+  in a 4 m column than the 1.07 m post. The pre-reg sweep range (copied from the tape's
+  H 0.9-12.0) lets the detector lock onto it. I will NOT shrink the range after seeing
+  this - that is choosing a threshold after the result. Report the refusal.
+- Adding DIAGNOSTIC fields only (never used by any rule): response at the calibration's
+  own predicted h'=1.07, its robust z, its percentile rank, and px distance to the
+  nearest local max. Labelled post-hoc; it characterises whether the post produces a
+  detectable step AT ALL, which is the instrument question.

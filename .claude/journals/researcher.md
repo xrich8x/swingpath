@@ -13,7 +13,59 @@ findings go in `docs/STATE.md` + `docs/evidence/`. Do not duplicate those here.
 
 ---
 
-## TASK — what I was asked to do (2026-09-05b, NEW TASK, prior one below is DONE)
+## TASK — what I was asked to do (2026-09-05c, NEW TASK, prior one below is DONE)
+
+Write docs/evidence/gravity-arc-pilot.md: design + pre-register the gravity-arc
+calibration pilot (candidate #2 from independent-calibration-references.md). Six
+points: what's measured/from what, error budget vs net tape's 3.2%/px, three warning
+signs (T22, reproj_px non-certification, drag bias) each answered, confounds (spin,
+wind, fps, degenerate scale-vs-g), pre-registered bar with a kill condition, on-device
+feasibility. End with one RUN/DO-NOT-RUN + the one deciding number. STOP-WHEN: six
+points written or ~30 tool calls. Concurrent with backend-dev (net-post detector) and
+qa (ground-plane-blindness test) — do not touch their files.
+
+## STATE — DONE 2026-09-05c
+
+Deliverable written in full: docs/evidence/gravity-arc-pilot.md (all 6 points +
+RUN/DO-NOT-RUN + PM tradeoff + NOT ESTABLISHED). KEY FINDING (not previously known):
+read ball_physics/tennis_tracker/estimation/trajectory_fit.py::fit_arc directly —
+it ALREADY fits drag+Magnus physics to a 2D pixel arc but holds g=9.81 FIXED
+(physics/constants.py:24) and solves for launch state, camera scale assumed correct.
+The inverted fit the brief describes (fix g, solve for scale k) does NOT exist —
+new code, not a config flag. Derived analytically (not measured): pure isotropic
+scale error gives g_apparent = k*g_true exactly, but this project's actual measured
+failure (yt_match40) is an ANISOTROPIC hfov/depth misfit, not a scalar k — so even a
+clean g reading resolves only 1 DOF of a multi-parameter error. Hand-derived
+precision estimate: single-arc SE(g) ~20% from pixel noise alone at a low mount
+(1.38-1.74m caps usable window to 8-15 frames, curvature-fit error scales 1/T² not
+1/sqrt(N)) — already worse than the tape's proven 10% bar/3.2%/px. Drag shown
+mechanistically (from the actual a_z formula) to bias asymmetrically by flight phase
+in a way that actively masquerades as scale error, not just adds noise — a sharper
+version of the tape's sag confound. reproj_px-cannot-certify carried at memory-index
+detail only (primary evidence file un-locatable again this session, same T25 failure
+as last session — flagged, not re-derived). Recommended: DO NOT build as a shipping
+check; a narrow SIMULATION-ONLY pilot (extend synth_truth.py, inject known scale
+error, recover k, ~half day, no GPU/footage/labels) with a sharp kill condition
+(non-monotonic k-recovery OR >20% error at null k=1) is worth running only to settle
+the science question. On-device: confirmed zero new ANE inference, pure arithmetic,
+Accelerate/vDSP cost class same as the net tape. Also found and used: hfov_deg is a
+GUESSED input (default 70°) in the desktop calibration path (calibration.py) but a
+KNOWN AVCaptureDevice intrinsic on-device — the scale ambiguity this pilot targets is
+smaller in the shipped product than in this project's own desktop gold clips, flagged
+as an asymmetry not sized.
+
+agent-memory updated: open-questions.md (new bullet appended with full summary +
+pointer). MEMORY.md needed no edit (open-questions.md already indexed generically).
+No DECISIONS_PENDING write (outside allowlist per this session's system prompt,
+consistent with prior sessions) — no founder decision was generated needing it; the
+RUN/DO-NOT-RUN call is a research recommendation, not a founder decision, left in the
+deliverable and the final report.
+
+~24 tool calls used, under 30. Nothing further to do this task.
+
+---
+
+## TASK — what I was asked to do (2026-09-05b, DONE, prior task)
 
 Write docs/evidence/independent-calibration-references.md: rank OTHER independent
 references (beyond net tape, already built) for validating a court calibration /

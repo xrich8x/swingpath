@@ -88,3 +88,28 @@ Backfilled 2026-08-27 from `docs/STATE.md` and the archived sessions.
   human confirming calibration (same shipped pattern as the tape), never a fifth
   autonomous gate — four gates in this family have failed identically.
   `docs/evidence/independent-calibration-references.md`.
+- **Gravity-arc pilot, pre-registered (2026-09-05).** Priced candidate #2 above precisely.
+  `fit_arc` (`ball_physics/tennis_tracker/estimation/trajectory_fit.py`) already fits
+  drag+Magnus physics to a 2-D pixel arc but holds `g=9.81` FIXED and solves for launch
+  state — the inverted fit (fix `g`, solve for camera scale `k`) does not exist in this
+  repo and would be new code, not a config flag. Mechanism confirmed analytically: a pure
+  isotropic scale error gives `g_apparent = k·g_true` exactly, BUT this project's own
+  measured calibration failures (`yt_match40`) are anisotropic hfov/depth misfits, not a
+  scalar k — so even a clean apparent-g reading resolves only one DOF of a
+  multi-parameter error. Hand-derived precision estimate (not measured): single-arc SE(g)
+  ~20% from pixel noise alone at a low mount (1.38-1.74m caps the usable window to
+  0.26-0.5s = 8-15 frames @30fps, curvature-fit precision scales as 1/T² not 1/sqrt(N)) —
+  already worse than the net tape's proven 10% bar / 3.2%/px sensitivity, BEFORE drag/spin
+  bias (mechanistically shown to actively mimic a scale error, not just add noise) is
+  added. `reproj_px` cannot certify an arc (23.8x span passes, prior finding) so
+  certification would need cross-arc repeatability (the tape's own proven pattern) or
+  validation against known simulated truth, never a tighter residual bar. T22 (z=0
+  airborne) is naturally avoided IF the pilot builds on `bridge.py`'s physics-fit path,
+  not the flat `image_to_court` path — flagged as the one discipline a builder must hold.
+  On-device: pure arithmetic (Gauss-Newton/RK4), zero new ANE inference, cost class =
+  Accelerate/vDSP same as the net tape, not a Core ML question. RECOMMENDATION: DO NOT
+  build as a shipping check; a narrow SIMULATION-ONLY pilot (extend `synth_truth.py` with
+  an injected known scale error, recover k, ~half a day, no GPU, no real footage, no new
+  labels) is worth running only to settle the science question, with a sharp
+  pre-registered kill condition (non-monotonic k-recovery, or >20% error at the null k=1
+  case, ends it outright). `docs/evidence/gravity-arc-pilot.md`.
