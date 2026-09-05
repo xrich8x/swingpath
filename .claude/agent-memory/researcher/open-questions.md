@@ -57,3 +57,34 @@ Backfilled 2026-08-27 from `docs/STATE.md` and the archived sessions.
   trivially transfer to the ball, and that non-transfer IS the evidence the two problems
   differ. Two narrow items left open, one gated, one sketched:
   [docs/evidence/far-end-player-and-ball-what-is-left.md](../../../docs/evidence/far-end-player-and-ball-what-is-left.md).
+- **What else can independently validate a calibration, given coverage/camera-height/
+  net-anchor-bar all failed as GATES?** (2026-09-05.) Assessed, ranked, not built.
+  Organising finding: every FAILED check so far used only the ground plane (`z=0`);
+  the one check that WORKED (net tape) is the only one off-plane. A regulation
+  court's own paint is near/far and left/right symmetric (net excepted), so no
+  ground-plane-only statistic can in principle separate the `yt_match40`-class error
+  (a plausible court compressed onto its near half) from a correct one — this is why
+  four separate gates in this family have now failed the same way. Ranked: (1) **net
+  posts at 1.07m** — build next, cheap, off-plane, rigid (no sag confound unlike the
+  tape), framing-limited on low mounts in an unmeasured way (falsifier: count post
+  visibility across the 27 existing `*_netanchor.png` renders before building
+  anything — zero-cost). (2) **ball/gravity arc fit** — theoretically the sharpest
+  reference (an actual physical constant + real fps-timed seconds, not another
+  game-object assumption) but this project's own history gives three reasons to
+  expect it fails cheaply if funded now: T22 (naive z=0 airborne-ball projection is
+  already known wrong), the arc-fit-observability finding that `reproj_px` cannot
+  certify an arc (23.8x span passes), and unmeasured per-shot drag bias (-21.7%
+  measured on average speed already) that would fire on every CORRECT calibration.
+  (3) people-as-scale-reference — works, but stacks a ~4-5% population-height term
+  plus uncharacterised pose keypoint head/foot bias on top of the same off-plane
+  logic; noisier per-observation than the tape, no repeatability structure. (4) other
+  court markings (service lines/T/singles sidelines) and (5) vanishing points —
+  REJECTED as new work, both already tried under a different name (`verify_court`
+  coverage and joint line-to-model correspondence respectively) and both inherit the
+  same ground-plane symmetry blindness. (6) shadows — genuinely independent in
+  principle but inapplicable on Shell (64/116 clips, indoors), already shown to
+  confound the net-anchor `band_ratio` check via the net's OWN shadow, needs a wholly
+  new detector. Recommendation: build the post detector as a NUMBER shown to the
+  human confirming calibration (same shipped pattern as the tape), never a fifth
+  autonomous gate — four gates in this family have failed identically.
+  `docs/evidence/independent-calibration-references.md`.

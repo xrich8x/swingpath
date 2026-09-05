@@ -13,7 +13,71 @@ findings go in `docs/STATE.md` + `docs/evidence/`. Do not duplicate those here.
 
 ---
 
-## TASK — what I was asked to do (2026-09-05, NEW TASK, prior one below is DONE/unrelated)
+## TASK — what I was asked to do (2026-09-05b, NEW TASK, prior one below is DONE)
+
+Write docs/evidence/independent-calibration-references.md: rank OTHER independent
+references (beyond net tape, already built) for validating a court calibration /
+estimating camera height — net posts, people-as-scale, ball/gravity physics, other
+court markings, vanishing points, shadows. Error budget each, confounds, low-mount
+feasibility, on-device A13/CoreML feasibility. STOP-WHEN: ranked + ~30 tool calls.
+
+## STATE — DONE 2026-09-05b
+
+Deliverable written in full: docs/evidence/independent-calibration-references.md.
+Organising finding (the throughline for the whole ranking): every FAILED check so
+far (coverage, camera-height screen, net-anchor band_ratio/dy) reads only the
+ground plane (z=0); the one check that WORKED (net tape) is off-plane. A
+regulation court's own paint is near/far + left/right symmetric (net excepted), so
+no ground-plane-only statistic can in principle separate the yt_match40-class error
+(court compressed onto its near half, every ground-plane statistic still plausible)
+from a correct one. Ranked: (1) net posts 1.07m - BUILD NEXT, cheap, off-plane,
+rigid vs tape's sag confound, framing-limited in an UNMEASURED way (falsifier:
+count post visibility across the 27 existing *_netanchor.png renders BEFORE
+building anything, zero cost - flagged NOT ESTABLISHED). (2) ball/gravity arc -
+theoretically sharpest (real physical constant + fps-timed seconds, not another
+game-object assumption; corroborated as a real technique via WebSearch, e.g.
+arXiv:2407.00574 gravity+body-height camera-scale calibration in mocap, and
+several single-camera ballistic-trajectory sports papers - all broadcast/lab, none
+amateur-phone-tennis, flagged as benchmark-transfer) but THIS PROJECT's own history
+gives 3 reasons to expect a naive version fails cheaply if funded now: T22 (z=0
+airborne-ball projection already known wrong), arc-fit-observability's own finding
+that reproj_px cannot certify an arc (23.8x span passes - could not re-read the
+exact evidence file, path unknown/T25-suspect, relied on the agent-memory MEMORY.md
+index line which already had enough detail), and unmeasured per-shot drag bias
+(-21.7% measured on average speed) that would fire on every CORRECT calibration.
+Recommended as a narrow pilot only, not a build. (3) people-as-scale - works,
+computed error budget (~4-5% population height term + uncharacterised pose
+keypoint head/foot bias, stacked on the same off-plane logic) is wider than the
+tape's measured 3-10%, no repeatability structure (every player a different
+height) - corroborating signal only, not primary. (4) other court markings and (5)
+vanishing points REJECTED as duplicate work already tried under different names
+(verify_court coverage; joint line-to-model correspondence) - both inherit the same
+ground-plane symmetry blindness, explained via court.py's own LANDMARKS dict
+already containing all these points. (6) shadows - genuinely independent idea, not
+rejected on argument, but ranked last: inapplicable on Shell (64/116 clips,
+indoors), already shown to confound net-anchor band_ratio via the net's OWN shadow,
+needs a wholly new detector with no existing component. Recommendation section:
+build the post detector as a NUMBER for the human confirming calibration, never a
+fifth autonomous gate (four gates in this family already failed identically:
+coverage, camera-height screen, band_ratio, dy). Explicit "what would falsify this"
+given for both the top candidate (post-visibility count) and the built detector
+(reuse tape's own AGREE bar). Rejected-candidates table + NOT ESTABLISHED section
+both present.
+
+agent-memory updated: open-questions.md (new bullet, full ranking summary),
+MEMORY.md index needed no edit (existing line already points at open-questions.md
+generically). ~16 tool calls used this task, well under 30. No DECISIONS_PENDING
+addition - no founder decision was generated, this is a research ranking with an
+explicit recommendation and the "build first" item already named.
+
+Nothing further to do. Final response to lead: point to the deliverable path, the
+one-line recommendation (build the post detector as a diagnostic number, not a
+gate; treat gravity-arc as a pilot not a build; reject markings/VP as duplicates;
+shadows deprioritised), and the two falsifiers.
+
+---
+
+## TASK — what I was asked to do (2026-09-05, DONE, prior task)
 
 Write assessment at docs/evidence/court-detection-path-after-the-line-ceiling.md: given
 today's least-squares-court-fit.md result (fit ceiling is the LINE DETECTOR, not the
