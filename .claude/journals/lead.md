@@ -109,47 +109,44 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-RUN-STATE: RUNNING
+**Founder went to sleep 2026-09-06 ~00:15.** Nothing below needs them awake.
 
-**Pause history:** PAUSED 2026-09-04 ("pause im sleeping"), RESUMED the same day. That pause
-was misread as "no new agents" and a long background job was started under it; the founder's
-2026-09-05 ruling in RUN STATE above corrects that — a pause stops everything. The line then
-sat unrewritten for a day, which is why the next session waited to be told to continue.
+**LIVE: one `backend-dev`** building the COMPOSITE calibration score (founder instruction:
+*"don't just use the net - it should be a mix of all we've worked on"*). 39 min in at the time
+of writing, against a ~45-tool-call budget, so it is near its stop condition either way.
 
-**RUNNING, unattended:** the full parity chain on the **4 remaining gold clips**
-(`UHf0LeMU2pg`, `sAjkpeRq4P4`, `uR5q2cSM6AY`, `L73ep7JHiJ4`), four shells in parallel.
-int8 inference is ~10 s/frame with no HW accel, so expect **1-3 hours**. Every stage is
-resumable and skips completed tags, so a kill costs nothing but time. Script:
-`scratchpad/parity_full.sh`; logs `scratchpad/parity_<clip>.log`.
+**IF IT DIED MID-WRITE - and two agents were killed at this exact duration earlier today -
+DO NOT RE-RUN IT BLIND.** Check disk first; that rule has paid off three times today:
+- `data/output/composite_signal_sweep.json` is already written. The expensive half (signal
+  sweep + corruptions) is in there.
+- `docs/evidence/composite-calibration-score.md` was 59 lines with `(pending)` verdicts.
+  **Finish the write-up FROM the JSON**, exactly as the hfov doc was finished from
+  `hfov_sweep.json`. Do not recompute.
+- Its pre-registered bar is the last-but-one section of this journal. **Do not retune it**, and
+  in particular the ablation (each signal's SOLO score beside the composite) is the point - if
+  one signal alone matches the composite, that KILLS the ensemble and is the finding.
 
-**Why it is worth the wall clock:** the top-2 refusal signal PASSES on n=5 bad frames with
-an **effective event count of ~3**, and its own evidence names a wider clip set as *the*
-prerequisite for any use. This takes the parity set from 6 clips to 10.
+**THE STANDING RISK, named:** agents have been killed by session limits four times today
+(17:26, 17:43, and two earlier). Locks survive them. `ListAgents` is the ONLY reliable check -
+a lock file plus a recent file timestamp is NOT evidence an agent is alive, and the lead
+asserted otherwise once today and was rightly challenged.
 
-**ON RESUME, do this first:** check whether those four wrote
-`data/output/ball_detector_int8_parity_summary__<clip>.json`. If they did, re-run the pooled
-rate (`scratchpad/pool_rate.py`, extend its CLIPS list to 10) and re-run the refusal-signal
-extraction over the wider set. **Check for finished output before re-running anything** - a
-shell died mid-session on 2026-09-04 and everything had in fact completed; the lead re-ran
-three int8 compares needlessly.
+**Founder queue (nothing urgent, nothing blocking):**
+0. **Record one clip from above 2.5 m** (~15 min) - pm's new #0. It is the falsifier for v1's
+   whole setup story AND the first compliant metric clip. Nothing else flips a feature set
+   for a quarter hour.
+1. Buy a used A13+ iPhone - still the largest unblock; the Mac half of that blocker is dead.
+2. Re-label 8 court gold frames (~1 min).
+3. One sentence: does match scoring stay out of v1?
+4. `sAjkpeRq4P4` corner sheet (~2 min) - at 3.33 m it is ABOVE the crossover so an eye CAN
+   settle it. **`am_hard_utr`'s sheet was DELETED from this queue** - at 1.74 m it is
+   un-confirmable in principle.
+5. The 3-6 h point-boundary labelling session.
 
-**Closed 2026-09-03/04** (all committed, none pushed):
-- int8 parity: 3 of 6 clips fail, pooled 5/528 both-fire frames. **All THREE mitigations
-  spent**, the third by refuting the premise the other two shared.
-- Smoother backward-pass re-admit: FAIL. **Rule 3 bars a fourth in that family.**
-- `seen_frac` speed gate: weak, and **cannot be rescued by re-tuning** - NONE ADMISSIBLE for
-  any coverage floor above 27%. Needs replacing.
-- Court joint-correspondence: **branch dead.** Both named continuations measured, both fail;
-  the ceiling is the DETECTED LINES (~6.4 px), one stage upstream of the fit.
-- Point-boundary label protocol written; the founder's 3-6 h session is unblocked.
-- `verify_court`'s coverage gate does not separate correct from wrong courts.
-- Top-2 margin refusal: fp32 5/5 at 31% precision; **int8 4/5 at 14-17%** (amended - the
-  fp32-only claim was too strong).
-
-**Corrections I had to make against my own STATE rows this session** - all same-day, all
-recorded: "G fails everywhere", "the gate is at chance", "it refuses the more accurate
-shots", "camera height is a correctness screen", "int8 cannot police itself". **Every one
-came from a teammate or a control, not from me re-reading.** Keep the controls mandatory.
+**Founder decision still open on the harness:** the `Stop` hook runs an **opus agent on every
+turn end** (90 s timeout, can block). That is the "everything got slow" complaint. Three fixes
+were offered - narrow it to the files it already cares about, cut the timeout, or amend
+CLAUDE.md's one-child rule to 3. **Nothing was touched; it is their config.**
 
 
 ## PARKED — work that was started and stopped
