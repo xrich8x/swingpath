@@ -619,3 +619,54 @@ already failed here and the fifth must clear a higher bar than "it flags the bad
 
 **Not authorised:** a fifth accept/reject gate shipped on this evidence; editing any
 calibration; changing `cam_fit_quad`'s fit. Surfacing a computed number is authorised.
+
+---
+
+## PRE-REGISTRATION — a COMPOSITE calibration score. 2026-09-05, founder instruction
+
+**Founder: "Don't just use the net - it should be a mix of all we've worked on."** Correct, and
+the lead had over-indexed on the net because it was the one thing that worked alone.
+
+**Why a mix is principled here and not just hopeful.** Every signal failed as a solo gate, but
+**they fail for DIFFERENT reasons**, which is the condition under which an ensemble beats its
+members:
+
+| signal | what it sees | how it fails alone |
+|---|---|---|
+| net-tape clearance | far baseline vs tape, pre-calibration | geometric only; says nothing below the crossover |
+| net-tape height | camera height, off-plane | precision-limited (3.2%/px at 720p); net SAG |
+| net posts (1.07 m) | off-plane, RIGID - no sag | 7x worse row precision; confidently wrong on 4/11 |
+| fitted hfov | depth-anisotropic compression | false-rejects broadcast (`eala`) and 6 correct clips |
+| camera height | mount plausibility | mount-TYPE test, not correctness |
+| line coverage | lines on real paint | orders by line VISIBILITY, not correctness |
+| fit residual | corner self-consistency | T23: 0.9 px on a grossly wrong court |
+| centrality | court centred | never fires |
+| player feet -> depth | an object standing ON the court | needs a person, one frame |
+
+Coverage fails on contrast; hfov fails on broadcast; height fails on mount type. **Those are
+decorrelated failure modes.** A wrong court has to fool all of them at once.
+
+**THE HARD PROBLEM, named before anyone starts: n = 1 confirmed-wrong calibration.**
+(`yt_match40`'s `.bak`.) You cannot fit or validate an ensemble on one positive. **So the
+positive class MUST be synthetic** - qa's corruption harness already generates depth
+compression, isotropic scale, shift, rotation and asymmetric scale, and it is the only way to
+get a positive class with any n at all.
+
+**PRE-REGISTERED BAR:**
+- **Fit the combination rule on a TRAIN split of clips; report on a HELD-OUT split.** Any number
+  quoted from clips the rule was chosen on is worthless, and this project has been caught
+  choosing thresholds post-hoc twice this week.
+- **PASS:** on held-out clips, flags **>= 80%** of synthetic corruptions at **<= 1 false flag**
+  among the calibrations believed correct - **`eala_pts_auto` included as a negative**, since it
+  broke two previous screens.
+- **FAIL:** anything else. **A sixth failure is a fine outcome** and would say the signals are
+  not merely weak but redundant - all reading the same thing.
+- **Mandatory ablation:** report each signal's solo score and the composite's, so the reader can
+  see whether the mix adds anything or one member is carrying it. **If one signal alone matches
+  the composite, say so** - that is the honest result and it kills the ensemble.
+- **Report by corruption TYPE, not pooled.** Depth compression is the one that matters; a
+  composite that shines on rotation (which residual already catches at 5 deg) and misses
+  compression has solved nothing.
+
+**Still not a gate.** Five have failed. Output is a score and a reason string for the human who
+confirms setup. Whether it ever gates is a founder call, not this run's.
