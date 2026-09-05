@@ -1,37 +1,45 @@
 ---
 name: v1-critical-path-is-founder-blocked
-description: The whole v1 mobile critical path (Core ML export, pose affordability on A13) is blocked on founder actions, so every queueable item is off the critical path — sequence the human asks first
+description: CORRECTED 2026-09-05 — the Mac blocker is DEAD (Core ML export runs on a GitHub macos-14 runner, push bar lifted). What remains is a physical A13 iPhone, and it is a scoping input, not a final verification step.
 metadata:
   type: project
 ---
 
-Established 2026-08-29 while re-sequencing the queue from scratch.
+Established 2026-08-29, **materially corrected 2026-09-05**. Read the correction first.
 
-**The fact.** Nothing on the v1 critical path is runnable by the team. The two gates that
-decide whether an iPhone can run this pipeline at all are both waiting on the founder:
+## CORRECTION — the Mac half of this is stale, do not quote it
 
-- **P0-0, Core ML export** — needs a Mac. `coremltools`' Windows wheel is pure Python and
-  the native `BlobWriter` that serialises an `mlprogram`'s weights is absent, so the
-  *export* fails, not merely the on-device measurement. No phone has run any part of this
-  pipeline. Procurement, not minutes.
-- **P0-2, pose affordability on an A13** — pose **binds runtime** (~1000 ms/frame ANE
-  arithmetic; see [[mobile-parity-first]]). Its `yt_match40` column was WITHDRAWN because
-  that clip's four clicked corners sit on asphalt and hedge, so the pipeline scored the
-  NEAR player as far. Blocked on **one human re-click of four corners** (rule 9 bars us
-  editing it).
+The original version of this memory said P0-0 Core ML export "needs a Mac. Procurement, not
+minutes." **That is wrong as of 2026-09-05.** Verified by reading the file:
+`.github/workflows/coreml-export.yml` is `workflow_dispatch` on a pinned `macos-14`
+(Apple Silicon) runner, installs `coremltools` on real macOS where the compiled
+`libmilstoragepython`/`libcoremlpython` missing from the Windows wheel exist, runs
+`tools/export_coreml_p0.py` and uploads `ios/coreml_export/` with **14-day artefact
+retention**. It was blocked only by (a) a standing push bar, **lifted by founder ruling
+2026-09-04**, and (b) a hard-coded `backend/yolo11m-pose.pt` that `.gitignore` excludes from
+a fresh CI checkout — **fixed**. It is a button press. `workflow_dispatch` only reads the
+default branch's copy, so any brief must say **push `master` first**.
 
-**Why:** court and ball work look busy but neither decides whether v1 ships; the runtime
-question does, and it cannot be answered on this machine.
+## What is genuinely still hardware-blocked
 
-**How to apply:** rank the founder's minutes as a scarce resource with a leverage
-ordering, and lead any status report with it rather than burying it under the queue.
-Highest leverage in the project is ~5 minutes re-clicking `yt_match40` — it unblocks the
-top runtime risk. Build the rendered-corner audit sheets BEFORE asking, so the founder
-only looks and never hunts. Batch every human ask into one update
-([[human-asks-are-a-scarce-batched-resource]]) and dispatch the human-latency item first
-so his clock runs while machine work continues.
+**A physical A13-or-newer iPhone.** Not a Mac, not a Simulator, not a cloud macOS VM (which
+is a VM with no phone attached). Three v1 decisions dead-end there and nowhere else:
 
-**Corollary for the cut line:** if every queueable item is off the critical path, none of
-them is urgent — which is exactly when a big speculative build (joint line-to-model court
-correspondence, 4-8 sessions, can fail) looks deceptively attractive. Court auto-detection
-is not required for v1 parity at all; manual 4-corner tap supplies the homography.
+1. **Sustained throughput at thermal steady state** — the honest bar, never "fps". Desktop
+   arithmetic is ~1.1 s/frame; a 60–90 min match needs roughly an order of magnitude more
+   than desktop CPU. The single largest open unknown in v1.
+2. **int8 vs fp32 for the ball graph** — 10.9 MB vs 43.0 MB, affordability unknown.
+3. **The cost half of P0-2 pose affordability.** Its **accuracy** half is unblocked by five
+   minutes of founder corner-clicking on `yt_match40` (rule 9 bars us editing it).
+
+**Why this is urgent rather than a final verification step:** if throughput comes back bad,
+the fix is not optimisation, it is a **product cut** (analyse a set not a match; downscale
+pose; drop a stage) — and that cut is far cheaper at session 15 than at session 45. The
+device is a **scoping input**.
+
+**How to apply:** lead every status report with the hardware ask and the ~16-minute batched
+founder sitting (re-click `yt_match40`, review the 27 corner sheets, re-label 8 gold frames),
+per [[human-asks-are-a-scarce-batched-resource]]. Almost the entire remaining build — Core ML
+artefacts, app shell, capture, calibration screen, refusal surface, results UI, batch job,
+parity checks — proceeds at full speed without the device. See
+[[v1-cut-line-after-court-closure]].

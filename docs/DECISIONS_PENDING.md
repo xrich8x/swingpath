@@ -44,6 +44,57 @@ was done instead so the blocker is not also idle time.
 
 ---
 
+## −1. Buy one used A13-or-newer iPhone. This is the largest unblock available and it is on no list.
+
+**Raised by pm 2026-09-05 while re-sequencing v1** (`docs/evidence/v1-resequenced-after-court-closure.md` §5).
+
+Three v1 decisions dead-end on physical hardware and **nowhere else**: sustained throughput at
+thermal steady state (the honest bar for whether a 60–90 min match is analysable at all), the
+int8-vs-fp32 ship call, and the cost half of P0-2 pose affordability. A cloud macOS runner does
+not help — it is a VM with no phone attached, and a Simulator number is not a device number.
+
+**The Mac half of this blocker is now DEAD** and should stop being quoted: the Core ML export
+runs on a GitHub-hosted `macos-14` runner, the workflow is on `origin/master`, the push bar was
+lifted 2026-09-04 and the one defect is fixed. What remains is an iPhone, not a Mac.
+
+**Cost to unblock: one secondhand iPhone 11 or SE 2nd gen.** Why it is urgent rather than a
+verification step at the end: if throughput comes back bad, the fix is a **product cut**
+(analyse a set not a match; downscale pose; drop a stage), and that cut is far cheaper at
+session 15 than at session 45. We are otherwise about to build tens of sessions against three
+unknowns an afternoon of testing would retire.
+
+**Done instead, so the blocker is not idle time:** the whole build lane is dispatchable without
+it — see §4 of the same file for the ordered queue.
+
+---
+
+## −0.5. Match SCORING is being DEFERRED out of v1; rally clips stay. Confirm or overturn.
+
+**pm call 2026-09-05**, recorded because rule 12 put the score layer back in scope on
+2026-08-27 and this narrows it. Full reasoning in
+`docs/evidence/v1-resequenced-after-court-closure.md` §2.3.
+
+**Rally segmentation stays in v1** — it ships today, its consumer (clip list, highlights reel)
+is built, and a late boundary produces a slightly late clip, not a wrong fact. **Match scoring
+leaves v1** — it is one confident fact per match that the user already knows the true answer
+to, it has no ground truth of any kind today, and its consumers (a score view, a mobile
+correction UI) are **not built**, so it is 8–12 sessions from a screen even with labels in hand.
+
+**The ~3–6 h labelling session is still on the founder queue, with a changed justification:** it
+is now the only way to put a number on **rally clip boundaries, a v1 feature that is currently
+unmeasured**. The score floor becomes a secondary benefit.
+
+**Two accuracy floors pre-registered before the labels exist (rule 2), and they do not move:**
+- Rally clip boundaries (v1): **≥90% of boundaries within 2.0 s** of the human label. Below
+  that, the clip list still ships but **dead-time trimming does not**.
+- Match score (v1.x, gating whether it is ever displayed): **≥95% of games correctly scored**,
+  plus a refusal path. Below that, ship no score at all.
+
+**Cost to overturn: one sentence.** If the founder wants scoring in v1, the queue absorbs
+8–12 sessions of consumer UI built before its accuracy floor is known.
+
+---
+
 ## 0. The shipped int8 ball graph fails its parity bar on half the gold clips — ship it, or not?
 
 > **UPDATE 2026-09-04 — option 3 was authorised, run, and is MEASURED OUT.** The per-layer
