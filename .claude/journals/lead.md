@@ -35,6 +35,44 @@ thing you try — re-dispatching the work that just died — is the thing it blo
    survive a death. The directory is gitignored, so nothing else will surface them.
 4. **Then resume**, preferring the killed agent's uncommitted files over a restart.
 
+## RUN STATE — the one thing that decides whether to wait for the founder
+
+`NOW` opens with a `RUN-STATE:` line. It has exactly three values. **Read it before anything
+else: it is the whole answer to "should I be working right now?"**
+
+| RUN-STATE | Means | What you do |
+| --- | --- | --- |
+| `RUNNING` | Normal. The default. | Work. Do not ask permission to continue. |
+| `KILLED` | A usage limit, crash or closed terminal ended the last session mid-work. | **Resume immediately, without asking.** Then set `RUNNING`. A death is not a pause. |
+| `PAUSED-BY-FOUNDER` | The founder said stop. | Stop everything and end the turn. Only the founder's words clear it. |
+
+**A founder pause stops the ENTIRE SESSION — founder ruling 2026-09-05.** Not just agent
+dispatch. When the founder says "pause", "im sleeping", "stop for now" or anything like it:
+
+- dispatch no agents;
+- **start no background job** — however cheap, however well it seems to fit an unattended
+  window. This is the exact mistake of 2026-09-04: "pause im sleeping" was read as "no
+  agents", and a 1-3 hour parity run was launched *because* nobody was waiting;
+- run no experiment, no training, no analysis, no commit;
+- log the pause (below), set `RUN-STATE: PAUSED-BY-FOUNDER`, and **END THE TURN**.
+
+A job that was ALREADY running is left alone — killing it throws away work — but name it in
+the pause line and start nothing new.
+
+**Logging a pause is mandatory, in both places:**
+
+1. `NOW`'s state line becomes:
+   `RUN-STATE: PAUSED-BY-FOUNDER — <YYYY-MM-DD HH:MM> — "<founder's exact words>" — still running: <job, or nothing>`
+2. `## LOG`, newest-first, one line at pause and one at resume:
+   `- **<date>** — PAUSED by founder ("<words>"). Left running: <...>.`
+   `- **<date>** — RESUMED by founder ("<words>").`
+
+**Only the founder sets `PAUSED-BY-FOUNDER`, and clearing it is not optional** — the moment
+they say continue, that line goes back to `RUNNING` in the same turn. A stale PAUSED line is
+indistinguishable from a live pause and will stop the next session too; that happened on
+2026-09-04 and cost a day. **A kill never sets it** — a kill is `KILLED`, and `KILLED`
+resumes on its own.
+
 ## REPORTING RULE — founder instruction 2026-09-02
 
 **Do not surface founder-blocked items unless the founder asks for them.** They go in
@@ -44,11 +82,15 @@ work, and asks for the list when they want it.
 
 Report what was DONE. Keep the queue to yourself until requested.
 
-## RESUME AFTER A KILL — read this first, it is one paste
+## RESUME AFTER A KILL — usually automatic; one paste only if the terminal is gone
 
-A usage limit kills the session outright and NOTHING restarts it — not this journal,
-not a scheduled job, not a cloud agent (a cloud agent cannot see this local repo).
-Resumption costs exactly one message. Paste this:
+**This is `RUN-STATE: KILLED`, never a pause. Resume without asking.**
+
+`autoContinueAtUsageLimit: true` is set in `.claude/settings.json`, so a usage limit hit
+while the session process is still alive resumes it by itself when the quota rolls over —
+no human message needed. Only a CLOSED terminal, a crash or a reboot needs a restart, and
+nothing automates that: not this journal, not a scheduled job, not a cloud agent (which
+cannot see this local repo). In that case, and only that case, resumption costs one paste:
 
     /loop Work docs/STATE.md's Open table continuously and autonomously, and ALWAYS
     use the teammate agents for feature work — 3-live-agent project cap, one direct
@@ -67,9 +109,12 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-**PAUSED at the founder's request 2026-09-04 ("pause im sleeping"), then told to continue.**
-No new AGENT was dispatched after that. One long background JOB was started deliberately,
-because it is exactly the kind of thing to run while nobody is waiting — see below.
+RUN-STATE: RUNNING
+
+**Pause history:** PAUSED 2026-09-04 ("pause im sleeping"), RESUMED the same day. That pause
+was misread as "no new agents" and a long background job was started under it; the founder's
+2026-09-05 ruling in RUN STATE above corrects that — a pause stops everything. The line then
+sat unrewritten for a day, which is why the next session waited to be told to continue.
 
 **RUNNING, unattended:** the full parity chain on the **4 remaining gold clips**
 (`UHf0LeMU2pg`, `sAjkpeRq4P4`, `uR5q2cSM6AY`, `L73ep7JHiJ4`), four shells in parallel.
@@ -172,11 +217,27 @@ affordability) both wait here, and nothing dispatchable is on that path.
 - **Line calling is PARKED** (founder, 2026-08-29). The 0.15/0.20 m refusal band is NOT
   chosen. `live.py` keeps its 0.05 m. qa's margin curve is filed in STATE, unactioned.
 - **P0-3's substituted identity test is ACCEPTED** (founder, 2026-08-29).
+- **A founder pause stops the WHOLE SESSION** (founder, 2026-09-05) — agents, background
+  jobs, experiments, commits, everything; not just agent dispatch. It is written to `NOW`'s
+  `RUN-STATE` line and to `LOG`, and only the founder clears it. **A kill is not a pause:**
+  a killed session resumes itself and asks nobody. See "RUN STATE" at the top of this file.
 - **P0-3 is no longer provisional** — 25 context tiles reviewed 2026-08-29. Both strict
   passes are real far-end figures; sampled rejections are real far players thrown out for
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-05** — **Founder ruling: "pause" means the ENTIRE session, not just agent
+  dispatch.** Came out of a review of the doorman, which found the doorman was not the
+  blocker at all: `doorman.log`'s five entries are ALL synthetic self-tests — it has never
+  refused a real dispatch. The real blockers were in this file. (a) `NOW` still read PAUSED
+  from 2026-09-04, a day after being told to continue, so every restart read a live pause.
+  (b) This file contradicted itself on whether a killed session self-resumes — l.22 and the
+  2026-08-28 LOG entry said yes (`autoContinueAtUsageLimit`), the "read this first" section
+  said "NOTHING restarts it — paste this". So a DEATH was read as a PAUSE and cost a human
+  message every time. Fixed here: a `RUN-STATE:` line in `NOW` with three values
+  (RUNNING / KILLED / PAUSED-BY-FOUNDER), a RUN STATE section defining each and making
+  pause-logging mandatory, and the kill section corrected.
 
 - **2026-09-03** — **doorman v2 installed** from `agent-team-package/swingvision-install/`
   (INSTALL.md steps 1-5). New `agent_cap.py`/`agent-cap.sh`; settings env teams flag 1->0,

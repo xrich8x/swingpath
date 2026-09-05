@@ -174,12 +174,12 @@ in one. Queue the rest on paper, dispatch only the head, PAUSE anything needing 
 on every return (the answer to A usually deletes half of C–Z before they are paid for), and
 dispatch before writing the status report.
 
-**A task needs a human when** only an eye can invalidate the result (visual failure mode →
-provisional until the frames are seen); it fires a stopping rule, is irreversible, is a
-product decision, needs absent hardware, or would edit human ground truth (rule 9).
-**Paused tasks batch into ONE update** naming what unpauses each.
+**A task needs a human when** only an eye can invalidate it (visual failure → provisional until
+the frames are seen), or it fires a stopping rule, is irreversible, is a product decision, needs
+absent hardware, or would edit human ground truth (rule 9). **Batch paused tasks into ONE update.**
 
-**`.claude/journals/` — one per agent plus `lead.md`, written DURING work, not after.** A
-usage limit kills an agent outright and nothing restarts it, so a journal written at the end
-never survives the kill it exists for. Read yours FIRST when restarting — a populated
-TASK/STATE means resume, not begin — and treat a rate-limit notice as a restart trigger.
+**`.claude/journals/` — one per agent plus `lead.md`, written DURING work, not after**; a kill
+loses everything unwritten. Read yours FIRST on restart: a populated TASK/STATE means resume, and
+a rate-limit notice IS a restart trigger. **A KILL IS NOT A PAUSE — resume without asking.** Only
+the founder pauses, and their pause stops the WHOLE session (agents, jobs, experiments) via
+`lead.md`'s `RUN-STATE:` + LOG; they alone clear it, and a stale PAUSED line stops the next one.
