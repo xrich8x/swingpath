@@ -67,35 +67,44 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-**An autonomous /loop, self-paced, working `docs/STATE.md`'s Open table.** Founder
-instruction 2026-09-02: keep going, do not ask, record decisions for later.
+**PAUSED at the founder's request 2026-09-04 ("pause im sleeping"), then told to continue.**
+No new AGENT was dispatched after that. One long background JOB was started deliberately,
+because it is exactly the kind of thing to run while nobody is waiting — see below.
 
-**Closed 2026-09-03/04:**
-- Lane 1 int8 — `28ead70`. 3 of 6 clips fail; pooled **5/528 both-fire frames (0.95%)**;
-  both named mitigations rejected. Independently re-reproduced 2026-09-04, numbers exact.
-- Smoother backward-pass re-admit — `1fbcb6f`. FAIL 0/3. **Rule 3 bars a fourth in that family.**
-- Point-boundary label protocol — `79c381d`. Founder's 3-6 h session unblocked.
-- `seen_frac` gate — `6013653`, CORRECTED `cf556a5`, restated `bbe954b`, swept `7195e32`.
+**RUNNING, unattended:** the full parity chain on the **4 remaining gold clips**
+(`UHf0LeMU2pg`, `sAjkpeRq4P4`, `uR5q2cSM6AY`, `L73ep7JHiJ4`), four shells in parallel.
+int8 inference is ~10 s/frame with no HW accel, so expect **1-3 hours**. Every stage is
+resumable and skips completed tags, so a kill costs nothing but time. Script:
+`scratchpad/parity_full.sh`; logs `scratchpad/parity_<clip>.log`.
 
-**A shell died mid-run 2026-09-04** (exit 107 on every command, `echo` included). It came
-back on the next session with **every artifact intact** — all 5 sweep seeds and all three
-orphaned int8 clips had finished. Check for finished output before re-running anything after
-a shell death; I re-ran the int8 compares needlessly and only got a free reproducibility check
-out of it.
+**Why it is worth the wall clock:** the top-2 refusal signal PASSES on n=5 bad frames with
+an **effective event count of ~3**, and its own evidence names a wider clip set as *the*
+prerequisite for any use. This takes the parity set from 6 clips to 10.
 
-**Live child: `backend-dev`** — executing the REPAIRED replacement-bar sweep. I wrote that bar
-(it adds the >=60% coverage floor the defective §7 test lacked), so I am deliberately not the
-one running it: writing and running a bar in one breath is the post-hoc error this whole lane
-exists to avoid.
+**ON RESUME, do this first:** check whether those four wrote
+`data/output/ball_detector_int8_parity_summary__<clip>.json`. If they did, re-run the pooled
+rate (`scratchpad/pool_rate.py`, extend its CLIPS list to 10) and re-run the refusal-signal
+extraction over the wider set. **Check for finished output before re-running anything** - a
+shell died mid-session on 2026-09-04 and everything had in fact completed; the lead re-ran
+three int8 compares needlessly.
 
-**Queue, re-sorted:**
-1. The court SEARCH problem — the biggest cluster of open rows (right-court/wrong-width,
-   indoor shell, `AGREE_PX` on 4K) all sit downstream of that one unsolved thing.
-2. `suppress_false_locks`, the second-largest coverage cost (-5.2 / -4.4).
-3. Off-machine backup — still open, and pushes are barred, so it needs a non-push route.
+**Closed 2026-09-03/04** (all committed, none pushed):
+- int8 parity: 3 of 6 clips fail, pooled 5/528 both-fire frames. **All THREE mitigations
+  spent**, the third by refuting the premise the other two shared.
+- Smoother backward-pass re-admit: FAIL. **Rule 3 bars a fourth in that family.**
+- `seen_frac` speed gate: weak, and **cannot be rescued by re-tuning** - NONE ADMISSIBLE for
+  any coverage floor above 27%. Needs replacing.
+- Court joint-correspondence: **branch dead.** Both named continuations measured, both fail;
+  the ceiling is the DETECTED LINES (~6.4 px), one stage upstream of the fit.
+- Point-boundary label protocol written; the founder's 3-6 h session is unblocked.
+- `verify_court`'s coverage gate does not separate correct from wrong courts.
+- Top-2 margin refusal: fp32 5/5 at 31% precision; **int8 4/5 at 14-17%** (amended - the
+  fp32-only claim was too strong).
 
-**Blocked, do not surface unasked:** the int8 ship call and the speed-gate replacement both
-need a real-footage absolute speed reference, which no compliant source currently provides.
+**Corrections I had to make against my own STATE rows this session** - all same-day, all
+recorded: "G fails everywhere", "the gate is at chance", "it refuses the more accurate
+shots", "camera height is a correctness screen", "int8 cannot police itself". **Every one
+came from a teammate or a control, not from me re-reading.** Keep the controls mandatory.
 
 
 ## PARKED — work that was started and stopped
