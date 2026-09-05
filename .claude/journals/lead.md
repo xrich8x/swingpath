@@ -589,3 +589,33 @@ at least one is wrong, not which.**
 
 **Not authorised:** editing any calibration; changing any fitted height; restating the
 close-call table. This measures a disagreement, it does not resolve it.
+
+---
+
+## PRE-REGISTRATION — the fitted hfov, which the code computes and throws away. 2026-09-05
+
+**qa's finding, not a new idea of mine.** `cam_fit_quad` already fits an hfov per clip. Under
+depth-anisotropic compression - the ONE corruption invisible to every shipped gate - that hfov
+**collapses monotonically**: 91 -> 55 -> 34 -> 18 -> 9 -> 2 deg on `yt_match40`, leaving this
+repo's own stated **60-90 deg amateur-lens prior** by about **15% compression**. Nobody reads
+it. `camera_height_m()` **hardcodes a default 70 deg** instead of the value the fit computed
+a few lines earlier.
+
+**So this is a reporting gap, not a new instrument**, and that framing is load-bearing: the
+number already exists and is discarded.
+
+**PRE-REGISTERED BAR** - and it is deliberately two-sided, because **four autonomous gates have
+already failed here and the fifth must clear a higher bar than "it flags the bad one":**
+- **SEPARATES:** an hfov-plausibility window flags **>= 4 of 5** synthetic depth-compressions at
+  the magnitude qa used, AND flags **0 of the calibrations believed correct** - `eala_pts_auto`
+  **specifically included**, since it is a real Wimbledon broadcast camera and is exactly what
+  false-rejected the camera-height screen. A window that catches compressions by also rejecting
+  broadcast footage has reproduced the previous failure, not fixed it.
+- **DOES NOT SEPARATE:** anything else. Then it is **reported as a number and not gated on** -
+  which is still a win, because it is currently not reported at all.
+- **The window must be justified BEFORE the sweep** from the lens prior already written down
+  (60-90 deg), not chosen from the results. If the justified window fails, it stays failed; do
+  not widen it to fit.
+
+**Not authorised:** a fifth accept/reject gate shipped on this evidence; editing any
+calibration; changing `cam_fit_quad`'s fit. Surfacing a computed number is authorised.
