@@ -98,3 +98,23 @@ STOP-WHEN: held-out eval + ablation written up, or ~45 tool calls.
   DO NOT RETUNE: n=1 and every constant that catches it re-breaks eala.
 - backend/tests/test_calib_score.py: 15 tests, all pass.
 - NEXT: HELD-OUT eval + solo ablation on HELD, then write the deliverable.
+- *** HELD-OUT RESULT (rule frozen before looking): FF 1/9 (flexi_franz_p07, lens_coherence
+  at 59.5 deg vs the 60 floor - fragile, sibling p01 is 60.5). eala_auto 0.0 NOT FLAGGED.
+  Detection pooled 92/162 = 57% -> FAILS the 80% bar. BY TYPE: depth 91%, rot 93%,
+  shift 67%, asym 30%, ISO 0/36 = 0%.
+  ABLATION (held-out): best solo pooled = residual 37%; best solo on DEPTH = lens_coherence
+  76% AND it is the one that false-flags. COMPOSITE 91% on depth, 57% pooled.
+  => NO SOLO MATCHES THE COMPOSITE. The ensemble is NOT redundant. That is the positive.
+  Sensitivity res=40 (repo's own bound): same FF, pooled 49%. Verdict unchanged.
+- ISO BLIND SPOT EXPLAINED: coverage catches isotropic scale only RELATIVE to the clip's own
+  baseline; absolutely it OVERLAPS believed-correct clips (0.188/0.326/0.433). At setup time
+  there is no baseline. Argued, not proved, that no single-frame 4-corner rule can catch it.
+- FULL SUITE 586/586 PASS (was 571; +15 new). No pre-existing test moved.
+- DELIVERABLE docs/evidence/composite-calibration-score.md WRITTEN IN FULL (all sections).
+- DECISIONS_PENDING appended: eye-check flexi_franz_p07 / demo30 tape +80% / surface-or-not /
+  COMMISSION HUMAN MIS-CLICKS as real positives (the real ask).
+- TASK COMPLETE 2026-09-06. docs/STATE.md row NOT written (NOT-THIS-RUN); lead must add:
+  "Composite calibration score FAILS the pre-registered bar: held-out 57% detection (bar 80%)
+  at 1/9 false flags; depth compression 91%, isotropic scale 0/36; no solo signal matches the
+  composite; scores 0.0 on the one real wrong calibration --
+  docs/evidence/composite-calibration-score.md". No git commit (NOT-THIS-RUN).

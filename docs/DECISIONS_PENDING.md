@@ -505,3 +505,30 @@ of the net tape, and `run.py check` prints it. Full evidence and the per-clip sw
   `mpc_tuesday_p01`, 2.79 m) to confirm the two lines are actually distinguishable there. If
   they are not, the good band belongs higher than +10 px — and that would be a finding, not a
   reason to retune. Rule: the bands stay as pre-registered until an eye says otherwise.
+
+## Composite calibration score — 2026-09-06 (backend-dev)
+
+Evidence: `docs/evidence/composite-calibration-score.md`. Code `backend/swingvision/calib_score.py`.
+The composite FAILS the pre-registered bar (held-out 57% detection vs 80%) but MEETS the
+false-flag budget (1 of 9, and `eala_auto` scores 0.0). It is wired to nothing.
+
+1. **EYE-CHECK, human required: `flexi_franz_p07`.** It is the single held-out false flag,
+   fired by a fitted lens of 59.5 deg — 0.5 deg below the 60 deg floor — while its sibling
+   `flexi_franz_p01` (same camera, same mount, re-clicked) fits 60.5 deg and passes. Measured
+   re-click hfov scatter on one mount is up to 29.2 deg, so the "<= 1 false flag" half of the
+   bar is met by luck, not margin. Only a human looking at the frame can say whether p07 is a
+   marginal click or a rule error.
+2. **UNEXPLAINED: `demo30`'s net tape reads +80%** against its own fitted camera height, while
+   every other held-out clip reads within 8%. Not chased this run. It is half a vote so it
+   changed no verdict, but an 80% off-plane disagreement on a believed-correct calibration is
+   either a real clip problem or a tape-measurement failure mode nobody has named.
+3. **PRODUCT CALL: should the score be surfaced at all, and where?** It is a reason string for
+   the human confirming setup, not a gate, and it is currently called from nothing. Options:
+   (a) print the reasons in `run.py check`'s Setup block, (b) stamp them into `_audit`,
+   (c) leave it dormant. Anything that makes it refuse footage is a founder decision.
+4. **THE REAL ASK: commission human mis-clicks as ground truth.** The composite scores 0.0 on
+   the ONE confirmed-wrong calibration (`yt_match40_pts.json.bak-2026-09-05`) because a wrong
+   court clicked on asphalt fits a 10.8 m / 20.9 deg camera, which is within 2 m and 4 deg of
+   the real Wimbledon broadcast clip. The synthetic corruption class does not cover the
+   failure mode that actually happened. A dozen deliberately mis-clicked, labelled
+   calibrations would be worth more than another five corruption families.
