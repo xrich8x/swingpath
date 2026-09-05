@@ -209,3 +209,46 @@ and also `HoHxFSX_gLk_s1` (0.426), `sAjkpeRq4P4` (0.464), `CYqapSq5llo` (0.328) 
 `HoHxFSX_gLk_s3` (0.245) — **four correct courts for one wrong one.** So the conclusion above
 stands unchanged: correct and incorrect courts overlap in coverage, and no single threshold
 separates them. What is corrected is only the sharper claim that coverage carries *no* signal.
+
+
+---
+
+## A wrong court scoring 0.944 coverage. 2026-09-05 — the strongest evidence in this file
+
+The founder re-clicked `yt_match40`'s corners on 2026-09-05. The result is the sharpest
+demonstration of this file's thesis so far, and it is a **live** one, not a retrospective.
+
+| | old (wrong: corners on asphalt/hedge) | re-clicked (wrong: corners on the NET) |
+|---|---|---|
+| fit residual | 0.9 px | **0.2 px** |
+| camera height | 11.3 m (implausible) | **1.61 m (plausible)** |
+| `verify_court` line coverage | 0.436 | **0.944** |
+| verdict | PASS | LOW-CAMERA |
+
+**Every screen this project has improved passed it, and it is still wrong.** The residual
+improved. The camera-height screen — the one that isolated the original error — now reads a
+perfectly plausible 1.61 m. And line coverage reads **0.944**, which is higher than almost
+every *correct* calibration in the repo (`eala` 0.91, `L73ep7JHiJ4` 0.75) and beaten only by
+the very best (`flexi_franz_p01` 0.996).
+
+**What actually caught it:** projecting the **net** — a distinct physical object at a known
+`court-y = 11.885 m`, plainly visible in the frame with its posts and tape — and comparing it
+to where the net really is. The projected net landed **~36 px below** the real net tape, and
+the projected *far baseline* landed on the real net. The four far corners had been placed on
+the net rather than the far baseline: the whole court mapped onto the near half.
+
+**Why coverage rewards that.** Mapping a full court onto the near half puts the projected
+lines on top of *real paint* — just the wrong paint. The near half carries the near baseline,
+both service lines, the centre line and the sidelines, so a court compressed into it scores
+extremely well on "do my lines lie on white pixels?" **Coverage measures whether lines land on
+paint, not whether they land on the paint they are named for.**
+
+> **The lead nearly accepted this calibration on the strength of the 0.944.** It is recorded
+> because that is the failure this file exists to document, and the number very nearly worked
+> a second time on the same clip.
+
+**The generalisable check, and it is cheap:** project a court feature that was **not clicked**
+and that is **physically identifiable in the frame** — the net is ideal — and require it to
+land on the real thing. That is not circular (the net is not one of the four fitted points)
+and it does not care about line contrast, surface or exposure, which is exactly where coverage
+fails. Recommended as the standard follow-up to any re-click, alongside the rendered corners.
