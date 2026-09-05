@@ -40,6 +40,8 @@ import sys
 import cv2
 import numpy as np
 
+import net_anchor_check
+
 REPO = pathlib.Path(__file__).resolve().parents[1]
 
 CORNERS = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"]
@@ -159,11 +161,72 @@ def render(pts_path, frame_index, out_dir):
             "residual_px": resid, "camera_h_m": camh, "off_frame": off, "flag": flag}
 
 
+def render_net_anchors(pts_path, frame_index, out_dir):
+    """The NET-ANCHOR check, rendered to its OWN image.
+
+    Deliberately a separate PNG from the corner sheet above. The corner sheet's
+    entire value is that it shows evidence and clicks and nothing derived from
+    them; mixing a projection into it would re-create the confusion it exists to
+    prevent. This image is the complementary question: given those clicks, does
+    the NET land on the net? See tools/net_anchor_check.py for why that is not
+    circular and what the two pre-registered bars are.
+    """
+    tag = pts_path.stem.replace("_pts", "")
+    blob = json.loads(pts_path.read_text(encoding="utf-8"))
+    kp = {k: blob[k] for k in CORNERS if k in blob}
+    if len(kp) < 4:
+        return {"tag": tag, "status": "SKIP", "note": f"only {len(kp)}/4 named corners"}
+    video = find_video(tag)
+    if video is None:
+        return {"tag": tag, "status": "NO VIDEO", "note": "no matching .mp4 found"}
+    frame = grab_frame(video, frame_index)
+    if frame is None:
+        return {"tag": tag, "status": "NO FRAME", "note": f"cannot decode {video.name}"}
+
+    h, w = frame.shape[:2]
+    audit = blob.get("_audit", {})
+    stamped_wh = audit.get("img_wh")
+    sx = sy = 1.0
+    if stamped_wh and (stamped_wh[0] != w or stamped_wh[1] != h):
+        sx, sy = w / float(stamped_wh[0]), h / float(stamped_wh[1])
+    kp = {n: (kp[n][0] * sx, kp[n][1] * sy) for n in CORNERS}
+
+    hfov = net_anchor_check.hfov_for(kp, w, h)
+    meas, geo = net_anchor_check.measure(frame, kp, (w, h), hfov)
+    rows = [
+        (f"{tag}   {video.name}   frame {frame_index}   {w}x{h}   "
+         + (f"hfov {hfov:.0f}deg (fitted)" if hfov else "hfov UNKNOWN"), WHITE),
+        (f"stamped {audit.get('verdict', 'not stamped')} at "
+         f"{audit.get('fit_residual_px')} px, camera {audit.get('camera_height_m')} m"
+         f"   |   band_ratio {meas['band_ratio']}   best {meas['ratio_best']} at "
+         f"dy {meas['dy_best']}   net {meas['net_px_height']} px", GREY),
+        (f"rows: horizon {meas['horizon_row']}   net GROUND {meas['net_ground_row']}   "
+         f"net TAPE {meas['net_tape_row']}   (tape = horizon + (ground-horizon)*(H-0.914)/H)",
+         GREY),
+        ("NET AND POSTS ARE NOT FITTED POINTS. Ask only: does the YELLOW tape line lie "
+         "along the real white tape, and do the red sticks stand on the real posts?", GREY),
+        ("Do NOT read the GREEN ground line against the tape - that is the apples-to-"
+         "oranges error; the tape is 0.914 m up and MUST image higher.", AMBER),
+    ]
+    out = out_dir / f"{tag}_netanchor.png"
+    cv2.imwrite(str(out), net_anchor_check.draw(frame, geo, meas, rows))
+    return {"tag": tag, "status": "rendered", "out": out.name,
+            "verdict": audit.get("verdict"),
+            "residual_px": audit.get("fit_residual_px"),
+            "camera_h_m": audit.get("camera_height_m"),
+            "hfov_deg": None if hfov is None else round(hfov, 1),
+            **meas, "flag": "FLAG" if meas["flags"] else "ok"}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pts", nargs="*", default=None)
     ap.add_argument("--frame", type=int, default=0)
     ap.add_argument("--out-dir", default="data/output/corner_audit")
+    ap.add_argument("--net-anchors", action="store_true",
+                    help="render the NET-ANCHOR check instead: the net line and "
+                         "both net posts, none of which is one of the four fitted "
+                         "corners, drawn over the frame and measured")
     args = ap.parse_args()
 
     files = ([pathlib.Path(p) for p in args.pts] if args.pts
@@ -171,14 +234,34 @@ def main():
     out_dir = REPO / args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    fn = render_net_anchors if args.net_anchors else render
     rows = []
     for f in files:
         try:
-            rows.append(render(f, args.frame, out_dir))
+            rows.append(fn(f, args.frame, out_dir))
         except Exception as e:                       # noqa: BLE001
             rows.append({"tag": f.stem, "status": "ERROR", "note": repr(e)[:110]})
-        print(f"  {rows[-1]['tag']:28s} {rows[-1]['status']:9s} "
-              f"{rows[-1].get('verdict', rows[-1].get('note', ''))}")
+        r = rows[-1]
+        note = (f"ratio {r.get('band_ratio')} dy {r.get('dy_best')} {r.get('flag')}"
+                if args.net_anchors and r["status"] == "rendered"
+                else r.get("verdict", r.get("note", "")))
+        print(f"  {r['tag']:28s} {r['status']:9s} {note}")
+
+    if args.net_anchors:
+        done = [r for r in rows if r["status"] == "rendered"]
+        flagged = [r for r in done if r["flag"] == "FLAG"]
+        print(f"\n[net] {len(done)} rendered of {len(files)} -> {out_dir}")
+        print(f"[net] {len(flagged)} FLAGGED by the pre-registered bars "
+              f"(band_ratio < {net_anchor_check.BAR_BAND_RATIO}, or |dy| > "
+              f"{net_anchor_check.BAR_DY_FRAC} x net px height):")
+        for r in flagged:
+            print(f"      {r['tag']:28s} ratio {r['band_ratio']} -> {r['ratio_best']} "
+                  f"at dy {r['dy_best']}  netpx {r['net_px_height']}  "
+                  f"stamped {r['verdict']} @ {r['residual_px']} px")
+        print("[net] A BAR IS A TRIAGE ORDER, NOT A VERDICT - open the PNG (T23).")
+        (out_dir / "net_index.json").write_text(json.dumps(rows, indent=2),
+                                                encoding="utf-8")
+        return 0
 
     done = [r for r in rows if r["status"] == "rendered"]
     tall = [r for r in done if r["flag"] == "CHECK"]

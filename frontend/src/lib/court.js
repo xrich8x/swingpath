@@ -20,6 +20,16 @@ export const Y_NEAR_SERVICE = NET_Y - SERVICE_LINE_FROM_NET; // 5.485
 export const Y_FAR_SERVICE = NET_Y + SERVICE_LINE_FROM_NET; // 18.285
 export const Y_FAR_BASELINE = LENGTH; // 23.77
 
+// Net structure. Posts sit 0.914 m (3 ft) outside the DOUBLES sideline; singles
+// sticks use the same offset from the SINGLES sideline. Mirrors court.py.
+export const NET_POST_OFFSET = 0.914;
+export const NET_HEIGHT_POST = 1.07;
+export const NET_HEIGHT_CENTER = 0.914;
+export const X_LEFT_POST = X_LEFT_DOUBLES - NET_POST_OFFSET; // -0.914
+export const X_RIGHT_POST = X_RIGHT_DOUBLES + NET_POST_OFFSET; // 11.884
+export const X_LEFT_STICK = X_LEFT_SINGLES - NET_POST_OFFSET; // 0.456
+export const X_RIGHT_STICK = X_RIGHT_SINGLES + NET_POST_OFFSET; // 10.514
+
 // Line segments [[x1,y1],[x2,y2]] in court metres — mirrors court.LINES.
 export const LINES = [
   // Baselines

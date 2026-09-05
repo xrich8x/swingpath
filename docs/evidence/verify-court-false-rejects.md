@@ -213,7 +213,57 @@ separates them. What is corrected is only the sharper claim that coverage carrie
 
 ---
 
-## A wrong court scoring 0.944 coverage. 2026-09-05 — the strongest evidence in this file
+## WITHDRAWN: "a wrong court scoring 0.944". The calibration was CORRECT; I mis-read the net
+
+Written 2026-09-05, withdrawn the same hour. The section that stood here claimed the founder's
+re-click of `yt_match40` was still wrong — far corners on the net — and presented it as this
+file's strongest evidence, a wrong court scoring 0.944 line coverage. **It was my error, not a
+bad calibration.**
+
+**What I did wrong.** I compared the projected net **GROUND line** — court-y 11.885 m, where
+the net meets the court, which is what a homography gives you — against the net's **TOP TAPE**
+in the image. The tape sits **0.914 m above the ground**, so it necessarily images higher.
+Comparing the two is apples to oranges and will "fail" every correct calibration ever tested.
+
+**The arithmetic that settles it.** For a pinhole at height `H`, `(row − horizon)` is
+proportional to `H / depth`; a point `h` above the ground at the same depth scales by
+`(H − h) / H`. With the fitted camera at **1.64 m** and a horizon row of **264.6** derived from
+the three court rows:
+
+    net ground line (court-y 11.885)  projected at row 325.0
+    => top tape (0.914 m up) must image at row 291.3
+    observed white tape in the frame:              row ~295
+    mismatch                                        3.7 px
+
+**Two independent confirmations.** The far player's feet sit at row ~301, which this
+calibration places at **24.0 m** — the far baseline, exactly where a player standing at their
+baseline belongs. And the fit residual is **0.0 px** with coverage 0.948 and a plausible
+1.64 m mount.
+
+**So the re-click is good, and I sent the founder back to redo work that was already correct.**
+
+### What survives, and it is not nothing
+
+The original `yt_match40` calibration — preserved at `data/yt_match40_pts.json.bak-2026-09-05`
+— really did score **0.436** coverage while being grossly wrong, and really did pass the audit
+at 0.9 px. That is still a genuine example of coverage failing to separate, and the rest of
+this file stands on the 25-clip measurement, not on this clip.
+
+What does **not** survive is the claim that a wrong court scored 0.944. Nothing in this repo
+has been shown to do that.
+
+### The lesson, which is worth more than the claim was
+
+A check against a physical object in the frame is only valid if it is projected **at that
+object's real height**. The net tape is at 0.914 m, the posts reach 1.07 m; only the net's
+*base* is on the ground plane a homography describes. This makes the height check a *better*
+anchor rather than a discarded one — the tape row is tied to the fitted camera height, so
+agreement directly tests the quantity that exposed this clip's original error (an implausible
+11.3 m). That correction has been sent to the agent building the net-anchor check.
+
+---
+
+## [SUPERSEDED — see the withdrawal above] The original claim, kept for the record
 
 The founder re-clicked `yt_match40`'s corners on 2026-09-05. The result is the sharpest
 demonstration of this file's thesis so far, and it is a **live** one, not a retrospective.

@@ -4,76 +4,57 @@
 
 ---
 
-## TASK - CURRENT (started 2026-09-04, THIRD task of the day)
+## TASK - CURRENT (started 2026-09-05)
 
-Lead PRE-REG "an int8-COMPUTABLE refusal signal" (last section of .claude/journals/lead.md).
-Q: does ANY int8-graph-computable quantity flag its own bad frames? Candidates named before
-looking: winner absolute AREA, winner PEAK, BLOB COUNT, winner AREA x PEAK.
-BAR: PASS = some single quantity, some threshold, catches >=4/5 bad at <=5% collateral on
-the 523 correctly-decoded both-fire frames. Both halves. FAIL = anything else => int8 cannot
-police itself.
-MANDATORY: (1) seeded 1000-draw null; (2) SELECTION-ADJUSTED null - each draw searches the
-SAME candidate x threshold grid. REPORT PRECISION too (fp32 passed at 31% = risk gate).
-Power: n=5 bad, effective ~3. PASS is a SCREEN not a ship.
-DELIVERABLE: section "Can int8 police itself?" appended to
-docs/evidence/top2-margin-refusal-signal.md
-STOP-WHEN: candidates + both nulls measured & written, or ~35 tool calls.
-NOT-THIS-RUN: decode/shipped changes, shipping, 4th precision arm, re-running int8 inference,
-editing docs/STATE.md, git commit.
+Build a NET-ANCHOR calibration check: project court features NOT in the 4-corner fit
+(net line at court-y 11.885 m, both NET POSTS at 0.914 m outside doubles sideline) and
+render over a real frame so a human can see if they land on the real thing.
+Motivation: yt_match40 re-click 2026-09-05 IMPROVED on every screen (0.2 px residual,
+1.61 m height, 0.944 coverage) and was STILL WRONG — far corners on the NET. Coverage
+rewards that: court squashed into near half still lands on real paint, wrong paint.
+WIRE INTO: tools/validate_new_clip.py --audit and/or tools/render_corner_audit.py
+(extend, do not fork). run.py parser must not change (hook).
+Add post constants to backend/swingvision/court.py if missing. Add a test.
+RUN over ~25 existing data/*_pts*.json with videos; report which get flagged.
+DELIVERABLE: docs/evidence/net-anchor-calibration-check.md
+STOP-WHEN: check runs over existing calibrations + written up, or ~40 tool calls.
+NOT-THIS-RUN: editing any calibration file; verify_court thresholds; docs/STATE.md; commit.
 
-## STATE - 2026-09-04 - IN PROGRESS
+## STATE - 2026-09-05 - STARTING
 
-Reusing scratchpad/top2_margin.py + top2_null.py (this session scratchpad, both intact).
-Plan: new script int8_self.py -> extract int8 blob features (area1,peak1,k8,score1) with the
-SAME decode guard (top blob centroid == int8_xy in js_results.json), exhaustive threshold
-sweep both directions, then nulls A (fixed t) + B (selection-adjusted over the FULL grid
-actually searched, incl. both directions).
-
-## LOG - previous task (least-squares court fit, COMPLETE)
+## LOG
 
 - CARRIED FORWARD: `python` is a broken Store shim. Use backend/.venv/Scripts/python.exe
-- CARRIED FORWARD: `grep -rn` across repo ROOT times out (it walks .venv) — grep with an
-  explicit dir list (eval/ tools/ backend/swingvision/ docs/) is fast.
-- CARRIED FORWARD: Grep/Glob TOOLS have returned false "no matches" this session; bash grep.
+- CARRIED FORWARD: `grep -rn` across repo ROOT times out (walks .venv) — grep explicit dirs.
+- CARRIED FORWARD: Grep/Glob TOOLS return false "no matches"; use bash grep.
 - CARRIED FORWARD: long markdown via heredoc FAILS; use the Write tool for long docs.
-- CARRIED FORWARD: bash /tmp is NOT visible to Windows python.exe — use scratchpad abs path.
-- eval/ is OUTSIDE the mobile audit scope (desktop harness) — fine to edit for measurement.
-- Harness written: eval/corr_ls_fit.py. CONTROL REPRODUCES PER-CLIP EXACTLY vs
-  data/output/corr_attrib.json (am_classB 5.57, am_usta45 12.88, CYqapSq5llo 50.49,
-  hillsborough_p02 4.51). Trustworthy.
-- v1 objective was BROKEN: point-on-line using the world segment ENDPOINTS blows up when
-  an endpoint projects near/behind the horizon — rms under the TRUE homography was 204 px
-  on hillsborough_p02. An objective the truth does not minimise cannot test anything.
-  FIX: reverse the direction — project the MODEL line into the image (l_i = H^-T l_w,
-  always finite) and measure distance from sample points on the FRAME-CLIPPED DETECTED
-  line. Depth-safe, and uses evidence only where the line was actually seen.
-  Acceptance test for the objective itself: rms_truth must be a few px, not 200.
-- CYqapSq5llo has 2/2 matched lines so LS == exact by construction (50.49 both). Internal
-  control that the two arms share the same assignment.
-- Full run: 40 clips, 11 s, 13 survivors. Numbers in STATE above.
-- TASK COMPLETE 2026-09-04.
-
-## LOG - this task (int8 self-policing)
-
-- Prior task COMPLETE: LS court fit FAIL 19.80 px, ceiling is the LINE EVIDENCE. Shipped.
-- fp32 rows already on disk: scratchpad/top2_rows.json (has m32/k32/top1/area1/peak1 for fp32
-  only). int8 features NOT in it -> re-extract from int8_heat_*.bin (cheap, no model).
-- EXTRACTION DONE. 528 both-fire, 5 bad, int8 guard failures 0. Files:
-  scratchpad/int8_self.py, int8_self_null.py, int8_self_rows.json.
-- RESULT: area1 / peak1 / score1 all FAIL flat (0 catch at <=5% collat). Bad frames sit AT
-  the median of every one: area1 12-13 (med 12), peak1 242 (= the MAX and the mode), score1
-  2904-3146 (med 2904). "Small winner" is REFUTED.
-- k8 <= 1 (the PRE-REGISTERED mechanistic direction) FAILS hardest: 1/5 at 95.2% collateral,
-  because ~94% of both-fire frames have exactly one blob.
-- k8 >= 2 (OPPOSITE direction) PASSES: 4/5, 25/523 = 4.78% collat, precision 13.8%.
-  Misses yt_rally2/0108 - exactly the frame the pre-reg named as the single-blob case.
-- CORRECTION to sec 3.2 of the doc: the earlier "int8 margin FAILS at every threshold" used
-  the fp32-inherited grid that STOPS AT 0.30. Wider sweep: m8<=0.90 catches 4/5 at 3.82%
-  collat, precision 16.7% -> PASSES. m8<=0.99 is EXACTLY k8>=2. Same mechanism: a runner-up
-  EXISTS, not that the race is close.
-- NULLS all separate: A exact hypergeom 3.6e-5 (k8) / 1.6e-5 (m8<=0.90), perm p=0.0000;
-  B selection-adjusted 108-rule grid p=0.0000; B' extended 148-rule grid p=0.0000;
-  C cluster-preserving fixed-rule p=0.0010 (max 4 in 1000), C' extended p=0.0000.
-- CONFOUND to report: k8>=2 rate is 11.3%/10.7% on the two clips holding the failures vs
-  1.1-3.4% on the other four. Null C prices per-clip counts and still separates.
-- NEXT: write sections 8-15 into docs/evidence/top2-margin-refusal-signal.md.
+- CARRIED FORWARD: bash /tmp NOT visible to Windows python.exe — use scratchpad abs path.
+- court.py + court.js: added NET_POST_OFFSET .914, NET_HEIGHT_POST 1.07, NET_HEIGHT_CENTER
+  .914, X_LEFT/RIGHT_POST (-0.914 / 11.884), X_LEFT/RIGHT_STICK (0.456 / 10.514),
+  NET_LINE_SEGMENT, NET_POST_BASES, net_post_segments_3d(). LINES UNCHANGED (still 10) on
+  purpose: overlay.py draws LINES and validate_new_clip counts horizon crossings over it.
+- calibration.project_court_3d(H,img_wh,xyz,hfov_deg) exists -> post TOPS projectable.
+  Feed it hfov from courtfit.cam_fit_quad focal, not the 70deg default.
+- SHIPPED tools/net_anchor_check.py (shared module: geometry + measure + draw, with the
+  PRE-REG bars band_ratio<1.5 and |dy|>0.5*net_px_height) and
+  tools/render_corner_audit.py --net-anchors (separate <tag>_netanchor.png, net_index.json).
+  NOTE: `import net_anchor_check` works because tools/ is the script dir.
+- FIRST RESULTS: yt_match40 (the RE-CLICKED wrong one, stamped 0.0px LOW-CAMERA)
+  ratio 0.78 -> 16.67 at dy +49, netpx 36 => FLAG, 21x separation.
+  yt_rally2 (known good) ratio 1.79, dy -17 => ok. Bars survive first contact.
+- *** LEAD CORRECTION 2026-09-05 (mid-run). The brief's premise was WRONG. yt_match40's
+  re-click is CORRECT (residual 0.0 px, camera 1.64 m, coverage 0.948). The lead had
+  compared the projected net GROUND line (z=0) against the net TOP TAPE (z=0.914) in the
+  image - apples to oranges; the tape necessarily images higher. Correct arithmetic:
+  (row-horizon) ~ H/depth, so a point h above ground scales by (H-h)/H. H=1.64,
+  horizon 264.6, net ground row 325 -> tape must be at 291.3; observed ~295 => 3.7 px.
+  Do NOT cite "wrong court scoring 0.944". .bak-2026-09-05 IS the wrong one - negative
+  example only, never restore.
+- CONSEQUENCE: my PRE-REGISTERED BARS FAIL. 14/27 flagged INCLUDING yt_match40 (ratio
+  0.78, dy +49) which is now known CORRECT. A failed bar stays failed - report, do not move.
+- My band ALREADY projects to tape height (project_court_3d + fitted hfov), so the
+  machinery is right; the LABELS were not. Fix: draw+name z=0 ground line vs z=0.914/1.07
+  TAPE line vs post segments distinctly, and print horizon/ground/tape ROWS so a human can
+  redo the lead's arithmetic from the PNG without repeating the mistake.
+- FULL SWEEP RESULT (27 rendered of 29; court/yt_court have no video) saved at
+  data/output/corner_audit/net_index.json
