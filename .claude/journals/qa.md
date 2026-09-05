@@ -13,7 +13,31 @@ findings go in `docs/STATE.md` + `docs/evidence/`. Do not duplicate those here.
 
 ---
 
-## TASK — DONE 2026-09-03 (second task today)
+## TASK — DONE 2026-09-05 (net-anchor check verification)
+
+Verified backend-dev's net-anchor calibration check (4 items). Deliverable FILED:
+docs/evidence/net-anchor-qa-verification.md. Headline: render/constants half is
+safe (13/13 tests, JS mirror byte-identical, court.LINES diff-confirmed
+untouched); the two pre-registered bars (band_ratio, dy_best) are correctly
+reported FAILED — reproduced both per-clip numbers exactly (yt_match40 current
+0.78/+49/FLAG vs .bak 7.84/-15/ok) and the corpus counts exactly (14/27 flagged,
+4 PASS-stamped: flexi_franz_p01, L73ep7JHiJ4, UHf0LeMU2pg, uR5q2cSM6AY).
+horizon_row independence CONFIRMED by tracing the call chain (takes only H, no
+hfov; camera_height's hfov is itself seeded from focal_from_homography(H) —
+same vanishing-line source, no new evidence). BIGGEST FINDING (mine, not in the
+original doc): built an independent brightness-profile measurement on the CLEAN
+(un-overlaid) decoded frame 0 for both unsettled clips, cross-checked across
+3+ disjoint column ranges — am_hard_utr's real tape is ~9px off (small,
+one-sided), but sAjkpeRq4P4's real tape is ~29-31px off AND its ground ~22-25px
+off (large, two-sided, ~half the modelled net height) despite the automated bar
+rating it "ok, not flagged at all". This means the bar's failure includes a
+false NEGATIVE, not just the known false positive/inversion on yt_match40 —
+sAjkpeRq4P4 should get MORE founder scrutiny than the doc implies, not less.
+Did NOT edit docs/DECISIONS_PENDING.md myself (out of write-allowlist); wrote
+the exact text for the lead to append, inside the evidence file's last section.
+Used ~30 tool calls, within the ~35 budget.
+
+## PRIOR TASK — DONE 2026-09-03 (second task today)
 
 Verified backend-dev's seen_frac-vs-speed-error gate evidence. Deliverable
 FILED: docs/evidence/seen-frac-gate-qa-verification.md.
