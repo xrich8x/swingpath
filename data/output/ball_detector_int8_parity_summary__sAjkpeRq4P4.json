@@ -1,0 +1,15 @@
+{
+ "clip": "sAjkpeRq4P4",
+ "video": "e:/Claude Outputs/Cowork Tasks/Swing Vision/data/incoming/Clay/sAjkpeRq4P4.mp4",
+ "total": 178,
+ "null_agree": 178,
+ "both_nonnull": 0,
+ "diffs_px": [],
+ "worst_frames": [],
+ "null_mismatch_tags": [],
+ "bars": {
+  "null_agreement_pass": true,
+  "median_le_2px_pass": false,
+  "no_frame_gt_10px_pass": true
+ }
+}

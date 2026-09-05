@@ -119,9 +119,12 @@ unmeasured**. The score floor becomes a secondary benefit.
 **Status: measured out. Not blocked on anything technical — this is a product call.**
 
 Six gold clips, 178 contiguous frames each, the shipped `tracknet_ball.int8.onnx` against
-the fp32 reference, both through the real mobile decode. **3 of 6 clips fail** the
-pre-registered no-frame-over-10px condition: 70.8 px, 75.4 px (three consecutive frames)
-and **185.1 px**. Pooled **5 bad frames in 528** where both graphs fire — call it 1 in 100.
+the fp32 reference, both through the real mobile decode. **5 of 9 informative clips fail** the pre-registered
+no-frame-over-10px condition — widened to the full 10-clip gold set on 2026-09-05, up from 3 of 6. Worst frames: 185.1, 162.5, 75.4 (three consecutive), 70.8, 38.6 px.
+Pooled **7 bad frames in 772** where both graphs fire = **0.91%**, essentially unchanged from
+the 6-clip 0.95%, so the rate is now stable rather than provisional. **`sAjkpeRq4P4` is
+excluded from the denominator: it has ZERO both-fire frames, so its "pass" is vacuous and
+counting it would flatter the result.**
 Aggregates are excellent everywhere and always were: medians 0.000–0.163 px, null agreement
 95.5–99.4%. The failure is a confident wrong lock with no refusal signal, not a wobble.
 
