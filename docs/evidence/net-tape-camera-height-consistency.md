@@ -313,3 +313,41 @@ AGREE that was never on the table, and the pre-registration bars it explicitly.
   source of the few-percent residual spread; nothing here measures sag.
 * **A `(ground_row − horizon)` floor for refusal.** `demo30` shows one is needed; adding it
   after seeing the result would be moving a bar, so it is recorded, not applied.
+
+---
+
+## Post-hoc observation: `h_prime` explains both outliers, and it is NOT a bar
+
+Read after the sweep, so this is an observation and explicitly **not** a filter retro-added to
+the pre-registered bar. It is recorded because it points at a cheaper next step than a
+tiebreaker.
+
+The tool reports `h_prime_m` — the net height that *would* make the observed band consistent
+with the **fitted** camera height. A regulation centre tape is **0.914 m**, so `h_prime` near
+0.914 means "the band I locked onto behaves like a real net tape".
+
+| clip | `h_prime` (3 groups) | vs 0.914 | delta % | `rival_frac` |
+|---|---|---|---|---|
+| `am_hard_utr` | 0.949 / 0.933 / 0.966 | **+2 to +6%** | −3.7 (agree) | 0.179 |
+| `L73ep7JHiJ4` | 1.176 / 1.162 / 1.190 | **+27 to +30%** | −22.3 (outlier) | **0.387** |
+| `demo30` | 0.521 / 0.507 / 0.492 | **−43 to −46%** | +75.4 (outlier) | −0.019 |
+
+**Both outliers have an implausible `h_prime`, and the agreeing clip does not.** A band at
+1.18 m is not a tennis net tape — it is above even the 1.07 m post height. A band at 0.50 m is
+half a net. On `L73ep7JHiJ4` the `rival_frac` is also the highest in the corpus at 0.387,
+meaning a strong competing band was present and the filter had a real choice to make.
+
+**So the likely reading of both outliers is a mis-locked band, not a wrong calibration** —
+the detector found the top of a windscreen, a fence rail, or a banner rather than the tape.
+That is a much cheaper explanation than a 22% camera-height error, and it is testable.
+
+**Why this is not turned into a refusal rule here.** Adding `0.7 < h_prime < 1.15` after seeing
+which clips it would exclude is exactly the post-hoc threshold this project has been caught
+doing twice this week — once on a close-race margin, once on a coverage floor. If it is worth
+having, it gets pre-registered and run on clips not used above, with the same discipline the
+`seen_frac` sweep was held to.
+
+**What it does change now:** the two outliers should not be described as camera-height
+disagreements until the band identity is settled, and `L73ep7JHiJ4` in particular should not be
+called "the one genuine geometric disagreement" without that check. The honest label for both
+is **band identity unconfirmed**.
