@@ -12,8 +12,13 @@ Backfilled 2026-08-27 from `docs/STATE.md` and the archived sessions.
   normalised in **court terms rather than image pixels** would be resolution-independent by
   construction and could weight width separately from position — *an untested idea, not a
   result.*
-- **Joint line-to-model correspondence** — the one build named and never tested. Gate
-  pre-registered 2026-08-27.
+- **Joint line-to-model correspondence** — BUILT, MEASURED, KILLED (2026-08-29 build,
+  2026-09-04 continuations). See [[court-detection-negatives]] UPDATE 2026-09-05: the
+  ceiling is the line detector's ~6.4 px rms disagreement with truth, not the fitter or
+  the search. Court auto-detection is now CLOSED for v1; manual calibration is the
+  recommended product answer. One cheap, un-run decomposition test remains if anyone
+  wants the underlying science question (not the product question) settled — see
+  `docs/evidence/court-detection-path-after-the-line-ceiling.md` §1.
 - **`AGREE_PX` is 6x tighter on 4K than on the gate.** Real artefact — three
   high-resolution clips have good locks 38-46 native px apart that are only 12.8-15.3 px
   apart at 640. But height-scaling *loses* a gold clip, and the cell that lifts references

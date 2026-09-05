@@ -13,6 +13,52 @@ findings go in `docs/STATE.md` + `docs/evidence/`. Do not duplicate those here.
 
 ---
 
+## TASK — what I was asked to do (2026-09-05, NEW TASK, prior one below is DONE/unrelated)
+
+Write assessment at docs/evidence/court-detection-path-after-the-line-ceiling.md: given
+today's least-squares-court-fit.md result (fit ceiling is the LINE DETECTOR, not the
+fitter/search — LS-geom fits detected lines BETTER than truth, 3.01px vs human's 6.44px
+rms, yet reconstructs WORSE, 19.8 vs 17.1px, against 8.1px shipped bar) — what is the
+right next build for court detection, or is there none? 5 points: (1) is 6.4px
+detector/labelling/definitional, what's irreducible; (2) alternatives vs same bar
+(classical line detect, CourtNet keypoints @ 21.6% fire rate, dense segmentation, manual
+calibration as product answer); (3) hard constraints iOS/A13/CoreML/on-device only;
+(4) is auto-detect even on v1 critical path given manual calib ships; (5) rule 11 (truth
+=game not HUD). Negative assessment ("ship manual") is a fine, even expected, outcome.
+STOP-WHEN: 5 points written or ~30 tool calls.
+
+## STATE — DONE 2026-09-05
+
+Deliverable written in full:
+docs/evidence/court-detection-path-after-the-line-ceiling.md (all 5 points + recommendation
++ falsifier + NOT ESTABLISHED). Recommendation: STOP funding court auto-detection branches;
+manual calibration IS the product answer for v1 (not a fallback). Key reasoning: the 6.4px
+line-truth gap (least-squares-court-fit.md §3) is the SAME ORDER as the human corner-click
+neighbourhood (~5.8px, eval/truth_neighbourhood.py / withdrawn 0.18-0.31 row) - so much of
+the "ceiling" may be label/definitional noise, not a fixable detector defect. CourtNet
+alternative already closed (STATE: wrong target, Tier2<Tier1 even capped) - did not reopen
+it. Dense segmentation: judged untested but wrong-axis (attacks coverage, not the binding
+precision ceiling) - recommend against funding, reasoning not measurement. iOS constraints
+don't disqualify any candidate technically, just add ANE-budget cost on top of a weak
+accuracy case. v1 impact: auto-detect confirmed OFF v1 critical path, frees the ~2900-line
+courtfit/calibration C++ port (mobile-port-split.md already said skip-able, this
+corroborates with the accuracy ceiling as the reason). One cheap falsifier proposed, not run:
+click points ALONG lines (not just corners) on gold frames, measure detector residual
+against that - >10px would reopen a narrow detector-bias branch, ~5-7px corroborates
+near-irreducible.
+
+agent-memory updated: court-detection-negatives.md (UPDATE 2026-09-05 block appended),
+open-questions.md (joint-correspondence line updated to point at closure), MEMORY.md index
+line updated. Nothing else pending - all 5 asks covered, ~17 tool calls used, well under
+30. No DECISIONS_PENDING addition needed (no founder decision generated - this is a
+research assessment, the "reopen if" condition is already fully specified in the
+deliverable itself).
+
+Nothing further to do on this task. Final response to lead should point to the deliverable
+path and give the one-line recommendation + falsifier.
+
+---
+
 ## TASK — what I was asked to do (2026-09-03, NEW TASK, prior one below is DONE/unrelated)
 
 Write a point-boundary LABELLING PROTOCOL (not code, not the scoring state machine) at

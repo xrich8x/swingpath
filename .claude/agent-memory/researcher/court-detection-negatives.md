@@ -42,4 +42,36 @@ and 13 of 18 clips disagree principally about how **WIDE** the court is, not whe
 The one build named and never tested is **joint line-to-model correspondence** (assignment
 solved together with the homography, Farin-style); its gate was pre-registered 2026-08-27.
 
+**UPDATE 2026-09-05 — joint correspondence was built, measured, and killed; the bottleneck
+is now named as the LINE DETECTOR, and court auto-detection is CLOSED as a research
+question for v1.** Built 2026-08-29 (three failures: C6 cost 12.6x, 22/30 die before
+scoring, C3 reconstructs at 17.1 px@640 even given the TRUE correspondence — worse than
+shipped 8.1 px). Two continuations then killed it for good, 2026-09-04:
+`verify-court-false-rejects.md` shows the shipped accept gate's coverage/centrality
+statistic **orders clips by line VISIBILITY, not correctness** — `yt_match40` (T23,
+grossly wrong) PASSES at 0.436, above two correct courts — so no threshold retune fixes
+it. `least-squares-court-fit.md` handed the solver the PERFECT correspondence and
+optimised over every matched line (not just 4): it drives the line residual to **3.01 px,
+below the human homography's own 6.44 px, on 13 of 13 clips** — the optimiser is not the
+problem — yet reconstruction is *worse* (19.80 vs 17.10 px). **The ~6.4 px line-truth
+disagreement is the ceiling, one stage upstream of the fit and the search both**, and no
+fit strategy (4-point, all-lines-LS, DLT) beats it because the line evidence itself does
+not contain a better answer. My 2026-09-05 assessment
+([[court-detection-path-after-the-line-ceiling]] — see
+`docs/evidence/court-detection-path-after-the-line-ceiling.md`) finds the 6.4 px gap is
+the SAME ORDER as the human corner-click neighbourhood itself (~5.8 px, from
+`eval/truth_neighbourhood.py` / the withdrawn `0.18-0.31` STATE row) — so a large share of
+it may not be a fixable detector defect at all, just label/definitional noise (paint
+width + blur) that no line-based method, classical or learned, can beat. **Recommendation:
+manual calibration is the product answer for v1, not a fallback** — it already ships
+(`run.py check`, Court Setup tool), already works, and is what every accuracy number in
+this project is measured against. CourtNet-keypoints and dense-segmentation alternatives
+were both considered and rejected on the same evidence (CourtNet already closed per row
+above — Tier 2 loses to Tier 1 even capped; segmentation would attack coverage, not the
+precision ceiling that is actually binding). **The one cheap test that could reopen this**
+(not yet run): click points directly ALONG each court line (not just the 4 corners) on a
+handful of gold frames, and measure the detector's residual against THAT — if it comes
+back >10 px, the detector has real fixable bias and a narrow re-open is justified; if
+~5-7 px, the ceiling is corroborated as near-irreducible.
+
 Related: [[sensor-court-priors]], [[open-questions]], [[project-method-rules]]

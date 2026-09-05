@@ -122,6 +122,26 @@ Source: §3 of `docs/evidence/point-boundary-label-protocol.md`.
 
 ---
 
+## 0c. The cheapest founder task in the queue: click along court LINES, not corners
+
+**Status: not blocking. It is the single falsifier for a conclusion just reached, and it costs
+minutes rather than hours.**
+
+Court auto-detection was closed for v1 on 2026-09-05 on the grounds that the line detector's
+~6.4 px disagreement with truth is **near-irreducible** — the same order as human corner-click
+noise (~5.8 px). That conclusion is falsifiable by one measurement nobody has made: click a few
+points **along** each court line (not the four corners) on a handful of existing gold frames,
+so the detector can be scored against direct line truth instead of a corner-derived homography.
+
+- **> 10 px** — the detector carries real, fixable bias. The closure is wrong and a narrow,
+  differently-scoped reopening is justified.
+- **~5–7 px** — the ceiling is corroborated and the closure stands.
+
+Every court branch this project has funded rests on the assumption this tests. It is the
+highest-leverage founder minute available and it is not hours of work.
+
+---
+
 ## 1. A push is required before the Core ML export can ever run — and pushes are barred
 
 **Status: the job is ready and cannot be triggered.**
