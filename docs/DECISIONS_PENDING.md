@@ -431,3 +431,50 @@ future off-plane candidate. Cutting is defensible too.
 **Not blocking anything.** The tape remains the only working off-plane reference and is
 unchanged. Do NOT show a post-implied height to a user: on this corpus it would have
 told someone their 3.73 m camera was at 1.16 m.
+
+---
+
+## The net-occlusion crossover: one product call and one 15-minute ask. 2026-09-05 (pm)
+
+Full reasoning: `docs/evidence/low-mount-implications.md`. Two items, one a decision and
+one a task; **neither blocks any dispatchable work today.**
+
+**THE PRODUCT CALL — recommend approve.** Below the ~2.0–2.2 m crossover, does v1
+(a) **warn but never block capture**, (b) still ship the shot list, rally clips, dead-time
+trim and highlights, and (c) **withhold ball speed, the bounce map and distance run**
+rather than caveating them? My recommendation is yes to all three. The reasoning is that a
+recording refused courtside is a match lost forever, so capture must never block; while a
+speed that leaves the app in a screenshot carries no caveat with it, so a metric number
+must be withheld rather than warned. It requires one bit — *framing verified* — stored on
+the **match record**, not in view state, which makes it a `schema.py` question. **No new
+autonomous calibration gate is proposed**; net posts, fitted hfov, gravity/arc and every
+ground-plane statistic are already measured out in STATE.
+
+**THE ASK — ~15 minutes, and it is now the highest-leverage founder item on the board.**
+**Record one 2-minute clip from above 2.5 m at the court you actually play on**, using
+whatever elevation you can find (fence clamp, tripod on a bench, balcony, raised path), and
+note what you had to do to get up there. Two reasons it outranks everything else:
+
+- **This project owns no confirmed metric footage.** The four named mounts are 1.36–1.74 m,
+  all below the crossover. Every future speed or bounce measurement needs a clip above it.
+- **It is the falsifier for v1's whole setup story.** If a phone cannot get above ~2.2 m at
+  a real court with ordinary gear, then the framing requirement is unshippable and v1's
+  answer changes to **cut speed and the bounce map entirely** and ship the shot-and-rally
+  product. That is a smaller but coherent v1, and it is far cheaper to choose at session 15
+  than at session 45.
+
+**Two queue changes this finding makes, recorded so nobody re-asks:**
+
+- **`am_hard_utr`'s corner sheet is DELETED from the eye-check queue.** At 1.74 m it is
+  below the crossover and therefore **un-confirmable from a still frame in principle** —
+  asking a human to settle it asks for something the geometry says cannot be done. It stands
+  on two independent corroborations instead (net-tape height −3.7%, net-anchor internally
+  consistent to 0.4 px).
+- **`sAjkpeRq4P4` is PROMOTED and is now a ~2-minute ask.** At 3.33 m it is *above* the
+  crossover, so the information is in the image and an eye can settle it — and qa measured
+  it as the worse of the two (tape offset ~29–31 px *and* ground offset ~22–25 px, same
+  direction) despite the automated bar reading it clean. Answerable and probably wrong.
+
+**Unaffected, stated so no session is spent re-screening for it:** the ~3–6 h
+point-boundary labelling. A point boundary is a **time, not a place** — it consumes no
+homography, so mount height is irrelevant and low-mount clips are fine labelling material.

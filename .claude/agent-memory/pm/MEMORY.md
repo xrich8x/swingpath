@@ -14,5 +14,7 @@ Index. Detail in the topic files. Inherited 2026-08-28 from the prior planning w
 - [Founder rulings 2026-08-29](founder-rulings-2026-08-29.md) — TrackNet ships v1, line calling PARKED, P0-3 accepted, a TrackNet idea withheld; surprising results go to researcher first
 - [Human asks are a scarce batched resource](human-asks-are-a-scarce-batched-resource.md) — one batched update, ranked by leverage, artefact built first, dispatched before machine work
 - [Cheap tests that close a line](cheap-tests-that-close-a-line.md) — price a cheap experiment by what its FAILURE closes; riders get no gate; pre-write the row both ways
+- [The mount crossover splits v1's outputs](mount-crossover-splits-v1-outputs.md) — below ~2.2 m: warn at capture, ship shots/rallies, WITHHOLD speed and bounce map; ball pixel numbers provably safe
+- [No confirmed metric footage exists](project-owns-no-confirmed-metric-footage.md) — all four named mounts are 1.36-1.74 m; per-clip status, and the 15-min recording ask that is now top of the queue
 
 **Settled, do not reopen:** iOS only, A13+, Core ML only. 100% on-device, no server ever.

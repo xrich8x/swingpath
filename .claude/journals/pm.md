@@ -10,42 +10,52 @@ Durable learnings -> `.claude/agent-memory/pm/`. Findings -> `docs/evidence/`.
 
 ## TASK — what I was asked to do
 
-2026-09-05. **Re-sequence v1** against three closures (court auto-detection CLOSED;
-`seen_frac` speed gate unrescuable, no compliant real-footage speed reference; int8 ball
-graph fails 3/6 gold clips, all mitigations spent, ship call turns on unmeasured A13 fps).
+2026-09-05 (SECOND RUN TODAY). The net-occlusion finding: net tape covers the far baseline
+below a **2.0–2.2 m** mount; all four of this project's measured mounts (1.36–1.74 m) are
+BELOW it. Re-sequence v1 against it.
 
-DELIVERABLE: `docs/evidence/v1-resequenced-after-court-closure.md` — (a) what v1 is,
-(b) the cut line, (c) ranked founder-time queue, (d) dispatchable queue in order,
-(e) hardware dead-ends, ending with THE single next dispatch.
-NOT-THIS-RUN: code, docs/STATE.md, re-deriving measurements, git.
+DELIVERABLE: `docs/evidence/low-mount-implications.md` — five points:
+(1) what it does to v1 / the honest fallback when the user cannot clamp at 2.5 m;
+(2) what it does to the gold set — does a low clip's BALL/SPEED number go suspect or only
+its COURT; (3) the refusal surface — where it appears, what it says, block or warn;
+(4) re-rank the founder queue (A13 purchase, labelling, two unsettled corner sheets —
+1.74 m vs 3.33 m); (5) good news or bad news, no hedge. Ends with ONE recommendation and
+the one thing that would change it.
+
+NOT-THIS-RUN: code, docs/STATE.md, git, re-deriving geometry. DO NOT TOUCH
+`docs/evidence/live-setup-criterion.md` or `calibration.py` (backend-dev is live in them).
+STOP-WHEN: five points written, or ~30 tool calls.
 
 ## STATE — where I got to
 
-**ALL FIVE SECTIONS WRITTEN. Deliverable complete.** Remaining: agent-memory updates
-(retire the stale "P0-0 needs a Mac" claim; add the re-sequencing memory), then report.
-
-DECISIONS_PENDING appended with two new founder items (−1 buy an A13 iPhone; −0.5 match
-scoring deferred out of v1, with two pre-registered accuracy floors).
+**RUN COMPLETE.** `docs/evidence/low-mount-implications.md` — all five points written,
+plus recommended STATE wording and a NOT-ESTABLISHED list. DECISIONS_PENDING appended
+(one product call + the 15-min recording ask + two queue changes). Two agent-memory files
+written and indexed. Nothing left but the report.
 
 ## LOG — newest first
 
-- **THE FINDING OF THIS RUN: the Mac blocker is DEAD and my own memory is stale.**
-  `.github/workflows/coreml-export.yml` VERIFIED present by Read: workflow_dispatch,
-  pinned macos-14, installs coremltools on real macOS, runs tools/export_coreml_p0.py,
-  uploads ios/coreml_export/ with **14-day retention**. Push bar LIFTED 2026-09-04; the
-  hard-coded `backend/yolo11m-pose.pt` defect is fixed. It is a button press nobody has
-  pressed. => THE SINGLE NEXT DISPATCH. Caveat in the brief: push master FIRST
-  (workflow_dispatch only reads the default branch's copy).
-- Calls made: court auto-detect as a low-accuracy convenience = NO (yt_match40 is the
-  standing proof a wrong court inverts numbers rather than degrading them). Speed gate =
-  leave it (option 1) AND stop denominating anything in it => the speed-coverage lane is
-  PARKED not cut, unparks only when a compliant real-footage speed reference exists.
-  Score layer SPLIT: rally clips in, match scoring out.
-- Ranked founder queue deliberately puts the CHEAP §1 line-click falsifier LAST: its best
-  case changes no v1 decision, because the court cut rests on manual calibration being the
-  reference standard, not on the detector being unfixable. Ranking by leverage, not cost.
-- New #0 founder item invented this run: buy a used A13 iPhone. Three v1 go/no-go calls
-  dead-end there and nowhere else, and a bad throughput number is a SCOPING input (a
-  product cut), far cheaper at session 15 than session 45.
-- Court cut frees ~15-20 sessions (40-50 vs 55-70 parity range, agent-memory
-  mobile-parity-first). Stated as a pm estimate, not a measurement.
+- **§2's decisive fact, found not inferred:** the BallNet-vs-TrackNet chain STATE row
+  measured that the court gate removes 0 locks on 7 calibrated clips x 2 arms and
+  `--no-gate` is BYTE-IDENTICAL => **the ball chain does not consume the calibration.**
+  So NO pixel-domain ball number is at risk. Only metres/km/h/court-coords are.
+- **The close-call curve is NOT this cost re-expressed.** Curve = precision GIVEN a
+  correct homography. Crossover = whether a correct homography is identifiable AT ALL.
+  Independent, they compound, but the remedy is the same one (mount higher).
+- **yt_match40 HAS BEEN RE-CLICKED AND CONFIRMED** (STATE rows 186 + 190; the wrong
+  version survives as `.bak`). Founder queue item #1 from my last run is DONE.
+- **am_hard_utr (1.74 m) is un-confirmable IN PRINCIPLE** => remove from the founder
+  "settle it" queue; corroborated instead by net-tape -3.7% and net-anchor 0.4 px.
+  **sAjkpeRq4P4 (3.33 m) is ABOVE the crossover** => answerable by eye, and qa measured
+  it the WORSE of the two (tape ~29-31 px, ground ~22-25 px). It gets PROMOTED.
+- **NEW top founder ask invented this run: record ONE clip above 2.5 m at his own court,
+  ~15 min.** The project's four named mounts are 1.36-1.74 m — it owns NO confirmed
+  metric footage. If the founder cannot reach 2.2 m at his court, no user can and v1's
+  setup story is broken. Highest leverage on the board.
+
+- PRIOR RUN (complete): v1 re-sequenced after court closure. Key standing calls I must stay
+  consistent with: manual 4-tap calibration IS the setup story; court auto-detect NO for v1
+  and v1.x; match scoring OUT, rally clips IN; speed-coverage lane PARKED; founder queue
+  #0 buy an A13 iPhone, #1 re-click yt_match40, #2 review 27 corner sheets, #3 relabel 8
+  gold frames, #4 3-6h point-boundary labelling, #5 line-click falsifier LAST.
+- Refusal surface already flagged by me as "the largest un-owned area in v1".
