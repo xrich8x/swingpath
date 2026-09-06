@@ -71,6 +71,21 @@ this agent's system prompt — read it first; it is the authoritative copy.
   quantity (fitted hfov from the same cam_fit_quad call) would catch the compression at
   ~15% severity, so "blind by construction" overstates a reporting gap as a geometric law.
 
+- **Clean-plate/MTI vs the near-baseline-only solve, measured 2026-09-06.**
+  [cleanplate-mti-near-baseline-measured.md](cleanplate-mti-near-baseline-measured.md) —
+  weak/mixed: only 1 of 8 double-locked clips clears the founder's <=2px bar on both
+  near-baseline row+width with the plate; width sharpens on a majority (5/7), row does
+  not (3/7); shipped n=80/span=60 fails a pre-registered "as well as n=150/span=90" bar
+  decisively on width. Late-discovered protocol mismatch with backend-dev's px@640/
+  raw-detector measurement means my numbers aren't directly poolable with theirs —
+  written up as an honest correction, not hidden. Net-line side corrected: NOT
+  actually unmeasurable (projectable via homography), just not done this run.
+- **Process: SendMessage tool absent + duplicate dispatch, 2026-09-06.**
+  [dispatch-collision-cleanplate-task.md](dispatch-collision-cleanplate-task.md) —
+  a brief claimed I had SendMessage; I didn't. Also backend-dev was independently
+  given the identical deliverable path concurrently. Check a coupled teammate's
+  journal EARLY for both its protocol and a path collision, before spending budget.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is

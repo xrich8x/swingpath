@@ -27,3 +27,5 @@ monolithic file; nothing was dropped.
 - [Post loses on precision, not sensitivity](post-loses-on-precision-not-sensitivity.md) — net post FAILS 3/11 despite being 15% more sensitive per px; a confuser spanning both posts breaks the two-object cross-check
 - [Net-tape clearance is the setup criterion](net-tape-clearance-is-the-setup-criterion.md) — px margin replaces the guessed 0.28; the width ratio is rho +0.189, camera height +0.937; 16/28 clips OVERLAP
 - [Composite beats its members but fails the bar](composite-beats-its-members-but-fails-the-bar.md) — 57% held-out vs 80%, yet no solo matches it; coherence pairs save eala and exonerate the one real wrong calibration
+- [Rows are detectable, widths are not](rows-are-detectable-widths-are-not.md) — near-baseline ROW 0.83 px@640 but WIDTH 12.4 and net width 44.6; the cross-ratio protects the far row, not the far corner
+- [The rho gate is inert for oblique lines](rho-gate-is-inert-for-oblique-lines.md) — corr_attrib._match_line accepted sideline matches up to 316 px@640 off truth

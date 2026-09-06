@@ -4,48 +4,37 @@
 
 ---
 
-## TASK - CURRENT (started 2026-09-06) CLEAN PLATE / MTI - MEASURE WHAT IT BUYS
+## TASK - CURRENT (started 2026-09-06) NEAR-BASELINE + NET LINE DETECTION PRECISION
 
-Founder raised "MTI and temporal integration" for court detection. BOTH ALREADY EXIST.
-Establish empirically what they buy, so researcher runs on measurement not speculation.
-ORDER: (1) has tools/eval_court_cleanplate.py EVER been run + what did it report
-(T24: do NOT trust a docstring's claim about its own run history); (2) run it across
-the labelled court corpus, lock + err per clip vs SINGLE-FRAME and BLANK-RECTANGLE
-baselines; (3) MECHANISM: line support on single frame vs plate - does the plate
-actually recover occluded lines; (4) COST: decode time for ~80 frames / 60 s span.
-DELIVERABLE: docs/evidence/cleanplate-mti-measured.md
-NOT-THIS-RUN: editing data/*_pts*.json; changing court_setup_server.py behaviour; a new
-gate; run.py parser; docs/STATE.md; any git commit. DO NOT TOUCH
-docs/evidence/court-detection-research-2026-09-06.md (researcher is live).
-STOP-WHEN: eval run + written up, or ~40 tool calls.
+Falsifier for `docs/evidence/net-baseline-solve-without-far-line.md`. Measure the
+detected-vs-truth error of FOUR observables separately: (a) near baseline ROW,
+(b) net line ROW, (c) near baseline WIDTH, (d) court WIDTH at the net. Then feed my
+own measured errors into the solver and report where the EXTRAPOLATED FAR BASELINE
+lands vs truth on REAL clips. Verdict: does the <=2 px premise hold / borderline / fail.
+Message qa FIRST with the protocol (qa is measuring whether the clean plate sharpens
+the same two lines - numbers must be comparable), message again with the result.
+DELIVERABLE: docs/evidence/near-line-detection-precision.md
+NOT-THIS-RUN: editing data/*_pts*.json; a court detector; docs/STATE.md; git commit;
+qa's docs/evidence/cleanplate-mti-measured.md.
+STOP-WHEN: sweep + end-to-end written up, or ~40 tool calls.
 
-## PRE-REGISTERED BAR (written 2026-09-06 BEFORE running anything)
+## PRE-REGISTERED BAR (written 2026-09-06 BEFORE measuring anything)
 
-STATE records single-frame auto-seed FAILED: 7 of 10 worse than a blank rectangle.
-Primary metric: per-clip median corner err px vs human clicks, and lock rate.
-Corpus: every clip in data/gold/*.court.labels.json that the tool accepts (fixed,
-declared before seeing results; no clip dropped after the fact).
+UNITS: everything in **px@640** (frame resized to width 640). The 8.1 px shipped bar
+and the 6.4 px line floor are both px@640, so the Monte Carlo's <=2 px is px@640 too.
 
-- WORTH BUILDING ON (PASS): clean plate LOCKS on >=60% of corpus clips AND, on the
-  clips where both it and single-frame produce a court, it beats single-frame on err
-  on a MAJORITY of clips, AND it beats the blank-rectangle baseline on a MAJORITY.
-- RETIRE (FAIL): clean plate does NOT beat the blank rectangle on a majority of
-  clips, OR it locks on <30% of the corpus. (i.e. it repeats the single-frame
-  failure - temporal integration bought nothing.)
-- AMBIGUOUS in between -> report as ambiguous, do not round to PASS.
+- PASS: pooled median error <=2.0 px@640 on ALL FOUR observables, AND end-to-end
+  extrapolated far-baseline row error on real clips <=8.1 px@640 at the MEDIAN.
+- FAIL: any of the four observables at >=6.4 px@640 pooled median, OR end-to-end
+  median >8.1 px@640, OR the net line is MISSED on >50% of clips (availability
+  failure counts as FAIL regardless of the error on clips where it is found).
+- BORDERLINE: in between (2.0-6.4 px on the observables, or end-to-end median inside
+  8.1 with p90 outside). Report as borderline; do NOT round to PASS.
+- Population fixed before looking: every clip with BOTH a `data/*_pts*.json` human
+  4-corner click AND a locatable video. No clip dropped after the fact; misses are
+  reported as misses, not excluded.
 
-MECHANISM BAR (independent of score, item 3): "the plate recovers occluded lines"
-is SUPPORTED only if line support (fraction of court-line samples landing on white
-line pixels), computed with the SAME human homography on both images, is HIGHER on
-the plate than on a single frame for a MAJORITY of clips tested. If score moves but
-line support does not, the score is measuring something other than the premise --
-report that as the headline.
-
-COST BAR (item 4, declared BEFORE sweeping n): a reduced (n, span) is "as well" if
-it locks the same set of clips AND its median err is within 2.0 px of the full
-(n=150, span=90) setting on every clip where both lock. Anything else is worse.
-
-## STATE - 2026-09-06 - bar pre-registered; next: T24 run-history check
+## STATE - 2026-09-06 - DONE. Deliverable written, verdict FAIL, memory updated. Only open item: qa exchange (SendMessage disabled).
 
 ## LOG
 - CARRIED FORWARD: `python` broken Store shim -> backend/.venv/Scripts/python.exe
@@ -53,6 +42,36 @@ it locks the same set of clips AND its median err is within 2.0 px of the full
 - CARRIED FORWARD: Grep/Glob TOOLS false "no matches" (T25); use bash grep.
 - CARRIED FORWARD: long markdown via heredoc FAILS -> use Write tool for long docs.
 - CARRIED FORWARD: bash /tmp not visible to Windows python.exe - use scratchpad abs path.
-- NOTE: brief says court_setup_server.py:39 clean_plate_and_motion(n=80, span_s=60).
-  eval_court_cleanplate.plate_from_video defaults n=150, span_s=90 and does NOT call
-  the MTI path at all - it calls its own median. Two different implementations.
+- FOUND: `eval/line_snap.py` docstring already reports the nearest-detected-line
+  distance for the four OUTER lines: near baseline median **2.7 px@640** (within 8 px
+  on 36/40), far 2.9, left sideline 1.3, right 4.1. That is a strong PRIOR for (a).
+  It does NOT cover the NET line, and it is a line-to-line distance, not the four
+  solver observables. Data said to be in data/output/.
+- KEY RISK, stated before measuring: **there is NO painted line at the net.** The
+  solve needs the net GROUND row (y=11.885 m); the detectable object is the net TAPE
+  (0.914 m above ground at centre, 1.07 at posts) or the net's base/shadow. Memory
+  `net-ground-vs-net-tape` says confusing them condemned a CORRECT calibration. I will
+  measure BOTH interpretations and report which is actually found.
+- Detector to use = the SHIPPED one: `calibration.line_ridge_mask` -> `courtfit._detect_lines`.
+- SendMessage TOOL IS DISABLED this session ("No such tool available: SendMessage.
+  SendMessage is disabled ... in subagents as well"). Protocol therefore published in
+  docs/evidence/near-line-detection-precision.md SS1 as the channel to qa. Reported up.
+- HARNESS: eval/near_line_precision.py -> data/output/near_line_precision.json (n=40).
+- RESULT 1 (CONTROL): solve fed TRUTH observables reproduces the human far baseline row
+  to 0.007 px@640 median / 0.75 max over 40 REAL clips. The pinhole model is NOT the
+  limit. Only detection is.
+- RESULT 2: shipped corr_attrib._match_line gates on |rho| from the IMAGE ORIGIN -> for
+  long oblique lines a 6 deg tilt barely moves rho. It accepted right-sideline matches
+  up to 316 px@640 off the truth segment (median 34.9 of 27 accepted). Under a geometric
+  perp matcher only 18/40 right sidelines match. BUG-CLASS, affects corr_attrib pops.
+- RESULT 3 (four observables, px@640, perp matcher, gate 12): (a) near row 0.83 med
+  n=16; (b) net row 6.22 med n=11; (c) near WIDTH 12.44 med; (d) net WIDTH 44.63 med.
+- RESULT 4 (end-to-end n=10): far ROW 3.99 med / 6.77 p90 / 8.01 max  BUT far WIDTH
+  32.7 med -> far CORNER ~17.4 px@640 median vs the shipped 8.1 bar. FAIL.
+- MECHANISM: r_net - r_far = (r_near - r_net) * D/(D+23.77) -- compressive, so a 20% k
+  error costs only ~4 px of ROW. The far WIDTH = f*W/(D+23.77) inherits the D error in
+  full. Camera HEIGHT is recovered to 0.02-0.16 m even at 40% D error.
+- NET: there is no paint at the net. ground line found 24/40 (med 5.80); TAPE found
+  38/40 (med 4.10) and sits 15-47 px@640 above ground. Substituting tape for ground
+  puts the far baseline 32 px@640 out (min 19 max 59) = 4x the bar.
+- VERDICT: the <=2 px premise FAILS. Only (a) is near it.
