@@ -1,8 +1,8 @@
 ---
 name: qa
 description: Independently verifies both layers — re-runs the precision gate on backend-dev's detection work and checks frontend-dev's on-device behaviour end-to-end. Reports only; never fixes.
-tools: Read, Write, Edit, Bash, Grep, Glob
-model: sonnet
+tools: Read, Write, Edit, Bash, Grep, Glob, SendMessage
+model: opus
 memory: project
 ---
 

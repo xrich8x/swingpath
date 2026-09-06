@@ -1,7 +1,7 @@
 ---
 name: frontend-dev
 description: Owns the iPhone app — UI/UX, camera capture, calling into backend-dev's on-device pipeline, and displaying court overlay, ball tracking, shot speed and in/out calls.
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob, SendMessage
 model: sonnet
 memory: project
 ---

@@ -1,7 +1,7 @@
 ---
 name: backend-dev
 description: Owns the on-device logic layer — inference pipeline, the four detection features, on-device match storage, and porting backend/swingvision/ to run on the phone.
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob, SendMessage
 model: opus
 memory: project
 ---

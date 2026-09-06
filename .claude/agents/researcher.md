@@ -1,8 +1,8 @@
 ---
 name: researcher
 description: Researches ML/CV for court, player, ball and shot detection, plus on-device iOS inference patterns. Establishes what is true and feasible. Never writes code.
-tools: Read, Write, Edit, WebSearch, WebFetch, Grep, Glob
-model: sonnet
+tools: Read, Write, Edit, WebSearch, WebFetch, Grep, Glob, SendMessage
+model: opus
 memory: project
 ---
 
