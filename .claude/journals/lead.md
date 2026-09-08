@@ -109,44 +109,63 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-**Founder went to sleep 2026-09-06 ~00:15.** Nothing below needs them awake.
+**FOUNDER DIRECTIVE 2026-09-09: COURT ONLY.** Do not start ball, speed, score or mobile
+work. Everything below is court.
 
-**LIVE: one `backend-dev`** building the COMPOSITE calibration score (founder instruction:
-*"don't just use the net - it should be a mix of all we've worked on"*). 39 min in at the time
-of writing, against a ~45-tool-call budget, so it is near its stop condition either way.
+**Session limit hit 2026-09-09, resets 02:10 Asia/Manila.** THREE agents were dispatched and
+**all three died instantly, producing nothing**: reconcile-external-research, proposal-recall,
+EVID_BAND sweep. Their briefs are worth re-issuing verbatim when quota returns — they are the
+three cheapest high-value court questions on the board and all are answerable from artifacts
+already on disk.
 
-**IF IT DIED MID-WRITE - and two agents were killed at this exact duration earlier today -
-DO NOT RE-RUN IT BLIND.** Check disk first; that rule has paid off three times today:
-- `data/output/composite_signal_sweep.json` is already written. The expensive half (signal
-  sweep + corruptions) is in there.
-- `docs/evidence/composite-calibration-score.md` was 59 lines with `(pending)` verdicts.
-  **Finish the write-up FROM the JSON**, exactly as the hfov doc was finished from
-  `hfov_sweep.json`. Do not recompute.
-- Its pre-registered bar is the last-but-one section of this journal. **Do not retune it**, and
-  in particular the ablation (each signal's SOLO score beside the composite) is the point - if
-  one signal alone matches the composite, that KILLS the ensemble and is the finding.
+### RE-DISPATCH THESE THREE FIRST (court only, all pre-scoped)
 
-**THE STANDING RISK, named:** agents have been killed by session limits four times today
-(17:26, 17:43, and two earlier). Locks survive them. `ListAgents` is the ONLY reliable check -
-a lock file plus a recent file timestamp is NOT evidence an agent is alive, and the lead
-asserted otherwise once today and was rightly challenged.
+1. **Proposal-stage recall** -> `docs/evidence/candidate-proposal-recall.md`.
+   *What fraction of gold clips EVER produce a correct court candidate, regardless of the
+   vote?* Separates **"the search never found it"** from **"found it and lost the vote"** —
+   which this project has never cleanly separated, and every court fix so far has assumed the
+   second. `eval/candidate_audit.py` is the instrument and already exists. Split by mount
+   height (the <=2.2 m net-overlap boundary) and by surface (the shell claim).
+2. **Does `EVID_BAND` have a correct value at all?** -> `docs/evidence/evid-band-has-a-correct-value.md`.
+   Not "what is the best value" — *is there ANY value that passes the gate (>=12 of 20, zero
+   accepted court beyond 20 px)?* If none exists, the **formula** is wrong, not the tuning,
+   and a whole class of future sweeps is retired. Gated on item 1: if proposal recall is the
+   binding failure, `EVID_BAND` is scoring candidates that were never generated.
+3. **Reconcile the founder's external research doc** -> `docs/evidence/external-research-reconciled.md`.
 
-**Founder queue (nothing urgent, nothing blocking):**
-0. **Record one clip from above 2.5 m** (~15 min) - pm's new #0. It is the falsifier for v1's
-   whole setup story AND the first compliant metric clip. Nothing else flips a feature set
-   for a quarter hour.
-1. Buy a used A13+ iPhone - still the largest unblock; the Mac half of that blocker is dead.
-2. Re-label 8 court gold frames (~1 min).
-3. One sentence: does match scoring stay out of v1?
-4. `sAjkpeRq4P4` corner sheet (~2 min) - at 3.33 m it is ABOVE the crossover so an eye CAN
-   settle it. **`am_hard_utr`'s sheet was DELETED from this queue** - at 1.74 m it is
-   un-confirmable in principle.
-5. The 3-6 h point-boundary labelling session.
+### THE EXTERNAL DOC'S CENTRAL CLAIM, and why it is not obviously dead
 
-**Founder decision still open on the harness:** the `Stop` hook runs an **opus agent on every
-turn end** (90 s timeout, can block). That is the "everything got slow" complaint. Three fixes
-were offered - narrow it to the files it already cares about, cut the timeout, or amend
-CLAUDE.md's one-child rule to 3. **Nothing was touched; it is their config.**
+It argues our court failures share ONE cause: `yastrebksv/TennisCourtDetector` runs
+**CNN-global -> classical-local**; we run **classical-global -> CNN fallback**. Opposite
+assignments of the same two tools. It says shell failure is a *global search* failure (trusses,
+ceiling lights, mesh fencing outnumber the 8 court lines in the Hough output), and that this
+explains five rejections as one systematic error rather than five dead ends.
+
+**Do not dismiss this because court was closed for v1.** Our closure rests on the **line
+detector** floor (~6.4 px vs ~5.8 px human click noise). Their proposal uses a CNN for
+**global localisation from appearance**, which may not touch the line floor at all. That is
+the crux and it is genuinely open.
+
+**Two facts the doc did not have, already established here:**
+- `backend/weights/court_detector.pt` is dated **Jun 2023 = upstream released weights**;
+  `courtnet_ft.pt` / `courtnet_split.pt` are **our fine-tunes from that checkpoint**. So we
+  never used their *training recipe* — which **retires its issue-#13 worry** and one of its
+  five open questions.
+- Our ~21.6% is a **fire-rate on amateur frames**, not per-keypoint precision at 7 px. Their
+  0.963 is per-keypoint. **The two numbers were probably never comparable.**
+
+**Its other cheap wins, court-only:** add a synthetic court-centre 15th keypoint to stabilise
+heatmap training; duty-cycle the court detector (every ~30 frames, not per frame); and note
+its ablation shows local refinement buys ACCURACY while homography buys RELIABILITY — they do
+different jobs.
+
+**Not court, so parked under this directive:** its ball/YOLO benchmark, bounce detector,
+shot classification, and the Ultralytics AGPL question (revisit only if a YOLO court model is
+actually adopted).
+
+### Standing state
+Everything committed and pushed through `eebe7ad`. 586 tests pass. Doorman is v1, teams mode
+is back ON, cap 3 across the whole tree, `autoContinueAtUsageLimit` true.
 
 
 ## PARKED — work that was started and stopped
