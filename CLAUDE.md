@@ -157,17 +157,10 @@ diagnoses alone nor jumps to a fix. Findings only — a mislabelled doc number i
 The lead **decomposes and hands out work without asking first**, matching the task to the
 agent's `tools:` — execution work to an agent with no `Bash` wastes a whole run.
 
-**THREE LIVE AGENTS PROJECT-WIDE — `.claude/hooks/agent-cap.sh` counts the whole tree.** Only
-the lead hires: teammates have no `Agent` tool, so scan every report for **NEEDS DISPATCH** and
-fold it into the queue. **A cap refusal is PARKED, not lost** — handed back when a slot frees;
-never retry, never shrink. The **BUDGET (12 runs / 5 h) REFUSES instead**: batch blocked
-dispatches into ONE update for the founder and stop; going past it is their call via
-`TENNIS_AGENT_BUDGET`. One run hit 253k; a trivial teammate ~19k, any `*`-tool agent ~37k (T07).
-
-**Every brief needs ONE `DELIVERABLE:` and a `STOP-WHEN:` or the doorman rejects it** (free, no
-run spent): the single artifact this run produces, and what ends the run with questions still
-open — a condition, or "~25 tool calls, then write up what is established". Name the A-to-Z
-remainder `NOT-THIS-RUN:` so the agent cannot drift into it.
+**THREE LIVE AGENTS PROJECT-WIDE — `.claude/hooks/agent-cap.sh` counts the whole tree**, so a
+teammate calling a teammate spends the same quota (lead→backend-dev→qa is two of three). **A
+refusal is PARKED, not lost** — handed back when a slot frees; never retry, never shrink to fit.
+A Pro-plan QUOTA cap: one run hit 253k, a one-word agent ~38k. Never several on one question (T07).
 
 **The lead holds ONE direct child at a time**, one task per brief — two deliverables is two runs
 in one. Queue the rest on paper, dispatch only the head, PAUSE anything needing a human, re-sort
