@@ -29,3 +29,5 @@ monolithic file; nothing was dropped.
 - [Composite beats its members but fails the bar](composite-beats-its-members-but-fails-the-bar.md) — 57% held-out vs 80%, yet no solo matches it; coherence pairs save eala and exonerate the one real wrong calibration
 - [Rows are detectable, widths are not](rows-are-detectable-widths-are-not.md) — near-baseline ROW 0.83 px@640 but WIDTH 12.4 and net width 44.6; the cross-ratio protects the far row, not the far corner
 - [The rho gate is inert for oblique lines](rho-gate-is-inert-for-oblique-lines.md) — corr_attrib._match_line accepted sideline matches up to 316 px@640 off truth
+- [Upstream CourtNet does not fire on amateur](upstream-courtnet-does-not-fire-on-amateur.md) — the CNN-global flip FAILED 12/20 -> 2/20; 2-3 of 14 keypoints, so no proposal at all
+- [CourtNet weights substitute silently + two gold populations](courtnet-weights-silently-substitute.md) — courtnet_ft.pt overrides what you pass; "12/20 gold" and "2/20 references" are different sets

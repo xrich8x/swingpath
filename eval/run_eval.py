@@ -394,6 +394,12 @@ def main():
     ap.add_argument("--drop", action="store_true", help="run eval/frames/")
     ap.add_argument("--all", action="store_true", help="with --gold: every gold clip")
     ap.add_argument("--k", type=int, default=8, help="frames per clip (default 8, the pipeline's own sample)")
+    ap.add_argument("--proposer", default=None, choices=["classical", "courtnet"],
+                    help="GLOBAL-localisation stage (default: the shipped classical "
+                         "line-fit). 'courtnet' runs the CNN globally and the SAME "
+                         "classical snap + 6-DOF lock locally - the ordering A/B. "
+                         "Set through the environment so the fit call site stays "
+                         "byte-identical to the shipped one.")
     ap.add_argument("--no-overlays", action="store_true", help="skip writing eval/out/")
     ap.add_argument("--out", default=None, help="overlay root (default eval/out)")
     ap.add_argument("--json", default=None, help="also write the summary as JSON here")
@@ -403,6 +409,23 @@ def main():
     a = ap.parse_args()
     if not (a.gold or a.drop):
         a.gold = True
+
+    if a.proposer:
+        import os as _os
+
+        _os.environ["COURT_PROPOSER"] = a.proposer
+        if a.proposer == "courtnet":
+            # The seam silently prefers our fine-tune, whose training pool held 17
+            # of these 20 gold clips; forcing the UPSTREAM checkpoint is what keeps
+            # this from being self-grading. Stamped, not assumed.
+            _os.environ.setdefault(
+                "COURTNET_WEIGHTS",
+                str(REPO / "backend" / "weights" / "court_detector.pt"))
+    from swingvision import courtfit as _cf
+
+    print(f"[provenance] proposer={_cf.resolved_proposer()}"
+          + (f" weights={Path(_cf.resolved_courtnet_weights()).name}"
+             if _cf.resolved_proposer() == "courtnet" else ""))
 
     out_root = Path(a.out) if a.out else OUT
     overlays = not a.no_overlays

@@ -59,7 +59,24 @@ the ~5.8 px human-click noise. Median err on clips BOTH arms accept is an
 OBSERVATION only. And no ordering can fix the net-tape/far-baseline overlap below
 ~2.0-2.2 m mount - information absent from the image.
 
-## STATE - 2026-09-09 - flag SHIPPED (default unchanged) + 9 tests pass. Full 20-clip A/B running in background (log: scratchpad/ab_full.log -> eval/out/proposer_ab.json). Next: read it, run proposer_rejects.py on the failures, write docs/evidence/cnn-global-classical-local.md.
+## STATE - 2026-09-09 - DONE. Flag built (default unchanged), 9 tests pass, both A/Bs run, docs/evidence/cnn-global-classical-local.md written, DECISIONS_PENDING appended. Nothing left except the return.
+
+## RESULT - THE FLIP FAILED ITS PRE-REGISTERED BAR
+GOLD (the founder's named gate, >=12/20 + zero >20 px): A classical 12/20 median
+8.1 px 0 wrong; B courtnet 2/20 median 4.1 px 0 wrong. B fails by 10 clips.
+REFERENCES (20 human _exact clips at native res): A 2/20 accepted, 89/160 frames
+locked; B 0/20, 3/160. Shell (10 clips, all 3840x2160): A 0/10 + 20/80 frames;
+B 0/10 + 0/80. Zero wrong-accepted courts in either arm.
+MECHANISM (the real finding): the CNN REFUSES BEFORE our gate ever runs. On 4 of 6
+probed gold clips detect_court_learned returned None on all 8 frames; the keypoint
+probe shows only 2-3 of 14 heatmap peaks clear 0.40, and 4 are needed for ANY
+homography. The upstream broadcast checkpoint does not see amateur courts.
+The LOCAL half DID reproduce where observable: am_usta40 proposal 7.2 px -> 5.9 px
+through our snap+lock (same direction as upstream's 2.83 -> 2.23). n=1 clip.
+qa (relayed by the coordinator, SendMessage still absent): proposal recall 8/20=40%
+-> THE SEARCH BINDS; shell worst; mount-height mechanism NOT established (16.7 pp vs
+a 40 pp bar, confounded by surface) -> I split by SURFACE and withdrew my own
+mount-height split bar rather than report it.
 
 ## WHAT IS BUILT
 - backend/swingvision/courtfit.py: `auto_fit_frame(..., proposer=None|"classical"|
