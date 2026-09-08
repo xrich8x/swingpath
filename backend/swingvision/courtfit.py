@@ -25,12 +25,24 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from pathlib import Path
 
 import numpy as np
 
 REPO = Path(__file__).resolve().parents[2]
 DBL = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"]
+
+# --- the GLOBAL-PROPOSAL source (flag; shipped default unchanged) -------------
+# The three-step recipe is: GLOBAL localisation -> LOCAL refinement -> 6-DOF gate.
+# Only step one is switchable here.
+#   "classical" - `autodetect`: Hough lines + regulation-structure matching (SHIPPED)
+#   "courtnet"  - `calibration.detect_court_learned`: the vendored 15-channel
+#                 heatmap CNN, used for GLOBAL localisation only.
+# Steps two and three (snap_to_lines, lock_quad) and the consensus vote are the
+# same objects either way - that is the point of the experiment. One variable.
+COURT_PROPOSERS = ("classical", "courtnet")
+COURTNET_BASE_WEIGHTS = str(REPO / "backend" / "weights" / "court_detector.pt")
 
 
 # Court line samples + endpoints (court metres), cached — H-independent.
@@ -1084,9 +1096,70 @@ def setup_verdict(frame, named, calibration, court):
     return {"view": view, "angle": angle}
 
 
-def auto_fit_frame(frame, calibration, court, *, with_score=False):
-    """The full single-frame recipe: line-fit autodetect -> guarded corner snap
+def resolved_proposer(proposer=None) -> str:
+    """The proposal source that will ACTUALLY run.
+
+    Resolution order: explicit argument > COURT_PROPOSER env > "classical".
+    Provenance stamps must call this rather than quoting a preset table - a stamp
+    that reads the request instead of the resolution is how a cache outlives its
+    settings."""
+    p = proposer if proposer is not None else os.environ.get("COURT_PROPOSER") or "classical"
+    p = str(p).strip().lower()
+    if p not in COURT_PROPOSERS:
+        raise ValueError(f"unknown court proposer {p!r}; expected one of {COURT_PROPOSERS}")
+    return p
+
+
+def resolved_courtnet_weights(requested: str | None = None) -> str:
+    """The checkpoint `detect_court_learned` will actually load, mirroring ITS
+    order: COURTNET_WEIGHTS env > courtnet_ft.pt beside the requested file if it
+    exists > the requested file. Asking for court_detector.pt and silently getting
+    our fine-tune is exactly the contamination the seam's own comment warns about,
+    so the eval must read this, not the argument it passed."""
+    req = requested or COURTNET_BASE_WEIGHTS
+    env = os.environ.get("COURTNET_WEIGHTS")
+    if env:
+        return env
+    ft = os.path.join(os.path.dirname(req), "courtnet_ft.pt")
+    return ft if os.path.exists(ft) else req
+
+
+def _propose_classical(frame, calibration, court):
+    """GLOBAL stage, shipped: line-fit autodetect. -> (named DBL corners, score)."""
+    res = autodetect(frame, calibration, court)
+    if res is None:
+        return None, None
+    ref = res[2]
+    return {k: [float(ref[k][0]), float(ref[k][1])] for k in DBL}, float(res[1])
+
+
+def _propose_courtnet(frame, calibration, court, weights=None):
+    """GLOBAL stage, flipped: CourtNet localises the court, we take only the four
+    doubles corners its homography implies and hand them to the SAME local snap.
+
+    `verify=False` on purpose: verify_court is a second ACCEPT test that the
+    classical proposer has no counterpart for, and the shipped 6-DOF lock plus the
+    consensus vote are what decide acceptance here. Leaving it on would make the
+    A/B two variables. Score returned is the model's own keypoint confidence and is
+    NOT comparable with the classical ranking score (same caveat as `with_score`)."""
+    det = calibration.detect_court_learned(
+        frame, weights=weights or COURTNET_BASE_WEIGHTS, verify=False)
+    if det is None:
+        return None, None
+    xy = calibration.court_to_image(det.homography, [court.LANDMARKS[k] for k in DBL])
+    named = {k: [float(p[0]), float(p[1])] for k, p in zip(DBL, xy)}
+    return named, float(det.confidence)
+
+
+def auto_fit_frame(frame, calibration, court, *, with_score=False, proposer=None,
+                   weights=None):
+    """The full single-frame recipe: GLOBAL proposal -> guarded corner snap (LOCAL)
     -> physical shape re-lock. Returns {corner:[x,y]} or None (no lock).
+
+    proposer (default None -> `resolved_proposer()` -> "classical", the shipped
+    ordering): which stage-one localiser runs. "courtnet" runs the CNN globally and
+    the classical machinery locally - the ordering flip. Stages two and three below
+    are untouched by the flag, so the two arms differ in exactly one thing.
 
     with_score (eval harness only, default off so the shipped return is byte-for-byte
     unchanged): also return `autodetect`'s raw ranking score as (corners, score),
@@ -1094,11 +1167,13 @@ def auto_fit_frame(frame, calibration, court, *, with_score=False):
     comparable across mask paths - the white path ranks by g*(0.5+0.5*st) and the
     clay path by st alone, on different scales. Nothing may gate on it while that
     is true; eval/run_eval.py prints it to make the incomparability visible."""
-    res = autodetect(frame, calibration, court)
-    if res is None:
+    which = resolved_proposer(proposer)
+    if which == "courtnet":
+        named, score = _propose_courtnet(frame, calibration, court, weights=weights)
+    else:
+        named, score = _propose_classical(frame, calibration, court)
+    if named is None:
         return (None, None) if with_score else None
-    ref = res[2]
-    named = {k: [float(ref[k][0]), float(ref[k][1])] for k in DBL}
     _, out, _snapped, _c0, _c1 = calibration.snap_to_lines(
         frame, named, min_coverage=0.0, max_move_px=60.0)
     use = out if all(k in out for k in DBL) else named
@@ -1106,10 +1181,10 @@ def auto_fit_frame(frame, calibration, court, *, with_score=False):
     h, w = frame.shape[:2]
     out = lock_quad(use, calibration, court, w, h,
                     dt=line_distance_map(frame, calibration))[0]
-    return (out, float(res[1])) if with_score else out
+    return (out, float(score)) if with_score else out
 
 
-def fit_video_frames(frames, calibration, court):
+def fit_video_frames(frames, calibration, court, *, proposer=None, weights=None):
     """Consensus auto-calibration over sampled frames of ONE clip.
 
     Fits each frame independently, keeps the largest agreeing group (the court is
@@ -1118,7 +1193,8 @@ def fit_video_frames(frames, calibration, court):
       tag "vote"  - corners = per-corner median of `votes` agreeing frames
       tag "stack" - clay rescue fit (single fit on stacked line evidence)
       (None, votes, None) - refused; votes = best agreement seen."""
-    fits = [auto_fit_frame(f, calibration, court) for f in frames]
+    fits = [auto_fit_frame(f, calibration, court, proposer=proposer, weights=weights)
+            for f in frames]
     pts, votes = consensus(fits)
     if pts is not None:
         return pts, votes, "vote"

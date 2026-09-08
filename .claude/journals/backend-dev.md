@@ -4,58 +4,80 @@
 
 ---
 
-## TASK - CURRENT (started 2026-09-09) CANDIDATE PROPOSAL RECALL
+## TASK - CURRENT (2026-09-09, SECOND task of the day) CNN-GLOBAL -> CLASSICAL-LOCAL
 
-External-research item ranked 3rd of 9: the PROPOSAL-STAGE RECALL TEST. Measure what
-fraction of gold clips EVER produce a court candidate within accept tolerance of the
-human-clicked corners - regardless of whether the vote accepts it. Separates
-"the search never found it" from "it found it and lost the vote".
-Instrument: eval/candidate_audit.py (exists, UNRUN as of its docstring). Extend
-minimally, do not fork.
-Splits required: (2) mount height above/below ~2.0-2.2 m; (4) indoor shell vs outdoor.
-DELIVERABLE: docs/evidence/candidate-proposal-recall.md
-MESSAGE: researcher with the headline number; qa if it bears on EVID_BAND.
-NOT-THIS-RUN: data/*_pts*.json edits; retraining; docs/STATE.md; git commit;
-docs/evidence/external-research-reconciled.md; docs/evidence/evid-band-has-a-correct-value.md
-STOP-WHEN: audit run + verdict written, or ~40 tool calls.
+Founder brief supersedes the earlier proposal-recall task in this journal; that one
+is now owned by qa (docs/evidence/candidate-proposal-recall.md - DO NOT TOUCH).
+COURT ONLY. Build, behind a FLAG, a court path that runs CourtNet for GLOBAL
+localisation, then the EXISTING classical machinery for LOCAL refinement, then the
+EXISTING 6-DOF gate and consensus vote UNCHANGED. One variable: the proposal source.
+DELIVERABLE: docs/evidence/cnn-global-classical-local.md (A/B vs shipped ordering,
+per clip, split by surface and mount height) + tests + flag.
+NOT-THIS-RUN: ball/speed/score/mobile; retraining CourtNet; data/*_pts*.json edits;
+changing the shipped default; docs/STATE.md; git commit.
+STOP-WHEN: A/B run and written up, or ~45 tool calls.
 
-## PRE-REGISTERED BAR (written 2026-09-09 BEFORE running the audit)
+## BLOCKER RECORDED: SendMessage is DISABLED
 
-DEFINITIONS fixed before looking:
-- "correct candidate" = a per-frame court fit whose mean projected-DBL-landmark
-  distance to the HUMAN court is <= 20.0 px@640. That is candidate_audit.WRONG_PX_640,
-  the SHIPPED empty-band number. I am not inventing a tolerance.
-- "proposal recall" R = (# gold clips with >=1 correct candidate on >=1 of K frames)
-  / (# gold clips audited). K = 8 frames per clip, the script default.
-- Population fixed before looking: every reference run_refs.references() returns
-  (human `_exact` calibrations only; eala_pts_auto excluded by that function's rule).
-  No clip dropped after the fact. Skips are reported as skips.
+The brief says teams mode is on and SendMessage works. It does NOT:
+`Error: No such tool available: SendMessage. SendMessage is disabled for this
+session, in subagents as well as here.` So I could not ask qa for the proposal-recall
+number that would have killed or confirmed the premise. I build the flag-gated path
+(cheap, reversible, useful either way) and report the premise as UNRESOLVED-BY-QA.
 
-VERDICT BARS:
-- SEARCH IS THE BINDING FAILURE if R < 0.50.
-- VOTING/SCORING IS THE BINDING FAILURE if R >= 0.80 AND the shipped end-to-end
-  correct-consensus rate is at least 25 points below R.
-- MIXED / NEITHER DOMINATES if 0.50 <= R < 0.80, or if R >= 0.80 and the consensus
-  rate is within 25 points of it (in which case nothing is badly broken at either stage
-  on this corpus and the failures are clip-specific).
-- CATASTROPHIC PROPOSAL CAP (the bounce-detector analogue) if R <= 0.20.
-A failed bar stays failed. I will NOT read the threshold off the results.
+## PRE-REGISTERED BAR (written BEFORE running either arm)
 
-SPLIT BARS (pre-registered):
-- Mount-height mechanism is SUPPORTED only if R(low mount, <2.2 m) is at least 30
-  points below R(high mount, >=2.2 m) AND n>=4 in each arm. Below n=4 in either arm
-  I report the split as UNDERPOWERED and draw no mechanism conclusion.
-- The shell global-search claim is SUPPORTED only if R(indoor shell) is at least 30
-  points below R(outdoor), same n>=4 rule.
+ARMS. A = shipped ordering (classical global `autodetect` -> snap -> lock).
+B = flipped (CourtNet global proposal -> the SAME snap -> the SAME lock).
+Everything downstream identical: `snap_to_lines(min_coverage=0.0, max_move_px=60)`,
+`lock_quad`, `consensus`, ACCEPT_VOTES=6, K=8 frames, same frame indices, same clips.
+Deterministic apart from cv2.findHomography RANSAC inside detect_court_learned
+(unseeded upstream code - noted, not changed).
+WEIGHTS for arm B: `backend/weights/court_detector.pt`, the UPSTREAM released
+checkpoint. Chosen because it is leak-free by construction (never saw our gold);
+`courtnet_ft.pt` is our fine-tune and 17 of 20 gold clips were in that training pool,
+so using it would be self-grading. Recorded in the artifact's provenance stamp.
 
-CAVEAT STATED BEFORE RUNNING: cf.auto_fit_frame returns ONE winner per frame, so the
-"candidate set" this measures is the union of per-frame ACCEPTED fits over K frames,
-not the raw pre-accept proposal pool. That is an UPPER bound on how bad the search is
-and a LOWER bound on proposal recall. If R is low I must check whether the raw
-pre-accept pool contains the truth, or the finding is about the accept gate, not the
-proposal stage. Report which one I measured.
+SHIPPED GATE (unchanged, from the founder): >=12 of 20 gold clips ACCEPTED
+AND ZERO accepted court beyond 20 px@640 of the human clicks.
 
-## STATE - 2026-09-09 - pre-registration written. Next: inspect run_refs.references(), mount-height + surface metadata sources, then run the audit.
+VERDICTS, fixed before looking:
+- FLIP WINS if B_accepted > A_accepted AND B has zero accepted court >20 px@640.
+- FLIP LOSES if B_accepted < A_accepted, OR B accepts any court >20 px@640 (a wrong
+  court accepted is worse than a refusal - it is the failure mode the vote exists
+  to stop).
+- NO DIFFERENCE if B_accepted == A_accepted and the accepted SET is the same.
+- The ORDERING/GLOBAL-SEARCH HYPOTHESIS is SUPPORTED only if B accepts >=3 clips
+  that A refuses AND at least half of those gains are indoor-shell clips. Fewer
+  than that and any win is clip-specific, not the mechanism the document claims.
+- Split bars: n>=4 per arm or I report the split UNDERPOWERED and draw no mechanism
+  conclusion (same rule I pre-registered this morning).
+
+BARRED CLAIMS (stated before running, because conflating them was made here this
+week): I may NOT claim the flip beats the ~6.4 px line-detector precision floor or
+the ~5.8 px human-click noise. Median err on clips BOTH arms accept is an
+OBSERVATION only. And no ordering can fix the net-tape/far-baseline overlap below
+~2.0-2.2 m mount - information absent from the image.
+
+## STATE - 2026-09-09 - flag SHIPPED (default unchanged) + 9 tests pass. Full 20-clip A/B running in background (log: scratchpad/ab_full.log -> eval/out/proposer_ab.json). Next: read it, run proposer_rejects.py on the failures, write docs/evidence/cnn-global-classical-local.md.
+
+## WHAT IS BUILT
+- backend/swingvision/courtfit.py: `auto_fit_frame(..., proposer=None|"classical"|
+  "courtnet", weights=None)`, `fit_video_frames(..., proposer=)`, plus
+  `resolved_proposer()` / `resolved_courtnet_weights()` (RESOLVED, not requested).
+  Stage one only is switched; snap_to_lines + lock_quad + consensus are shared.
+  SHIPPED DEFAULT UNCHANGED (env COURT_PROPOSER exists for the eval).
+- backend/tests/test_court_proposer.py - 7 tests, incl. default==explicit classical
+  (the refactor-changed-nothing proof) and a stub-detector test that the courtnet
+  proposal really goes THROUGH the shipped snap+lock. 9 pass with the old test.
+- eval/proposer_ab.py - both arms on the SAME decoded frames, run_refs metric.
+- eval/proposer_rejects.py - per-frame stage-of-death for the courtnet arm.
+
+## FIRST RESULT (smoke, am_hard_utr, Hardcourt, mount 1.74 m)
+A classical: locked 8/8, votes 7, ACCEPTED, err@640 13.23.
+B courtnet: locked 0/8, votes 0, NOT accepted (its err 25.84 came from the shared
+stacked_clay_fit rescue, not from CourtNet). `locked=0` is the thing to diagnose:
+proposal never made, or made and refused by lock_quad.
 
 ## LOG
 - CARRIED FORWARD: `python` broken Store shim -> backend/.venv/Scripts/python.exe
@@ -63,7 +85,16 @@ proposal stage. Report which one I measured.
 - CARRIED FORWARD: Grep/Glob TOOLS false "no matches" (T25); use bash grep.
 - CARRIED FORWARD: long markdown via heredoc FAILS -> use Write tool for long docs.
 - CARRIED FORWARD: bash /tmp not visible to Windows python.exe - use scratchpad abs path.
-- eval/candidate_audit.py READ. It already computes exactly this: per-clip `n_good`,
-  `best_err`, `agree_good`, `votes`, `cons_err`, `within_margin`, plus which accept
-  TERMS the human court itself fails. Verdict strings already name the two failures.
-  It needs NO new logic for Q1/Q3 - only the mount-height and surface SPLITS (Q2/Q4).
+- ARCHITECTURE READ: auto_fit_frame = autodetect (classical GLOBAL) -> snap_to_lines
+  (classical LOCAL) -> lock_quad (6-DOF gate). So the flip only replaces step 1.
+- detect_court_learned ALREADY does CNN-global + per-keypoint classical local refine
+  (`_refine_keypoint`, a 40 px crop Hough intersection) + RANSAC homography. The
+  document's "local refinement" stage therefore already exists on the CNN path; what
+  does NOT exist is CourtNet feeding OUR snap+lock+vote.
+- detect_court_learned's `weights=` default is a RELATIVE path ("weights/...") so it
+  only resolves with cwd=backend. Pass an absolute path from eval (eval_court.py
+  already does exactly this via its _WEIGHTS constant).
+- detect_court_learned has its own internal accept gates: reproj > 0.015*max(w,h)
+  -> None, and verify_court(). I pass verify=False for the PROPOSAL, because the
+  brief says the SHIPPED gate decides; leaving it on would add a second accept test
+  the classical arm does not have (two variables).
