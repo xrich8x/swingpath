@@ -575,3 +575,19 @@ false-flag budget (1 of 9, and `eala_auto` scores 0.0). It is wired to nothing.
    the real Wimbledon broadcast clip. The synthetic corruption class does not cover the
    failure mode that actually happened. A dozen deliberately mis-clicked, labelled
    calibrations would be worth more than another five corruption families.
+
+## 2026-09-09 - backend-dev - CourtNet as the court GLOBAL proposer: flag built, bar FAILED
+The CNN-global -> classical-local ordering flip is implemented behind
+`auto_fit_frame(..., proposer="courtnet")`, default UNCHANGED. It FAILS the
+pre-registered bar: gold 12/20 -> 2/20 accepted; references 2/20 -> 0/20; 3 of 160
+frames locked vs 89; shell 0 of 80 frames. Mechanism: the UPSTREAM checkpoint emits
+NO proposal on the failing clips (2-3 of 14 keypoints clear 0.40; 4 are needed for a
+homography). Evidence: docs/evidence/cnn-global-classical-local.md.
+FOUNDER DECISIONS NEEDED:
+1. Keep the flag (recommended - it costs nothing and the follow-up needs it) or revert?
+2. The live follow-up is whether a CourtNet TRAINED ON AMATEUR LOW-MOUNT FOOTAGE
+   proposes at all on shell. `courtnet_ft.pt` cannot answer it: 17 of 20 gold clips
+   were in its training pool, so measuring it on gold is self-grading. This needs a
+   leak-clean train/test split and a retrain - both out of this run's scope. Approve?
+3. SendMessage was asserted to work in two briefs and does NOT exist in the subagent
+   toolset. Agent-to-agent findings are being relayed by hand.

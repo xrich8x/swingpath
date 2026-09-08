@@ -86,6 +86,16 @@ this agent's system prompt — read it first; it is the authoritative copy.
   given the identical deliverable path concurrently. Check a coupled teammate's
   journal EARLY for both its protocol and a path collision, before spending budget.
 
+- **Court proposal recall measured 2026-09-09 — the SEARCH binds, not the vote.**
+  [court-proposal-recall-search-binds.md](court-proposal-recall-search-binds.md) — 8/20
+  refs (40%) and 1/5 shell recordings ever produce a court within 20px of the clicks;
+  pre-registered <=0.60 = search binds, so SEARCH BINDS (shell borderline, exactly on
+  its 1/5 line). Mount-height mechanism FAILED its 40pp bar at 16.7pp and is confounded
+  with surface. `truth_would_pass 9/20` is a withdrawn-genre artifact — the real
+  accept-side number is 19/20 from the §10 neighbourhood sweep. Also: candidate_audit.py's
+  "UNRUN" docstring is STALE (Session O ran it on shell 2026-08-24, 3/10 then vs 2/10 now)
+  — grep docs/evidence + data/output for a script's numbers BEFORE running it.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is
