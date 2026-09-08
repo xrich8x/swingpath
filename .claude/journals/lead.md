@@ -109,63 +109,55 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-**FOUNDER DIRECTIVE 2026-09-09: COURT ONLY.** Do not start ball, speed, score or mobile
-work. Everything below is court.
+**FOUNDER DIRECTIVE 2026-09-09 (overnight): COURT PREDICTION AND MODELLING ON LIVE CLIPS.
+Keep all agents working while they sleep. Send an update when the session budget hits 90%.**
+Do not start ball, speed, score or mobile work.
 
-**Session limit hit 2026-09-09, resets 02:10 Asia/Manila.** THREE agents were dispatched and
-**all three died instantly, producing nothing**: reconcile-external-research, proposal-recall,
-EVID_BAND sweep. Their briefs are worth re-issuing verbatim when quota returns — they are the
-three cheapest high-value court questions on the board and all are answerable from artifacts
-already on disk.
+**LIVE, dispatched 02:20:**
+1. `backend-dev` -> `docs/evidence/cnn-global-classical-local.md`. Implements the external
+   doc's top recommendation: **CourtNet global -> classical local refinement -> existing
+   6-DOF gate and vote UNCHANGED**. One variable: the ordering. Behind a flag; the shipped
+   default does not move without a founder call.
+2. `qa` -> `docs/evidence/candidate-proposal-recall.md`. **Gates agent 1.** Does a correct
+   court candidate EVER get proposed, regardless of the vote? High recall kills the
+   "global search is the problem" premise outright; low recall on shell justifies the
+   rebuild. Split by surface and by mount height.
+3. `researcher` -> `docs/evidence/external-research-reconciled.md`. Verifies the HuggingFace
+   claims first-hand and marks each of the doc's items CONFIRMED / CONTRADICTED / NEWLY
+   ACTIONABLE / ALREADY DONE against our measurements.
 
-### RE-DISPATCH THESE THREE FIRST (court only, all pre-scoped)
+**Teams mode is ON, so all three can message each other.** qa's number is the gating exchange.
 
-1. **Proposal-stage recall** -> `docs/evidence/candidate-proposal-recall.md`.
-   *What fraction of gold clips EVER produce a correct court candidate, regardless of the
-   vote?* Separates **"the search never found it"** from **"found it and lost the vote"** —
-   which this project has never cleanly separated, and every court fix so far has assumed the
-   second. `eval/candidate_audit.py` is the instrument and already exists. Split by mount
-   height (the <=2.2 m net-overlap boundary) and by surface (the shell claim).
-2. **Does `EVID_BAND` have a correct value at all?** -> `docs/evidence/evid-band-has-a-correct-value.md`.
-   Not "what is the best value" — *is there ANY value that passes the gate (>=12 of 20, zero
-   accepted court beyond 20 px)?* If none exists, the **formula** is wrong, not the tuning,
-   and a whole class of future sweeps is retired. Gated on item 1: if proposal recall is the
-   binding failure, `EVID_BAND` is scoring candidates that were never generated.
-3. **Reconcile the founder's external research doc** -> `docs/evidence/external-research-reconciled.md`.
+### ALREADY DONE, do not rebuild (checked 2026-09-09)
+- **The synthetic court-centre 15th keypoint** the doc recommends is **already implemented** —
+  `_courtnet.py` outputs 15 heatmaps, `train_courtnet.py:40` builds "14 keypoints + court
+  centre (mean of the 4 corners)".
+- **We fine-tuned from the upstream RELEASED checkpoint**, not their training recipe:
+  `court_detector.pt` is Jun 2023 (theirs); `courtnet_ft.pt` / `courtnet_split.pt` are ours.
+  The doc's issue-#13 worry does not apply, and its Q1 is answered.
+- **Our ~21.6% is a fire-rate on amateur frames**; their 0.963 is per-keypoint at 7 px. Its
+  Q2 is answered: the two were probably never comparable.
 
-### THE EXTERNAL DOC'S CENTRAL CLAIM, and why it is not obviously dead
+### NEXT, when a slot frees (court only)
+- **`EVID_BAND`: does a correct value EXIST at all?** Not the best value — whether ANY value
+  passes the gate (>=12 of 20, zero accepted beyond 20 px). If none does, the scoring
+  FORMULA is wrong and a class of future sweeps is retired. Gated on qa's recall number: if
+  proposal recall binds, EVID_BAND is scoring candidates that were never generated.
+- **Duty-cycle the court detector** (~every 30 frames rather than per frame) — assess against
+  the existing 8-frame vote; may already be equivalent.
+- **Live-clip modelling**, per the founder's overnight wording: the corpus work is on gold
+  FRAMES; running the court path over continuous video is a different and less-tested
+  regime. `tools/eval_court_cleanplate.py` and the parity harnesses are the instruments.
 
-It argues our court failures share ONE cause: `yastrebksv/TennisCourtDetector` runs
-**CNN-global -> classical-local**; we run **classical-global -> CNN fallback**. Opposite
-assignments of the same two tools. It says shell failure is a *global search* failure (trusses,
-ceiling lights, mesh fencing outnumber the 8 court lines in the Hough output), and that this
-explains five rejections as one systematic error rather than five dead ends.
-
-**Do not dismiss this because court was closed for v1.** Our closure rests on the **line
-detector** floor (~6.4 px vs ~5.8 px human click noise). Their proposal uses a CNN for
-**global localisation from appearance**, which may not touch the line floor at all. That is
-the crux and it is genuinely open.
-
-**Two facts the doc did not have, already established here:**
-- `backend/weights/court_detector.pt` is dated **Jun 2023 = upstream released weights**;
-  `courtnet_ft.pt` / `courtnet_split.pt` are **our fine-tunes from that checkpoint**. So we
-  never used their *training recipe* — which **retires its issue-#13 worry** and one of its
-  five open questions.
-- Our ~21.6% is a **fire-rate on amateur frames**, not per-keypoint precision at 7 px. Their
-  0.963 is per-keypoint. **The two numbers were probably never comparable.**
-
-**Its other cheap wins, court-only:** add a synthetic court-centre 15th keypoint to stabilise
-heatmap training; duty-cycle the court detector (every ~30 frames, not per frame); and note
-its ablation shows local refinement buys ACCURACY while homography buys RELIABILITY — they do
-different jobs.
-
-**Not court, so parked under this directive:** its ball/YOLO benchmark, bounce detector,
-shot classification, and the Ultralytics AGPL question (revisit only if a YOLO court model is
-actually adopted).
+### THE 90% UPDATE
+When the session budget nears exhaustion (or repeated rate-limit kills make progress
+impossible), write the founder ONE consolidated update: what landed, what each agent found,
+what is still open, and what needs them. Do not interrupt before that with routine progress.
 
 ### Standing state
-Everything committed and pushed through `eebe7ad`. 586 tests pass. Doorman is v1, teams mode
-is back ON, cap 3 across the whole tree, `autoContinueAtUsageLimit` true.
+Committed and pushed through `54b23bf`. 586 tests pass. Doorman v1, teams ON, cap 3 across
+the whole tree, `autoContinueAtUsageLimit` true. A 10-minute cron (`98a6a475`) re-checks the
+quota and resumes from THIS section — it is session-only and expires after 7 days.
 
 
 ## PARKED — work that was started and stopped
