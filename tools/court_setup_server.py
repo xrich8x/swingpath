@@ -21,6 +21,7 @@ import sys
 import threading
 import time
 import webbrowser
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -526,6 +527,80 @@ window.addEventListener("resize",()=>{if(W){fit();render();}});
 </script></body></html>"""
 
 
+PLACED_BY_UNKNOWN = "unattributed"
+
+
+def provenance_block(state, shape_lock: bool, moved_px: float) -> dict:
+    """The `_provenance` block stamped onto every save.
+
+    WHY THIS EXISTS. Until 2026-09-09 a saved calibration recorded NOTHING about
+    where its corners came from. `_exact` was read downstream (eval/run_refs.py)
+    as "a human deliberately placed these", but it only ever meant "the browser's
+    Shape lock checkbox was unchecked" — an agent driving this tool with the box
+    unticked produced a file indistinguishable from a human's. Worse, the
+    shape-lock-ON path threw `moved_px` away, so there was no record of how far
+    the solver had shifted the placement it was handed.
+
+    `placed_by` is honestly `"unattributed"`: this tool serves a localhost page
+    and cannot tell a person's mouse from an agent's HTTP POST. It is a slot for
+    a human or a commit to fill in, NOT a claim. Do not read a missing or
+    "unattributed" value as "human".
+    """
+    src = state.get("source") or {"kind": "unknown"}
+    return {
+        "placed_by": PLACED_BY_UNKNOWN,
+        "tool": "tools/court_setup_server.py",
+        "shape_lock": bool(shape_lock),
+        "moved_px": float(moved_px),
+        "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "source": src,
+    }
+
+
+def source_desc(args) -> dict:
+    """What frame the corners were placed on, as far as the tool can honestly say.
+
+    Only `--frame` and `--gallery` identify a single image on disk. `--clip` picks
+    a middle frame out of a directory, so the directory is recorded but not which
+    jpg. `--video` DEFAULT is a temporal median clean plate over ~80 frames — there
+    IS no single source frame, and inventing a frame index would be a lie, so
+    `frame` stays null and the plate is declared. `--camera` has no file at all.
+    """
+    if getattr(args, "frame", None):
+        return {"kind": "image", "path": str(args.frame)}
+    if getattr(args, "clip", None):
+        return {"kind": "gold_clip_middle_frame", "clip": str(args.clip),
+                "frame": None,
+                "note": "middle jpg of data/gold/frames/<clip>; index not recorded"}
+    if getattr(args, "video", None):
+        plate = not getattr(args, "no_plate", False)
+        return {"kind": "video_clean_plate" if plate else "video_single_frame",
+                "video": str(args.video), "frame": None,
+                "note": ("temporal median over ~80 frames - no single source frame"
+                         if plate else "middle frame; index not recorded")}
+    if getattr(args, "camera", None) is not None:
+        return {"kind": "live_camera", "index": int(args.camera), "frame": None,
+                "note": "live stream - the frame is not persisted anywhere"}
+    return {"kind": "unknown"}
+
+
+def save_text(named: dict, exact: bool, provenance: dict | None = None) -> str:
+    """The exact JSON text a save writes.
+
+    CONTRACT (pinned by backend/tests/test_court_setup_save_provenance.py): the
+    four corner entries serialise byte-for-byte as they did before provenance
+    existed. `_exact` and `_provenance` are appended AFTER them, so removing
+    `_provenance` from the parsed dict and re-dumping reproduces the old file
+    character for character. Never insert a key ahead of the corners.
+    """
+    data = dict(named)
+    if exact:
+        data["_exact"] = True
+    if provenance is not None:
+        data["_provenance"] = provenance
+    return json.dumps(data, indent=2)
+
+
 def gallery_list(state):
     """[{name, done}] for the clip strip. `done` is read from disk every time so
     a save made in this session, or one made last week, look identical."""
@@ -551,6 +626,8 @@ def select_clip(state, idx: int):
     state["frame"] = frame
     state["out"] = str(c["out"])
     state["clip_name"] = c["name"]
+    # Gallery is the ONE mode that knows exactly which image is on screen.
+    state["source"] = {"kind": "gallery_image", "path": str(c["image"])}
     state["idx"] = idx
     state["static_mask"] = None
     # Bump the frame counter so the distance-to-line map, which is cached per
@@ -755,7 +832,9 @@ def build_handler(state):
                     # pull — at Save time the user's placement is the authority).
                     locked, moved = lock_shape(named, use_dt=False)
                     Path(state["out"]).write_text(
-                        json.dumps(corners_named(locked), indent=2), encoding="utf-8")
+                        save_text(corners_named(locked), exact=False,
+                                  provenance=provenance_block(state, True, moved)),
+                        encoding="utf-8")
                     self._send(200, {"ok": True, "path": state["out"],
                                      "corners": corners_named(locked),
                                      "moved": float(moved)})
@@ -764,10 +843,10 @@ def build_handler(state):
                     # (e.g. a wide lens bends the real lines away from any
                     # pinhole view). Saved with the _exact marker so the
                     # pipeline also skips its snap + shape lock.
-                    data = dict(corners_named(named))
-                    data["_exact"] = True
                     Path(state["out"]).write_text(
-                        json.dumps(data, indent=2), encoding="utf-8")
+                        save_text(corners_named(named), exact=True,
+                                  provenance=provenance_block(state, False, 0.0)),
+                        encoding="utf-8")
                     self._send(200, {"ok": True, "path": state["out"],
                                      "corners": corners_named(named),
                                      "moved": 0.0, "exact": True})
@@ -833,7 +912,7 @@ def main():
     # LIVE mode: aim a real camera and read the verdict as you move it.
     if args.camera is not None:
         state = {"out": args.out, "seed": None, "static_mask": None,
-                 "frame": None, "live": True}
+                 "frame": None, "live": True, "source": source_desc(args)}
         print(f"[setup] opening camera {args.camera} ...")
         start_live_camera(state, args.camera)
         Handler = build_handler(state)
@@ -908,7 +987,7 @@ def main():
             print("[setup] clip too short for a clean plate; using one frame")
 
     state = {"frame": frame, "out": args.out, "seed": None,
-             "static_mask": static_mask}
+             "static_mask": static_mask, "source": source_desc(args)}
 
     # Auto-fit on startup by default: detect the court, then snap it onto the lines,
     # so the overlay opens already fitted and the user only nudges if it's off.

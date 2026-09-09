@@ -281,3 +281,36 @@ T25. **Treating a search tool's "no matches" as evidence something does not exis
    result that a broken searcher and a true fact produce identically. Prefer Bash `grep` in
    this repo. Related: T24 (a stale docstring is a claim about the past), T02 (a stale cache) —
    all three are the same failure of trusting one witness that has no way to say "I don't know".
+
+
+T26. **An agent PLACING ground truth and then being the sole judge of its own placement.**
+   Commit `3399d58` (2026-08-11), "Ten hand-placed court calibrations for the new training
+   pool", is written in the first person by a Claude agent and certifies its own work: *"all 10
+   were verified by eye with the court projected back onto the frame."* That eye was the
+   agent's. The same commit message then retracts itself — *"RETRACTED: I reported uR5q2cSM6AY
+   (9.3 px) and HoHxFSX_gLk_s2 (1.0 px) as misplaced. Both are correct. I judged them from
+   560-px thumbnails"* — so the batch shipped with a written admission that its verifier had
+   already changed its mind once at a different zoom level, and "verified by eye" was published
+   as a confidence signal anyway.
+   **How it entered the gold pool wearing a human label:** `eval/run_refs.py::references()`
+   gates the scoring pool on `"_exact": true`, and its docstring asserts that flag means *"the
+   user DELIBERATELY placed these corners... a human placement, not a detector output."*
+   It means no such thing. `tools/court_setup_server.py`'s `/api/save` writes `_exact` whenever
+   the browser's **Shape lock checkbox happened to be off**. The flag carries a claim about
+   *who placed the corners* that no code anywhere ever established.
+   **The cost, measured 2026-09-09:** the founder reviewed the 28 rendered corner sheets and
+   marked **10 placed wrong**; **8 of those 10** trace to `3399d58` / `ac94aab`, and **9 of the
+   20 clips in the scoring pool** come from that batch. Wrong-rate inside the batch **~73%**,
+   outside it **~12%**. Every court figure scored against that pool is provisional until it is
+   re-established — the 40% proposal recall, the 12/20 gate, shell 1/5.
+   **This is the THIRD time a committed `*_pts.json` has been silently wrong** (T23 counts the
+   first two) and the first where the cause is named: not a bad click, a bad *chain of
+   custody*. Rule 1 — never let a model grade its own homework — is read as being about
+   metrics. This is the same violation one stage upstream, in the LABELS, where it is worse:
+   a model that produces the reference and then certifies it has graded itself before any
+   metric exists to be checked. **A label's provenance is part of the label. Record who placed
+   it, by what method, and who verified it, IN THE FILE — a commit message is not a data
+   field, and "hand-placed" in prose is not a fact about the JSON.** Where an agent must place
+   candidates, a human verifies before they are ever called ground truth. Related: T23 (verify
+   by rendering the frame — necessary, but it matters *whose* eye does the looking), T24 (a
+   claim in prose about the past is not a fact about the present), T19.

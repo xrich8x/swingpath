@@ -1,7 +1,42 @@
 """eval/candidate_audit.py - is the RIGHT ANSWER even in the candidate set?
 
-UNRUN. Written 2026-08-24 as step O1 of docs/archive/sessions/SESSION_O_shell_courts.md.
-No number in this repo has been produced by it yet.
+RUN HISTORY - corrected 2026-09-09. This header used to say "UNRUN. No number in
+this repo has been produced by it yet." That was false for at least a fortnight,
+and it is trap T24 for the second time (`eval/movers.py` carried the identical
+false claim while two docs/STATE.md rows already quoted its results). It is
+restated below from git and from what CONSUMED this script's output, because a
+file's own prose about its past is not a fact about the present.
+
+  Written 2026-08-24 as step O1 of docs/archive/sessions/SESSION_O_shell_courts.md.
+  RUN at least twice:
+
+  * 2026-08-26, commit `424ecdc` ("The court diagnosis harness, and the twelve
+    negatives it produced"). The SAME COMMIT that introduced this file also
+    committed `data/output/candidate_audit.json` - 10 clips x 8 frames, its own
+    output. The docstring shipped saying UNRUN with the run's artifact beside it.
+    Consumed by `data/output/court_scoring_diagnosis.md` §10,
+    `docs/evidence/indoor-shell-courts.md` (shell: 3/10 reached), and
+    `eval/truth_neighbourhood.py`'s header. `--movers` ran the same day; its
+    numbers are in docs/evidence/far-player-motion-gate-result.md.
+  * 2026-09-09, over the full 20-clip reference pool (`--k 8 --json`), published
+    in commit `5e322e2` as docs/evidence/candidate-proposal-recall.md: proposal
+    recall 40%, the SEARCH binds rather than the vote, shell worst (2/10).
+
+  `git log` ON THIS FILE PROVES NONE OF THAT - it has been edited once since
+  creation. Runs are recorded by their outputs, never by the script.
+
+DO NOT QUOTE `truth_would_pass` (it prints 9/20). It scores the exact human
+clicks and fails a clip if any one of 8 frames fails any term - the same all-or-
+nothing artifact that got the 0.18-0.31 band numbers withdrawn, and it
+self-contradicts: 5 of the 8 clips where a good lock WAS produced come out as
+"truth would not pass". The accept-side instrument that works is the
+neighbourhood sweep, `data/output/court_scoring_diagnosis.md` §10 (19/20).
+
+STANDING WARNING FOR EVERY NUMBER BELOW - the human courts this scores against
+are under review. 9 of the 20 pool clips were placed by an agent that then judged
+its own placement (trap T26, docs/evidence/calibration-provenance.md), and the
+founder marked 10 of 28 rendered sheets wrong-placed on 2026-09-09. Recall
+measured against a wrong court is not recall.
 
 THE QUESTION IT SETTLES
 -----------------------
