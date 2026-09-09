@@ -109,24 +109,45 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-**FOUNDER DIRECTIVE 2026-09-09 (overnight): COURT PREDICTION AND MODELLING ON LIVE CLIPS.
-Keep all agents working while they sleep. Send an update when the session budget hits 90%.**
-Do not start ball, speed, score or mobile work.
+RUN-STATE: RUNNING
 
-**LIVE, dispatched 02:20:**
-1. `backend-dev` -> `docs/evidence/cnn-global-classical-local.md`. Implements the external
-   doc's top recommendation: **CourtNet global -> classical local refinement -> existing
-   6-DOF gate and vote UNCHANGED**. One variable: the ordering. Behind a flag; the shipped
-   default does not move without a founder call.
-2. `qa` -> `docs/evidence/candidate-proposal-recall.md`. **Gates agent 1.** Does a correct
-   court candidate EVER get proposed, regardless of the vote? High recall kills the
-   "global search is the problem" premise outright; low recall on shell justifies the
-   rebuild. Split by surface and by mount height.
-3. `researcher` -> `docs/evidence/external-research-reconciled.md`. Verifies the HuggingFace
-   claims first-hand and marks each of the doc's items CONFIRMED / CONTRADICTED / NEWLY
-   ACTIONABLE / ALREADY DONE against our measurements.
+**FOUNDER DIRECTIVE 2026-09-09 (later): STOP ALL COURT *FEATURE* WORK. Fix the measuring
+instrument first.** The three overnight court briefs (round 2: shell 4K refiner reach,
+search-ranking defect, amateur-court literature) are PARKED, not cancelled.
 
-**Teams mode is ON, so all three can message each other.** qa's number is the gating exchange.
+**WHY — the finding that stopped everything.** The founder reviewed the 28 rendered corner
+sheets and marked **10 placed wrong**. Git traced 8 of those 10 to `3399d58` / `ac94aab`
+(2026-08-11/12), where **a Claude agent placed the corners AND was its own sole verifier**
+("all 10 were verified by eye"), and that same commit message carries a self-retraction where
+its visual verdict flip-flopped. **9 of the 20 clips in the scoring pool come from that batch.**
+Failure rate inside the batch ~73%, outside it ~12%.
+
+So `_exact: true` — which `eval/run_refs.py` treats as "a human DELIBERATELY placed these" —
+actually only means "the Shape-lock checkbox was off at save time". Agent output entered the
+gold pool wearing a human label. **Every court number scored against that pool is provisional
+until this is settled**, including last night's 40% proposal recall, the 12/20 gate and shell 1/5.
+
+**LIVE, dispatched:** `backend-dev` -> `docs/evidence/calibration-provenance.md`. Make the save
+path record what actually happened (`_provenance` block; persist the `moved_px` that
+`lock_shape` computes and discards), correct run_refs' false docstring, and produce the
+git-derived provenance table for every existing `*_pts.json`. Corner values byte-identical,
+pinned by a test. NOT authorised to re-place corners or backfill existing files.
+
+**QUEUED, in order, one at a time:**
+1. `run_refs` provenance-aware pool reporting (needs the founder's call on whether suspect
+   clips leave the pool — that changes every number, so it is his, not ours).
+2. `render_corner_audit.py`: `--tag` is accepted and IGNORED on the corner path (`main()`
+   never passes it to `render()`, output silently overwrites); and it defaults to frame 0
+   while the eval samples 5-95%.
+3. `eval/candidate_audit.py` docstring still says UNRUN; it has run twice.
+4. Side-by-side re-review of the founder's 10 "wrong" calls — the lead disagrees with at
+   least one (`L73ep7JHiJ4` looks correctly placed), and one reviewer with no disagreement
+   mechanism repeats the failure mode that caused this.
+5. Commit + test `tools/render_ai_court_audit.py` (new this session, untracked).
+6. `docs/TRAPS.md` entry: an agent placing labels AND judging them is self-grading.
+
+**FOUNDER-BLOCKED (do not dispatch):** re-placing the suspect calibrations. Only a human eye
+can do it and rule 9 makes it his. This is the expensive one and it gates F1.
 
 ### ALREADY DONE, do not rebuild (checked 2026-09-09)
 - **The synthetic court-centre 15th keypoint** the doc recommends is **already implemented** —
@@ -234,6 +255,55 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-09** — **The court gold pool's provenance was never established.** Founder marked
+  **10 of 28** rendered corner sheets wrongly placed. `_exact: true`, which `run_refs` treated
+  as "a human deliberately placed these", only ever meant the Shape-lock checkbox was off, so
+  agent output entered the pool wearing a human label. Damage is LOCALISED: of 11 reviewed
+  clips from the 2026-08-11/12 seven-commit agent session **8 are wrong (73%)**; of the 10
+  shell clips from `7c8b8af` — half the pool, same unevidenced "human" claim — **0 are wrong**.
+  Auditing by commit hash under-counts by a third (`3399d58` is the session's closing commit,
+  wrote 6; `ac94aab` wrote 0). Fixed: `_provenance` on save incl. the `moved_px` that
+  `lock_shape` was discarding (0.508 px on a test quad); corners byte-identical; `references()`
+  returns the identical 20 clips; 693 tests pass. Trap **T26** written. Two STATE rows.
+  **Then a second defect, in the audit instrument itself:** the 28 sheets were rendered at
+  **frame 0**, but gallery-mode placement uses arbitrary mid-clip frames from
+  `collect_frames.py` — so under camera motion a CORRECT placement renders as wrong, and the
+  10 verdicts carry a false-accusation risk. `--tag` was also silently dropped on the corner
+  path (five renders → one file, four destroyed, no error). Both fixed; frame index now in
+  every filename; default is the eval's own sample 4/8 via an imported `frame_positions()`,
+  pinned by 88 tests.
+- **2026-09-09** — **Re-audit CLOSED the founder's 10: 4 misplaced, 5 mixed, 1 exonerated**, judged
+  across all 8 eval frames with the prior verdict hidden. Only 3 of 8 original "wrong" calls
+  survived; `sAjkpeRq4P4` reversed to HOLDS (and the lead's own frame-0-vs-500 spot-check had
+  wrongly confirmed the accusation — both frames sat inside a title shot). qa's two predicted
+  false-exonerations both landed. **pm's triage then shrank the damage twice over** and the lead
+  verified both corrections: (a) **TWO pools exist** — the 12/20 gate scores against
+  `data/gold/*.court.labels.json` (`run_eval.py:79-90`), a different 20-file truth set, so it
+  NEVER inherited T26; the lead's STATE row saying otherwise was wrong and is fixed. (b) **In-pool
+  damage is 2 clips, not 4** — `HoHxFSX_gLk_s3` is not `_exact`, `bump_ntrp30` sits in
+  `data/amateur_clips/` which `run_refs.py:132`'s non-recursive glob never scans. So proposal
+  recall can rise to at most 10/20 = 50%, still under the 60% line: **the headline verdict
+  SURVIVES, do not re-measure it.** Archived `yt-match40-calibration-is-wrong.md` (its 3 dangling
+  links repointed), READMEs on `corner_audit/` and the new `data/pre_reaudit_backup/`.
+  **Then the re-placement was STOPPED before staging**: all four "misplaced" clips are MULTI-SHOT
+  (s1 M_win 101.9 + 3 cut frames, s2 81.2 + 2, s3 two venues, bump_ntrp30 a cut at 508), so
+  clicking fresh corners on one frame reproduces the exact defect just exposed. The open question
+  is `clip-shot-map.md`: does one camera setup cover >=6 of 8 frames (ACCEPT_VOTES)? Outcome is a
+  founder drop-or-restrict decision, not a labelling session.
+- **2026-09-09** — **qa's shot-map brief KILLED by a session limit for the SECOND time in one day**
+  (reset 18:20 Asia/Manila). It died just after writing its bar — **and the bar SURVIVED in
+  `.claude/journals/qa.md` run 5**, which is the journal rule paying for itself. Re-dispatched
+  pointing at that bar with an explicit instruction to honour it verbatim rather than re-derive
+  (re-deriving after a kill is bar-shopping, and this repo has been caught choosing thresholds
+  post-hoc twice). Its scratchpad survived too — same session id, `measure_motion.py` /
+  `motion.json` / `window_motion.*` all reusable. Corpse lock cleared by hand, again.
+- **2026-09-09** — **qa's camera-motion brief KILLED by the session limit at zero work** (whole
+  output: "New task. Let me look at the relevant machinery"). Same failure as 2026-09-03. Its
+  lock `aa0740a0a774fd8af-*` was a corpse holding a slot and was cleared by hand per the
+  restart checklist. Limit reset 13:20 Asia/Manila; re-dispatched verbatim, not shrunk.
+  **Nothing is re-placed until that measurement lands** — it decides whether the founder's 10
+  verdicts are sound or partly false accusations, and it is his time being spent either way.
 
 - **2026-09-05** — **Founder ruling: "pause" means the ENTIRE session, not just agent
   dispatch.** Came out of a review of the doorman, which found the doorman was not the

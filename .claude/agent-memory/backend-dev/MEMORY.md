@@ -31,3 +31,6 @@ monolithic file; nothing was dropped.
 - [The rho gate is inert for oblique lines](rho-gate-is-inert-for-oblique-lines.md) — corr_attrib._match_line accepted sideline matches up to 316 px@640 off truth
 - [Upstream CourtNet does not fire on amateur](upstream-courtnet-does-not-fire-on-amateur.md) — the CNN-global flip FAILED 12/20 -> 2/20; 2-3 of 14 keypoints, so no proposal at all
 - [CourtNet weights substitute silently + two gold populations](courtnet-weights-silently-substitute.md) — courtnet_ft.pt overrides what you pass; "12/20 gold" and "2/20 references" are different sets
+- [Audit instruments have failure modes](audit-instruments-have-failure-modes.md) — the corner sheet showed frame 0 while the eval scores 5%-95%; gallery placements make that a FALSE-ACCUSATION risk
+- [References pool is STRICT-16, not 20](references-pool-is-strict-16.md) — founder ruling 2026-09-09; every `/20` against it is stale, and three different "20"s exist
+- [Court gold provenance is UNATTRIBUTED](court-gold-provenance-is-unattributed.md) — `_exact` is a checkbox not a human marker; 9/20 refs placed by a self-grading agent session; blame values, not commits

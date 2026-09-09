@@ -5,94 +5,117 @@ nothing restarts it automatically. Whatever is below is what survived.
 
 ---
 
-## TASK — 2026-09-09 (NEW TASK, supersedes the 2026-09-06 court-research task)
+## TASK — 2026-09-09 LATE (WHAT WOULD MOVE COURT RECALL; supersedes the literature survey below,
+## whose findings are RETAINED as STATE and feed part (b))
 
-Reconcile the founder's EXTERNAL RESEARCH DOC (dated 8 Sep 2026: models, repos, one
-benchmark paper; court/ball/player/bounce/shots/mobile/licensing) against what THIS
-project measured. Its §8 "what actually transfers" and §9 "ignore" lists get graded
-CONFIRMED / CONTRADICTED / NEWLY ACTIONABLE / NOT APPLICABLE with the specific
-measurement that settles each.
+Deliverable: `docs/evidence/court-recall-what-would-actually-move-it.md`
+(a) FIRST: is ~30 px@640 frame-to-frame self-spread on STATIC 4K shell footage EXPECTED
+    (inherent precision floor of Hough/line-fit at that res) or ANOMALOUS (a specific bug)?
+    Reason from method: sub-pixel line localisation, seed grid, downscaling, UNSEEDED RANSAC.
+(b) Ranked lit list for OUR regime, each vs iOS A13/Core ML/on-device/PROPOSAL-stage +
+    TRAINING DATA needed (we have NO indoor-shell gold).
+Rule 3 check stated explicitly per recommendation. Name what I could not reach.
+Must ENGAGE with pm cut line (docs/evidence/court-triage-2026-09-09.md): no 7th branch,
+no multi-homography, don't ship AGREE_PX normalisation, don't touch courtnet_ft.pt.
+STOP-WHEN: written or ~35 calls. NO code, NO measurement (no Bash), NO STATE.md edit.
 
-Central claim to test hardest: our court failure is ONE systematic cause — ordering.
-yastrebksv/TennisCourtDetector = CNN-global -> classical-local; we = classical-global
--> CNN fallback. It claims shell-court failure is a GLOBAL SEARCH failure (trusses/
-lights/mesh outnumber the 8 court lines in Hough), CNNs robust via appearance, and
-that this unifies 5 prior rejections into 1 error.
-CRUX (decide, do not hedge): our measured ceiling is the LINE DETECTOR (~6.4px rms vs
-truth, vs ~5.8px human click noise) — is that even the same axis as their CNN-global
-localisation claim?
+## OLD TASK — 2026-09-09 (LITERATURE SURVEY) — findings retained below, task closed
 
-Also: (a) TrackNet-for-ball founder decision vs its §2.3 (TrackNetv2 20fps RTX3070;
-YOLOv4 > TrackNetv2 on F1, arXiv 2302.09657) — ours chosen on chain accuracy vs human
-gold, not fps. (b) Verify HF claims first-hand: CourtSide v1 card 85.6% vs v0.1 card
-67.87%; kjfk bounce 0.951 LOMO; Gholamreza dataset provenance/licence. (c) Ultralytics
-AGPL on a shipped commercial iOS app — resolve as far as reading allows.
+**COURT ONLY.** Find out whether anyone has SOLVED or MEASURED court detection on
+AMATEUR, LOW-MOUNT, often INDOOR-SHELL footage.
 
-FACTS GIVEN BY LEAD (do not re-derive): backend/weights/court_detector.pt = Jun 2023 =
-UPSTREAM released weights -> we fine-tuned from their CHECKPOINT (courtnet_ft.pt Jul
-2026, courtnet_split.pt Aug 2026), NOT their training script -> defuses its issue #13.
-Our CourtNet figure is a FIRE RATE on amateur frames, not per-keypoint precision @7px
-— confirm from code, say whether the two numbers were ever comparable.
+1. Fetch **arXiv 2404.06977** "Accurate Tennis Court Line Detection on Amateur Recorded
+   Matches" — the PAPER, not the abstract. Method / dataset / mount heights / numbers /
+   reproducibility. Highest-value fetch available.
+2. Survey beyond the doc: court/field registration on amateur/consumer footage — tennis,
+   padel, pickleball, badminton, basketball, football. Transferable question is METHOD:
+   localise a known planar layout under clutter, low oblique, no broadcast framing.
+3. Look for OUR failure specifically: line detection drowned by structural clutter
+   (trusses, ceiling lights, fencing). Temporal/multi-view evidence, learned line/edge
+   detectors (vs Hough), segmentation-then-fit, direct homography regression.
+4. Assess strictly vs: iOS A13, Core ML, 100% on-device, must run at the **PROPOSAL**
+   stage. State TRAINING DATA each needs — we have NO shell ground truth.
 
-DELIVERABLE: docs/evidence/external-research-reconciled.md
-STOP-WHEN: written, or ~35 tool calls.
-NOT-THIS-RUN: code, STATE.md, git commit, the other agents' files
-(docs/evidence/candidate-proposal-recall.md, evid-band-has-a-correct-value.md).
+RANK by expected value. **Be willing to conclude nothing published helps.**
+Say which sources I actually REACHED vs could not.
+
+CONTEXT THAT DEFINES THE QUESTION (given by lead, do not re-derive):
+- SEARCH binds, not the vote: proposal recall **8/20** gold clips; **shell worst 1/5
+  recordings**; three shell recordings **no lock at all**.
+- Criteria do not bind: a court median **4.9 px** from human clicks clears accept on 19/20.
+- Upstream CNN cannot supply missing proposals: **2-3 of 14 keypoints** on amateur, below
+  the 4 needed. Gold 12/20 -> 2/20; shell 20/80 frames -> **0/80**.
+
+DELIVERABLE: `docs/evidence/amateur-court-detection-literature.md`
+STOP-WHEN: 2404.06977 read AND survey ranked — or ~35 tool calls.
+NOT-THIS-RUN: code; ball/speed/score/mobile; docs/STATE.md; git commit;
+docs/evidence/shell-4k-refiner-reach.md; docs/evidence/search-ranking-defect.md.
 CAUTION T25: Grep/Glob unreliable — prefer Read on known paths.
+NOTE: **SendMessage does NOT exist in subagents** — established last run, do not look.
+
+## STATE — IN PROGRESS. ~14 tool calls used.
+
+**2404.06977 full text NOT REACHABLE.** arXiv has NO html/ar5iv version (404 / 307 back to
+abs). PDF downloads but Read cannot render it (no poppler). r.jina.ai 403, academia.edu 403,
+aimodels.fyi 403, themoonlight.io 429 (x3), semanticscholar API 429. papers.cool = metadata only.
+So everything below is from arXiv abs + search-engine-indexed PDF text. SAY SO IN THE REPORT.
+
+ESTABLISHED about 2404.06977 so far:
+- Agrawal, Sundararajan, Sagar; submitted 10 Apr 2024; accepted to **5th Intl Conf on Image,
+  Video Processing and AI (IVPAI)** — a minor venue, not a CV conference.
+- Method = **enhanced Hough + homography estimation**, i.e. the FARIN-family court-model fit
+  (gchlebus/tennis-court-detection is the open implementation of that lineage). Adds
+  (a) shadow removal via **MTMT (Multi-Task Mean Teacher)** pretrained shadow detector ->
+  binary shadow mask, (b) pretrained **object detection** (player/occluder removal),
+  (c) **court-colour-based filtering**.
+- Claimed result: **"94% accuracy in the best case"** — metric definition NOT yet found.
+- No code release found; no GitHub repo located for the authors.
+**CRITICAL for us: its base algorithm is the Farin-style joint line-to-model fit that this
+project BUILT AND KILLED 2026-08-29 (C3 reconstructs 17.1 px@640 even given TRUE
+correspondence, worse than shipped 8.1).** And its three additions all attack OUTDOOR
+degradations (shadows, worn paint, players) — none attacks indoor structural clutter.
 
 ## STATE — **DONE 2026-09-09.** Deliverable written:
-`docs/evidence/external-research-reconciled.md`. Verdict: diagnosis CONTRADICTED (0.80),
-prescription NOT retired by the line ceiling (0.90), 15th keypoint ALREADY DONE (upstream's
-own), duty-cycle NOT APPLICABLE (we are one-time; 1-in-30 would be 91x WORSE), Gholamreza =
-upstream's own training set (strike it), CourtSide = ball/racket + axis-aligned court REGIONS,
-cannot calibrate. Q1+Q2 answered; Q3-Q5 ungraded (never saw the doc). Nothing else to resume.
+## `docs/evidence/court-recall-what-would-actually-move-it.md`. ~19 calls.
+## Memory updated: court-detection-negatives.md + amateur-court-literature.md.
+## Nothing outside the allowlist was written. No STATE.md edit, no code, no commit.
+## If restarted: the work is FINISHED — just report it. Headline in STATE-2 below.
 
-## STATE (history) — IN PROGRESS (resumed 2026-09-09, second attempt)
+## STATE-2 (part a) — HYPOTHESIS FORMED, from reading courtfit.py. ~7 calls used.
 
-SCOPE NARROWED BY FOUNDER: **COURT ONLY**. Ball/bounce/shot-class/AGPL sections of the
-doc are PARKED — mention only where they bear on a court decision.
-Teams mode ON: qa is measuring proposal-stage recall (ask it for the number),
-backend-dev is building CNN-global/classical-local. Do NOT touch their evidence files.
+ANSWER FORMING: 30 px@640 is **neither an inherent Hough precision floor NOR a bug** — it is
+an ILL-CONDITIONED / near-null-space direction in the objective, plus MODE SWITCHING in a
+discrete argmax search. Three legs:
+1. **Quantisation cannot produce 30 px@640.** `_detect_lines` (courtfit.py:73) HoughLinesP
+   theta bin = 1 deg, rho bin = 1 px, at NATIVE res; merge averages segments weighted by
+   length so effective angular precision ~0.3 deg. On a 1500 px sideline at 3840 that is
+   ~8 px = **1.3 px@640**. An order of magnitude below 30. Floor hypothesis DIES on arithmetic.
+2. **The error is ANISOTROPIC, which noise is not.** Same static frames: near-baseline
+   spread 3.3% (hillsborough_p02) vs far-baseline **93.9%**. flexi_joy_p07 9.8 near / 34.9 far.
+   A quantisation floor is roughly isotropic; a 5-30x near/far asymmetry along the DEPTH
+   direction is a conditioning problem.
+3. **Mechanism named:** `_ori_detail` (courtfit.py:137-174) EXCLUDES lines with no nearby
+   paint as UNMEASURABLE (`ev`, EVID_MIN) — correct for faded paint, but on a LOW MOUNT the
+   net tape physically covers the far baseline (<2.0-2.2 m, Part A of pm triage). Drop the far
+   baseline from the evidence set and the only observable pinning court DEPTH EXTENT is gone,
+   so the fit slides along a ~1-param depth/width family at near-constant score. All shell
+   mounts are low. Predicts exactly the observed near-pinned/far-free signature.
+4. `autodetect` is a discrete **argmax over <=topk=12 refined seeds** (rankv), not a continuous
+   estimator. One player crossing a line flips WHICH seed wins -> the 8 fits are a MIXTURE over
+   hypotheses, not a scatter. So "self-spread" is not a precision measure at all.
 
-Read: journal, court-detection-negatives.md, STATE.md head, lead.md (full), DECISIONS_PENDING.
-**GLOB AND GREP ARE 100% BROKEN this run (T25) — every call returns "No files found",
-including `*` on the repo root. Read-on-known-path is the ONLY working file tool.**
-External research doc NOT on disk under the obvious names (docs/EXTERNAL_RESEARCH.md,
-docs/external_research.md, root EXTERNAL_RESEARCH.md all ENOENT).
-FALLBACK IF NOT FOUND: reconcile against the lead's verbatim summary of its claims in
-lead.md NOW section (lines 136-164) — that is a faithful restatement of §8/§9 court items.
+CHEAPEST FALSIFIER, data ALREADY EXISTS: qa's `scratchpad/interframe_agreement.py` ->
+`interframe.json` holds ALL pairwise distances per clip. Test MODALITY: if the per-clip fits
+form tight clusters (<8 px@640 within, >30 between) it is mode-switching, not a floor.
+Unimodal 30 px smear = floor. NO new measurement needed, just re-read the artefact.
 
-**NO SendMessage TOOL IN MY FUNCTION LIST** despite the brief saying teams mode is on.
-Tools I actually have: Read, Write, Edit, WebSearch, WebFetch, Grep(broken), Glob(broken).
-So I CANNOT ask qa for the proposal-recall number. Say so in the report; do not fake it.
-
-**DOC NOT FOUND after 8 guessed paths** (docs/EXTERNAL_RESEARCH.md, docs/external_research.md,
-root EXTERNAL_RESEARCH.md, docs/research/external-research-2026-09-08.md, docs/research_notes.md,
-docs/FOUNDER_RESEARCH.md, docs/evidence/external-research-reconciled.md). With Glob dead I
-cannot enumerate. DECISION: proceed on the FALLBACK — lead.md NOW lines 136-164 is a verbatim
-restatement of the doc's court claims, plus the five items itemised in my brief. Limitation
-stated in the deliverable.
-
-CONFIRMED ALREADY: `_courtnet.py` docstring — 15 heatmaps = 14 keypoints + 1 court centre,
-"used only for training convergence", "kept byte-for-byte compatible with the published
-checkpoint". So the 15th-keypoint recommendation is not just ALREADY DONE here, it is
-UPSTREAM'S OWN ARCHITECTURE — the doc recommends adding something inherent to the checkpoint
-it recommends. Stronger than the brief's framing.
-
-STATE read (What has not worked, full). Two rows are decisive for the central claim:
-- 2026-09-06 near-baseline+net solve: **availability binds harder than precision** — right
-  doubles sideline found on 18/40 clips, net ground line 24/40, all four needed lines
-  coexisting on only **10/40**. "Everything failing is DETECTION", control exact to 0.007 px.
-- 2026-09-05 closure: line detector ~6.4 px vs ~5.8 px click noise; LS-fit over ALL matched
-  lines drives line residual to 3.01 px (below the HUMAN homography's 6.44) yet reconstruction
-  is WORSE (19.80 vs 17.10) — the fit is not the problem.
-
-NEXT: (1) [done - fallback accepted]; (2) CourtNet fire-rate code (_courtnet.py,
-train_courtnet.py:40, eval_court.py) to confirm 21.6% is a fire rate not px precision;
-(3) court_detector.pt provenance; (4) 8-frame vote / duty cycle in calibration.py;
-(5) web: CourtSide cards, Gholamreza dataset, yastrebksv repo health; (6) SendMessage qa.
+Also a code fact, unproposed anywhere: HoughLinesP params are MIXED-scaling —
+threshold=45 and maxLineGap=12 are ABSOLUTE, minLineLength scales with w. At 3840 that means
+45 votes is ~6x EASIER (more spurious lines) while a 12 px gap is ~6x STRICTER (more
+fragmentation). They pull opposite ways. Must rule-3 check before naming it.
 
 ## LOG
 
-- 2026-09-09 start. Journal rewritten for new task.
-- 2026-09-09 resume #2. Court-only directive. Glob/Grep dead — noted above.
+- 2026-09-09 previous task DONE: `docs/evidence/external-research-reconciled.md`.
+- 2026-09-09 new task (literature survey) started. Journal rewritten.
+- 2026-09-09 2404.06977: 10 fetch attempts, full text unreachable; facts above from abs+search.

@@ -16,5 +16,7 @@ Index. Detail in the topic files. Inherited 2026-08-28 from the prior planning w
 - [Cheap tests that close a line](cheap-tests-that-close-a-line.md) — price a cheap experiment by what its FAILURE closes; riders get no gate; pre-write the row both ways
 - [The mount crossover splits v1's outputs](mount-crossover-splits-v1-outputs.md) — below ~2.2 m: warn at capture, ship shots/rallies, WITHHOLD speed and bounce map; ball pixel numbers provably safe
 - [No confirmed metric footage exists](project-owns-no-confirmed-metric-footage.md) — all four named mounts are 1.36-1.74 m; per-clip status, and the 15-min recording ask that is now top of the queue
+- [Two court pools, only one compromised](two-court-pools-only-one-compromised.md) — the 12/20 gate scores against GOLD, not the `_exact` REFERENCES that T26 broke; only 2 of 20 confirmed misplaced
+- [Setup-time camera motion is an ordering problem](setup-time-camera-motion-is-an-ordering-problem.md) — calibrate LAST + IMU stillness; never detect movement from the court fit (it self-disagrees by 29.9-37.5 px)
 
 **Settled, do not reopen:** iOS only, A13+, Core ML only. 100% on-device, no server ever.

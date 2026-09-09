@@ -96,6 +96,37 @@ this agent's system prompt — read it first; it is the authoritative copy.
   "UNRUN" docstring is STALE (Session O ran it on shell 2026-08-24, 3/10 then vs 2/10 now)
   — grep docs/evidence + data/output for a script's numbers BEFORE running it.
 
+- **Camera motion vs court inter-frame agreement, measured 2026-09-09.**
+  [camera-motion-vs-court-agreement.md](camera-motion-vs-court-agreement.md) — the vote does
+  penalise motion (24.0 px@640 removed on 5 moving clips) but rescues ZERO clips: static
+  clips sit at the same ~25 px@640 floor, 1 of 16 crosses the line, 0 of 20 change
+  acceptance. BAR1 INDETERMINATE (rho .474 / gap 18.6, both in the dead band), BAR2 PARTIAL,
+  BAR3 width-zoom LINKED at n=3 but does NOT explain STATE's width row. Two lessons: a
+  motion number measured vs video frame 0 is NOT the within-eval-window covariate
+  (sAjkpeRq4P4 80.4 vs 3.6), and AGREE_PX's resolution problem was already in
+  docs/evidence/agree-px-is-6-tighter-on-4k.md — grep before claiming.
+- **Corner-audit verdicts are frame-choice contaminated, measured 2026-09-09.**
+  [corner-audit-frame-choice-risk.md](corner-audit-frame-choice-risk.md) — 7 of the 10
+  founder "wrong court" verdicts sit on a frame the eval never scores (frame 0 vs the
+  5-95% samples); A7vXlWIlyrI's frame 0 is a monochrome intro, sAjkpeRq4P4's matches 0 of
+  8 scored frames, HoHxFSX_gLk_s3 spans two venues. Risk runs BOTH ways (2 "correct"
+  verdicts equally unsupported). Motion is confounded with clip type, not a cause.
+
+- **Clip shot map measured 2026-09-09 — 8/10 single-setup, but the edge test is weaker
+  than it looks.** [clip-shot-map-single-setup.md](clip-shot-map-single-setup.md) —
+  control sAjkpeRq4P4 G=8 PASS; only HoHxFSX_gLk_s1 (5) and _s3 (4) FAIL-RESTRICT, zero
+  FAIL-DROP; pool loses N=1 (5%) by the bar vs N=4 (20%) tight. Lesson: an ORB similarity
+  edge proves "registrable background", NOT "one homography holds" — A7vXlWIlyrI passes
+  G=8 at 188 px@640 / 40% zoom. Negative control (frame vs a DIFFERENT clip) is what
+  validates a grouping; null+positive only prove the estimator runs.
+
+- **§4.1 modality falsifier ran 2026-09-09 — INDETERMINATE, kill condition did not fire.**
+  [mixture-vs-precision-floor-indeterminate.md](mixture-vs-precision-floor-indeterminate.md)
+  — strict-16 n=11: MIX 4 / PF 1 / IND 6 vs a >=6 bar; all 5 MIXTURE verdicts are 1920-wide
+  and 0 of 5 measurable 4K shell clips is MIXTURE, so the reading cannot be carried onto
+  shell. The 4 motivating tripods rest on 1-10 pairs (flexi_joy_p01's 29.9 px is ONE pair).
+  Bar has an all-singleton specification gap; flagged, not patched.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is

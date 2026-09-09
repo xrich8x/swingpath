@@ -4,97 +4,141 @@
 
 ---
 
-## TASK - CURRENT (2026-09-09, SECOND task of the day) CNN-GLOBAL -> CLASSICAL-LOCAL
+## TASK - CURRENT (2026-09-09, SIXTH task of the day) POOL 20 -> 16 (founder ruling)
 
-Founder brief supersedes the earlier proposal-recall task in this journal; that one
-is now owned by qa (docs/evidence/candidate-proposal-recall.md - DO NOT TOUCH).
-COURT ONLY. Build, behind a FLAG, a court path that runs CourtNet for GLOBAL
-localisation, then the EXISTING classical machinery for LOCAL refinement, then the
-EXISTING 6-DOF gate and consensus vote UNCHANGED. One variable: the proposal source.
-DELIVERABLE: docs/evidence/cnn-global-classical-local.md (A/B vs shipped ordering,
-per clip, split by surface and mount height) + tests + flag.
-NOT-THIS-RUN: ball/speed/score/mobile; retraining CourtNet; data/*_pts*.json edits;
-changing the shipped default; docs/STATE.md; git commit.
-STOP-WHEN: A/B run and written up, or ~45 tool calls.
+Task 5 (three audit-tool defects) COMPLETE - see DONE-T5 below, do not redo.
+`eval/reach_ab.py` untracked leftover from an even earlier task - ignore.
 
-## BLOCKER RECORDED: SendMessage is DISABLED
+FOUNDER RULING: references pool drops A7vXlWIlyrI, HoHxFSX_gLk_s1, HoHxFSX_gLk_s2,
+UHf0LeMU2pg. 20 -> 16. Reason: strict "one camera setup" - qa's clip-shot-map.md
+ORB/RANSAC similarity edge only proves REGISTRABLE background, a pan-and-zoom passes.
+Within-winning-group motion: A7vXlWIlyrI 188.3 px@640 w/ 40% zoom at 8/8;
+HoHxFSX_gLk_s1 189.5; HoHxFSX_gLk_s3 138.5; HoHxFSX_gLk_s2 105.9. Strict rule adds
+EXISTING WRONG_PX_640=20.0 (no new constant): pairwise-linked AND pairwise <=20 px.
+uR5q2cSM6AY is a marginal 5th - RETAINED, flagged not dropped. Do NOT widen rule.
 
-The brief says teams mode is on and SendMessage works. It does NOT:
-`Error: No such tool available: SendMessage. SendMessage is disabled for this
-session, in subagents as well as here.` So I could not ask qa for the proposal-recall
-number that would have killed or confirmed the premise. I build the flag-gated path
-(cheap, reversible, useful either way) and report the premise as UNRESOLVED-BY-QA.
+DELIVERABLES: (1) explicit+discoverable exclusion in eval/run_refs.py (NOT by moving
+files - that is how bump_ntrp30 vanished; glob is non-recursive at data/*_pts*.json).
+(2) test in backend/tests/: pool==16, four absent, uR5q2cSM6AY present.
+(3) docs/evidence/pool-strict-16.md = invalidation list of every published /20 number.
 
-## PRE-REGISTERED BAR (written BEFORE running either arm)
+NOT-THIS-RUN: re-measuring ANYTHING (numbers stay as published, marked stale),
+docs/STATE.md, git commit, editing any *_pts.json, data/pre_reaudit_backup/.
 
-ARMS. A = shipped ordering (classical global `autodetect` -> snap -> lock).
-B = flipped (CourtNet global proposal -> the SAME snap -> the SAME lock).
-Everything downstream identical: `snap_to_lines(min_coverage=0.0, max_move_px=60)`,
-`lock_quad`, `consensus`, ACCEPT_VOTES=6, K=8 frames, same frame indices, same clips.
-Deterministic apart from cv2.findHomography RANSAC inside detect_court_learned
-(unseeded upstream code - noted, not changed).
-WEIGHTS for arm B: `backend/weights/court_detector.pt`, the UPSTREAM released
-checkpoint. Chosen because it is leak-free by construction (never saw our gold);
-`courtnet_ft.pt` is our fine-tune and 17 of 20 gold clips were in that training pool,
-so using it would be self-grading. Recorded in the artifact's provenance stamp.
+## STATE - **TASK COMPLETE.** All three deliverables in; full suite **706 passed**
+(693 before + 13 new). Outstanding for the LEAD only: docs/STATE.md + commit.
+Deliverable 3 = docs/evidence/pool-strict-16.md (before/after lists, composition
+table, invalidation list in 3 parts: 3a stale, 3b affected-going-forward, 3c
+NOT-affected). Nothing re-measured; no eval run.
+KEY FINDINGS in that doc worth not re-deriving:
+- All 4 dropped clips are 1920 HARDCOURT -> pool loses 20% of clips but 40% of its
+  NON-SHELL half (10->6); shell share 50% -> 62.5%. Surface splits move most.
+- proposal recall 8/20: drop removes 1 REACHED (A7vXlWIlyrI 5.3px) + 3 never-reached
+  -> moves UP, does NOT cross the 60% search-binds line. Verdict survives, figure not.
+- cnn-global References 2/20: BOTH accepts (am_hard_utr, sAjkpeRq4P4) are RETAINED ->
+  numerator unchanged, denominator only.
+- "19 of 20 clears the accept gate, only UHf0LeMU2pg fails" -> the SOLE counterexample
+  is dropped. Same for camera-motion's "1 of 16 crosses the line" = HoHxFSX_gLk_s2.
+- HAZARD: after the drop the pool holds 0 confirmed-MISPLACED clips. It looks cleaner
+  because the contested clips LEFT, not because anything was re-placed. T26 unresolved.
+- THREE different 20s in the repo: gold data/gold/*.court.labels.json (am_*, 640w,
+  the 12/20 gate - NOT affected), the references pool (moved), and ball gold
+  gold_UHf0LeMU2pg/gold_uR5q2cSM6AY (NOT affected, shared basename trap).
+- 28-calibration populations (net tape 13/15, post 3/11, setup 28) do NOT use
+  references() -> unaffected; the ruling deletes no file.
+DONE so far:
+- eval/run_refs.py: WRONG_PX_640=20.0 (copied, not new), EXCLUDED_CLIPS dict with a
+  per-clip reason quoting S20/px/zoom, FLAGGED_MARGINAL=("uR5q2cSM6AY",),
+  exclusion_note() printed to stderr ahead of provenance_warning(), module docstring
+  + references() docstring say 16 and cite pool-strict-16.md. Skip is `if stem in
+  EXCLUDED_CLIPS: continue` inside the glob loop - files NOT moved.
+- backend/tests/test_refs_pool_strict16.py: 13 tests, all pass. Includes a test that
+  the four *_pts.json are STILL ON DISK and still _exact (guards the bump_ntrp30
+  move-it-out-of-the-glob failure mode) and a 20-4=16 arithmetic test that
+  reconstructs the pre-ruling pool.
+- tools/render_ai_court_audit.py: default_clip_list() docstring + --clips help said
+  "20-clip gold pool"; corrected (it calls references(), so its default silently
+  shrank to 16). Dropped clips can still be named explicitly.
+SIDE EFFECT FOUND: provenance_warning() denominators are computed at runtime, so
+they moved 6/20 -> 3/16 (named commits) and 9/20 -> 5/16 (agent session). All four
+dropped clips were in FLAGGED_SESSION. -> invalidation list item.
 
-SHIPPED GATE (unchanged, from the founder): >=12 of 20 gold clips ACCEPTED
-AND ZERO accepted court beyond 20 px@640 of the human clicks.
+## LOG-CTX WRONG_PX_640=20.0 lives in 9 eval
+scripts (agree_sweep, behind_camera, candidate_audit, evid_band_sweep, foot_gate_power,
+proposer_ab, score_truth, tol_sweep, truth_neighbourhood) - each defines its own copy.
+run_refs importers (grep eval/*.py): behind_camera, candidate_audit, crop_safety,
+evid_band_sweep, movers, proposer_ab, proposer_rejects, reach_ab, score_truth,
+tol_sweep, truth_neighbourhood = 11 files (brief said 8).
 
-VERDICTS, fixed before looking:
-- FLIP WINS if B_accepted > A_accepted AND B has zero accepted court >20 px@640.
-- FLIP LOSES if B_accepted < A_accepted, OR B accepts any court >20 px@640 (a wrong
-  court accepted is worse than a refusal - it is the failure mode the vote exists
-  to stop).
-- NO DIFFERENCE if B_accepted == A_accepted and the accepted SET is the same.
-- The ORDERING/GLOBAL-SEARCH HYPOTHESIS is SUPPORTED only if B accepts >=3 clips
-  that A refuses AND at least half of those gains are indoor-shell clips. Fewer
-  than that and any win is clip-specific, not the mechanism the document claims.
-- Split bars: n>=4 per arm or I report the split UNDERPOWERED and draw no mechanism
-  conclusion (same rule I pre-registered this morning).
+DELIVERABLE - three fixes + tests green + a note (appended to
+docs/evidence/calibration-provenance.md) saying for each defect WHAT IT COULD HAVE
+HIDDEN. The note matters more than the fixes: audit-instrument failure modes are
+findings.
 
-BARRED CLAIMS (stated before running, because conflating them was made here this
-week): I may NOT claim the flip beats the ~6.4 px line-detector precision floor or
-the ~5.8 px human-click noise. Median err on clips BOTH arms accept is an
-OBSERVATION only. And no ordering can fix the net-tape/far-baseline overlap below
-~2.0-2.2 m mount - information absent from the image.
+1. tools/render_corner_audit.py: `--tag` accepted and SILENTLY IGNORED on the corner
+   path (main() passes it only to render_net_anchors). Lead rendered one clip at 5
+   frame indices -> 1 file, 4 silently destroyed.
+2. Same file: defaults to `--frame 0`, but eval/run_refs.frames_from samples k=8
+   over 5%-95%. Sheet can show a frame the scoring never sees. Caption must state
+   WHICH frame and HOW it was chosen. Do not paper over ONE-frame-vs-EIGHT.
+3. eval/candidate_audit.py docstring still claims UNRUN. It ran 2026-08-24 (Session
+   O, shell) and 2026-09-09 (full 20-clip pool). Trap T24. Correct from git log +
+   importers, not from prose in the file.
 
-## STATE - 2026-09-09 - DONE. Flag built (default unchanged), 9 tests pass, both A/Bs run, docs/evidence/cnn-global-classical-local.md written, DECISIONS_PENDING appended. Nothing left except the return.
+## NOT-THIS-RUN
+docs/STATE.md (lead owns). git commit (lead commits). Re-placing/editing ANY corner
+value (rule 9). Changing which clips references() returns. Ball/speed/score/mobile.
 
-## RESULT - THE FLIP FAILED ITS PRE-REGISTERED BAR
-GOLD (the founder's named gate, >=12/20 + zero >20 px): A classical 12/20 median
-8.1 px 0 wrong; B courtnet 2/20 median 4.1 px 0 wrong. B fails by 10 clips.
-REFERENCES (20 human _exact clips at native res): A 2/20 accepted, 89/160 frames
-locked; B 0/20, 3/160. Shell (10 clips, all 3840x2160): A 0/10 + 20/80 frames;
-B 0/10 + 0/80. Zero wrong-accepted courts in either arm.
-MECHANISM (the real finding): the CNN REFUSES BEFORE our gate ever runs. On 4 of 6
-probed gold clips detect_court_learned returned None on all 8 frames; the keypoint
-probe shows only 2-3 of 14 heatmap peaks clear 0.40, and 4 are needed for ANY
-homography. The upstream broadcast checkpoint does not see amateur courts.
-The LOCAL half DID reproduce where observable: am_usta40 proposal 7.2 px -> 5.9 px
-through our snap+lock (same direction as upstream's 2.83 -> 2.23). n=1 clip.
-qa (relayed by the coordinator, SendMessage still absent): proposal recall 8/20=40%
--> THE SEARCH BINDS; shell worst; mount-height mechanism NOT established (16.7 pp vs
-a 40 pp bar, confounded by surface) -> I split by SURFACE and withdrew my own
-mount-height split bar rather than report it.
+## STATE - 2026-09-09 - **TASK COMPLETE.** All three fixes in, full suite 693
+passed (605 before + 88 new), addendum section 8 written into
+docs/evidence/calibration-provenance.md. Smoke-tested: default frame, --tag +
+--frame, --eval-frames (8 sheets), --net-anchors, and the --post-height refusal.
+Outstanding for the LEAD only: docs/STATE.md (NOT-THIS-RUN) + commit.
 
-## WHAT IS BUILT
-- backend/swingvision/courtfit.py: `auto_fit_frame(..., proposer=None|"classical"|
-  "courtnet", weights=None)`, `fit_video_frames(..., proposer=)`, plus
-  `resolved_proposer()` / `resolved_courtnet_weights()` (RESOLVED, not requested).
-  Stage one only is switched; snap_to_lines + lock_quad + consensus are shared.
-  SHIPPED DEFAULT UNCHANGED (env COURT_PROPOSER exists for the eval).
-- backend/tests/test_court_proposer.py - 7 tests, incl. default==explicit classical
-  (the refactor-changed-nothing proof) and a stub-detector test that the courtnet
-  proposal really goes THROUGH the shipped snap+lock. 9 pass with the old test.
-- eval/proposer_ab.py - both arms on the SAME decoded frames, run_refs metric.
-- eval/proposer_rejects.py - per-frame stage-of-death for the courtnet arm.
+## DECISIONS (made, do not re-derive)
+- D1: make `--tag` WORK on the corner path (not error) - the tool already has
+  --video-tag to find the clip, so the override is meaningful there too. PLUS the
+  corner output filename gets the frame index appended, so N frames -> N files with
+  no flag needed. That is the actual fix for the silent destruction.
+- D2: `--frame` default becomes None = "the eval's own sampling". Resolve via a NEW
+  pure function `run_refs.frame_positions(total, k)` that `frames_from` now calls
+  (refactor pinned by a test, repo rule 8), imported by the tool so parity is
+  STRUCTURAL not asserted. Default renders the lower-middle eval sample; new
+  `--eval-frames` renders all 8. Caption states index, sample n/k, and the rule.
+- D3: candidate_audit run history: git log --follow on the file shows only 424ecdc
+  (creation) + 733565a (archive move) - the file's own history proves nothing about
+  RUNS. Runs are established from what CONSUMED it:
+    * 2026-08-24 Session O, shell: docs/archive/sessions/SESSION_O_shell_courts.md
+      :443 "10 references x 8 frames. Reproduces the shipped 2/10 accept rate";
+      --movers primitives same day (TRAPS T24, far-player-motion-gate-result.md).
+    * 2026-09-09 full 20-clip pool: docs/evidence/candidate-proposal-recall.md,
+      commit 5e322e2 "proposal recall is 40%: the SEARCH binds, not the vote".
+    * qa memory + STATE:198 warn `truth_would_pass = 9/20` from this tool is NOT
+      quotable (scores the wrong subject). Put that in the docstring too.
 
-## FIRST RESULT (smoke, am_hard_utr, Hardcourt, mount 1.74 m)
-A classical: locked 8/8, votes 7, ACCEPTED, err@640 13.23.
-B courtnet: locked 0/8, votes 0, NOT accepted (its err 25.84 came from the shared
-stacked_clay_fit rescue, not from CourtNet). `locked=0` is the thing to diagnose:
-proposal never made, or made and refused by lock_quad.
+## DONE (this task)
+- tools/render_corner_audit.py: --tag honoured on corner path; output names carry
+  the frame (`_corners_f<N>.png`, `_netanchor_f<N>.png`); --frame default None ->
+  default_frame(); --eval-frames renders all 8; grab_frame(seek=) mirrors
+  run_refs' CAP_PROP_POS_FRAMES; caption states index + "eval sample n/k" + the
+  ONE-vs-EIGHT line; refuses --post-height w/o --net-anchors, --eval-frames with
+  --frame, --tag with >1 --pts.
+- eval/run_refs.py: frame_positions(total,k) extracted; frames_from calls it.
+- backend/tests/test_eval_frame_positions.py: 88 cases; legacy expression copied
+  verbatim from 5e322e2 and asserted equal; also pins tool<->eval agreement.
+- eval/candidate_audit.py: docstring run history corrected (2026-08-26 424ecdc
+  committed its OWN output candidate_audit.json; 2026-09-09 5e322e2) + the
+  truth_would_pass 9/20 "do not quote" caveat + T26 standing warning.
+- docs/evidence/calibration-provenance.md section 8 (addendum) = the deliverable
+  note: per defect, WHAT IT COULD HAVE HIDDEN.
+- KEY FINDING for the note: court_setup_server --video mode places against frame 0
+  (line 121 cap.read()), but GALLERY mode images come from collect_frames.py which
+  SEEKS arbitrary positions. So frame-0 sheets were rendered at a frame that is
+  not the placement frame for every gallery-placed calibration -> a correct
+  calibration on a moving-camera clip renders as WRONG. False accusation risk in
+  the founder's 10-of-28.
+- CAVEAT recorded: all published --net-anchors numbers were frame-0; re-running at
+  the new default is not like-for-like. Use --frame 0 to reproduce.
 
 ## LOG
 - CARRIED FORWARD: `python` broken Store shim -> backend/.venv/Scripts/python.exe
@@ -102,16 +146,9 @@ proposal never made, or made and refused by lock_quad.
 - CARRIED FORWARD: Grep/Glob TOOLS false "no matches" (T25); use bash grep.
 - CARRIED FORWARD: long markdown via heredoc FAILS -> use Write tool for long docs.
 - CARRIED FORWARD: bash /tmp not visible to Windows python.exe - use scratchpad abs path.
-- ARCHITECTURE READ: auto_fit_frame = autodetect (classical GLOBAL) -> snap_to_lines
-  (classical LOCAL) -> lock_quad (6-DOF gate). So the flip only replaces step 1.
-- detect_court_learned ALREADY does CNN-global + per-keypoint classical local refine
-  (`_refine_keypoint`, a 40 px crop Hough intersection) + RANSAC homography. The
-  document's "local refinement" stage therefore already exists on the CNN path; what
-  does NOT exist is CourtNet feeding OUR snap+lock+vote.
-- detect_court_learned's `weights=` default is a RELATIVE path ("weights/...") so it
-  only resolves with cwd=backend. Pass an absolute path from eval (eval_court.py
-  already does exactly this via its _WEIGHTS constant).
-- detect_court_learned has its own internal accept gates: reproj > 0.015*max(w,h)
-  -> None, and verify_court(). I pass verify=False for the PROPOSAL, because the
-  brief says the SHIPPED gate decides; leaving it on would add a second accept test
-  the classical arm does not have (two variables).
+
+## DONE-PREV (2026-09-09 task 4, complete)
+tools/court_setup_server.py _provenance on both /api/save paths;
+backend/tests/test_court_setup_save_provenance.py (12 tests, corner values proven
+byte-identical); eval/run_refs.py docstring corrected + provenance_warning();
+docs/evidence/calibration-provenance.md. references() before==after, 20 clips.

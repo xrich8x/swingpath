@@ -74,4 +74,40 @@ handful of gold frames, and measure the detector's residual against THAT — if 
 back >10 px, the detector has real fixable bias and a narrow re-open is justified; if
 ~5-7 px, the ceiling is corroborated as near-irreducible.
 
-Related: [[sensor-court-priors]], [[open-questions]], [[project-method-rules]]
+**UPDATE 2026-09-09 — two things that reframe the record. Both are ASSESSMENTS, not
+measurements** (`docs/evidence/court-recall-what-would-actually-move-it.md`).
+
+1. **"The search binds" is being MISREAD.** The 2026-09-09 proposal-recall row and the
+   older rows in this table (widen seed grid REACHES truth and gets it wrong; `topk`
+   12->150 moves no clip; reachability stopping rule) only reconcile one way: **the seed
+   ENUMERATION is adequate and the OBJECTIVE's argmax is not the true court.** Say
+   "the proposal STAGE binds", never "the search binds" — three readers have taken it as
+   "enumerate more", which is a re-proposal of two dead rows.
+2. **~30 px@640 static self-spread is a MIXTURE, not a precision floor** (confidence 0.72).
+   Hough quantisation accounts for only ~1-4 px@640 (1 deg theta bin levered over a 1500 px
+   sideline at 3840 = 4.4 px@640 worst case, less after length-weighted merging), so the
+   floor reading is off by 7-30x. The error is ANISOTROPIC — near-baseline width spread
+   3.3% vs far-baseline **93.9%** on the same motionless tripod — which noise is not.
+   Mechanism: `_ori_detail` correctly excludes lines with no nearby paint as UNMEASURABLE,
+   and on a low mount the net tape covers the far baseline, so the only observable pinning
+   court DEPTH disappears and the fit slides along a depth/width family at near-constant
+   score. `autodetect` is a discrete argmax over <=topk=12 refined seeds, so its 8 frames
+   sample a mixture over hypotheses. **Cheapest falsifier, data already exists**
+   (`scratchpad/interframe_agreement.json`): cluster the per-frame quads; tight clusters
+   far apart = mixture, one loose cluster = floor.
+
+**AND THE LIVE LEAD, unproposed anywhere: `AGREE_PX` cannot be the shell cause.** It is
+read only by `consensus`; a clip locking **0 of 8 frames** was refused by the PER-FRAME
+path. That path has five constants violating CLAUDE.md's `frame_height/720` rule:
+`Sobel(ksize=3)` orientation map (courtfit.py:127 — a 3x3 operator on ~12 px-wide paint at
+4K returns noise, and `_ori_detail` demands `align>=0.80`), `HoughLinesP(threshold=45)`
+(:73, ~6x easier at 4K), `maxLineGap=12`/`14` (:74,:111, ~6x stricter at 4K),
+`cv2.line(...,thickness=2)` in `_clay_mask` (:115 — the SHELL path re-rasterises its own
+evidence as 2-px hairlines), `snap_court(max_move_px=30.0)` (:918). Accept rate falls
+monotonically with capture resolution: 640 gold 12/20 -> 1920 refs 2/20 -> 3840 shell 0/8.
+**Not in "What has not worked" (checked lines 138-206). Not proposed — court is closed for
+v1.** Falsify it cheaply by checking whether `calibration.court_line_mask` skeletonises to
+1 px; if it does, the Sobel argument weakens sharply.
+
+Related: [[sensor-court-priors]], [[open-questions]], [[project-method-rules]],
+[[amateur-court-literature]]
