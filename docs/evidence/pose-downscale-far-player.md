@@ -4,7 +4,7 @@
 >
 > `data/yt_match40_pts.json` is miscalibrated: all four clicked corners lie on blank
 > asphalt, hedge or fence rather than on any court line
-> ([yt-match40-calibration-is-wrong.md](yt-match40-calibration-is-wrong.md)). The
+> ([yt-match40-calibration-is-wrong.md](../archive/resolved/yt-match40-calibration-is-wrong.md)). The
 > near/far split runs through that homography, so on this clip the pipeline labels
 > the NEAR player as the far player — rendered in `data/output/p0_3_who_is_far.png`,
 > six frames, red FAR box on the near player every time, real far player unboxed.

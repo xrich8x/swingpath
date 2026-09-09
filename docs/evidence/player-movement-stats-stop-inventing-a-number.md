@@ -3,7 +3,7 @@
 > **CORRECTION 2026-08-28.** The far-player coverage figures quoted below for
 > `yt_match40` (**11.0%**) are withdrawn as *far-player* numbers: that clip's committed
 > calibration is wrong, so the pipeline labelled the NEAR player FAR
-> ([yt-match40-calibration-is-wrong.md](yt-match40-calibration-is-wrong.md)). The
+> ([yt-match40-calibration-is-wrong.md](../archive/resolved/yt-match40-calibration-is-wrong.md)). The
 > conclusion of this file is UNAFFECTED — the point is that a sparse track must not be
 > integrated into a confident distance, and a track that is sparse *and* the wrong person
 > is a stronger case for the gate, not a weaker one.
