@@ -44,7 +44,14 @@ was done instead so the blocker is not also idle time.
 
 ---
 
-## −1. Buy one used A13-or-newer iPhone. This is the largest unblock available and it is on no list.
+## −1. ~~Buy one used A13-or-newer iPhone~~ — **RESOLVED 2026-09-09: the founder has an iPhone 17.**
+
+> **The largest unblock on this list is closed.** An iPhone 17 is far above the A13 floor, so the
+> three decisions that dead-ended on physical hardware — sustained throughput at thermal steady
+> state, the int8-vs-fp32 ship call, and the cost half of P0-2 pose affordability — are now
+> measurable. **None of them needs a tennis court**: they load existing clips onto the device and
+> measure the runtime. "No court" blocks new capture, which nothing here is waiting on.
+> Original text kept below for the reasoning, which still stands.
 
 **Raised by pm 2026-09-05 while re-sequencing v1** (`docs/evidence/v1-resequenced-after-court-closure.md` §5).
 
@@ -239,9 +246,17 @@ drag feel better, (b) something new, or (c) the live guidance already built toda
 
 ---
 
-## 1. A push is required before the Core ML export can ever run — and pushes are barred
+## 1. ~~A push is required before the Core ML export can ever run — and pushes are barred~~ — **UNBLOCKED 2026-09-09**
 
-**Status: the job is ready and cannot be triggered.**
+**Status: the job is ready and CAN NOW BE TRIGGERED. Nobody has triggered it yet.**
+
+> The founder lifted the push bar on 2026-09-09 ("ok to push") and three commits went to
+> `origin/master` the same day. Both halves of this blocker are therefore gone: the Mac half was
+> already dead (the export runs on a GitHub-hosted `macos-14` runner, not local hardware — this
+> heading's "pushes are barred" had also been stale since 2026-09-04 per item −1, and the lead
+> repeated it to the founder before checking), and the push bar is now lifted in fact.
+> **The remaining action is one manual `workflow_dispatch` trigger.** The on-device fps half is
+> separately unblocked by item −1.
 
 `.github/workflows/coreml-export.yml` already exists, is already on `origin/master`,
 and is `workflow_dispatch` (manual) — deliberately, to dodge the 24-hour minimum
