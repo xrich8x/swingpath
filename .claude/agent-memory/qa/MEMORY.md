@@ -127,6 +127,15 @@ this agent's system prompt — read it first; it is the authoritative copy.
   shell. The 4 motivating tripods rest on 1-10 pairs (flexi_joy_p01's 29.9 px is ONE pair).
   Bar has an all-singleton specification gap; flagged, not patched.
 
+- **Innovation-gate diagnostic §5 (K3 + K1) independently verified 2026-09-10.**
+  [gate-noise-diag-k1-k3-verified.md](gate-noise-diag-k1-k3-verified.md) — both verdicts
+  CONFIRMED (K3 discarded 914/492/48 and +6.557/+5.142/+3.534 pts, higher than the reported
+  902/479/47 and +6.492/+4.926/+3.450; K1 pooled median 0.11272 on n=291, 12.30x below
+  chi2_2, sign-test p=1.9e-29). TWO DEFECTS: a post-hoc run-reconstruction undercount, and
+  `yt_match40`'s calibration silently resolving to a DIFFERENT court (86 vs 186 shots, hfov
+  91.28 vs 26.43) between 2026-09-02 and 2026-09-10 — so its "reproduces the published
+  baseline" claim is false and every span-derived number on that clip is in question.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is

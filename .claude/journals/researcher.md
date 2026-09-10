@@ -5,117 +5,124 @@ nothing restarts it automatically. Whatever is below is what survived.
 
 ---
 
-## TASK — 2026-09-09 LATE (WHAT WOULD MOVE COURT RECALL; supersedes the literature survey below,
-## whose findings are RETAINED as STATE and feed part (b))
+## TASK — 2026-09-10 — INNOVATION GATE / NOISE CALIBRATION
 
-Deliverable: `docs/evidence/court-recall-what-would-actually-move-it.md`
-(a) FIRST: is ~30 px@640 frame-to-frame self-spread on STATIC 4K shell footage EXPECTED
-    (inherent precision floor of Hough/line-fit at that res) or ANOMALOUS (a specific bug)?
-    Reason from method: sub-pixel line localisation, seed grid, downscaling, UNSEEDED RANSAC.
-(b) Ranked lit list for OUR regime, each vs iOS A13/Core ML/on-device/PROPOSAL-stage +
-    TRAINING DATA needed (we have NO indoor-shell gold).
-Rule 3 check stated explicitly per recommendation. Name what I could not reach.
-Must ENGAGE with pm cut line (docs/evidence/court-triage-2026-09-09.md): no 7th branch,
-no multi-homography, don't ship AGREE_PX normalisation, don't touch courtnet_ft.pt.
-STOP-WHEN: written or ~35 calls. NO code, NO measurement (no Bash), NO STATE.md edit.
+Deliverable: ONE file `docs/evidence/innovation-gate-noise-calibration.md` with FOUR
+sections in order: (1) family verdict on the R-calibration line — in or out of the
+barred smoother-gate family, unambiguous; (2) ranked 2-4 candidate mechanisms OUTSIDE
+the family, each with mechanism / why it separates / falsifier / cost, plus a
+"do not build" entry; (3) a DIAGNOSTIC that must run before any build; (4) a
+PRE-REGISTERED BAR (coverage + ghost guard + per-frame-recall guard), each stated
+against what it is measured on.
+NO code. NO Bash (I have none). NO STATE.md edit. No subagent. Do NOT design the
+implementation — that is backend-dev's run.
+Return in final msg: family verdict, top mechanism, one-line diagnostic.
 
-## OLD TASK — 2026-09-09 (LITERATURE SURVEY) — findings retained below, task closed
+## STATE — ANALYSIS ESSENTIALLY COMPLETE, file being written. ~7 calls used.
 
-**COURT ONLY.** Find out whether anyone has SOLVED or MEASURED court detection on
-AMATEUR, LOW-MOUNT, often INDOOR-SHELL footage.
+### THE VERDICT I HAVE REACHED (R-calibration line = INSIDE the barred family, DEAD)
 
-1. Fetch **arXiv 2404.06977** "Accurate Tennis Court Line Detection on Amateur Recorded
-   Matches" — the PAPER, not the abstract. Method / dataset / mount heights / numbers /
-   reproducibility. Highest-value fetch available.
-2. Survey beyond the doc: court/field registration on amateur/consumer footage — tennis,
-   padel, pickleball, badminton, basketball, football. Transferable question is METHOD:
-   localise a known planar layout under clutter, low oblique, no broadcast framing.
-3. Look for OUR failure specifically: line detection drowned by structural clutter
-   (trusses, ceiling lights, fencing). Temporal/multi-view evidence, learned line/edge
-   detectors (vs Hough), segmentation-then-fit, direct homography regression.
-4. Assess strictly vs: iOS A13, Core ML, 100% on-device, must run at the **PROPOSAL**
-   stage. State TRAINING DATA each needs — we have NO shell ground truth.
+Four independent legs, none needing a new run:
 
-RANK by expected value. **Be willing to conclude nothing published helps.**
-Say which sources I actually REACHED vs could not.
+1. **S ≈ R, so scaling R IS a gate_chi2 sweep.** ball.py:815-817,857,862. Q from
+   `sigma_jerk=1.0` gives Q[0,0]=0.05 px²; with near-zero process noise a CA filter
+   converges to least-squares so P[0,0]→small. S = Hm P Hmᵀ + R ≈ R = 25·I.
+   d² ≤ 13.8 → |y| ≤ sqrt(13.8·25) = **18.6 px**, matching the brief's ~19 px.
+   Scaling R by k scales S by ~k and d² by 1/k — arithmetically identical to raising
+   gate_chi2 by k. There is no shape change, only radius. It is a pure WIDEN.
+2. **THE CENSUS KILLS IT, and it is already measured.** smoother-gate-backward-readmit
+   §3: the adjudicated LOST-rejection population is 9R/9G + 6R/7G + 6R/12G =
+   **21 real / 28 ghost pooled = 0.75:1**. That is a HARD CEILING on any widen: admit
+   ALL rejects and you still get 0.75:1, against the family's ~7:1 structural rate and
+   the ≥3:1 pre-registered bar. Founder's "ghosts sit 208-829 px away" is the SESSION I
+   CHAIN-FALSE-LOCK population, a DIFFERENT population from the gate's rejects — §5's
+   table shows reject-ghosts with lock errors of 24.0 / 30.3 / 49.8 px, i.e. squarely
+   inside the 35-45 px widened radius. The separation argument breaks THERE.
+3. **Raising R makes staleness WORSE.** K = P Hmᵀ S⁻¹; bigger R = smaller gain = the
+   filter trusts detections less = the model is slower to catch a direction change,
+   which is the exact condition under which real detections get rejected.
+4. **A gate-widen has been measured in THIS gate already.** Docstring ball.py:686-692,
+   depth-aware Q, median reference: "half the frames get LOOSER ... lets more junk
+   through the innovation gate (**false-fire 19 -> 27%**)"; tighten-only (p10) held
+   false-fire flat at 19.2%. Q≠R mechanically (Q moves bandwidth+gate, R moves
+   gate+gain) — DIFFERENT family — but the gate-widening HALF is shared and its one
+   measured instance cost +7.7 pts of false-fire for a modest widen.
 
-CONTEXT THAT DEFINES THE QUESTION (given by lead, do not re-derive):
-- SEARCH binds, not the vote: proposal recall **8/20** gold clips; **shell worst 1/5
-  recordings**; three shell recordings **no lock at all**.
-- Criteria do not bind: a court median **4.9 px** from human clicks clears accept on 19/20.
-- Upstream CNN cannot supply missing proposals: **2-3 of 14 keypoints** on amateur, below
-  the 4 needed. Gold 12/20 -> 2/20; shell 20/80 frames -> **0/80**.
+### THE CODE-READ RESULT THAT KILLS BRIEF-CANDIDATE (b)
+`seen_frac` excludes coasted frames by construction, and in ball.py every ACCEPTED
+detection is emitted (used[i]=True → accepted_by_seg → emit). Bridged gaps are coasted
+and do not count. Therefore **D_smooth (−11.0/−8.1) IS the gate's rejection rate over
+span frames, minus reset re-seeds** — not a downstream reset cascade. No run needed.
+Consequence: only three routes can move coverage — (i) widen [dead], (ii) make the model
+less often stale, (iii) recover rejections into a NEW segment where they are accepted.
 
-DELIVERABLE: `docs/evidence/amateur-court-detection-literature.md`
-STOP-WHEN: 2404.06977 read AND survey ranked — or ~35 tool calls.
-NOT-THIS-RUN: code; ball/speed/score/mobile; docs/STATE.md; git commit;
-docs/evidence/shell-4k-refiner-reach.md; docs/evidence/search-ranking-defect.md.
-CAUTION T25: Grep/Glob unreliable — prefer Read on known paths.
-NOTE: **SendMessage does NOT exist in subagents** — established last run, do not look.
+### TOP-RANKED MECHANISM (outside the family): REJECTION-RUN COHERENCE
+`rej` (ball.py:868, 965-970) counts ANY rejection toward `reset_after=3`, and on trip
+re-seeds at the CURRENT frame i, discarding the earlier `reset_after-1 = 2` rejections.
+Two defects, one fix, NO widen anywhere:
+- a coherent run of ≥2-3 mutually-consistent rejections = a real direction change →
+  re-seed RETROSPECTIVELY at the run's FIRST frame, recovering ~2 real frames per reset;
+- an ISOLATED junk lock (all 19 chain false locks have **run_len = 1**, memory
+  ball-negatives.md / 9-solid-ghost-balls) should not increment `rej` at all — today it
+  can force a spurious reset that both EMITS the ghost as a seed (used[i]=True) and
+  throws away a converged model.
+Escapes the §5 confound: the coherence is fit to the REJECTIONS themselves, not to the
+incumbent stale path — the barred signal was distance to the incumbent RTS track.
+Falsifier: run-length × real/ghost contingency on the adjudicated rejects. If run length
+does not separate, it is dead.
 
-## STATE — IN PROGRESS. ~14 tool calls used.
+### GRAVITY-SEED IDEA — CHECKED AND DROPPED, do not re-derive
+seed() sets a=0 with σ_a²=100 (σ=10 px/frame²). Projected gravity is ~0.44-1.1 px/frame²
+at 720p (9.81/30² m/frame² × 40-100 px/m). Already inside the prior by ~10×. Buys nothing.
+Also checked: seed v0=400 (σ_v=20) → after one propagation P[0,0]=25+400+25=450, S=475,
+so a 40 px/frame post-hit step gives d²=3.4, passes. The seed is fine. Not the defect.
 
-**2404.06977 full text NOT REACHABLE.** arXiv has NO html/ar5iv version (404 / 307 back to
-abs). PDF downloads but Read cannot render it (no poppler). r.jina.ai 403, academia.edu 403,
-aimodels.fyi 403, themoonlight.io 429 (x3), semanticscholar API 429. papers.cool = metadata only.
-So everything below is from arXiv abs + search-engine-indexed PDF text. SAY SO IN THE REPORT.
+### DIAGNOSTIC I WILL PROPOSE (one run, three clips, no video decode)
+One instrumented pass emitting per REJECTED frame: d², consecutive-run length, whether
+the run tripped a reset, whether the frame is inside a hit→landing span, gold label if
+adjudicated. Yields (a) empirical d² vs χ²₂ on gold-real frames [founder's question,
+free], (b) run-length contingency [mechanism falsifier], (c) reset count = prize ceiling,
+(d) share of −11.0 pts inside spans. Reuse the backward-readmit run's source-transform
+instrumentation (inspect.getsource → exec), which proved identical-output on 3 clips.
 
-ESTABLISHED about 2404.06977 so far:
-- Agrawal, Sundararajan, Sagar; submitted 10 Apr 2024; accepted to **5th Intl Conf on Image,
-  Video Processing and AI (IVPAI)** — a minor venue, not a CV conference.
-- Method = **enhanced Hough + homography estimation**, i.e. the FARIN-family court-model fit
-  (gchlebus/tennis-court-detection is the open implementation of that lineage). Adds
-  (a) shadow removal via **MTMT (Multi-Task Mean Teacher)** pretrained shadow detector ->
-  binary shadow mask, (b) pretrained **object detection** (player/occluder removal),
-  (c) **court-colour-based filtering**.
-- Claimed result: **"94% accuracy in the best case"** — metric definition NOT yet found.
-- No code release found; no GitHub repo located for the authors.
-**CRITICAL for us: its base algorithm is the Farin-style joint line-to-model fit that this
-project BUILT AND KILLED 2026-08-29 (C3 reconstructs 17.1 px@640 even given TRUE
-correspondence, worse than shipped 8.1).** And its three additions all attack OUTDOOR
-degradations (shadows, worn paint, players) — none attacks indoor structural clutter.
+### BAR DESIGN NOTE
+Coverage is GAMEABLE by exactly the dead move: seen_frac counts an emitted frame without
+checking accuracy, so admitting locks 24-50 px off a click RAISES seen_frac while
+lowering recall. Therefore bar on MEAN seen_frac (not shot counts crossing 0.5 — that
+line is measured only weakly predictive, does-seen-frac-predict-speed-error.md) AND
+require recall@10px vs human clicks not to fall. yt_match40 inherits T23.
 
-## STATE — **DONE 2026-09-09.** Deliverable written:
-## `docs/evidence/court-recall-what-would-actually-move-it.md`. ~19 calls.
-## Memory updated: court-detection-negatives.md + amateur-court-literature.md.
-## Nothing outside the allowlist was written. No STATE.md edit, no code, no commit.
-## If restarted: the work is FINISHED — just report it. Headline in STATE-2 below.
+## DONE — 2026-09-10. ~11 tool calls. If restarted: the work is FINISHED, just report it.
 
-## STATE-2 (part a) — HYPOTHESIS FORMED, from reading courtfit.py. ~7 calls used.
+Written: `docs/evidence/innovation-gate-noise-calibration.md` (all 4 sections, in order).
+Memory updated: `.claude/agent-memory/researcher/ball-negatives.md`.
+Nothing outside the allowlist written. No STATE.md edit, no code, no commit, no subagent.
 
-ANSWER FORMING: 30 px@640 is **neither an inherent Hough precision floor NOR a bug** — it is
-an ILL-CONDITIONED / near-null-space direction in the objective, plus MODE SWITCHING in a
-discrete argmax search. Three legs:
-1. **Quantisation cannot produce 30 px@640.** `_detect_lines` (courtfit.py:73) HoughLinesP
-   theta bin = 1 deg, rho bin = 1 px, at NATIVE res; merge averages segments weighted by
-   length so effective angular precision ~0.3 deg. On a 1500 px sideline at 3840 that is
-   ~8 px = **1.3 px@640**. An order of magnitude below 30. Floor hypothesis DIES on arithmetic.
-2. **The error is ANISOTROPIC, which noise is not.** Same static frames: near-baseline
-   spread 3.3% (hillsborough_p02) vs far-baseline **93.9%**. flexi_joy_p07 9.8 near / 34.9 far.
-   A quantisation floor is roughly isotropic; a 5-30x near/far asymmetry along the DEPTH
-   direction is a conditioning problem.
-3. **Mechanism named:** `_ori_detail` (courtfit.py:137-174) EXCLUDES lines with no nearby
-   paint as UNMEASURABLE (`ev`, EVID_MIN) — correct for faded paint, but on a LOW MOUNT the
-   net tape physically covers the far baseline (<2.0-2.2 m, Part A of pm triage). Drop the far
-   baseline from the evidence set and the only observable pinning court DEPTH EXTENT is gone,
-   so the fit slides along a ~1-param depth/width family at near-constant score. All shell
-   mounts are low. Predicts exactly the observed near-pinned/far-free signature.
-4. `autodetect` is a discrete **argmax over <=topk=12 refined seeds** (rankv), not a continuous
-   estimator. One player crossing a line flips WHICH seed wins -> the 8 fits are a MIXTURE over
-   hypotheses, not a scatter. So "self-spread" is not a precision measure at all.
+REPORT LINES:
+- VERDICT: R-calibration is INSIDE the barred widen family. Dead. Decisive reason = the
+  reject census (21 real / 28 ghost = 0.75:1 pooled) caps ANY widen below every bar this
+  family has been held to; and the founder's "ghosts at 208-829 px cannot enter" is the
+  wrong population (chain survivors, not gate rejects — reject-ghosts sit at 24-50 px).
+- TOP MECHANISM: are 1-2 frame interpolated bridges actually unmeasured? `seen_frac`
+  excludes all coasted frames by rule; `eval_model_filters.py:201-208` already accumulates
+  `coast_by_gap` ("1-2"/"3-5"/"6-9"/"10+") vs human clicks. Falsifier: `"1-2"` bin median
+  > 10.0 px kills it in one command. Rank 2 = rejection-run coherence.
+- DIAGNOSTIC: one instrumented pass (source-transform, ball.py untouched) recording d² for
+  EVERY detection-bearing frame plus run-length/reset/span/gold-label — and compare the
+  MEDIAN and p90 of d² against chi2_2 (1.386 / 4.605), NOT the 99.9th percentile the brief
+  proposed, which needs >=1000 clean samples and the gold sets carry 175-258 per clip.
 
-CHEAPEST FALSIFIER, data ALREADY EXISTS: qa's `scratchpad/interframe_agreement.py` ->
-`interframe.json` holds ALL pairwise distances per clip. Test MODALITY: if the per-clip fits
-form tight clusters (<8 px@640 within, >30 between) it is mode-switching, not a floor.
-Unimodal 30 px smear = floor. NO new measurement needed, just re-read the artefact.
-
-Also a code fact, unproposed anywhere: HoughLinesP params are MIXED-scaling —
-threshold=45 and maxLineGap=12 are ABSOLUTE, minLineLength scales with w. At 3840 that means
-45 votes is ~6x EASIER (more spurious lines) while a 12 px gap is ~6x STRICTER (more
-fragmentation). They pull opposite ways. Must rule-3 check before naming it.
+VERIFIED THIS RUN (do not re-verify): `tools/eval_speed_coverage_chain.py` exists (Read);
+`tools/eval_model_filters.py` exists, recall = dist<=10.0 px at :199, coast_by_gap at
+:201-208 (Read); `pipeline.py:1448-1460` is the ONE call site, passes only fps_eff +
+res_scale. **Glob is NON-FUNCTIONAL in this session** — returned "no files found" for paths
+I had just read links to. T25. Use Read on known paths only.
+ARTEFACT PATH CONFLICT, unresolved and flagged in the file: eval_speed_coverage_chain.py's
+docstring writes a FLAT `data/output/speed_coverage_amhard_tracknet.json`; the evidence file
+cites a DIRECTORY `data/output/speed_coverage/*.json`. backend-dev must check on disk.
 
 ## LOG
 
-- 2026-09-09 previous task DONE: `docs/evidence/external-research-reconciled.md`.
-- 2026-09-09 new task (literature survey) started. Journal rewritten.
-- 2026-09-09 2404.06977: 10 fetch attempts, full text unreachable; facts above from abs+search.
+- 2026-09-09 prior task DONE: docs/evidence/court-recall-what-would-actually-move-it.md.
+- 2026-09-10 new task started; journal rewritten. Read the 3 evidence files + ball.py
+  615-1014. Analysis above is complete enough to write the file from.

@@ -53,4 +53,34 @@ Full ranking, literature check (SAHI/TOTNet/Kalman-tiny-object survey, all foota
 and the caveats in
 [docs/evidence/far-end-player-and-ball-what-is-left.md](../../../docs/evidence/far-end-player-and-ball-what-is-left.md).
 
+**The smoother innovation gate — R-calibration assessed and killed 2026-09-10.** The founder
+asked whether `meas_var = 25` (σ≈5 px, a tuning guess) is miscalibrated, since the gate claims
+a 0.1% false-rejection rate (`gate_chi2 = 13.8`, χ²₂ 99.9%) and measures 14-17%.
+**Verdict: INSIDE the barred widen family, dead.** Four facts worth never re-deriving:
+1. **The gate's REJECT population is 21 real / 28 ghost = 0.75:1 pooled** (backward-readmit
+   §3). That is a HARD CEILING on any widen — admit everything and you still get 0.75:1,
+   against the family's ~7:1 structural rate and its ≥3:1 pre-registered bar.
+2. **Session I's "all 19 chain false locks sit 208-829 px off the track" is the WRONG
+   POPULATION** for this argument — those are chain SURVIVORS. The gate's reject-ghosts sit at
+   **24.0 / 30.3 / 49.8 / 386.2 px**, inside any widened radius. Do not reuse 208-829 to argue
+   a widen is safe.
+3. **S ≈ (1.2-1.4)·R**, because `sigma_jerk=1.0` gives Q[0,0]=0.05 px² against R=25, so P
+   converges small. Scaling R by k IS a `gate_chi2` sweep by k; accept radius ≈ 18.6-21 px.
+   Also: raising R lowers the Kalman gain, making the staleness that causes rejections WORSE.
+4. **`D_smooth` (−11.0/−8.1 pts) IS the gate's rejection rate over span frames**, not a reset
+   cascade — `pipeline.py:1460` sets `ball_seen = p is not None and not coasted`, and every
+   accepted detection is emitted. Code read, no run needed.
+**No `gate_chi2` or `meas_var` sweep exists in STATE** (all 78 rows read) — the question is
+virgin, the intervention is not. **No raw-detection-to-click σ distribution exists anywhere in
+this repo**; only a binary at 10 px (`eval_model_filters.py:199`) and ~17 anecdotal errors
+(3-4 px core in backward-readmit §5, a 20-502 px tail in bounce-hypothesis-v2) — i.e. a
+MIXTURE, which argues for a tight gate, not a wide one.
+**What is left, outside the family:** (1) are 1-2 frame interpolated bridges actually
+unmeasured? `eval_model_filters.py:201-208` already accumulates `coast_by_gap`; (2)
+rejection-run COHERENCE — `rej` counts every rejection alike and the reset re-seeds at the
+CURRENT frame, discarding 2; all 19 chain false locks are `run_len = 1`, so requiring a
+coherent run separates by the ghosts' own measured signature. Full assessment, ranked
+candidates, diagnostic and pre-registered bar:
+`docs/evidence/innovation-gate-noise-calibration.md`.
+
 Related: [[open-questions]], [[project-method-rules]]

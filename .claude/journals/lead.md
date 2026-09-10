@@ -13,7 +13,7 @@ so a rate-limit kill or a crash leaves it usable.
 - Numbers here are pointers. The authority is `docs/STATE.md` + `docs/evidence/`.
 - Never put a result here that belongs in STATE. This is working state, not findings.
 
-**Last updated:** 2026-08-29, after the motion gate failed and the corner sheets were built.
+**Last updated:** 2026-09-10, on picking up the innovation-gate brief.
 
 ---
 
@@ -109,18 +109,67 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-RUN-STATE: RUNNING — resumed by founder 2026-09-10 ("ok continue building").
-The `ios-harness-2` run COMPLETED during the pause; `ios/` is on disk (9 files, ~974 lines)
-and is recorded in STATE. **Standing limits still bind: pushes only on the founder's explicit
-per-push call, and NO CI is triggered without their say-so** — macOS runners bill at 10x on
-this private repo and the founder has said they do not want to pay.
+RUN-STATE: RUNNING — cleared 2026-09-10 by the founder opening THIS session with a new task.
+The pause read "I want to move on to a diff session first while this phone issue and sideloading has
+problems" — this is that session. **The pause still binds the iOS/sideloading line**: do not re-open
+Sideloadly, Apple ID, or the harness install path here. Everything else in the iOS queue below stays
+parked exactly as written.
 
-**FREE WORK ONLY until they authorise a spend.** Two lanes: (1) the lead reviews the harness
-by READING, since every bug caught before the first build saves a 10x-billed attempt on code
-nobody can compile; (2) prepare the CHEAP export path — section C below.
+**CURRENT TASK (founder brief, 2026-09-10):** attack `smooth_forecast`'s **innovation gate**. It is the
+largest single speed-coverage cost (-11.0 / -8.1 pts under TrackNet, v1's detector) and is a property of
+the STAGE, not the pairing, because the gate deletes **14-17% of surviving real detections in EVERY arm**.
+Suppression is second (-5.2 / -4.4). Ghost behaviour of the stage IS pairing-specific and needs no
+attention under TrackNet — do not conflate `seen_frac` (over hit->landing spans) with per-frame recall.
+Founder constraints: pre-register the bar; a failed bar stays failed; one variable per A/B, seeded; score
+at the CHAIN; never self-grade. Never stop to ask — append to `docs/DECISIONS_PENDING.md`. Update STATE.
+Commit to master, **DO NOT PUSH**.
 
-**HARNESS RUN: RETURNED, recorded in STATE.** record its result here and in STATE, and STOP. Do not
-review-and-fix, do not dispatch a follow-up, do not commit. The founder clears this line.
+**THE RULE-3 TENSION, STATED UP FRONT.** `docs/evidence/speed-coverage-is-chain-shaped-and-the.md` ends
+with: *"this is the third measured negative in the smoother-gate family, so rule 3 bars a fourth, the
+cross-detector variant included."* The founder has directed an attack on this gate anyway. That is the
+founder's call to make and it is made. It does **not** license re-running a dead idea: the three negatives
+are all **re-admit / widen** moves (`blocked` mask, backward-RTS re-admit, `reset_after`/`max_gap_s`
+sweeps). The line being taken instead is that the gate's **noise model** may never have been calibrated —
+`meas_var=25.0` (sigma 5 px at 720p) is a 2026 tuning guess, the pipeline passes only `fps_eff` and
+`res_scale` (`pipeline.py:1448`), and a chi2 gate at 13.8 (2 dof, 99.9%) claims a **0.1%** false-reject
+rate while measuring **14-17%**. That is a 140-170x gap between the gate's design point and its behaviour.
+Establishing whether R is miscalibrated is a **diagnosis**, not a fourth widening.
+
+## QUEUE FOR THIS TASK
+
+- [DONE] **researcher** — family verdict + pre-registration. Wrote
+  `docs/evidence/innovation-gate-noise-calibration.md` §1-§4. Verdict: **the R line is INSIDE
+  the barred family and is dead**, on a census that already existed — the gate's own rejects are
+  **21 real / 28 ghost = 0.75:1 pooled**, a ceiling on EVERY re-admission route at once, against a
+  family bar of >=3:1. My 208-829 px separation argument was a **population swap**: those are chain
+  SURVIVORS; the gate's reject-ghosts sit at 24.0 / 30.3 / 49.8 / 386.2 px. Proposed M1 (are 1-2
+  frame bridges unmeasured?) and M2 (rejection-run coherence) as the only non-family routes.
+- [DONE] **backend-dev** — ran the §3 diagnostic. Wrote §5. `ball.py` NOT modified on disk;
+  instrumented == shipped **6 of 6**; the lost-reject census reproduces the published 18/13/18 and
+  9/9, 6/7, 6/12 **exactly**; seen_frac baselines reproduce 51.1 / 55.0 to 0.05 pt. Three
+  independent cross-checks.
+  - **K1 BAND NOT MET, and the miss is ~12x LOW** — median `d2` pooled **0.113** vs chi2_2's 1.386.
+    The innovations are far SMALLER than the filter's own `S` predicts, so **S is OVER-stated**.
+    The R line dies by the OPPOSITE sign to the one §1 argued: raising `meas_var` moves the
+    statistic further from calibration.
+  - **Leg 2 REFUTED BY MEASUREMENT.** `R/S` median 0.187-0.304 — **P dominates S, not R** (the
+    derivation said R supplies 70-85%). True accept radius **64.4 px** at 1080p, not ~19 px.
+  - **K2 KILL.** Run-length enrichment +60.0 / +10.0 / +10.7 pp, 1 of 3 clips vs 2 required; seeded
+    null p = 0.105 / 0.589 / 0.585, none <= 0.05. M2 dead. **And 19 of 28 pooled ghost rejects (68%)
+    sit in runs >= 2** — the `run_len = 1` ghost signature is ANOTHER population swap.
+  - **K3 PASS, and it is the one number that survives.** Resets 630 / 384 / 34; frames discarded
+    902 / 479 / 47; worth **+6.49 / +4.93 / +3.45 pts** of mean `seen_frac` — a **ceiling worth
+    ~40-60% of this stage's entire cost**, never counted before. A ceiling, not a prize: K2 shows
+    run length cannot say which of them are real.
+  - **M1 KILL.** TrackNet `"1-2"` coast bin median **19.90 px** vs a <=10.0 px bar. The
+    `seen_frac` coast-exclusion rule is empirically RIGHT. (The nine existing coast-by-gap files
+    are all BallNet and would have passed — 6.7 / 11.8 / 5.3.)
+- [dispatched] **researcher** (SendMessage, context intact) — reconcile the surprising K1 result.
+- [parked] **qa** — independent verification of K1 and K3.
+
+**T27 CANDIDATE, and it fired TWICE in this one session:** reasoning about the gate's REJECTS from
+properties measured on chain SURVIVORS. First the lead's 208-829 px argument, then researcher's
+`run_len = 1` argument. Both were killed by the same measurement. Append to TRAPS as T27.
 
 ## THE QUEUE ON RESTART — ordered, with what each is blocked on
 
@@ -320,6 +369,18 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-10** — **HARD PAUSED by founder** ("Ok this is hard paused ... I want to move on to a diff
+  session first while this phone issue and sideloading has problems"). Nothing left running. **The session
+  ended on a WIN, not a failure**: the Core ML export ran for the first time ever and did it on Linux at
+  **1x instead of 10x**, and the iOS harness — Swift written blind by an agent for a compiler nobody here
+  can run — **compiled green on the first attempt**. What blocked the last mile is Apple ID login on
+  Windows (Sideloadly -22410, then iCloud and iTunes failing too). Diagnosis: not ours. Options recorded
+  for whoever picks this up: unlock at iforgot.apple.com and wait an hour, AltStore instead of Sideloadly,
+  a throwaway Apple ID, or the $99 developer account which deletes the whole category (TestFlight installs
+  are a tap on the phone, and the 7-day re-sign treadmill disappears). **A VM/simulator was considered and
+  REJECTED on the merits, not the difficulty**: no ANE and no thermal envelope, so it cannot answer either
+  question the harness exists to ask — the repo already said "a Simulator number is not a device number".
 
 - **2026-09-10** — **RESUMED by founder** ("ok continue building"). Pause cleared. The
   harness run had already completed inside the pause window. Resuming on FREE work only:

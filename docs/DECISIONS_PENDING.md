@@ -621,3 +621,54 @@ FOUNDER DECISIONS NEEDED:
    leak-clean train/test split and a retrain - both out of this run's scope. Approve?
 3. SendMessage was asserted to work in two briefs and does NOT exist in the subagent
    toolset. Agent-to-agent findings are being relayed by hand.
+
+---
+
+## 2026-09-10 — The innovation-gate brief meets a measured ceiling. Recorded, not asked.
+
+**The founder's brief:** *"Attack the innovation gate."* Correctly aimed — `smooth_forecast`
+is the largest single speed-coverage cost (**-11.0 / -8.1 pts** under TrackNet) and it is a
+STAGE property, since the gate deletes **14-17% of surviving real detections in every arm**.
+
+**What the desk work found, before anything was run.** The gate's own reject population has
+already been adjudicated against human clicks, in
+`docs/evidence/smoother-gate-backward-readmit-separation.md` §3: **21 real / 28 ghost, 0.75 : 1
+pooled** over three clips. That is a **ceiling on every re-admission route at once** — admit
+every rejection the gate has ever made, by any mechanism, at any threshold, and the exchange
+rate cannot exceed 0.75 : 1, against a family bar of >=3:1 and a structural rate of ~7:1.
+The lead's own proposed line (that `meas_var = 25.0` was never calibrated, and a chi2 gate at
+13.8 claiming a 0.1% false-reject rate while measuring 14-17% must have an understated R) was
+put to `researcher` to confirm **or refute**, and was **refuted**: with `Q[0,0] = 0.05 px2`
+against `R = 25 px2`, `S ~ (1.2-1.4) x R`, so scaling `meas_var` is arithmetically a
+`gate_chi2` sweep in different units — a widen, drawing from that same 0.75:1 pool. The one
+supporting fact the brief leaned on (Session I's ghosts at 208-829 px) describes chain
+SURVIVORS; the gate's own reject-ghosts sit at **24.0, 30.3, 49.8 and 386.2 px**, three of four
+inside the radius the widen would have opened.
+
+**No founder decision is required and none is requested.** The brief is being executed, on the
+two routes that are outside the barred family and that leave the accept radius untouched:
+
+- **M1** — whether 1-2 frame interpolated bridges are actually unmeasured. `seen_frac` excludes
+  every coasted frame on an *empirical* claim ("a forecast is not a measurement") that has never
+  been tested, and `tools/eval_model_filters.py:201-208` already computes the number that tests
+  it. Changes no filter behaviour at all.
+- **M2** — rejection-run coherence. `rej` counts every rejection alike and the reset re-seeds at
+  the current frame, discarding two. All 19 chain false locks have `run_len = 1`, so a coherence
+  requirement excludes ghosts by their own measured signature rather than by a chosen threshold.
+
+**Three things the founder may want to overrule later, recorded so they are not silently
+assumed:**
+
+1. **`meas_var` / `gate_chi2` have never been swept, and that question is now closed by
+   argument rather than by measurement.** No sweep exists anywhere in STATE's 78 "has not
+   worked" rows. The diagnostic below measures the noise model's bulk calibration anyway, as a
+   free by-product, so the argument gets one chance to be wrong.
+2. **The size of the prize behind -11.0 / -8.1 pts is still not established.** `seen_frac >= 0.5`
+   is measured only weakly predictive of speed accuracy (+4.96 / +3.11 against a >=10-pt bar,
+   0 of 10 seeds). Nothing in this repo shows a higher smoother-stage `seen_frac` yields a more
+   accurate speed. Establishing that needs `tools/synth_truth.py` — the one rule-11-compliant
+   speed reference — and is a separate run nobody has funded.
+3. **The evidence points at `suppress_false_locks`, which this brief does not cover.** It costs
+   -5.2 / -4.4 pts, and `pipeline.py:1441-1444` records that the gaps it opens are mostly gaps
+   where it deleted a REAL far-court ball. A lock deleted there never reaches the gate at all.
+   Out of scope here; named so it is not lost.
