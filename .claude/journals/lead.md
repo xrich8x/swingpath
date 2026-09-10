@@ -164,8 +164,42 @@ Establishing whether R is miscalibrated is a **diagnosis**, not a fourth widenin
   - **M1 KILL.** TrackNet `"1-2"` coast bin median **19.90 px** vs a <=10.0 px bar. The
     `seen_frac` coast-exclusion rule is empirically RIGHT. (The nine existing coast-by-gap files
     are all BallNet and would have passed — 6.7 / 11.8 / 5.3.)
-- [dispatched] **researcher** (SendMessage, context intact) — reconcile the surprising K1 result.
-- [parked] **qa** — independent verification of K1 and K3.
+- [DEAD — killed by a session limit, produced nothing] **researcher** — reconcile K1. Its
+  question is answered anyway: qa independently confirmed the sign and reports it survives both
+  alternative explanations it could test. Do NOT re-dispatch to re-derive a confirmed number.
+- [DONE — the journal said parked; its work was already on disk as §6] **qa** — independent
+  verification. **Both headline verdicts stand.** K3 CONFIRMED and **corrected UPWARD**
+  (914/492/48 frames, +6.557/+5.142/+3.534 pts; backend-dev's was a 1.3–2.7% undercount, so the
+  direction was safe), spans verified fixed twice. K1 CONFIRMED to 5 s.f. (0.11272), factor
+  **12.30×**, 238/291 below χ²₂'s median, **sign test p = 1.9e-29**. Two defects found in
+  SUPPORTING claims and left in place per its remit: the frame undercount, and §5.5's
+  "reproduces the baselines within 0.05 pt" which holds on `am_hard_utr` but **not** on
+  `yt_match40`.
+
+## THIS TASK IS COMPLETE — every proposed route is dead except a ceiling with no separator
+
+Committed `85fdf97`, **not pushed** (founder's standing instruction on this task). 706 tests pass.
+
+- **R line: dead twice.** Family verdict (rejects 21 real / 28 ghost = **0.75:1** against a ≥3:1
+  bar), and then K1 killed it by the **opposite sign** — `S` is OVER-stated ~12×, so raising
+  `meas_var` moves the statistic further from calibration.
+- **M2 / K2: dead.** Run-length coherence cleared the bar on 1 of 3 clips against 2 required;
+  seeded null p = 0.105 / 0.589 / 0.585. And **19 of 28 pooled ghost rejects (68%) sit in runs ≥ 2**,
+  so the `run_len = 1` ghost signature was a population swap.
+- **M1: dead.** TrackNet's `"1-2"` coast bin medians **19.90 px** against a ≤10.0 px bar — the
+  `seen_frac` coast-exclusion rule is empirically RIGHT. (The nine existing coast-by-gap files are
+  all BallNet and would have passed at 6.7 / 11.8 / 5.3 — a population swap of its own.)
+- **K3: the survivor, and it is a CEILING not a prize.** The reset discards frames worth
+  **+6.6 / +5.1 / +3.5 pts** of `seen_frac`, ~40–60% of this stage's whole cost. **Nothing
+  separates the recoverable frames from the rest** — that is exactly what K2 tested and killed.
+
+**So the honest next question is: what WOULD separate them?** Researcher's §2 named M1 and M2 as
+*the only non-family routes*, and both are now measured dead. A new separator is a **new
+hypothesis**, not a continuation — and rule 3 bars a fourth widening of this gate. **Do not
+dispatch another arm on this gate without a founder call**; the finding to hand them is the K3
+ceiling and the fact that nothing yet claims it.
+
+
 
 **T27 CANDIDATE, and it fired TWICE in this one session:** reasoning about the gate's REJECTS from
 properties measured on chain SURVIVORS. First the lead's 208-829 px argument, then researcher's
