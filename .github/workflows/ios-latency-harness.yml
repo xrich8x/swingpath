@@ -1,0 +1,118 @@
+name: iOS latency harness (build only, unsigned)
+
+# Manual only — same reasoning as coreml-export.yml, which already gets this
+# right: this is a private repo, so GitHub-hosted macOS runners bill at 10x
+# against the monthly minutes budget (the free 2,000 minutes/month is worth
+# roughly 200 macOS-minutes, i.e. 2-4 builds of a job this size). A push- or
+# PR-triggered build would silently spend that budget on every commit to this
+# workflow's own files. DO NOT add `push:` or `pull_request:` triggers.
+#
+# This job produces an UNSIGNED .ipa. Signing happens on the founder's Windows
+# PC at sideload time (Sideloadly or AltStore, free Apple ID) — never here —
+# because a paid Apple Developer account is out of scope for this project
+# (see ios/README.md). CODE_SIGNING_ALLOWED=NO below is load-bearing, not a
+# default left in by accident.
+#
+# NOT triggered by the agent that wrote this file. Triggering CI costs money
+# and is the founder's / lead's call, same as coreml-export.yml.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14   # pinned (Apple Silicon), not macos-latest — reproducible,
+                         # matches coreml-export.yml's choice for the same reason.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Disk space before install
+        run: df -h /
+
+      - name: Show available Xcode versions
+        run: ls /Applications | grep -i Xcode || true
+
+      - name: Select a recent Xcode (need the iOS 18 SDK for our deployment target)
+        # Soft hedge, not a hard pin: this repo cannot verify which Xcode versions
+        # macos-14 currently ships (that changes over time and there is no Mac
+        # here to check). Prefer the newest Xcode 16.x if one is present; if none
+        # matches, fall through to whatever xcode-select already points at rather
+        # than failing on a guessed path — a hardcoded wrong path is a wasted,
+        # 10x-billed build for nothing.
+        run: |
+          LATEST_XCODE=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n1)
+          if [ -n "$LATEST_XCODE" ]; then
+            echo "Selecting $LATEST_XCODE"
+            sudo xcode-select -s "$LATEST_XCODE"
+          else
+            echo "No Xcode_16* found; using the runner's current default."
+          fi
+          xcodebuild -version
+
+      - name: Fail fast if there is no iOS 18 SDK
+        # project.yml targets iOS 18.0 (matching ct.target.iOS18 in the export), which
+        # needs Xcode 16+. If this runner image only carries Xcode 15 the build fails
+        # deep in compilation, after minutes of 10x-billed time, with an error that
+        # does not name the real cause. Ten seconds here turns that into a one-line
+        # diagnosis and tells us exactly which runner image to switch to.
+        run: |
+          echo "SDKs available on this runner:"
+          xcodebuild -showsdks || true
+          if ! xcodebuild -showsdks | grep -qi "iphoneos18"; then
+            echo "::error::No iOS 18 SDK on this runner. project.yml targets iOS 18.0." >&2
+            echo "Switch 'runs-on' to a newer image (e.g. macos-15) or lower the target." >&2
+            exit 1
+          fi
+          echo "iOS 18 SDK present."
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate the Xcode project from project.yml
+        working-directory: ios
+        run: |
+          xcodegen generate
+          ls -la
+
+      - name: Build (unsigned)
+        working-directory: ios
+        run: |
+          xcodebuild \
+            -project LatencyHarness.xcodeproj \
+            -scheme LatencyHarness \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            clean build
+
+      - name: Package the unsigned build as a sideloadable .ipa
+        working-directory: ios
+        run: |
+          set -e
+          APP_PATH="build/Build/Products/Release-iphoneos/LatencyHarness.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Build product not found at expected path: $APP_PATH" >&2
+            echo "Actual contents of build/Build/Products:" >&2
+            find build/Build/Products -maxdepth 3 >&2 || true
+            exit 1
+          fi
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          # An .ipa is just a zip of Payload/<AppName>.app — this is the standard
+          # container Sideloadly/AltStore expect, unsigned or not.
+          zip -qry LatencyHarness-unsigned.ipa Payload
+          rm -rf Payload
+          ls -la LatencyHarness-unsigned.ipa
+
+      - name: Disk space after build
+        run: df -h /
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-latency-harness-unsigned-ipa
+          path: ios/LatencyHarness-unsigned.ipa
+          retention-days: 14

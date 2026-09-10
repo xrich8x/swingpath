@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+
+	<!-- This app is an instrument, not a product: no camera, no network, no push,
+	     no App Groups, no iCloud. Everything below exists only to (a) let a free
+	     Apple ID sideload it and (b) let its Documents folder receive Core ML
+	     model files from Windows without a Mac. -->
+
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+
+	<!-- Code-based SwiftUI launch screen; no storyboard file needed or present. -->
+	<key>UILaunchScreen</key>
+	<dict/>
+
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+
+	<!-- The whole point of this app: expose its Documents/ folder so the founder
+	     can copy .mlpackage (zipped) files into it from Windows via the "Apple
+	     Devices" app's File Sharing tab, then unzip in-place with the iOS Files
+	     app's native Extract action. No bundled models, no rebuild per model. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+
+	<!-- No encryption beyond what iOS provides by default; skips the export-
+	     compliance question some install tools ask about. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+</dict>
+</plist>

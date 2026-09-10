@@ -1,0 +1,67 @@
+# XcodeGen spec for the Core ML latency harness (P0-0/P0-2 instrument, not the
+# product app). Generated into an .xcodeproj by CI (`xcodegen generate`), never
+# committed as a hand-written .pbxproj — a hand-edited pbxproj is the single most
+# likely first-build failure on a runner nobody here can log into, and XcodeGen
+# lets this whole file be reviewed as plain text on Windows instead.
+#
+# Deployment target 18.0 is deliberate, not a typo: it matches
+# `minimum_deployment_target=ct.target.iOS18` in tools/export_coreml_p0.py (the
+# models this harness loads were exported for iOS 18+) and the project's own
+# floor ("iOS/iPadOS 18+, A13 or newer" — iPhone 11 runs iOS 18 fine, so there is
+# no conflict between "target the floor device" and "target iOS 18").
+#
+# No capabilities, no entitlements file, no push/App Groups/iCloud: this must be
+# installable with a free Apple ID via Sideloadly/AltStore, which cannot sign
+# anything requiring a paid developer account.
+
+name: LatencyHarness
+
+options:
+  bundleIdPrefix: com.swingpath
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  # Founder signs with their own free Apple ID at sideload time (Sideloadly/
+  # AltStore), never in CI. If PRODUCT_BUNDLE_IDENTIFIER below collides with
+  # something already sideloaded under the free-account 10-app limit, both
+  # tools support overriding the bundle ID at install time — see ios/README.md.
+
+configs:
+  Debug: debug
+  Release: release
+
+targets:
+  LatencyHarness:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: App
+        excludes:
+          # Referenced via INFOPLIST_FILE below; must not also be
+          # copied in as a bundle resource.
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_NAME: LatencyHarness
+        # Use the hand-written App/Info.plist AS IS. Do NOT reintroduce a
+        # target-level `info:` key: XcodeGen GENERATES a plist at that path,
+        # overwriting this one and silently dropping UIFileSharingEnabled /
+        # LSSupportsOpeningDocumentsInPlace — which are the only way model
+        # files can reach the device. That failure builds and installs fine
+        # and is only discovered when the app can see no models.
+        INFOPLIST_FILE: App/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.swingpath.latencyharness
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+        # This project is BUILT unsigned in CI on purpose (see the workflow) —
+        # these three make xcodebuild not even try, so the build cannot fail on
+        # a missing team/certificate that will never exist on a GitHub runner.
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGN_IDENTITY: ""
+        DEVELOPMENT_TEAM: ""
