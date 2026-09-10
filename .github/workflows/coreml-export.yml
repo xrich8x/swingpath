@@ -24,13 +24,46 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r backend/requirements-ml.txt coremltools
+          # numpy 2.4+ breaks coremltools Core ML export (apple/coremltools#2633)
+          # and ultralytics' check_requirements demands <=2.3.5. Pin at INSTALL
+          # time: ultralytics otherwise pip-installs the downgrade mid-run, which
+          # does not affect the numpy already imported into the running process.
+          # Found 2026-09-10 auditing the Linux path — this job, never yet run,
+          # was likely to FAIL without this, at 10x billing.
+          pip install -r backend/requirements-ml.txt coremltools "numpy<=2.3.5"
 
       - name: Disk space after install
         run: df -h /
 
       - name: Export
         run: python tools/export_coreml_p0.py
+
+      # Do NOT trust the exit code alone. ultralytics catches a failed .mlpackage
+      # save and silently re-saves a legacy .mlmodel; export_coreml_p0.py:87-91 then
+      # renames that onto a *.mlpackage name — a protobuf file wearing a bundle's
+      # name, invisible in the log. A real .mlpackage is a DIRECTORY containing a
+      # Manifest.json. Mirrors the check in coreml-export-linux.yml.
+      - name: Verify every output is a real .mlpackage bundle
+        run: |
+          python - <<'PYEOF'
+          import os, sys
+          out = os.path.join("ios", "coreml_export")
+          names = sorted(os.listdir(out)) if os.path.isdir(out) else []
+          if not names:
+              sys.exit(f"FAIL: nothing written to {out}")
+          bad = []
+          for n in names:
+              p = os.path.join(out, n)
+              kind = "dir" if os.path.isdir(p) else "FILE"
+              ok = os.path.isdir(p) and os.path.exists(os.path.join(p, "Manifest.json"))
+              print(f"{'ok  ' if ok else 'BAD '} {n}  ({kind})")
+              if not ok:
+                  bad.append(n)
+          if bad:
+              sys.exit("FAIL: not real .mlpackage bundles (missing Manifest.json): "
+                       + ", ".join(bad))
+          print(f"all {len(names)} outputs are .mlpackage bundles")
+          PYEOF
 
       - name: Disk space after export
         run: df -h /

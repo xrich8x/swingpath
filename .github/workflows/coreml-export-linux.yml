@@ -1,0 +1,104 @@
+name: Core ML export (P0-0) — Linux (cheap path)
+
+# TRY THIS ONE FIRST. It is the 1x-billing twin of coreml-export.yml.
+#
+# GitHub-hosted macOS runners bill at 10x on a private repo, so the free 2,000
+# minutes/month is really ~200 macOS-minutes; ubuntu-latest bills at 1x. The macOS
+# workflow's header explains a WINDOWS failure (`RuntimeError: BlobWriter not loaded`),
+# which was never a statement about Linux. The Linux wheel
+# `coremltools-9.0-cp312-none-manylinux1_x86_64.whl` ships BOTH compiled extensions the
+# export needs — libmilstoragepython (BlobWriter) and libmodelpackage (.mlpackage
+# writer). Only libcoremlpython is macOS-only, and that one is used to RUN a model, not
+# to save one. Full evidence: docs/evidence/coreml-export-on-linux.md.
+#
+# IF THIS JOB FAILS: do not debug it here. Run .github/workflows/coreml-export.yml
+# (macos-14) instead — it is the known-good fallback — and record the failure in
+# docs/evidence/coreml-export-on-linux.md so the verdict there stops being quoted.
+#
+# Manual only, same as the macOS job: never on push.
+on:
+  workflow_dispatch:
+
+jobs:
+  export:
+    # x86_64 REQUIRED. coremltools publishes no aarch64 Linux wheel at any version, so
+    # an ubuntu-*-arm runner cannot install it. Do not "optimise" this label.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"   # matches the cp312 coremltools Linux wheel
+
+      - name: Disk space before install
+        run: df -h /
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # CPU-only torch. Plain `pip install torch` on Linux x86_64 pulls the CUDA
+          # build plus several GB of nvidia-* wheels; the macOS arm64 wheel is CPU-only
+          # already, which is why the macOS job does not need this line.
+          # backend/requirements-ml.txt's own header gives this same instruction.
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          # numpy 2.4+ breaks coremltools Core ML export (apple/coremltools#2633), and
+          # ultralytics' own check_requirements demands <=2.3.5. Pin it at INSTALL time:
+          # ultralytics would otherwise pip-install the downgrade mid-run, which does not
+          # affect the numpy already imported into the running process.
+          pip install -r backend/requirements-ml.txt "coremltools>=9.0" "numpy<=2.3.5"
+
+      - name: Disk space after install
+        run: df -h /
+
+      # Fail in 5 seconds rather than after a multi-minute torch trace if the wheel is
+      # not the one we audited. This is the whole premise of running on Linux.
+      - name: Preflight — the compiled extensions that Windows lacked
+        run: |
+          python - <<'PY'
+          import coremltools as ct
+          from coremltools.libmilstoragepython import _BlobStorageWriter  # noqa: F401
+          from coremltools.libmodelpackage import ModelPackage           # noqa: F401
+          print("coremltools", ct.__version__, "- BlobWriter and ModelPackage both loaded")
+          PY
+
+      - name: Export
+        run: python tools/export_coreml_p0.py
+
+      # Do NOT trust the exit code alone. ultralytics catches a failed .mlpackage save
+      # and silently re-saves a legacy .mlmodel; export_coreml_p0.py then renames that
+      # onto a *.mlpackage name. A real .mlpackage is a DIRECTORY with a Manifest.json.
+      # See docs/evidence/coreml-export-on-linux.md section 3.
+      - name: Verify every output is a real .mlpackage bundle
+        run: |
+          python - <<'PY'
+          import os, sys
+          out = os.path.join("ios", "coreml_export")
+          names = sorted(os.listdir(out)) if os.path.isdir(out) else []
+          if not names:
+              sys.exit(f"FAIL: nothing written to {out}")
+          bad = []
+          for n in names:
+              p = os.path.join(out, n)
+              kind = "dir" if os.path.isdir(p) else "FILE"
+              ok = os.path.isdir(p) and os.path.exists(os.path.join(p, "Manifest.json"))
+              print(f"{'ok  ' if ok else 'BAD '} {n}  ({kind})")
+              if not ok:
+                  bad.append(n)
+          if bad:
+              sys.exit("FAIL: not real .mlpackage bundles (missing Manifest.json): "
+                       + ", ".join(bad))
+          print(f"all {len(names)} outputs are .mlpackage bundles")
+          PY
+
+      - name: Disk space after export
+        run: df -h /
+
+      - uses: actions/upload-artifact@v4
+        with:
+          # Deliberately NOT "coreml-export" — a Linux-built and a macOS-built bundle
+          # must never be confused after download. They are not proven bit-identical
+          # (the pose int8 arm uses k-means palettization).
+          name: coreml-export-linux
+          path: ios/coreml_export/
+          retention-days: 14

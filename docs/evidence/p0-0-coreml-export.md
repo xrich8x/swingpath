@@ -5,6 +5,13 @@
 > `.mlpackage` files) could run anywhere and only the Xcode measurement needed a Mac.
 > **That assumption is wrong** — the export step itself is blocked on this Windows
 > machine, before any measurement question is reached.
+>
+> **SUPERSEDED IN PART (2026-09-10).** This document is about **Windows**, not about
+> every non-Apple platform. `coremltools`'s **Linux** wheel ships both compiled
+> extensions that the Windows wheel lacks, and both the ball and pose exports run on
+> `ubuntu-latest` — at 1x CI billing instead of macOS's 10x. What still needs a Mac is
+> narrower than "the export": see
+> [`coreml-export-on-linux.md`](coreml-export-on-linux.md).
 
 ## What was attempted
 
