@@ -672,3 +672,33 @@ assumed:**
    -5.2 / -4.4 pts, and `pipeline.py:1441-1444` records that the gaps it opens are mostly gaps
    where it deleted a REAL far-court ball. A lock deleted there never reaches the gate at all.
    Out of scope here; named so it is not lost.
+
+### Addendum, same day — the brief is EXECUTED and CLOSED, and one thing needs the founder's eye
+
+**All three candidates are measured dead** against kill conditions pre-registered before anything
+ran. `docs/evidence/innovation-gate-noise-calibration.md` §5 (backend-dev) and §6 (qa) carry the
+numbers; the three negatives are rows in `docs/STATE.md`.
+
+**The answer to "attack the innovation gate", in one line: the gate is not too tight — it is
+already ~12x LOOSER than its own nominal design point, and what it rejects is genuinely
+inconsistent with the motion model.** Median `d2` on gold-confirmed real accepted frames is
+**0.113 against chi2_2's 1.386** (qa: 0.11272, sign test p = 1.9e-29). The -11.0 / -8.1 pt cost is
+not a mis-set threshold; it is what a single constant-acceleration model costs when the ball
+changes direction. Both of the lead's supporting arguments were wrong — the separation argument by
+population swap (now TRAPS **T27**) and the "R dominates S" derivation by measurement (`R/S` is
+0.187-0.304; **P** dominates).
+
+**ONE ITEM NEEDS A HUMAN EYE — recorded, not fixed (rule 9), and not an interruption.**
+`yt_match40` resolved to a **different court in two runs off the same `_pts.json`**: the published
+ladder stamps `manual+snap`, reproj 9.112, hfov 26.43 deg, 186 shots; the 2026-09-10 run stamps
+`manual+snap-clay`, reproj **0.011**, hfov **91.28 deg**, 86 shots. This is the clip T23 already
+flagged as miscalibrated, so the snap has two wrong courts to choose between — and **reproj cannot
+tell them apart; the 0.011 px fit is the better-looking of the two.** It joins the existing
+"re-click `yt_match40`'s corners" item rather than adding a new demand on the founder's time.
+
+**What is left of the -11.0 / -8.1 pts, and it is not nothing:** the reset path discards a
+**ceiling worth ~40-60% of the whole stage cost** (+6.56 / +5.14 / +3.53 pts, qa-verified). It is a
+ceiling nothing known can collect — that population is ~19 real / 18 ghost and M2 measured that run
+length cannot separate them. **The next real target on this row is `suppress_false_locks`**
+(-5.2 / -4.4 pts), whose own pipeline comment records it deleting real far-court balls. Not started;
+it is a different stage and a different brief.

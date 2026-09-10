@@ -142,7 +142,8 @@ unconfirmable court cannot make one suspect.
 Speed, bounce location, distance run, near/far player identity, any court-relative gate.
 These are the outputs T23 already burned us on: `yt_match40`'s bad homography made the
 pipeline **call the near player far** and cost two published figures (`11.0% @1280`,
-`8.8 m mount`). That is the failure mode, and it is an inversion, not a degradation.
+`8.8 m mount`) - both **WITHDRAWN**, and named here only as examples of the failure mode.
+That is the failure mode, and it is an inversion, not a degradation.
 
 **But the finding does not say these clips are miscalibrated.** It says something weaker
 and different: *a still frame cannot confirm they are calibrated correctly.* The evidence

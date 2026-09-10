@@ -314,3 +314,36 @@ T26. **An agent PLACING ground truth and then being the sole judge of its own pl
    candidates, a human verifies before they are ever called ground truth. Related: T23 (verify
    by rendering the frame — necessary, but it matters *whose* eye does the looking), T24 (a
    claim in prose about the past is not a fact about the present), T19.
+
+
+T27. **Reasoning about a filter's REJECTS from properties measured on the chain's SURVIVORS.**
+   It fired twice inside a single session (2026-09-10), on two different people, against the same
+   stage, and both times it was the load-bearing argument for building something.
+   **First**, the lead's case for widening the innovation gate: *"Session I measured all 19 chain
+   false locks sitting 208-829 px off the track, so ghosts at 208+ px still cannot enter a gate
+   widened to ~45 px."* Those 19 are the ghosts that **survived the whole chain and reached the
+   rendered output**. The gate's own reject-ghosts had already been measured, in
+   `docs/evidence/smoother-gate-backward-readmit-separation.md` §5, at **24.0, 30.3, 49.8 and
+   386.2 px** - three of the four squarely inside the radius the widen would have opened.
+   **Second**, the researcher's case for rejection-run coherence: *"all 19 chain false locks have
+   `run_len = 1`, so a single-frame ghost cannot form a coherent run and the ghost population is
+   excluded by its own measured property."* Same 19 clips of evidence, same swap. Measured the
+   same day: **19 of 28 pooled ghost rejects (68%) sit in runs of >= 2.** The mechanism died on
+   its pre-registered null control (p = 0.105 / 0.589 / 0.585).
+   **Why the swap is so easy to make.** Survivors are the population that gets *written up* -
+   they are what the product renders, so they are what evidence files describe and what an agent's
+   memory carries. The rejects are invisible by construction: nothing downstream ever sees them,
+   so no artefact describes them unless someone deliberately instruments the stage. Reaching for
+   the documented population is the path of least resistance, and it silently answers a different
+   question. **Survivorship also runs the wrong way for safety**: a ghost survives the chain
+   *because* it was extreme enough to hold a lock, so survivor-ghosts are systematically further
+   out and better-separated than the ones a gate is actually deciding about. Every bound derived
+   from them is optimistic.
+   **The rule: before quoting a property of a population, name the selection that produced it, and
+   check it is the selection your decision operates on.** If you are changing what a filter
+   ACCEPTS, your evidence must come from what it REJECTS - and if nothing measures that, the
+   instrumentation pass is the first piece of work, not the last. Here it cost two proposals and
+   was settled by one diagnostic run that had been pre-registered to answer something else.
+   Related: T19 (a detection rate is not evidence the model found the right thing) and T08 (pick
+   the population where the answer is actually in doubt) - all three are the same failure of
+   scoring on a population that was selected by the very property under test.
