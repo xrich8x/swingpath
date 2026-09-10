@@ -118,3 +118,7 @@ wrong in doubles again, it's a NEW bug, not a recurrence of the old one — chec
   `_decode()` didn't mirror `ball.py`'s connected-component algorithm; fixed, verified
   on real frames + the real ONNX graph; also the technique for testing a port when
   the runtime it dynamically imports isn't installed anywhere
+- [iOS latency harness built](ios_latency_harness_built.md) — 2026-09-10: `ios/`
+  now holds a full unbuilt Swift app + CI workflow that loads Core ML models from
+  Documents and times them; design decisions, what's unverified pending the first
+  real macos-14 build, and a real per-sample-setup-cost bug caught before shipping

@@ -46,12 +46,27 @@ was done instead so the blocker is not also idle time.
 
 ## −1. ~~Buy one used A13-or-newer iPhone~~ — **RESOLVED 2026-09-09: the founder has an iPhone 17.**
 
-> **The largest unblock on this list is closed.** An iPhone 17 is far above the A13 floor, so the
-> three decisions that dead-ended on physical hardware — sustained throughput at thermal steady
-> state, the int8-vs-fp32 ship call, and the cost half of P0-2 pose affordability — are now
-> measurable. **None of them needs a tennis court**: they load existing clips onto the device and
-> measure the runtime. "No court" blocks new capture, which nothing here is waiting on.
-> Original text kept below for the reasoning, which still stands.
+> **The device obstacle is closed. The decisions are NOT yet measurable, and this item's own
+> framing was wrong.** An iPhone 17 is far above the A13 floor, so the hardware half is done. But
+> the three decisions — sustained throughput at thermal steady state, the int8-vs-fp32 ship call,
+> and the cost half of P0-2 pose affordability — do **not** dead-end on hardware "and nowhere
+> else", as this item claimed. **There is no iOS app to install.** No `.xcodeproj`,
+> `.xcworkspace`, `Package.swift` or `Info.plist` exists anywhere in the repo; `mobile/` is
+> JavaScript and Python (ONNX models, JS detector/live-call ports, export scripts), and
+> `coreml-export.yml` produces **model artifacts**, not an installable app.
+>
+> **Corrected chain:** (1) export Core ML models — unblocked, runs in CI, no Mac needed;
+> (2) **an iOS harness that loads those models and times them — DOES NOT EXIST and is the real
+> blocker**; (3) install on the iPhone 17 — needs (2). A harness can be authored on Windows and
+> **built** on the same GitHub-hosted `macos-14` runner, then sideloaded from Windows
+> (AltStore/Sideloadly, free Apple ID = 7-day re-sign) or shipped via TestFlight with a paid
+> developer account. So no Mac purchase is implied — but a build-and-install lane and the harness
+> itself are unwritten work, not an afternoon of testing.
+>
+> **Recorded because the lead got this wrong:** it read this item's "dead-end on physical hardware
+> and nowhere else" and relayed "the three decisions are now measurable" to the founder without
+> checking whether an app existed. Third instance today of trusting a document's claim over the
+> repo — see T24. Original text below; its *reasoning* stands, its *scope* did not.
 
 **Raised by pm 2026-09-05 while re-sequencing v1** (`docs/evidence/v1-resequenced-after-court-closure.md` §5).
 

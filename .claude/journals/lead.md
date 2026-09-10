@@ -109,9 +109,74 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-RUN-STATE: RUNNING
+RUN-STATE: RUNNING — resumed by founder 2026-09-10 ("ok continue building").
+The `ios-harness-2` run COMPLETED during the pause; `ios/` is on disk (9 files, ~974 lines)
+and is recorded in STATE. **Standing limits still bind: pushes only on the founder's explicit
+per-push call, and NO CI is triggered without their say-so** — macOS runners bill at 10x on
+this private repo and the founder has said they do not want to pay.
 
-**FOUNDER DIRECTIVE 2026-09-09 (later): STOP ALL COURT *FEATURE* WORK. Fix the measuring
+**FREE WORK ONLY until they authorise a spend.** Two lanes: (1) the lead reviews the harness
+by READING, since every bug caught before the first build saves a 10x-billed attempt on code
+nobody can compile; (2) prepare the CHEAP export path — section C below.
+
+**HARNESS RUN: RETURNED, recorded in STATE.** record its result here and in STATE, and STOP. Do not
+review-and-fix, do not dispatch a follow-up, do not commit. The founder clears this line.
+
+## THE QUEUE ON RESTART — ordered, with what each is blocked on
+
+**A. Finish the stopwatch (the iOS latency harness). This is the head of the queue.**
+1. `ios/` sources + `project.yml` + build workflow + README — being written at pause.
+2. Lead reviews, then commits. **Push needs the founder's explicit call** (ruling below).
+3. **Run the Core ML export.** `.github/workflows/coreml-export.yml`, `workflow_dispatch`,
+   **never triggered — no `.mlpackage` exists yet.** ~10-20 min, macOS runner, **10x billing**.
+4. Build the harness. 5-10 min. **Budget 2-3 attempts** — the Swift is written blind and the
+   pose model's input name/type is UNVERIFIED (frontend-dev flagged it itself).
+5. Founder sideloads from Windows (AltStore/Sideloadly, free Apple ID, 7-day re-sign).
+6. Founder taps Run, reads ms/frame.
+
+**B. What A unblocks — three v1 decisions stuck for weeks, all gated on step 6:**
+sustained throughput at thermal steady state (can a 60-90 min match be analysed at all);
+the int8-vs-fp32 ship call (43.0 vs 10.9 MB); the cost half of P0-2 pose affordability.
+**A bad answer is a PRODUCT CUT**, which is why this precedes building any real app.
+
+**C. Cost lever, free to test, do it BEFORE step 3 if minutes are tight.** The export runs on
+`macos-14` at 10x. `docs/evidence/p0-0-coreml-export.md:5` says the `.mlpackage` export "could
+run anywhere and only the Xcode measurement needed a Mac" — it was put on macOS because the
+**Windows** wheel lacked the native lib. **Linux was never tried.** If `ubuntu-latest` works
+that is 1x instead of 10x.
+
+**D. Court — now a maintenance lane, ONE item.** pm's D.1: **nobody has ever rendered a
+gold-pool court onto its frame.** All 28 reviewed sheets were the *references* pool; the
+`data/gold/*.court.labels.json` truth behind the 12/20 gate has never been looked at, and it
+already carries two known defects. One session, bar pre-registered before anything renders.
+Everything else in court is CUT (pm's line): no seventh detection branch, no multi-homography,
+no AGREE_PX normalisation, no court-normalised metric, no second sheet review, nothing touching
+`courtnet_ft.pt`.
+
+**E. The only court item with a v1 consumer.** Setup-time camera motion: **calibrate LAST**
+(the 4-tap on a frame captured after the phone is placed and untouched) + an **IMU stillness
+gate** (CoreMotion, on-device, zero inference) as a refusal. Measured reason it must be the IMU:
+motionless tripods disagree with themselves about the court, so you cannot detect camera
+movement by watching the court fit wobble. ~1 session on frontend-dev's setup-screen brief.
+
+**F. Founder decisions already waiting (not new, not urgent):** match scoring deferred out of
+v1 — confirm or overturn; the 4 confirmed-misplaced calibrations stay un-replaced (all
+multi-shot, unfixable by clicking); `uR5q2cSM6AY` retained as the marginal fifth, revisit only
+with a pre-registered bar.
+
+**G. Parked, do not resume without a reason:** the overnight round-2 briefs (shell 4K refiner
+reach — `eval/reach_ab.py` is committed but INCOMPLETE; search-ranking defect); researcher's
+ALL-SINGLETON specification decision (hold until court reopens).
+
+**UNCOMMITTED AT PAUSE:** `docs/DECISIONS_PENDING.md` (the corrected item -1 / item 1 status),
+plus whatever `ios/` files the harness run lands.
+
+**FOUNDER RULING 2026-09-09, standing:** pushes are ALLOWED but **only on the founder's explicit
+call, per push.** Never automatic at session end; a prior approval does not carry forward.
+
+---
+
+**SUPERSEDED 2026-09-09 (kept for context): STOP ALL COURT *FEATURE* WORK. Fix the measuring
 instrument first.** The three overnight court briefs (round 2: shell 4K refiner reach,
 search-ranking defect, amateur-court literature) are PARKED, not cancelled.
 
@@ -255,6 +320,27 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-10** — **RESUMED by founder** ("ok continue building"). Pause cleared. The
+  harness run had already completed inside the pause window. Resuming on FREE work only:
+  a read-review of the uncompilable Swift, and preparing an `ubuntu-latest` variant of the
+  Core ML export so the first spend is 1x rather than 10x. No CI, no push.
+
+- **2026-09-10** — **PAUSED by founder** ("pause when stopwatch is done. List out what features
+  are next and hold until we restart again"). Left running: the `ios-harness-2` frontend-dev run
+  writing `ios/` — a job already in flight is not killed. Queue written into NOW, sections A–G.
+  Nothing dispatched, no CI triggered, no commit, no push. **Only the founder clears this.**
+- **2026-09-09/10** — **The v1 blocker list was wrong in BOTH directions and the lead relayed it
+  wrong twice.** (a) "You still need a Mac" — false since 2026-09-04; the Core ML export runs on
+  a GitHub-hosted `macos-14` runner. (b) "Pushes are barred" — a stale heading; item −1 directly
+  below it said the bar was lifted. (c) Then, having corrected those, the lead wrote into
+  `DECISIONS_PENDING` that the founder's new iPhone 17 made the three hardware-blocked decisions
+  "now measurable" — **also false: there is no iOS app to install.** No `.xcodeproj`,
+  `.xcworkspace`, `Package.swift` or `Info.plist` exists anywhere; `mobile/` is JS+Python and the
+  export produces model artifacts, not an app. **Three instances in one day of trusting a
+  document's claim over the repo** (T24's exact species). All three corrected in place.
+  Consequence: the harness is now being written, and the founder's phone is unblocked as
+  *hardware* while the *software to run on it* was the real gap all along.
 
 - **2026-09-09** — **The court gold pool's provenance was never established.** Founder marked
   **10 of 28** rendered corner sheets wrongly placed. `_exact: true`, which `run_refs` treated

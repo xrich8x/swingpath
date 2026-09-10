@@ -34,3 +34,4 @@ monolithic file; nothing was dropped.
 - [Audit instruments have failure modes](audit-instruments-have-failure-modes.md) — the corner sheet showed frame 0 while the eval scores 5%-95%; gallery placements make that a FALSE-ACCUSATION risk
 - [References pool is STRICT-16, not 20](references-pool-is-strict-16.md) — founder ruling 2026-09-09; every `/20` against it is stale, and three different "20"s exist
 - [Court gold provenance is UNATTRIBUTED](court-gold-provenance-is-unattributed.md) — `_exact` is a checkbox not a human marker; 9/20 refs placed by a self-grading agent session; blame values, not commits
+- [Core ML export runs on LINUX](coreml-export-runs-on-linux.md) — 1x CI billing not macOS's 10x; the manylinux1 tag trap, and ultralytics' silent .mlmodel fallback
