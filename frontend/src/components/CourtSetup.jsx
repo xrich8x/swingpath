@@ -3,6 +3,13 @@ import { LINES, NET_LINE, LENGTH, DOUBLES_WIDTH } from "../lib/court.js";
 import { computeHomography, applyHomography } from "../lib/homography.js";
 import { fitCamToQuad } from "../lib/camfit.js";
 import { callVerdict } from "../lib/calls.js";
+import {
+  FAR_BASELINE_QUESTION,
+  framingHintFromHeight,
+  noticeFor,
+  FRAMING_OVERLAP,
+  FRAMING_UNKNOWN,
+} from "../lib/setup.js";
 
 // SwingVision-style court setup: a fixed camera is calibrated ONCE by dragging
 // the four court corners onto the real corners. Coarse placement is by drag;
@@ -16,11 +23,24 @@ const PAD = 90; // draggable margin around the frame so edge corners are reachab
 const ZOOM = 3.5;
 const LOUPE_R = 120;
 
+// PLAIN LANGUAGE, not landmark keys. A normal player has never heard of a
+// "doubles corner"; they can see the far end of the court and the tramline they
+// are standing next to. Each corner therefore carries a `plain` name and a
+// `where` sentence that describes the physical spot to click, and the confirm
+// step names them one at a time.
 const CORNERS = [
-  { key: "far_bl_doubles", court: [0, LENGTH], label: "far-left", at: [0.34, 0.35] },
-  { key: "far_br_doubles", court: [DOUBLES_WIDTH, LENGTH], label: "far-right", at: [0.66, 0.35] },
-  { key: "near_bl_doubles", court: [0, 0], label: "near-left", at: [0.16, 0.86] },
-  { key: "near_br_doubles", court: [DOUBLES_WIDTH, 0], label: "near-right", at: [0.84, 0.86] },
+  { key: "far_bl_doubles", court: [0, LENGTH], label: "far-left", at: [0.34, 0.35],
+    plain: "Far end, left corner",
+    where: "The far end of the court, on YOUR left - the outermost corner, where the back line meets the outside tramline." },
+  { key: "far_br_doubles", court: [DOUBLES_WIDTH, LENGTH], label: "far-right", at: [0.66, 0.35],
+    plain: "Far end, right corner",
+    where: "The far end of the court, on YOUR right - again the outermost corner, outside the tramline." },
+  { key: "near_bl_doubles", court: [0, 0], label: "near-left", at: [0.16, 0.86],
+    plain: "Near end, left corner",
+    where: "The near end, on your left. If a corner is off the edge of the frame, zoom out and grab the frame again." },
+  { key: "near_br_doubles", court: [DOUBLES_WIDTH, 0], label: "near-right", at: [0.84, 0.86],
+    plain: "Near end, right corner",
+    where: "The near end, on your right. All four outer corners must be visible before you confirm." },
 ];
 // camfit's fixed corner order
 const DBL_ORDER = ["near_bl_doubles", "near_br_doubles", "far_br_doubles", "far_bl_doubles"];
@@ -42,6 +62,18 @@ export default function CourtSetup({ match }) {
   // Mount grade, recomputed off the current corners (see the effect below).
   const [mount, setMount] = useState(null);
   const mountTimer = useRef(null);
+  // --- the guided flow -------------------------------------------------------
+  // FEATURE 1: the framing question, asked BEFORE any calibration exists. There
+  // is no honest automatic answer at that moment - the clearance criterion needs
+  // a homography - so the person holding the phone is asked, and the answer is
+  // recorded as an ANSWER rather than laundered into a measurement.
+  const [farBaseline, setFarBaseline] = useState(null);   // true | false | null
+  // FEATURE 2: nothing is saved as confirmed until the user has ticked all four
+  // corners by their plain-language names, one at a time. `_exact` used to be
+  // read as "a human placed these" and never meant it (trap T26); this does.
+  const [confirmed, setConfirmed] = useState({});
+  const [reviewing, setReviewing] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(true);
 
   // Seed the corners from the ANALYZED match's own calibration when it carries
   // one (match.calibration.corners — written by run.py analyze), else from the
@@ -110,8 +142,17 @@ export default function CourtSetup({ match }) {
     return () => clearTimeout(mountTimer.current);
   }, [pts, frame.w, frame.h]);
 
+  // ANY change to a corner un-confirms every corner. A confirmation is a claim
+  // about a specific placement, and carrying it across an edit is precisely how a
+  // stale attestation ends up in a file (trap T26 is that failure one stage up).
+  function invalidateConfirmation() {
+    setConfirmed((c) => (Object.keys(c).length ? {} : c));
+    setReviewing(false);
+  }
+
   function nudge(dx, dy) {
     if (!selected) return;
+    invalidateConfirmation();
     setPts((s) => ({
       ...s,
       [selected]: [
@@ -153,6 +194,7 @@ export default function CourtSetup({ match }) {
   }
   function onMove(e) {
     if (!drag) return;
+    invalidateConfirmation();
     const [x, y] = toImg(e);
     setPts((s) => ({ ...s, [drag]: [clamp(x, -PAD, frame.w + PAD), clamp(y, -PAD, frame.h + PAD)] }));
   }
@@ -164,6 +206,7 @@ export default function CourtSetup({ match }) {
     img.onload = () => {
       setFrame({ src: url, w: img.naturalWidth, h: img.naturalHeight });
       setPts(defaultCorners(img.naturalWidth, img.naturalHeight));
+      invalidateConfirmation();
     };
     img.src = url;
     e.target.value = "";
@@ -188,15 +231,59 @@ export default function CourtSetup({ match }) {
     });
     v.addEventListener("error", () => setNote("No analyzed video found — load a frame instead."));
   }
+  const allConfirmed = CORNERS.every((c) => confirmed[c.key]);
+
   function download() {
     // With the lock on, export the LOCKED shape (a real camera's court). With it
     // off, export the exact points with the _exact marker - the analyzer then
     // skips its own snap + shape lock and treats your placement as final.
+    //
+    // NEVER SILENTLY MOVE A CONFIRMED POINT. When the shape lock would shift the
+    // corners the user just confirmed, the confirmation is dropped and the file
+    // says so, rather than shipping an attestation about points that are no
+    // longer the ones the person looked at.
     const src = lockShape ? lockedPts(pts) : pts;
     const named = {};
-    for (const c of CORNERS) named[c.key] = [Math.round(src[c.key][0]), Math.round(src[c.key][1])];
+    let movedPx = 0;
+    for (const c of CORNERS) {
+      named[c.key] = [Math.round(src[c.key][0]), Math.round(src[c.key][1])];
+      movedPx = Math.max(
+        movedPx,
+        Math.hypot(src[c.key][0] - pts[c.key][0], src[c.key][1] - pts[c.key][1])
+      );
+    }
     if (!lockShape) named._exact = true;
     if (lockShape) setPts(src);
+
+    const stillConfirmed = allConfirmed && movedPx <= 1.0;
+    // PROVENANCE IS PART OF THE LABEL (trap T26). What is recorded here is what
+    // actually happened - who confirmed what, on which frame, and how far the
+    // solver then moved it - not an inference about it. `placed_by` stays the
+    // honest "unattributed": a browser cannot tell a person's mouse from a
+    // script's synthetic event, and only `confirmed_by_user`, which requires the
+    // four named ticks in this UI, upgrades a calibration downstream.
+    named._provenance = {
+      placed_by: "unattributed",
+      tool: "frontend Court Setup",
+      shape_lock: lockShape,
+      moved_px: Number(movedPx.toFixed(2)),
+      confirmed_by_user: stillConfirmed,
+      confirmed_corners: stillConfirmed ? CORNERS.map((c) => c.key) : [],
+      confirmed_on_frame: frame.src.startsWith("data:") ? "video frame grab" : frame.src,
+      frame_wh: [frame.w, frame.h],
+      // FEATURE 1's answer, travelling with the calibration so `run.py analyze`
+      // can carry it into match.json even for a clip whose far baseline is out
+      // of frame entirely and therefore has no measurable clearance.
+      far_baseline_visible: farBaseline,
+      saved_at: new Date().toISOString(),
+    };
+    if (allConfirmed && !stillConfirmed) {
+      setConfirmed({});
+      setNote(
+        `Shape lock moved a confirmed corner by ${movedPx.toFixed(0)}px, so the ` +
+          "confirmation was dropped - check the corners again and re-confirm."
+      );
+    }
     const blob = new Blob([JSON.stringify(named, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -213,6 +300,10 @@ export default function CourtSetup({ match }) {
     : null;
   const selLabel = CORNERS.find((c) => c.key === selected)?.label;
 
+  const hint = mount ? framingHintFromHeight(mount.heightM) : null;
+  const framingNotice =
+    farBaseline === false ? noticeFor(FRAMING_OVERLAP) : null;
+
   return (
     <div className="setup">
       <div className="setup-help">
@@ -222,6 +313,62 @@ export default function CourtSetup({ match }) {
           the selected corner with the arrows below (or keyboard arrows). The magnifier shows exactly
           where it lands. Load your own frame to try it on your footage.
         </p>
+      </div>
+
+      {/* STEP 1 - the framing question. Asked before anything is measured,
+          because that is the only moment a low camera can still be fixed, and
+          because no honest automatic answer exists yet: the clearance criterion
+          needs a homography that does not exist until the corners are placed. */}
+      <div className="setup-step">
+        <div className="setup-step-num">1</div>
+        <div className="setup-step-body">
+          <div className="setup-step-title">{FAR_BASELINE_QUESTION}</div>
+          <p className="muted">
+            Look at the far end of the court. If the far baseline is hidden behind
+            the top of the net, speed, bounce positions and line calls on the far
+            half will be unreliable — but you can still record and review the
+            match either way.
+          </p>
+          <div className="setup-answers">
+            {[
+              { v: true, label: "Yes - I can see it below the net" },
+              { v: false, label: "No - the net covers it" },
+              { v: null, label: "Not sure" },
+            ].map((o) => (
+              <button
+                key={String(o.v)}
+                className={`chip ${farBaseline === o.v ? "chip-on" : ""}`}
+                onClick={() => setFarBaseline(o.v)}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+          {framingNotice && (
+            <div className="trust-banner trust-limited" style={{ marginTop: 12 }}>
+              <div className="trust-head">
+                <strong>{framingNotice.title}</strong>
+              </div>
+              <p className="trust-body">{framingNotice.body}</p>
+              <div className="trust-actions">
+                <span className="trust-continue">✓ {framingNotice.actions[0]}</span>
+                <span className="muted">
+                  Keep going — the corners below still get set, and the match is
+                  still analyzed. It will simply be marked as having limited court
+                  accuracy.
+                </span>
+              </div>
+            </div>
+          )}
+          {hint?.text && (
+            <p className="muted" style={{ marginTop: 10 }}>
+              <strong>
+                {hint.hint === FRAMING_UNKNOWN ? "Indication: " : "Indication: "}
+              </strong>
+              {hint.text}
+            </p>
+          )}
+        </div>
       </div>
 
       <svg
@@ -240,10 +387,15 @@ export default function CourtSetup({ match }) {
 
         <rect x={-PAD} y={-PAD} width={frame.w + 2 * PAD} height={frame.h + 2 * PAD} className="setup-bg" />
         <image href={frame.src} x="0" y="0" width={frame.w} height={frame.h} />
-        {lines.map(([a, b], i) => (
+        {/* The RAW frame must be inspectable. An overlay drawn over the paint is
+            exactly what made trap T23 invisible for months: `yt_match40` stamped
+            PASS at 0.9 px with all four clicks on asphalt, and no residual could
+            have said so. Toggling the overlay off is how a person checks the
+            clicks against the actual lines. */}
+        {showOverlay && lines.map(([a, b], i) => (
           <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} className="setup-line" />
         ))}
-        {net && (
+        {showOverlay && net && (
           <line x1={net[0][0]} y1={net[0][1]} x2={net[1][0]} y2={net[1][1]} className="setup-net" />
         )}
         {CORNERS.map((c) => (
@@ -252,7 +404,7 @@ export default function CourtSetup({ match }) {
               cx={pts[c.key][0]}
               cy={pts[c.key][1]}
               r="15"
-              className={`setup-handle ${drag === c.key ? "dragging" : ""} ${selected === c.key ? "selected" : ""}`}
+              className={`setup-handle ${drag === c.key ? "dragging" : ""} ${selected === c.key ? "selected" : ""} ${confirmed[c.key] ? "confirmed" : ""}`}
               onPointerDown={(e) => {
                 setDrag(c.key);
                 setSelected(c.key);
@@ -264,7 +416,7 @@ export default function CourtSetup({ match }) {
               }}
             />
             <text x={pts[c.key][0]} y={pts[c.key][1] - 22} className="setup-handle-label">
-              {c.label}
+              {confirmed[c.key] ? "✓ " : ""}{c.plain}
             </text>
           </g>
         ))}
@@ -310,11 +462,17 @@ export default function CourtSetup({ match }) {
                 key={c.key}
                 className={`chip ${selected === c.key ? "chip-on" : ""}`}
                 onClick={() => setSelected(c.key)}
+                title={c.where}
               >
-                {c.label}
+                {c.plain}
               </button>
             ))}
           </div>
+          {selected && (
+            <p className="muted" style={{ marginTop: 8 }}>
+              {CORNERS.find((c) => c.key === selected)?.where}
+            </p>
+          )}
         </div>
 
         <div className={`mount-grade mount-${mount?.level || "unknown"}`}>
@@ -357,11 +515,109 @@ export default function CourtSetup({ match }) {
           </div>
         </div>
 
+        {/* STEP 2 - confirm the four corners, one at a time, by their plain
+            names. This is the ONLY thing that produces `confirmed_by_user`
+            downstream, and it is what separates `user_confirmed` from
+            `provisional` in every match this calibration goes on to produce. */}
+        <div className="setup-confirm">
+          <div className="setup-step-title">
+            2. Check each corner on the frame, then tick it
+          </div>
+          <p className="muted">
+            Turn the overlay off to see the real lines, zoom in with the
+            magnifier, and make sure the handle sits on the actual corner of the
+            paint — not near it, and not on a line behind the court.
+          </p>
+          <label className="setup-toggle">
+            <input
+              type="checkbox"
+              checked={!showOverlay}
+              onChange={(e) => setShowOverlay(!e.target.checked)}
+            />
+            Hide the overlay (show the raw camera frame)
+          </label>
+          <ul className="confirm-list">
+            {CORNERS.map((c) => (
+              <li key={c.key} className={confirmed[c.key] ? "confirmed" : ""}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(confirmed[c.key])}
+                    onChange={(e) => {
+                      setSelected(c.key);
+                      setConfirmed((s0) => ({ ...s0, [c.key]: e.target.checked }));
+                    }}
+                  />
+                  <span className="confirm-name">{c.plain}</span>
+                  <span className="muted confirm-where">{c.where}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          <div className="confirm-state">
+            {allConfirmed ? (
+              <span className="confirm-ok">
+                ✓ All four corners confirmed — saving will record this as a
+                user-confirmed calibration.
+              </span>
+            ) : (
+              <span className="muted">
+                {CORNERS.filter((c) => confirmed[c.key]).length} of 4 confirmed.
+                You can still save without confirming — the calibration is then
+                recorded as <strong>provisional</strong>, and court measurements
+                are not presented as verified.
+              </span>
+            )}
+          </div>
+          <button className="btn" onClick={() => setReviewing((v) => !v)}>
+            {reviewing ? "Close review" : "Review before saving"}
+          </button>
+          {reviewing && (
+            <div className="setup-review">
+              <div className="setup-step-title">What will be saved</div>
+              <ul className="trust-list">
+                <li>
+                  Frame: {frame.w}&times;{frame.h}
+                  {frame.src.startsWith("data:") ? " (grabbed from the video)" : ` (${frame.src})`}
+                </li>
+                {CORNERS.map((c) => (
+                  <li key={c.key}>
+                    {confirmed[c.key] ? "✓" : "·"} {c.plain}: (
+                    {Math.round(pts[c.key][0])}, {Math.round(pts[c.key][1])})
+                  </li>
+                ))}
+                <li>
+                  Far baseline visible below the net:{" "}
+                  <strong>
+                    {farBaseline === true ? "yes" : farBaseline === false ? "no" : "not answered"}
+                  </strong>
+                </li>
+                <li>
+                  Shape lock: <strong>{lockShape ? "on" : "off"}</strong>
+                  {lockShape
+                    ? " — corners may be moved onto the nearest real camera view. If that moves a confirmed corner, the confirmation is dropped."
+                    : " — your points are saved exactly as placed."}
+                </li>
+                <li>
+                  Calibration will be recorded as{" "}
+                  <strong>{allConfirmed ? "user-confirmed" : "provisional"}</strong>.
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+
         <div className="setup-actions">
           <button className="btn" onClick={grabVideoFrame}>Use video frame</button>
           <button className="btn" onClick={() => fileRef.current?.click()}>Load frame</button>
           <input ref={fileRef} type="file" accept="image/*" onChange={loadFrame} hidden />
-          <button className="btn btn-ghost" onClick={() => setPts(defaultCorners(frame.w, frame.h))}>
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              setPts(defaultCorners(frame.w, frame.h));
+              invalidateConfirmation();
+            }}
+          >
             Reset corners
           </button>
           <label
@@ -380,7 +636,9 @@ export default function CourtSetup({ match }) {
             />
             Shape lock
           </label>
-          <button className="btn btn-primary" onClick={download}>Confirm &amp; save</button>
+          <button className="btn btn-primary" onClick={download}>
+            {allConfirmed ? "Save confirmed calibration" : "Save as provisional"}
+          </button>
           <span className="muted setup-note">
             {note || <>Saves <code>court_pts.json</code> → <code>run.py analyze --keypoints</code>.</>}
           </span>

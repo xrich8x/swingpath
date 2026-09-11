@@ -195,3 +195,103 @@ def test_provenance_key_is_underscored_so_every_reader_skips_it():
     prov = css.provenance_block({}, shape_lock=True, moved_px=0.0)
     d = json.loads(css.save_text(PLACEMENT, True, prov))
     assert [k for k in d if not k.startswith("_")] == DBL
+
+
+# --- the confirm step ---------------------------------------------------------
+# `confirmed_by_user` is the claim `_exact` was wrongly read as (trap T26), and it
+# is the ONLY route to `user_confirmed` in the trust layer. These pin what it
+# means, because a confirmation flag that can be set by accident is worse than no
+# flag at all: it launders a provisional calibration into a verified one.
+
+def _save_with(tmp_path, lock, body_extra, name="pts.json"):
+    out = tmp_path / name
+    state = {"frame": np.zeros((720, 1280, 3), np.uint8), "out": str(out),
+             "seed": None, "static_mask": None, "seq": 0}
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), css.build_handler(state))
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        body = {"corners": PLACEMENT, "lock": lock, **body_extra}
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{srv.server_address[1]}/api/save",
+            json.dumps(body).encode(), {"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            reply = json.loads(r.read())
+    finally:
+        srv.shutdown()
+        srv.server_close()
+    return json.loads(out.read_text(encoding="utf-8")), reply
+
+
+def test_an_unconfirmed_save_is_not_confirmed(tmp_path):
+    """The default. Every save this tool has ever made lands here."""
+    d, _ = _save_with(tmp_path, lock=False, body_extra={})
+    assert d["_provenance"]["confirmed_by_user"] is False
+    assert d["_provenance"]["confirmed_corners"] == []
+
+
+def test_three_of_four_ticks_is_not_a_confirmation(tmp_path):
+    """There is no partial state in the trust layer, so there is none here."""
+    d, reply = _save_with(tmp_path, lock=False,
+                          body_extra={"confirmed": True,
+                                      "confirmed_corners": DBL[:3]})
+    assert d["_provenance"]["confirmed_by_user"] is False
+    assert reply["confirmed"] is False
+
+
+def test_a_confirmed_flag_without_the_named_corners_is_refused(tmp_path):
+    """A caller that just sets `confirmed: true` gets nothing. The flag has to be
+    backed by the four names, which in the UI means four separate ticks."""
+    d, _ = _save_with(tmp_path, lock=False, body_extra={"confirmed": True})
+    assert d["_provenance"]["confirmed_by_user"] is False
+
+
+def test_a_full_confirmation_is_recorded(tmp_path):
+    d, reply = _save_with(tmp_path, lock=False,
+                          body_extra={"confirmed": True, "confirmed_corners": DBL})
+    assert d["_provenance"]["confirmed_by_user"] is True
+    assert sorted(d["_provenance"]["confirmed_corners"]) == sorted(DBL)
+    assert reply["confirmed"] is True
+
+
+def test_the_shape_lock_dropping_a_confirmed_corner_drops_the_confirmation(tmp_path):
+    """NEVER SILENTLY MOVE A CONFIRMED POINT. PLACEMENT is deliberately not a real
+    camera's view, so the lock moves it — and a confirmation about the placement
+    that was ticked cannot survive being applied to different numbers."""
+    d, reply = _save_with(tmp_path, lock=True,
+                          body_extra={"confirmed": True, "confirmed_corners": DBL})
+    assert reply["moved"] > 0.0
+    if reply["moved"] > 1.0:
+        assert d["_provenance"]["confirmed_by_user"] is False
+        assert reply["confirmation_dropped"] is True
+    else:
+        # A placement the lock barely touches keeps its confirmation. Asserted
+        # rather than assumed so this test says what it checked either way.
+        assert d["_provenance"]["confirmed_by_user"] is True
+
+
+def test_the_far_baseline_answer_rides_along(tmp_path):
+    for answer, expected in ((True, True), (False, False), ("maybe", None),
+                             (None, None)):
+        d, _ = _save_with(tmp_path, lock=False,
+                          body_extra={"far_baseline": answer},
+                          name=f"fb_{answer}.json")
+        assert d["_provenance"]["far_baseline_visible"] is expected
+
+
+def test_confirmation_does_not_change_placed_by(tmp_path):
+    """Two different questions, and neither may stand in for the other. A
+    localhost page still cannot tell a person's mouse from a script's POST, so
+    `placed_by` stays honest even on a fully confirmed save."""
+    d, _ = _save_with(tmp_path, lock=False,
+                      body_extra={"confirmed": True, "confirmed_corners": DBL})
+    assert d["_provenance"]["placed_by"] == css.PLACED_BY_UNKNOWN
+
+
+def test_the_confirm_fields_are_still_purely_additive():
+    """Claim 1 again, with the new fields present: dropping `_provenance`
+    reproduces the pre-provenance file byte for byte."""
+    prov = css.provenance_block({}, shape_lock=False, moved_px=0.0,
+                                confirmed=True, confirmed_corners=DBL,
+                                far_baseline=True)
+    text = css.save_text(PLACEMENT, exact=True, provenance=prov)
+    assert _strip_provenance(text) == _legacy_text(PLACEMENT, exact=True)

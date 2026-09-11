@@ -3,12 +3,12 @@
 > detector string, the "NOT yet committed" note, the README pointing at a
 > degenerate calibration, and the untracked evidence .txt files.
 > Kept as a record of what was fixed and why.
-> **For open work read [STATE.md](STATE.md).**
+> **For open work read [STATE.md](../STATE.md).**
 
 # Next fixes — the maintenance list
 
 Small, bounded corrections. Distinct from
-[SESSION_G_pose_proximity.md](archive/sessions/SESSION_G_pose_proximity.md), which is the
+[SESSION_G_pose_proximity.md](sessions/SESSION_G_pose_proximity.md), which is the
 research work. Nothing here is a test failure: **209 tests pass in 23 s** as of
 2026-08-01.
 
@@ -22,7 +22,7 @@ expensive kind of defect — a future session will trust it.
 
 ### 1.1 `pipeline.py` understates the cost of `suppress_false_locks` by 2.5×
 
-[backend/swingvision/pipeline.py:1303](../backend/swingvision/pipeline.py#L1303) reads:
+[backend/swingvision/pipeline.py:1303](../../backend/swingvision/pipeline.py#L1303) reads:
 
 > Measured on yt_rally2 gold: no-ball false-fire 61.5% -> 15.4% at a **3.9-pt recall
 > cost** — catches the persistent far-band fixture runs …
@@ -40,7 +40,7 @@ reading "3.9 pt" concludes it is cheap and leaves it alone.
 
 ### 1.2 `mine_hard_negatives.py` writes a provenance field it does not check
 
-[backend/mine_hard_negatives.py](../backend/mine_hard_negatives.py) hardcodes
+[backend/mine_hard_negatives.py](../../backend/mine_hard_negatives.py) hardcodes
 `"detector": "BallNet (weights/ballnet.pt)"` into every `hard_negatives.json`
 regardless of which checkpoint actually loaded. The existing sets were most likely
 mined while `ballnet.pt` was the default, so they are *probably* correctly attributed —
@@ -61,7 +61,7 @@ negatives inherit the same unverifiable label.
 
 ### 2.1 The documented example points at a known-bad calibration file
 
-[README.md:50](../README.md#L50) and the [backend/run.py](../backend/run.py) docstring
+[README.md:50](../README.md#L50) and the [backend/run.py](../../backend/run.py) docstring
 both use:
 
 ```bash

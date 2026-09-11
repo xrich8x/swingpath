@@ -117,6 +117,8 @@ backend/swingvision/
   analytics.py     shot speed + line calls (geometry)
   scoring.py       tennis scoring state machine (logic)
   corrections.py   apply human corrections, then re-derive score + stats (logic)
+  setup_state.py   what this camera setup may honestly claim (logic) - persisted
+                   into match.json under `setup`, read by the dashboard
   highlights.py    rank rallies + cut per-rally clips and a reel (logic)
   pipeline.py      orchestrator + synthetic demo + calibrate_video
   schema.py        the match.json contract
@@ -127,8 +129,14 @@ frontend/src/        components, lib/court.js, data/sample_match.json
 tools/               dev + ML tooling, not part of the analyzer. Notably:
   lab_server.py        the Lab — add a clip, label it, train, score, in a browser
                        (`py tools/lab_server.py`); enforces gold/train separation
-  court_setup_server.py  place the court corners on a clip (browser)
+  court_setup_server.py  place + CONFIRM the court corners on a clip (browser)
   validate_new_clip.py   audit a calibration; --stamp records the verdict in it
+  validate_court_calibration.py  the DEEP single-calibration check: fits the real
+                       camera (not an assumed FOV) and renders the overlay onto
+                       the paint, which is the only thing that catches a court
+                       whose residual is fine and whose corners are off the lines
+  backfill_setup_state.py  give an older match.json its `setup` block, derived
+                       from the court corners it already stores
 
 ## Tests
 
@@ -155,6 +163,16 @@ cd backend && python -m pytest tests/
   which is structural, not a bug to fix with a better detector. The answer is the
   Review tab: overrule a winner, call or stroke, and the score and stats are
   replayed from the corrected facts by the same code the pipeline uses.
+- **A low camera is a measured limit on what the image contains, not a user
+  error.** A tennis net is 0.914 m tall, and below roughly a 2.0–2.2 m mount its
+  white tape projects OVER the far baseline, so the two lines cannot be told
+  apart by any method. 16 of the 28 real calibrations in this repo are below that
+  crossover. **Nothing refuses a recording because of it.** `analyze` records the
+  state in `match.json` under `setup`, `run.py check` prints it before you spend
+  a run, and the dashboard shows a persistent "Limited court accuracy" status —
+  withholding the headline speed and in/out figures rather than printing a
+  precise-looking number under a small disclaimer. Video review, rally clips,
+  highlights, the shot list and manual corrections work at every setup quality.
 
 Accuracy is bounded by calibration quality and a fixed camera far more than by
 any single model choice.

@@ -29,7 +29,13 @@ def _fake_match():
     stats = types.SimpleNamespace(
         shot_count=3, rally_count=1, avg_speed_kmh=60.0, top_speed_kmh=90.0,
         line_calls={"in": 2, "out": 1})
-    return types.SimpleNamespace(stats=stats)
+    # `setup` is the persisted trust state (swingvision/setup_state.py), which
+    # `analyze` prints beside the figures. A real Match always carries one; this
+    # stub carries the honest `unknown` so the rate wiring is exercised against
+    # the same shape the pipeline returns.
+    from swingvision import setup_state
+    return types.SimpleNamespace(stats=stats,
+                                 setup=setup_state.normalize(None))
 
 
 def _capture_frame_step(monkeypatch):

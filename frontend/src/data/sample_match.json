@@ -12276,7 +12276,13 @@
       "out": 17,
       "uncertain": 0
     },
+    "speed_estimated": false,
+    "speed_err_pct": 0.0,
     "distance_run_m": {},
+    "player_track_coverage": {},
+    "rally_break_reasons": {},
+    "score_validation_note": "",
+    "distance_run_note": {},
     "serve_placement": {
       "A": {
         "deuce": {
@@ -12346,6 +12352,19 @@
     "width_m": 10.97,
     "singles_width_m": 8.23,
     "service_line_from_net_m": 6.4
+  },
+  "setup": {
+    "framing_status": "unknown",
+    "far_baseline_clearance_px_720": null,
+    "calibration_status": "unavailable",
+    "metrics_eligible": false,
+    "reasons": [
+      "Setup quality was not recorded for this match, so we cannot say how reliable the court measurements are.",
+      "This is the synthetic demo match: there is no camera and no recording, so no court measurement was made."
+    ],
+    "framing_source": "none",
+    "far_baseline_user_answer": null,
+    "notice": null
   },
   "calibration": null
 }

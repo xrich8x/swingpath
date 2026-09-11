@@ -14,7 +14,9 @@ A match.json is:
   "rallies": [Rally, ...],
   "score":   {sets: [...], games: [...], final, timeline: [...]},
   "stats":   {shot_count, rally_count, avg_speed_kmh, top_speed_kmh,
-              shot_mix: {...}, line_calls: {in, out}}
+              shot_mix: {...}, line_calls: {in, out}},
+  "setup":   {framing_status, far_baseline_clearance_px_720,
+              calibration_status, metrics_eligible, reasons: [...]}
 }
 
 Positions are court-plane metres [x, y]; speeds km/h; times seconds.
@@ -25,7 +27,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Optional
 
-from . import analytics, court
+from . import analytics, court, setup_state
 
 SCHEMA_VERSION = "1.0"
 
@@ -203,6 +205,26 @@ class Match:
             "service_line_from_net_m": court.SERVICE_LINE_FROM_NET,
         }
     )
+    # WHAT THIS CAMERA SETUP CAN HONESTLY CLAIM — see setup_state.py.
+    #
+    # {"framing_status": clear|limited|overlap|unknown,
+    #  "far_baseline_clearance_px_720": float|None,
+    #  "calibration_status": user_confirmed|provisional|unavailable,
+    #  "metrics_eligible": bool, "reasons": [str], ...}
+    #
+    # ADDITIVE, and SCHEMA_VERSION deliberately does NOT move for it. Every
+    # match.json written before this field simply lacks it, and
+    # `setup_state.normalize(None)` turns that into a well-formed `unknown`
+    # state — so an old file opens and renders, it just cannot claim anything.
+    # Bumping the version would have made `validate()` reject every one of them,
+    # which is a compatibility break dressed up as bookkeeping.
+    #
+    # Default is a full `unknown` state rather than None, so that every path that
+    # builds a Match (demo, analyze, a test fixture) produces a file the UI can
+    # read without a null check — "we did not measure this" is a real answer and
+    # deserves to be written down.
+    setup: dict[str, Any] = field(
+        default_factory=lambda: setup_state.normalize(None))
     # How the court was calibrated: {"corners": {landmark: [x_px, y_px]},
     # "source": ..., "hfov_deg": ..., "lens_k1": division-model radial
     # distortion (0.0 = none), "events": [{"frame", "kind"}]}. Optional -
@@ -380,4 +402,33 @@ def validate(data: dict[str, Any]) -> list[str]:
             problems.append(f"shot {s.get('id')}: player not found")
         if s.get("call") not in ("in", "out"):
             problems.append(f"shot {s.get('id')}: call must be 'in' or 'out'")
+
+    # `setup` is NOT in the required-keys list above, on purpose: an older
+    # match.json has none and must still validate. When it IS present, its two
+    # status strings have to be from the vocabulary — a typo'd status would
+    # silently degrade to `unknown` in the UI, which is exactly the kind of
+    # quiet downgrade that makes a trust signal untrustworthy.
+    if "setup" in data:
+        st = data["setup"]
+        if not isinstance(st, dict):
+            problems.append("setup: must be an object")
+        else:
+            f = st.get("framing_status")
+            if f not in setup_state.FRAMING_STATUSES:
+                problems.append(
+                    f"setup: framing_status {f!r} not one of "
+                    f"{setup_state.FRAMING_STATUSES}")
+            c = st.get("calibration_status")
+            if c not in setup_state.CALIBRATION_STATUSES:
+                problems.append(
+                    f"setup: calibration_status {c!r} not one of "
+                    f"{setup_state.CALIBRATION_STATUSES}")
+            # Re-derive rather than trust: a file may not assert that its numbers
+            # are verified when its own two axes say they are not.
+            expected = (f == setup_state.FRAMING_CLEAR
+                        and c == setup_state.CALIB_USER_CONFIRMED)
+            if bool(st.get("metrics_eligible")) != expected:
+                problems.append(
+                    f"setup: metrics_eligible={st.get('metrics_eligible')!r} "
+                    f"contradicts framing_status={f!r} + calibration_status={c!r}")
     return problems

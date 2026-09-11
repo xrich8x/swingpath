@@ -605,3 +605,150 @@ body {
   .review-shot { grid-template-columns: 52px 1fr; row-gap: 4px; }
   .review-winner { margin-left: 0; }
 }
+
+/* ---- Setup trust: what this camera setup can honestly claim ----------------
+   Rendered above the tabs (App.jsx), so it is on screen on every tab, in every
+   screenshot, and after every reload. A low camera costs CLAIMS, not features -
+   nothing in here hides content, it only says what a number is worth.
+   Colours: `limited` is amber, not red. Red says "something went wrong"; this is
+   a recording that worked, from a camera position that could not see far enough. */
+:root {
+  --warn: #e3a008;         /* limited / approximate - amber, never red */
+  --warn-dim: rgba(227, 160, 8, 0.12);
+  --provisional: #6ea8fe;  /* framing fine, corners unconfirmed */
+}
+
+.trust-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg-elev2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.trust-chip:hover { border-color: var(--accent-dim); }
+.trust-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.trust-chip.trust-good { color: var(--in); border-color: rgba(63, 185, 80, 0.4); }
+.trust-chip.trust-good .trust-dot { background: var(--in); }
+.trust-chip.trust-limited { color: var(--warn); border-color: rgba(227, 160, 8, 0.45); }
+.trust-chip.trust-limited .trust-dot { background: var(--warn); }
+.trust-chip.trust-provisional { color: var(--provisional); border-color: rgba(110, 168, 254, 0.4); }
+.trust-chip.trust-provisional .trust-dot { background: var(--provisional); }
+
+.trust-banner {
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  background: var(--bg-elev);
+}
+.trust-banner.trust-limited { border-left-color: var(--warn); background: var(--warn-dim); }
+.trust-banner.trust-provisional { border-left-color: var(--provisional); }
+.trust-banner.trust-good { border-left-color: var(--in); }
+.trust-banner.trust-unknown { border-left-color: var(--muted); }
+.trust-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.trust-body { margin: 6px 0 0; color: var(--text); line-height: 1.5; }
+.trust-details { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+.trust-cols { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; }
+.trust-sub { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.trust-list { margin: 0; padding-left: 18px; line-height: 1.6; }
+.trust-list li { margin-bottom: 3px; }
+.trust-facts { margin-top: 12px; font-size: 12px; }
+.trust-facts code { background: var(--bg-elev2); padding: 1px 5px; border-radius: 4px; }
+.trust-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.trust-continue { color: var(--in); font-weight: 600; }
+.trust-how { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+.trust-inline { line-height: 1.5; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* An "approximate" marker attached to the NUMBER, not parked in a footnote. */
+.approx-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--warn-dim);
+  color: var(--warn);
+  border: 1px solid rgba(227, 160, 8, 0.35);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  cursor: help;
+}
+
+/* Withheld rather than shown: an explicit unavailable state beats a
+   precise-looking number with tiny disclaimer text underneath it. */
+.tile-unavailable { border-style: dashed; }
+.tile-unavailable .tile-value { font-size: 17px; color: var(--muted); font-weight: 600; }
+.panel-limited { border-color: rgba(227, 160, 8, 0.3); }
+.unavailable-block {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 14px;
+}
+.unavailable-title { font-weight: 700; margin-bottom: 6px; }
+
+/* ---- Guided court setup ---------------------------------------------------
+   The flow is numbered because the ORDER carries meaning: the framing question
+   is asked before the corners are placed, since that is the only moment a low
+   camera is still fixable. The corner checklist is what produces
+   `confirmed_by_user` - the single thing that separates a user-confirmed
+   calibration from a provisional one everywhere downstream. */
+.setup-step {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.setup-step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: #1b1f17;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px;
+}
+.setup-step-title { font-weight: 700; margin-bottom: 6px; }
+.setup-answers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+.setup-confirm {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.setup-toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin: 8px 0 12px; cursor: pointer; font-size: 13px; color: var(--muted);
+}
+.confirm-list { list-style: none; margin: 0 0 12px; padding: 0; }
+.confirm-list li {
+  border-top: 1px solid var(--line);
+  padding: 9px 0;
+}
+.confirm-list li label {
+  display: grid; grid-template-columns: 20px 160px 1fr;
+  align-items: baseline; gap: 8px; cursor: pointer;
+}
+.confirm-list li.confirmed .confirm-name { color: var(--in); }
+.confirm-name { font-weight: 600; font-size: 13px; }
+.confirm-where { font-size: 12px; line-height: 1.45; }
+.confirm-state { margin-bottom: 10px; font-size: 13px; }
+.confirm-ok { color: var(--in); font-weight: 600; }
+.setup-review {
+  margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px;
+  font-size: 13px;
+}
+.setup-handle.confirmed { stroke: #3fb950; stroke-width: 3; }

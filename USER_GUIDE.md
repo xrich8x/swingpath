@@ -82,8 +82,18 @@ Set-ExecutionPolicy -Scope Process RemoteSigned once, then retry.
 - Court — top-down court. Nothing selected shows every shot landing (green = in,
   red = out). Click a rally to trail that point and scrub the ball.
 - Statistics — shot count, rally count, average and top speed, shot mix, line-call split.
+  Court-derived figures carry the setup's trust state: labelled approximate when
+  the camera was low, and withheld outright when the net hid the far baseline.
+- Setup quality chip (top right) + banner — always on screen, on every tab. Click
+  it for what still works, why the setup is rated as it is, and how to improve it.
 - Rallies — click any rally to focus it; click again to deselect.
 - Load match (top right) — drop in any match.json you've produced.
+
+The Court Setup tab is a guided flow: it asks whether the far baseline was
+visible below the net, names each corner in plain language ("Far end, left
+corner"), lets you hide the overlay to check your clicks against the real paint,
+and only records a calibration as user-confirmed once you have ticked all four.
+Moving any corner clears the ticks — a confirmation is about one placement.
 
 Regenerate demo data anytime:
 cd backend && python run.py demo --out ../frontend/src/data/sample_match.json
@@ -109,6 +119,11 @@ cd backend && python run.py demo --out ../frontend/src/data/sample_match.json
    is unusable. Don't name your file court_pts.json — that one is a known-bad one.
 3b. Check what your camera position is worth, BEFORE you spend an analysis run:
    python run.py check match.mp4 --keypoints my_court_pts.json
+   Add --far-baseline visible|hidden|unsure to record what YOU could see when
+   you filmed: whether the far baseline was a separate line below the top of the
+   net, or the net covered it. Same flag on `analyze`. It never refuses a clip,
+   and where the fitted court disagrees with your answer the measurement wins —
+   but the disagreement is written down rather than quietly resolved.
    It runs the same calibration `analyze` runs — so if it refuses here, analyze
    refuses too — and then tells you the one thing that decides whether the
    recording was worth making: what share of CLOSE line calls a mount at your
@@ -141,6 +156,48 @@ cd backend && python run.py demo --out ../frontend/src/data/sample_match.json
 Everything after perception — speed, line calls, scoring, stats — runs on the
 real trajectories. Speed is average ball speed; bounce height is a single-camera
 heuristic; vision scoring is best-effort (correct points by hand when it matters).
+
+## 5b. If your camera was low — you can still record, and here is what changes
+
+A tennis net is 0.914 m tall. Below roughly a 2.0–2.2 m mount, the white net tape
+projects OVER the far baseline in the image, so the two lines cannot be told
+apart — not by you, not by a detector, not by any check run afterwards. That is
+the normal amateur case: 16 of the 28 real calibrations in this repo are below
+that line.
+
+**Nothing stops you recording, and nothing is deleted.** Both `check` and
+`analyze` print a Setup quality block, and the same state is written into your
+match.json under `setup`, so the dashboard shows it too:
+
+  Setup quality  [CLEAR]    the far baseline is well clear of the net tape
+                 [LIMITED]  separable but close — court figures are approximate
+                 [OVERLAP]  the net hides the far baseline
+                 [UNKNOWN]  never measured (e.g. a match.json from before this)
+
+What you keep at every one of them: video review and the annotated overlay,
+rally clips and highlights, the shot list and shot types, and manual corrections.
+
+What changes on LIMITED and OVERLAP: court-derived figures are labelled
+approximate, and on OVERLAP the headline average/top speed and the in/out
+percentage are shown as **Not available** rather than as a precise number with a
+disclaimer underneath. Individual calls are still plotted and still correctable.
+
+There is a second, independent line in that block: **court corners**. It reads
+`user confirmed` only when somebody ticked all four corners by name in the setup
+tool, and `provisional` otherwise — including for every auto-detected court and
+every keypoints file made before that step existed. Good framing and a confirmed
+court are different claims, and only both together let the app present court
+measurements as verified.
+
+The fix, in order of payoff: clamp the phone to the back fence (~2.5 m) instead
+of standing it on a tripod (~1.5 m); record at the highest resolution your phone
+offers; keep all four outer corners in frame (the 0.5x ultrawide is fine); then
+re-check framing and set the corners again, because a calibration describes one
+camera position only.
+
+An older match.json with no `setup` block still opens — it reads as UNKNOWN. To
+give it one, derived from the corners it already stores:
+  python tools/backfill_setup_state.py path/to/match.json
 
 ## 6. Driving it with Claude Code
 

@@ -702,3 +702,119 @@ ceiling nothing known can collect — that population is ~19 real / 18 ghost and
 length cannot separate them. **The next real target on this row is `suppress_false_locks`**
 (-5.2 / -4.4 pts), whose own pipeline comment records it deleting real far-court balls. Not started;
 it is a different stage and a different brief.
+
+---
+
+## 2026-09-10 — PRE-REGISTRATION: the HUMAN-GUIDED two-line calibration (NOT BUILT)
+
+**Status: a protocol, not a result. No code, no number, and no product UI until the founder
+approves it.** Written before anything is run, because rule 2 says the gate is pre-registered
+and rule 3 says check "what has not worked" first — and checking it changed this proposal
+substantially.
+
+**Where the question came from.** The founder's note (2026-09-10): SwingVision is described as
+doing *"3D spatial court mapping — automatically maps the full court layout, including hidden
+or blocked lines, using visible markers and standard universal court dimensions."* And the
+product brief's Feature 5: *can a user identify the near baseline and the actual GROUND-PLANE
+net line, allowing geometry to predict the hidden far-court corners accurately enough for
+metric output?*
+
+**A competitor's marketing copy is a reason to ask, never evidence about the answer.** Nobody
+outside that company has measured their far-court error, and rule 11's logic applies: another
+product's claim about a court is not the court.
+
+### This is NOT unexplored — most of it is already measured, and half of it already FAILED
+
+`docs/STATE.md` → **"The camera SOLVES from the near baseline + net alone - the far line is
+never needed"** (2026-09-06), evidence `evidence/net-baseline-solve-without-far-line.md`. That
+row IS this idea, derived from the founder's earlier "how stretched it looks" proposal. What it
+established, so none of it is re-run:
+
+- **The geometry is exact and the system is DETERMINED.** Near baseline and net line sit at a
+  known 11.885 m separation with the same known 10.97 m width: four observables (two rows, two
+  widths) against four unknowns (standoff, focal, horizon, height). Synthetic solve-back is
+  **0.0000 m**. Fed TRUTH observables on all 40 real clips it reproduces the human far-baseline
+  row to **0.007 px median / 0.75 px max**, through real distortion, roll and off-centre
+  principal points. **So "known dimensions can place what the camera cannot see" is not in
+  doubt. It is proven.**
+- **The AUTOMATIC version FAILED the very gate the brief names.** End-to-end from detected
+  lines: far-baseline ROW error 3.99 px median (inside 8.1), but far **CORNER 17.4 px @640**
+  against the **8.1 px** bar. The row would have passed; the corner is the shipped metric.
+- **The cause is isolated and it is DETECTION, not geometry.** Near-baseline ROW detects to
+  0.83 px, but near-baseline WIDTH to **12.44 px** and width at the net to **44.63 px** — a
+  width is the separation of two intersections with *oblique* sidelines, where a sub-degree
+  angle error levers into tens of pixels.
+- **Availability binds harder than precision.** Right doubles sideline found on **18/40** clips,
+  net ground line on **24/40**, and all four lines coexisting on only **10/40**.
+- **The net TAPE is not the net ground line, and the error is sized.** Tape is found on 38/40
+  clips against the ground line's 24/40, sitting **15–47 px above it**; substituting tape for
+  ground puts the far baseline **32 px** out on every clip. This is exactly the brief's own
+  constraint, and it is not a caution — it is a measurement.
+
+**So rule 3 bars re-proposing the automatic form.** "Detect two lines instead of four" has been
+run and missed the bar for a named, isolated reason.
+
+### What IS open, and it is precisely the brief's wording
+
+The evidence file's own closing line: *"it composes with a human placing two lines rather than
+four — it does not remove the human."* Every failure above is a DETECTION failure, and the
+control shows the geometry is exact when the observables are right. **So the open question is
+whether a PERSON can supply those observables well enough**, on a low mount, where they are
+being asked for the two best-resolved lines in the image instead of four corners two of which
+they cannot see. That is a question about human placement precision, and this project has never
+measured it.
+
+### Pre-registered gate (verbatim from the brief; not to be moved afterwards)
+
+- median far-corner error **<= 8.1 px at 640p**
+- p90 **<= 20 px**
+- **no plausible-looking but grossly wrong calibration**
+
+**The third criterion is load-bearing and needs its own instrument.** A residual proves nothing
+(T23: `yt_match40` stamped PASS at 0.9 px with all four corners on asphalt), so "grossly wrong"
+is adjudicated by **rendering the predicted corners on the frame**, reviewed by a human who is
+not the agent that produced them (T26). Pre-registered definition: a predicted far corner more
+than **40 px at 640p** from the human-labelled one, or any prediction a reviewer marks off the
+paint, is gross — and **one gross failure in the held-out set fails the gate outright**,
+whatever the median says.
+
+**Pre-registered secondary, because the first run must be able to say WHY it failed:** report
+human placement error on the two input lines separately as ROW and WIDTH. If width error lands
+near the detector's 12.44 px, the human-guided version fails for the same reason the automatic
+one did, and that is a stopping result rather than a tuning opportunity.
+
+### Method constraints — all of them existing project rules
+
+- **The elevated net tape is never the ground-plane net line.** 0.914 m at the centre strap,
+  1.07 m at the posts, measured at 32 px of far-baseline error if substituted. The user must be
+  asked for **where the net meets the ground**, and the UI must make that distinction
+  unmissable — a person asked for "the net line" will click the tape, which is the bright one.
+- **Held-out court labels only** (`data/gold/court_split.json`, `assert_no_court_gold_leak`),
+  and the pool must exclude the batch T26 indicts: `3399d58` / `ac94aab` supplied 9 of the 20
+  scoring clips at a ~73% wrong-rate. **Establishing a clean held-out pool is a prerequisite,
+  not a step inside this experiment.**
+- **The human placements must be commissioned as ground truth, with provenance in the file** —
+  who placed them, by what method, who verified. An agent placing them and then scoring them is
+  T26 exactly.
+- One variable, seeded. The control is the shipped four-corner calibration on the same clips.
+- No new ML model. A learned far-corner regressor is a different proposal and stays barred until
+  this one has a number.
+
+**If it fails, it is retired, not retuned.** Five dead autonomous gates on this project share
+one feature: a second attempt at a bar they had already missed.
+
+### One thing from that row is worth taking NOW, and it is not calibration
+
+**Camera HEIGHT from the two-line solve survives a 40% standoff error** (1.64->1.62, 2.11->1.95,
+2.88->2.92 m). The evidence file's own conclusion is that *"if this solve has a use it is
+mount-height estimation for the setup criterion, not calibration."* That is directly useful to
+the framing guidance shipped today: it would give a live preview an honest mount height with no
+calibration at all, which is the one quantity the clearance criterion actually tracks (Spearman
++0.937 against the width ratio's +0.189). **Cheap, separable, and it does not need this gate.**
+Offered as its own small piece of work, not folded into the above.
+
+**What the founder is asked for:** (a) approve or amend the protocol, (b) approve the clean
+held-out pool and the commissioned human two-line placements as prerequisites, and (c) say
+whether the mount-height by-product should be picked up separately. **Nothing is blocked
+meanwhile** — the shipped Court Setup & Trust flow does not depend on any of it. A low-camera
+user can record, review and correct today, and is told plainly what their numbers are worth.

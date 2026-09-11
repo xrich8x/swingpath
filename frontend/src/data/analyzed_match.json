@@ -2320,5 +2320,19 @@
     "hfov_deg": 96.16,
     "lens_k1": -0.0217,
     "events": []
+  },
+  "setup": {
+    "framing_status": "clear",
+    "far_baseline_clearance_px_720": 16.6,
+    "calibration_status": "provisional",
+    "metrics_eligible": false,
+    "reasons": [
+      "The far baseline is 17 px clear of the net tape at 720p.",
+      "This setup state was derived from the court corners stored in the match file, after the analysis ran.",
+      "Nobody is recorded as having confirmed these corners, so the calibration is provisional."
+    ],
+    "framing_source": "clearance_geometry",
+    "far_baseline_user_answer": null,
+    "notice": null
   }
 }

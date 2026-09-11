@@ -11,6 +11,7 @@ Weights (yolo11n-pose.pt) download automatically on first use.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
@@ -58,6 +59,41 @@ QUALITY_PRESETS = {
     "accurate": ("yolo11x-pose.pt", 1920),
 }
 
+#: Where a bare weight NAME is looked for before it is handed to ultralytics.
+#: `backend/` first (the package's own parent, where the checkpoints live and
+#: where every documented command is run from), then the repo root.
+_WEIGHT_DIRS = (
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),        # backend/
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+)
+
+
+def resolve_weights(name: str) -> str:
+    """Turn a bare weight filename into an absolute path when we have the file.
+
+    WHY THIS EXISTS. `YOLO("yolo11m-pose.pt")` resolves relative to the CURRENT
+    WORKING DIRECTORY, and ultralytics silently DOWNLOADS the checkpoint when it
+    does not find one. So the same call loaded a local file from `backend/` and
+    reached for the network from the repo root - and the observable symptom was
+    that both directories ended up holding byte-identical 41 MB and 113 MB copies
+    of the same two files, one per place somebody had run a script from. On a
+    project whose standing constraint is that it works offline, a CWD-dependent
+    network fetch is the defect; the duplicate files were only how it showed.
+
+    A path that already points at a real file, or that is not a bare name, is
+    returned untouched. A name we cannot find is ALSO returned untouched, so the
+    behaviour when no local checkpoint exists is exactly what it was before -
+    ultralytics fetches it. This resolver can only turn a download into a local
+    read, never the reverse.
+    """
+    if os.path.isabs(name) or os.sep in name or (os.altsep and os.altsep in name):
+        return name
+    for d in _WEIGHT_DIRS:
+        cand = os.path.join(d, name)
+        if os.path.isfile(cand):
+            return cand
+    return name
+
 
 def _use_all_cpu_threads() -> None:
     import os
@@ -101,7 +137,7 @@ class PoseEstimator:
         from ultralytics import YOLO
 
         _use_all_cpu_threads()
-        self._model = YOLO(self.weights)
+        self._model = YOLO(resolve_weights(self.weights))
 
     def estimate(self, frame: np.ndarray) -> list[PlayerPose]:
         """Return a PlayerPose for every person detected in the frame."""

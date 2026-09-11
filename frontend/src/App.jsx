@@ -7,7 +7,9 @@ import Rallies from "./components/Rallies.jsx";
 import Broadcast from "./components/Broadcast.jsx";
 import CourtSetup from "./components/CourtSetup.jsx";
 import Review from "./components/Review.jsx";
+import SetupBanner, { SetupChip } from "./components/SetupTrust.jsx";
 import { playerName } from "./lib/format.js";
+import { trustPolicy } from "./lib/setup.js";
 
 const TABS = ["Broadcast", "Court", "Statistics", "Rallies", "Review", "Court Setup"];
 
@@ -24,6 +26,10 @@ export default function App() {
   // manifest is fetched the same way the annotated video is probed: if it isn't
   // there, the Rallies tab is exactly the table it always was.
   const [clips, setClips] = useState(null);
+  // Is the trust banner expanded? Lives in App, ABOVE the tab switch, so the
+  // limitation and its explanation survive navigation between tabs, a reload of
+  // the tab content, and any screenshot of any tab.
+  const [trustOpen, setTrustOpen] = useState(false);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -45,7 +51,14 @@ export default function App() {
     setMatch(which === "analyzed" ? analyzedMatch : sampleMatch);
     setSelectedRallyId(null);
     setLoadError(null);
+    setTrustOpen(false);
   }
+
+  // ONE trust policy for the whole app, derived from match.setup. `normalizeSetup`
+  // inside it turns a missing block (every match.json written before this
+  // feature) into an explicit `unknown` - so an old file opens and renders, it
+  // simply cannot claim anything.
+  const trust = useMemo(() => trustPolicy(match.setup), [match]);
 
   const selectedRally = useMemo(
     () =>
@@ -70,6 +83,7 @@ export default function App() {
       setMatch(data);
       setSelectedRallyId(null);
       setLoadError(null);
+      setTrustOpen(false);
     } catch (err) {
       setLoadError(err.message);
     } finally {
@@ -124,6 +138,7 @@ export default function App() {
         </div>
 
         <div className="topbar-actions">
+          <SetupChip setup={match.setup} onClick={() => setTrustOpen((v) => !v)} />
           <button className="btn" onClick={() => fileRef.current?.click()}>
             Load match
           </button>
@@ -138,6 +153,15 @@ export default function App() {
       </header>
 
       {loadError && <div className="banner banner-error">⚠ {loadError}</div>}
+
+      {/* Rendered above <nav>, so it is present on every tab. A camera that was
+          too low is a property of the RECORDING, not of the screen you happen to
+          be looking at. */}
+      <SetupBanner
+        setup={match.setup}
+        open={trustOpen}
+        onToggle={() => setTrustOpen((v) => !v)}
+      />
 
       <nav className="tabs">
         {TABS.map((t) => (
@@ -170,11 +194,12 @@ export default function App() {
         {tab === "Court" && (
           <Court
             match={match}
+            trust={trust}
             selectedRally={selectedRally}
             onSelectRally={handleSelectRally}
           />
         )}
-        {tab === "Statistics" && <Statistics match={match} />}
+        {tab === "Statistics" && <Statistics match={match} trust={trust} />}
         {tab === "Rallies" && (
           <Rallies
             match={match}
@@ -192,6 +217,7 @@ export default function App() {
           <>
             Analyzed from <code>{match.video.filename}</code> — TrackNet ball + YOLO-pose
             players, projected to court metres. Speeds are approximate (single camera).
+            {" "}Setup: {trust.chip}.
           </>
         ) : (
           <>

@@ -271,6 +271,23 @@ PAGE = r"""<!doctype html><html><head><meta charset="utf-8">
   .chk.idle{border-left-color:var(--line)}
   .meter{height:5px;border-radius:3px;background:#0c1219;margin-top:7px;overflow:hidden}
   .meter i{display:block;height:100%;background:var(--accent);border-radius:3px}
+  /* The guided flow. The framing question is asked BEFORE the corners are
+     placed, because that is the only moment a low camera is still fixable; the
+     confirm list is the only thing that produces `confirmed_by_user`. */
+  #framing,#confirm{margin:8px 16px;padding:12px 14px;background:#141a22;
+    border:1px solid var(--line);border-radius:9px}
+  #framing .q,#confirm .q{font-weight:700;margin-bottom:5px}
+  .qnote{color:var(--muted);font-size:12.5px;line-height:1.5}
+  .qrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .fb{background:#0c1219;border:1px solid var(--line);color:var(--muted);
+    border-radius:999px;padding:6px 12px;font-size:12.5px;cursor:pointer}
+  .fb.on{background:var(--accent);color:#101418;border-color:var(--accent);font-weight:700}
+  .qnotice{margin-top:10px;padding:10px 12px;border-radius:8px;
+    background:rgba(227,160,8,0.1);border-left:3px solid #e3a008;font-size:12.5px;line-height:1.5}
+  #cbox label{display:grid;grid-template-columns:20px 150px 1fr;gap:8px;
+    align-items:baseline;padding:7px 0;border-top:1px solid var(--line);cursor:pointer}
+  #cbox .nm{font-weight:600;font-size:12.5px}
+  #cbox label.on .nm{color:var(--accent)}
 </style></head><body>
 <header>
   <h1>Court Setup</h1>
@@ -287,6 +304,24 @@ PAGE = r"""<!doctype html><html><head><meta charset="utf-8">
 </header>
 <div id="clips" style="display:none"></div>
 <div id="status">Drag the <b>middle</b> of the court to move it, a <b>corner</b> to reshape. Then <b>Snap to lines</b>.</div>
+<div id="framing">
+  <div class="q">Looking at the far end of the court: can you see the far baseline as a separate line BELOW the top of the net?</div>
+  <div class="qnote">If the net covers it, you can still record and review the match &ndash; speed, bounce positions and line calls on the far half will be marked as approximate.</div>
+  <div class="qrow">
+    <button class="fb" data-fb="yes">Yes &ndash; I can see it below the net</button>
+    <button class="fb" data-fb="no">No &ndash; the net covers it</button>
+    <button class="fb on" data-fb="unsure">Not sure</button>
+  </div>
+  <div id="fb-notice" class="qnotice" style="display:none"></div>
+</div>
+<div id="confirm">
+  <div class="q">Check each corner on the frame, then tick it</div>
+  <div class="qnote">Only a calibration with all four corners ticked is recorded as
+    <b>user-confirmed</b>. Anything else saves as <b>provisional</b> and its court
+    measurements are never presented as verified.</div>
+  <div id="cbox"></div>
+  <div id="confirm-state" class="qnote">0 of 4 confirmed.</div>
+</div>
 <div id="checks">
   <div class="chk idle" id="chk-view"><div class="ico">•</div><div>
     <div class="ttl">Court view</div><div class="txt" id="view-txt">Checking the framing…</div></div></div>
@@ -300,8 +335,17 @@ PAGE = r"""<!doctype html><html><head><meta charset="utf-8">
 "use strict";
 const $=id=>document.getElementById(id);
 const view=$("view"), ctx=view.getContext("2d");
-const CORNERS=[{key:"near_bl_doubles",m:[0,0]},{key:"near_br_doubles",m:[10.97,0]},
-  {key:"far_br_doubles",m:[10.97,23.77]},{key:"far_bl_doubles",m:[0,23.77]}];
+// PLAIN LANGUAGE, not landmark keys. Nobody outside this repo knows what a
+// "doubles corner" is; everybody can find the outermost corner at the far end.
+const CORNERS=[
+  {key:"near_bl_doubles",m:[0,0],nm:"Near end, left corner",
+   where:"The near end, on your left - outside the tramline."},
+  {key:"near_br_doubles",m:[10.97,0],nm:"Near end, right corner",
+   where:"The near end, on your right - outside the tramline."},
+  {key:"far_br_doubles",m:[10.97,23.77],nm:"Far end, right corner",
+   where:"The far end, on your right - where the back line meets the outside tramline."},
+  {key:"far_bl_doubles",m:[0,23.77],nm:"Far end, left corner",
+   where:"The far end, on your left - where the back line meets the outside tramline."}];
 const KP={far_bl_doubles:[0,23.77],far_br_doubles:[10.97,23.77],near_bl_doubles:[0,0],
   near_br_doubles:[10.97,0],far_bl_singles:[1.37,23.77],near_bl_singles:[1.37,0],
   far_br_singles:[9.6,23.77],near_br_singles:[9.6,0],far_sl_left:[1.37,18.285],
@@ -416,7 +460,11 @@ async function refreshChecks(){
       (r.angle.level==="warn"?"var(--warn)":"#ff6b5a");}
   else m.style.display="none";}
 let checkTimer=null;
-function scheduleChecks(){clearTimeout(checkTimer);checkTimer=setTimeout(refreshChecks,220);}
+// Every corner mutation in this page funnels through scheduleChecks, so this is
+// the one place a moved corner has to un-confirm the placement. Hooking it here
+// rather than in each handler is deliberate: a new handler added later inherits
+// the invalidation instead of forgetting it.
+function scheduleChecks(){unconfirm();clearTimeout(checkTimer);checkTimer=setTimeout(refreshChecks,220);}
 $("auto").onclick=async()=>{setStatus("Auto-detecting the court...");$("auto").disabled=true;
   const r=await api("/api/autodetect",{});$("auto").disabled=false;
   if(r.corners){setDict(r.corners);render();scheduleChecks();setStatus('Auto-detected (line support '+(r.score*100|0)+'%). If it grabbed the wrong court, <b>drag it</b> onto the right one, then <b>Snap</b>.');}
@@ -426,12 +474,72 @@ $("snap").onclick=async()=>{setStatus("Snapping to the lines...");$("snap").disa
   if(r.corners){setDict(r.corners);render();scheduleChecks();
     setStatus(r.snapped?'<span class="g">Snapped onto the '+(r.mode==="clay"?'clay':'white')+' lines</span> (coverage '+(r.coverage*100|0)+'%). Adjust if needed, then <b>Save</b>.'
       :'<span class="w">Snap didn’t improve the fit</span> (coverage '+(r.coverage*100|0)+'%) - nudge it closer and try again, or place corners by hand.');}};
-$("save").onclick=async()=>{const r=await api("/api/save",{corners:corDict(),lock:lockOn()});
+// --- the guided flow -------------------------------------------------------
+// FEATURE 1: the framing question. Asked before anything is measured, because
+// that is the only moment a low camera can still be fixed - and because there is
+// no honest automatic answer in a preview, where no homography exists yet.
+let FB=null;                       // true | false | null (unsure / not asked)
+const FB_OVERLAP_TITLE="The net hides the far baseline";
+const FB_OVERLAP_BODY="You can still record and review this match. Court "+
+  "measurements may be less reliable, especially on the far half. Raising the "+
+  "phone gives better results.";
+document.querySelectorAll(".fb").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".fb").forEach(o=>o.classList.remove("on"));
+  b.classList.add("on");
+  FB=b.dataset.fb==="yes"?true:(b.dataset.fb==="no"?false:null);
+  const n=$("fb-notice");
+  if(FB===false){n.style.display="";
+    n.innerHTML="<b>"+FB_OVERLAP_TITLE+"</b><br>"+FB_OVERLAP_BODY+
+      "<br><br>✓ Continue with this setup – keep going, set the corners "+
+      "below and save. The match is still analysed; it is simply marked as having "+
+      "limited court accuracy.";}
+  else n.style.display="none";});
+
+// FEATURE 2: confirm the four corners by name. This is the ONLY thing that
+// writes `confirmed_by_user`, and therefore the only thing that makes a
+// calibration `user_confirmed` instead of `provisional` downstream. `_exact`
+// never meant this and was read as if it did (trap T26).
+let CONFIRMED={};
+function renderConfirm(){
+  const box=$("cbox");
+  if(!box.dataset.built){
+    box.innerHTML=CORNERS.map(c=>
+      '<label data-k="'+c.key+'"><input type="checkbox" data-k="'+c.key+'">'+
+      '<span class="nm">'+c.nm+'</span><span class="qnote">'+c.where+'</span></label>').join("");
+    box.dataset.built="1";
+    box.querySelectorAll("input").forEach(i=>i.onchange=()=>{
+      CONFIRMED[i.dataset.k]=i.checked;renderConfirm();});}
+  box.querySelectorAll("input").forEach(i=>{i.checked=!!CONFIRMED[i.dataset.k];
+    i.closest("label").classList.toggle("on",!!CONFIRMED[i.dataset.k]);});
+  const n=CORNERS.filter(c=>CONFIRMED[c.key]).length;
+  $("confirm-state").innerHTML = n===4
+    ? '<span class="g">✓ All four corners confirmed - saving records this as a '+
+      'user-confirmed calibration.</span>'
+    : n+' of 4 confirmed. You can still save: the calibration is then recorded as '+
+      '<b>provisional</b>, and court measurements are not presented as verified.';
+  $("save").textContent = n===4 ? "Save confirmed calibration" : "Save as provisional";}
+
+// ANY edit to a corner un-confirms every corner. A confirmation is a claim about
+// one specific placement, and carrying it across an edit is how a stale
+// attestation ends up in a file.
+function unconfirm(){if(Object.keys(CONFIRMED).length){CONFIRMED={};renderConfirm();}}
+renderConfirm();
+
+$("save").onclick=async()=>{const r=await api("/api/save",{corners:corDict(),lock:lockOn(),
+    confirmed:CORNERS.every(c=>CONFIRMED[c.key]),
+    confirmed_corners:CORNERS.filter(c=>CONFIRMED[c.key]).map(c=>c.key),
+    far_baseline:FB});
   if(r.ok){if(r.corners){setDict(r.corners);render();}
     setStatus('<span class="g">Saved</span> to <b>'+r.path+'</b>'+
       (r.exact?' (exact corners - your points, untouched)':
        (r.moved>3?' (shape locked to a real camera view, adjusted '+r.moved.toFixed(0)+'px)':''))+
+      (r.confirmation_dropped
+        ? ' <span class="w">The shape lock moved a corner you had confirmed by '+
+          r.moved.toFixed(0)+'px, so the confirmation was DROPPED and this saved as '+
+          'provisional - check the corners and confirm again.</span>'
+        : (r.confirmed?' <span class="g">(user-confirmed)</span>':' (provisional)'))+
       ' - use it with <kbd>run.py analyze --keypoints</kbd>.');
+    if(r.confirmation_dropped){CONFIRMED={};renderConfirm();}
     // Tick this clip in the strip, then step to the next unsaved one so a queue
     // of ten is Snap-Save-Snap-Save rather than Snap-Save-find-the-next-button.
     await refreshClips();
@@ -530,7 +638,9 @@ window.addEventListener("resize",()=>{if(W){fit();render();}});
 PLACED_BY_UNKNOWN = "unattributed"
 
 
-def provenance_block(state, shape_lock: bool, moved_px: float) -> dict:
+def provenance_block(state, shape_lock: bool, moved_px: float,
+                     confirmed: bool = False, confirmed_corners=None,
+                     far_baseline: bool | None = None) -> dict:
     """The `_provenance` block stamped onto every save.
 
     WHY THIS EXISTS. Until 2026-09-09 a saved calibration recorded NOTHING about
@@ -545,6 +655,20 @@ def provenance_block(state, shape_lock: bool, moved_px: float) -> dict:
     and cannot tell a person's mouse from an agent's HTTP POST. It is a slot for
     a human or a commit to fill in, NOT a claim. Do not read a missing or
     "unattributed" value as "human".
+
+    `confirmed_by_user` IS the claim `_exact` was wrongly read as. It is true only
+    when the caller ticked all four corners by name in the confirm step, and it is
+    the ONE thing that makes a downstream calibration `user_confirmed` rather than
+    `provisional` (backend/swingvision/setup_state.py). It says an explicit
+    confirmation happened; combined with `placed_by` still reading "unattributed"
+    it does NOT say a human was at the keyboard, because this tool still cannot
+    know that. The two fields answer different questions and neither is allowed to
+    stand in for the other.
+
+    `far_baseline_visible` carries the recorder's own answer to
+    setup_state.FAR_BASELINE_QUESTION, so a clip whose far baseline is out of
+    frame entirely - and therefore has no measurable clearance - can still say
+    something honest about its framing.
     """
     src = state.get("source") or {"kind": "unknown"}
     return {
@@ -552,6 +676,10 @@ def provenance_block(state, shape_lock: bool, moved_px: float) -> dict:
         "tool": "tools/court_setup_server.py",
         "shape_lock": bool(shape_lock),
         "moved_px": float(moved_px),
+        "confirmed_by_user": bool(confirmed),
+        "confirmed_corners": list(confirmed_corners or []) if confirmed else [],
+        "far_baseline_visible": (None if far_baseline is None
+                                 else bool(far_baseline)),
         "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source": src,
     }
@@ -826,18 +954,39 @@ def build_handler(state):
             elif self.path == "/api/save":
                 body = self._body()
                 named = corners_named(body["corners"])
+                # The confirm step. `confirmed` is only honoured when all four
+                # corners were ticked by name; anything less saves as provisional
+                # rather than partially confirmed, because "three of four" is not
+                # a claim the trust layer has a state for.
+                ticked = [c for c in (body.get("confirmed_corners") or [])
+                          if c in DBL]
+                confirmed = bool(body.get("confirmed")) and len(set(ticked)) == 4
+                far_baseline = body.get("far_baseline")
+                if far_baseline not in (True, False):
+                    far_baseline = None
                 Path(state["out"]).parent.mkdir(parents=True, exist_ok=True)
                 if body.get("lock", True):
                     # Never save an impossible court: pure shape lock (no paint
                     # pull — at Save time the user's placement is the authority).
                     locked, moved = lock_shape(named, use_dt=False)
+                    # NEVER SILENTLY MOVE A CONFIRMED POINT. If the lock shifted a
+                    # corner the caller had just confirmed, the confirmation was
+                    # about a placement that is no longer being saved, so it is
+                    # dropped and the reply says how far it moved. The alternative
+                    # - shipping an attestation about points nobody looked at - is
+                    # trap T26 rebuilt with better paperwork.
+                    kept = confirmed and float(moved) <= 1.0
                     Path(state["out"]).write_text(
                         save_text(corners_named(locked), exact=False,
-                                  provenance=provenance_block(state, True, moved)),
+                                  provenance=provenance_block(
+                                      state, True, moved, kept, DBL,
+                                      far_baseline)),
                         encoding="utf-8")
                     self._send(200, {"ok": True, "path": state["out"],
                                      "corners": corners_named(locked),
-                                     "moved": float(moved)})
+                                     "moved": float(moved),
+                                     "confirmed": kept,
+                                     "confirmation_dropped": confirmed and not kept})
                 else:
                     # Shape lock OFF: the user chose to place corners EXACTLY
                     # (e.g. a wide lens bends the real lines away from any
@@ -845,11 +994,14 @@ def build_handler(state):
                     # pipeline also skips its snap + shape lock.
                     Path(state["out"]).write_text(
                         save_text(corners_named(named), exact=True,
-                                  provenance=provenance_block(state, False, 0.0)),
+                                  provenance=provenance_block(
+                                      state, False, 0.0, confirmed, DBL,
+                                      far_baseline)),
                         encoding="utf-8")
                     self._send(200, {"ok": True, "path": state["out"],
                                      "corners": corners_named(named),
-                                     "moved": 0.0, "exact": True})
+                                     "moved": 0.0, "exact": True,
+                                     "confirmed": confirmed})
             else:
                 self._send(404, {"error": "not found"})
 

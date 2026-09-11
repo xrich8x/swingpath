@@ -92,7 +92,7 @@ The gate does not define correct as the clicks. It defines correct as **within 2
 > mis-registered version of it.
 
 Corrected in place in [court_why_it_fails.md](court_why_it_fails.md) (finding A),
-[the research brief](../../docs/RESEARCH_BRIEF_indoor_shell_courts.md) §4, and
+[the research brief](../../docs/archive/RESEARCH_BRIEF_indoor_shell_courts.md) §4, and
 `eval/score_truth.py`'s docstring. That paragraph is what drove the external research to
 rank "the scoring function is mis-specified" second of five, so those rankings re-weight.
 

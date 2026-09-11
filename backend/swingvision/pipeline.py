@@ -24,7 +24,7 @@ from typing import Optional
 
 import numpy as np
 
-from . import analytics, calibration, court, scoring
+from . import analytics, calibration, court, scoring, setup_state
 from .schema import (
     Match,
     Player,
@@ -311,6 +311,12 @@ def generate_demo_match(seed: int = 7, max_points: int = 42) -> Match:
         rallies=rallies,
         score=score_block,
         stats=stats,
+        # The demo has no camera at all, so its setup quality is not `clear` and
+        # is not `overlap` - it is genuinely UNKNOWN, and saying so is what makes
+        # the dashboard's third state visible on the data everyone opens first.
+        setup=setup_state.build(extra_reasons=[
+            "This is the synthetic demo match: there is no camera and no "
+            "recording, so no court measurement was made."]).to_dict(),
     )
 
 
@@ -1212,6 +1218,7 @@ def analyze_video(
     doubles: bool = False,
     far_player_rescue: bool = False,
     far_ball_tile: bool = False,
+    far_baseline_visible: Optional[bool] = None,
 ) -> Match:
     """Analyze a real clip into a match.json — the full real pipeline.
 
@@ -1223,6 +1230,13 @@ def analyze_video(
     Player selection and the near/far split are derived from the homography (in
     court metres), so this works for amateur footage (a phone mounted a little
     above and behind a baseline), not just a TV angle.
+
+    `far_baseline_visible` is the RECORDER'S OWN ANSWER to "could you see the far
+    baseline as a separate line below the net?" (setup_state.FAR_BASELINE_QUESTION).
+    It is optional, it is only guidance, and the measured clearance overrides it -
+    but when they disagree the state says so rather than quietly picking one. It
+    exists because the question can be asked before a calibration exists, which
+    is the only moment at which a low camera is still fixable.
     """
     import cv2
 
@@ -1575,6 +1589,19 @@ def analyze_video(
         "lens_k1": round(float(lens_k1), 4),
         "events": court_events,
     }
+    # THE TRUST STATE (setup_state.py). Measured on the METRIC homography - the
+    # pinhole one when a lens was fitted - because the clearance criterion models
+    # an ideal pinhole and feeding it bent pixels is the same systematic error the
+    # physics camera had. Attached to the match, not printed and forgotten, so a
+    # screenshot, an export, a reload and a corrections replay all still carry it.
+    match.setup = _setup_state_for(video_path, keypoints_path, source, H_metric,
+                                   (width, height), court_events,
+                                   far_baseline_visible).to_dict()
+    print(f"[analyze] setup: {setup_state.summary_line(match.setup)} "
+          f"(framing={match.setup['framing_status']}, "
+          f"calibration={match.setup['calibration_status']}, "
+          f"court metrics presented as verified: "
+          f"{'yes' if match.setup['metrics_eligible'] else 'no'})")
 
     if out_path:
         data = match.to_dict()
@@ -1601,6 +1628,71 @@ def analyze_video(
                                         fps_eff, frame_step, max_frames)
         print(f"[analyze] wrote annotated video -> {ann_path}")
     return match
+
+
+def _setup_state_for(video_path, keypoints_path, source, H_metric, img_wh,
+                     court_events=None, far_baseline_user_answer=None):
+    """The trust state for a finished analysis (setup_state.SetupState).
+
+    Three inputs decide it:
+
+      * the CLEARANCE, measured off the homography the analysis actually used -
+        never re-derived from the raw clicks, so what the file claims is what the
+        product ran (trap T15: predict by invoking). NOTE this can differ by a
+        few px from the `Setup` line `courtfit.setup_verdict` prints in
+        `run.py check`, which re-derives H from the stored corner pixels: with
+        no lens fitted, `calibrate_video` keeps the SHAPE-LOCKED H but leaves
+        `named` at the pre-lock corners, so the two are one shape-lock apart
+        (measured on demo30: -8 px here vs -13 px there, both OVERLAP). The
+        homography the metrics were computed from is the one that decides what
+        those metrics may claim, so this is the one recorded;
+      * the keypoint file's PROVENANCE, which decides `user_confirmed` vs
+        `provisional` (trap T26 - `_exact` never meant a human placed them);
+      * the camera-change EVENTS. A calibration is a statement about one camera
+        pose. If the watchdog saw the camera move and could not re-acquire the
+        court, that statement stopped being true partway through the clip, and a
+        clip in that condition can never be `user_confirmed` no matter who
+        confirmed the first frame - nobody confirmed the second pose.
+
+    Never raises: a setup state that failed to build is a state we do not know,
+    and an analysis that produced real shots must not be lost to it.
+    """
+    raw = None
+    if keypoints_path:
+        try:
+            with open(keypoints_path, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+        except (OSError, ValueError):
+            raw = None
+    status, reasons = setup_state.calibration_status_from_keypoints(raw, source)
+
+    lost = [e for e in (court_events or []) if e.get("kind") == "lost"]
+    moved = [e for e in (court_events or []) if e.get("kind") == "reacquired"]
+    if lost:
+        status = setup_state.CALIB_PROVISIONAL
+        reasons.append(
+            f"The camera moved during this recording and the court could not be "
+            f"found again ({len(lost)} time(s)), so the calibration does not hold "
+            f"for the whole clip.")
+    elif moved:
+        status = setup_state.CALIB_PROVISIONAL
+        reasons.append(
+            f"The camera moved during this recording ({len(moved)} time(s)) and "
+            f"the court was re-detected automatically - that re-detection is not "
+            f"confirmed by anyone.")
+
+    try:
+        return setup_state.from_homography(
+            H_metric, img_wh, calibration_status=status,
+            far_baseline_user_answer=far_baseline_user_answer,
+            extra_reasons=reasons)
+    except Exception as exc:                       # pragma: no cover - defensive
+        print(f"[analyze] setup state could not be measured: {exc}")
+        return setup_state.build(
+            calibration_status=status,
+            far_baseline_user_answer=far_baseline_user_answer,
+            extra_reasons=list(reasons) + [
+                "The far-baseline clearance could not be measured for this view."])
 
 
 def _estimate_speed_spin(ball_px, near_court, far_court, named_corners, H, img_wh,

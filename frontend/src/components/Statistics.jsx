@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { fmtSpeed, fmtShotType, playerName } from "../lib/format.js";
+import { trustPolicy } from "../lib/setup.js";
 import {
   X_LEFT_SINGLES,
   X_RIGHT_SINGLES,
@@ -8,13 +9,41 @@ import {
   SERVICE_LINE_FROM_NET,
 } from "../lib/court.js";
 
-function Tile({ label, value, sub }) {
+function Tile({ label, value, sub, unavailable }) {
   return (
-    <div className="tile">
+    <div className={`tile ${unavailable ? "tile-unavailable" : ""}`}>
       <div className="tile-value">{value}</div>
       <div className="tile-label">{label}</div>
       {sub && <div className="tile-sub">{sub}</div>}
     </div>
+  );
+}
+
+// A court-derived headline tile under the trust policy.
+//
+// THE RULE, and it is the one the brief is most insistent about: prefer an
+// explicit unavailable state over a precise-looking number with tiny disclaimer
+// text. A "112 km/h*" reads as 112 km/h to everybody; "Not available" reads as
+// what it is. So on `overlap` — where the far court is not in the image at all —
+// the number is withheld and the reason takes its place. On `limited` the number
+// stays, because it is usable, and carries an explicit approximate label.
+function CourtTile({ label, value, sub, trust, why }) {
+  if (trust.suppressHeadline) {
+    return (
+      <Tile
+        label={label}
+        value="Not available"
+        sub={why}
+        unavailable
+      />
+    );
+  }
+  return (
+    <Tile
+      label={label}
+      value={trust.labelMetrics ? `~${value}` : value}
+      sub={trust.labelMetrics ? `approximate - ${sub}` : sub}
+    />
   );
 }
 
@@ -263,8 +292,13 @@ function RallyLengthPanel({ buckets }) {
   );
 }
 
-export default function Statistics({ match }) {
+export default function Statistics({ match, trust: trustProp }) {
   const s = match.stats;
+  // `trust` is passed from App, but recomputed here when it is not, so this
+  // component is never accidentally rendered WITHOUT the trust policy - a stats
+  // page that silently forgot the limitation is the exact failure this feature
+  // exists to prevent.
+  const trust = trustProp || trustPolicy(match.setup);
   const mixEntries = Object.entries(s.shot_mix).sort((a, b) => b[1] - a[1]);
   const mixTotal = mixEntries.reduce((n, [, c]) => n + c, 0) || 1;
   const callTotal = s.line_calls.in + s.line_calls.out || 1;
@@ -326,15 +360,21 @@ export default function Statistics({ match }) {
           value={s.rally_count}
           sub={s.score_validation_note ? "unvalidated" : undefined}
         />
-        <Tile
+        {/* Speed is a COURT measurement: it comes from the ball's path in court
+            metres, so it inherits whatever the calibration can honestly claim. */}
+        <CourtTile
           label="Avg speed"
           value={s.avg_speed_kmh > 0 ? `${speedPrefix}${fmtSpeed(s.avg_speed_kmh)}` : fmtSpeed(s.avg_speed_kmh)}
           sub={speedSub}
+          trust={trust}
+          why="the net hides the far baseline in this view"
         />
-        <Tile
+        <CourtTile
           label="Top speed"
           value={s.top_speed_kmh > 0 ? `${speedPrefix}${fmtSpeed(s.top_speed_kmh)}` : fmtSpeed(s.top_speed_kmh)}
           sub={speedSub}
+          trust={trust}
+          why="the net hides the far baseline in this view"
         />
         <Tile
           label="Avg spin"
@@ -368,8 +408,34 @@ export default function Statistics({ match }) {
           </div>
         </section>
 
-        <section className="panel">
-          <h3>Line calls</h3>
+        <section className={`panel ${trust.suppressHeadline ? "panel-limited" : ""}`}>
+          <h3>
+            Line calls
+            {trust.labelMetrics && <span className="approx-tag">approximate</span>}
+          </h3>
+          {/* A line call is the most perspective-sensitive thing this product
+              produces, and the mount height it needs is measured: ~54% of close
+              calls right at 1.0 m against a 56.2% majority-class floor - worse
+              than answering "in" every time. When the net hides the far
+              baseline, the split is withheld rather than drawn at a confident
+              width with a caption underneath. */}
+          {trust.suppressHeadline ? (
+            <div className="unavailable-block">
+              <div className="unavailable-title">In / out split not available</div>
+              <p className="muted">
+                The net hides the far baseline in this recording, so a bounce
+                near a line cannot be placed reliably enough to publish a
+                percentage. Individual calls are still shown on the Court tab and
+                can be corrected on the Review tab.
+              </p>
+              <p className="muted">
+                {s.line_calls.in + s.line_calls.out} call
+                {s.line_calls.in + s.line_calls.out === 1 ? "" : "s"} were made,
+                {" "}{s.line_calls.uncertain || 0} already marked uncertain by the
+                pipeline.
+              </p>
+            </div>
+          ) : (
           <div className="callsplit">
             <div className="callsplit-bar">
               <div className="callsplit-in" style={{ width: `${inPct}%` }} />
@@ -392,11 +458,20 @@ export default function Statistics({ match }) {
               Speeds are average ball speed and read ~15–20% under a radar gun — expected,
               not a bug.
             </p>
+            {trust.labelMetrics && (
+              <p className="muted">
+                This split is approximate: {trust.summary}
+              </p>
+            )}
           </div>
+          )}
         </section>
 
-        <section className="panel">
-          <h3>Player movement</h3>
+        <section className={`panel ${trust.suppressHeadline ? "panel-limited" : ""}`}>
+          <h3>
+            Player movement
+            {trust.labelMetrics && <span className="approx-tag">approximate</span>}
+          </h3>
           <div className="bars">
             {["A", "B"].map((pid) => {
               // null/undefined means the player was never tracked densely enough
@@ -427,6 +502,13 @@ export default function Statistics({ match }) {
             for that player — it does <strong>not</strong> mean they did not move.
             {missingReasons.length > 0 && ` ${missingReasons.join("; ")}.`}
           </p>
+          {trust.labelMetrics && (
+            <p className="muted">
+              {trust.suppressHeadline
+                ? "Distance is integrated in court metres, so the FAR player's figure in particular is unreliable at this camera height — the net hides the far baseline, and depth there is not resolvable."
+                : "Distance is integrated in court metres, so it carries the same limitation as the other court measurements at this camera height."}
+            </p>
+          )}
         </section>
       </div>
     </div>

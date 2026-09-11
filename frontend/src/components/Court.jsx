@@ -8,10 +8,16 @@ import {
 } from "../lib/court.js";
 import { fmtSpeedConf, fmtStroke, playerName } from "../lib/format.js";
 import { heatCells, heatColor } from "../lib/heatmap.js";
+import { trustPolicy } from "../lib/setup.js";
 
 const L = makeCourtLayout(20, 30);
 
-export default function Court({ match, selectedRally, onSelectRally }) {
+export default function Court({ match, trust: trustProp, selectedRally, onSelectRally }) {
+  // The bounce map IS a court measurement: every dot is a position in court
+  // metres, so where the dots sit is exactly as trustworthy as the calibration
+  // that placed them. Recomputed here when App did not pass it, so this view can
+  // never render without the limitation attached.
+  const trust = trustProp || trustPolicy(match.setup);
   // Scrub state for the selected rally's ball track.
   const track = selectedRally?.ball_track ?? [];
   const [frame, setFrame] = useState(0);
@@ -182,11 +188,21 @@ export default function Court({ match, selectedRally, onSelectRally }) {
         </div>
         {!selectedRally ? (
           <div className="court-help">
-            <h3>All shot landings</h3>
+            <h3>
+              All shot landings
+              {trust.labelMetrics && <span className="approx-tag">approximate</span>}
+            </h3>
             <p>
               Every bounce in the match. <span className="dot dot-in" /> in,&nbsp;
               <span className="dot dot-out" /> out.
             </p>
+            {trust.labelMetrics && (
+              <p className="muted trust-inline">
+                {trust.suppressHeadline
+                  ? "Bounce positions are approximate, and those in the FAR half are not reliable: the net hides the far baseline in this recording, so depth beyond the net cannot be resolved. The map is still useful for reviewing where a point went - it is not a measurement of where the ball landed."
+                  : "Bounce positions are approximate at this camera height. Near-court placements are the more reliable half."}
+              </p>
+            )}
             <p className="muted">
               Pick a rally below to trail the ball through a single point.
             </p>

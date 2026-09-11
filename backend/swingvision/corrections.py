@@ -37,7 +37,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from . import scoring
+from . import scoring, setup_state
 
 #: Every correctable field. Anything else is refused — a typo in a target should
 #: fail loudly, not silently do nothing.
@@ -144,6 +144,17 @@ def _rederive(match: dict) -> None:
 
     # --- stats: hand the corrected shots/rallies back to the one implementation ---
     match["stats"] = _stats_from_dicts(shots, rallies, match.get("stats", {}))
+
+    # --- setup: RE-NORMALIZED, never re-derived and never upgraded -------------
+    # A correction changes facts about the match; it cannot change what the
+    # camera could see. The trust state therefore travels through untouched -
+    # except that it is passed through `normalize`, which re-derives
+    # `metrics_eligible` from the two axes. That closes the one way a correction
+    # could have laundered a claim: hand-editing `metrics_eligible: true` into a
+    # file, applying a no-op correction, and having the replay bless it. A
+    # corrections pass is also the moment an OLD match.json (no setup block at
+    # all) acquires an explicit `unknown` one rather than silently keeping none.
+    match["setup"] = setup_state.normalize(match.get("setup"))
 
 
 def _stats_from_dicts(shots: list[dict], rallies: list[dict],

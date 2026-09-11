@@ -15,6 +15,52 @@ import sys
 
 from swingvision import pipeline
 
+#: `--far-baseline` maps to the tri-state the trust layer wants: True (visible as
+#: a separate line below the net), False (hidden by the net) and None (not asked,
+#: or the user is unsure). It is the CLI form of the question the phone app asks
+#: in the preview, and its whole job is to let a recording that has NOT been
+#: calibrated yet still say something honest about its framing.
+_FAR_BASELINE = {"visible": True, "hidden": False, "unsure": None}
+
+
+def _far_baseline_answer(args: argparse.Namespace):
+    return _FAR_BASELINE.get(getattr(args, "far_baseline", "unsure") or "unsure")
+
+
+def _print_setup_block(state: dict) -> None:
+    """The user-facing Setup Quality block, shared by `check` and `analyze`.
+
+    ONE implementation, printed by both, because a pre-flight that grades a clip
+    differently from the run is worse than no pre-flight (trap T15). It reports
+    and never refuses: there is no exit code, no branch and no early return here.
+    ASCII only - this prints to a Windows console (cp1252).
+    """
+    from swingvision import setup_state as ss
+
+    s = ss.normalize(state)
+    tag = {"clear": "CLEAR", "limited": "LIMITED", "overlap": "OVERLAP",
+           "unknown": "UNKNOWN"}[s["framing_status"]]
+    print(f"\n  Setup quality  [{tag}] {ss.summary_line(s)}")
+    print(f"                 court corners: {s['calibration_status'].replace('_', ' ')}"
+          f"; court metrics presented as verified: "
+          f"{'yes' if s['metrics_eligible'] else 'no'}")
+    notice = s["notice"]
+    if notice:
+        print(f"\n  {notice['title']}")
+        for line in _wrap(notice["body"], 74):
+            print(f"    {line}")
+        print(f"    [{'] ['.join(notice['actions'])}]")
+    for r in s["reasons"]:
+        for i, line in enumerate(_wrap(r, 72)):
+            print(f"    {'- ' if i == 0 else '  '}{line}")
+    print("\n  Recording is never blocked by this. Video review, rally clips, "
+          "highlights\n  and manual corrections work at every setup quality.")
+
+
+def _wrap(text: str, width: int) -> list:
+    import textwrap
+    return textwrap.wrap(str(text), width) or [""]
+
 
 def _cmd_demo(args: argparse.Namespace) -> int:
     match = pipeline.write_demo_match(args.out, seed=args.seed)
@@ -68,6 +114,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         far_player_rescue=args.far_player_rescue,
         far_ball_tile=args.far_ball_tile,
         device=args.device,
+        far_baseline_visible=_far_baseline_answer(args),
     )
     s = match.stats
     print(
@@ -75,6 +122,13 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         f"avg {s.avg_speed_kmh} km/h, top {s.top_speed_kmh} km/h; "
         f"calls in/out = {s.line_calls['in']}/{s.line_calls['out']}"
     )
+    # The numbers above are only as good as the setup that produced them, and the
+    # match.json now says so in a form the dashboard reads. Print it here too, so
+    # a CLI user is told at the same moment they are handed the figures.
+    # `getattr` because a Match is also built by callers older than this block:
+    # `normalize` turns a missing one into an explicit UNKNOWN, which is a true
+    # statement, where crashing on the last line of a completed analysis is not.
+    _print_setup_block(getattr(match, "setup", None))
     return 0
 
 
@@ -105,6 +159,7 @@ def _cmd_check(args: argparse.Namespace) -> int:
     import cv2
 
     from swingvision import calibration, court, courtfit, pipeline
+    from swingvision import setup_state as ss
 
     cap = cv2.VideoCapture(args.video)
     ok, frame = cap.read()
@@ -113,10 +168,12 @@ def _cmd_check(args: argparse.Namespace) -> int:
         print(f"could not read {args.video}")
         return 1
 
+    answer = _far_baseline_answer(args)
     print("Framing check: running the same calibration `analyze` runs...")
     try:
-        _H, err, source, named = pipeline.calibrate_video(
-            args.video, keypoints_path=args.keypoints)[:4]
+        (_H, err, source, named, _hfov, _k1,
+         _H_und) = pipeline.calibrate_video(
+            args.video, keypoints_path=args.keypoints)
     except ValueError as exc:
         # calibrate_video refuses with the exact overlay-tool command. analyze
         # would stop here too, so report it verbatim rather than paraphrasing.
@@ -124,6 +181,16 @@ def _cmd_check(args: argparse.Namespace) -> int:
         # renders as a replacement character.
         print("\nFraming check: [REFUSED] - `analyze` would stop on this clip.\n")
         print(f"  {exc}")
+        # A refused calibration still has a trust state, and it is the honest one:
+        # `unavailable`, plus whatever the user answered about the far baseline.
+        # Printing it here is the difference between "we could not calibrate" and
+        # the user learning, in the same breath, that recording is still fine.
+        _print_setup_block(ss.build(
+            calibration_status=ss.CALIB_UNAVAILABLE,
+            far_baseline_user_answer=answer,
+            extra_reasons=["The court could not be calibrated from this clip, so "
+                           "no court measurement was possible. Set the corners "
+                           "once with tools/court_setup_server.py."]).to_dict())
         return 0
     except FileNotFoundError as exc:
         print(f"\nFraming check: could not calibrate — {exc}")
@@ -189,6 +256,17 @@ def _cmd_check(args: argparse.Namespace) -> int:
               "so the height is unknown")
 
     print(f"\n  {angle['msg']}")
+
+    # THE PERSISTED TRUST STATE, predicted the way `analyze` will record it -
+    # same builder, same homography source, same provenance rule. This is what
+    # the dashboard will show and what a corrections replay will carry, so a user
+    # sees it BEFORE spending an analysis run rather than afterwards.
+    # Measured on the SAME homography analyze will measure on - the pinhole one
+    # when a lens was fitted - not on a second one derived from the corners here.
+    _print_setup_block(pipeline._setup_state_for(
+        args.video, args.keypoints, source,
+        _H_und if _k1 else _H, (frame.shape[1], frame.shape[0]),
+        far_baseline_user_answer=answer).to_dict())
     return 0
 
 
@@ -375,6 +453,19 @@ def build_parser() -> argparse.ArgumentParser:
                          help="also run the ball detector on a native-resolution "
                               "crop of the far court (far ball is ~4px; the model "
                               "sees ~2px after downscaling). ~2x slower.")
+    # SETUP TRUST. Not a gate and not a filter: it records what the person who
+    # made the recording could see, so `match.json`'s setup block can say
+    # something honest about framing even when the geometry cannot (e.g. the far
+    # baseline is genuinely out of frame). The measured clearance overrides it
+    # wherever a calibration exists; a disagreement is recorded, not resolved.
+    analyze.add_argument("--far-baseline", dest="far_baseline",
+                         choices=["visible", "hidden", "unsure"], default="unsure",
+                         help="what YOU could see when recording: 'visible' = the "
+                              "far baseline was a separate line below the net, "
+                              "'hidden' = the net covered it, 'unsure' (default) = "
+                              "not asked. Guidance only - never refuses a clip, and "
+                              "the fitted court's own measurement wins where it "
+                              "disagrees")
     analyze.add_argument("--doubles", action="store_true", dest="doubles",
                          help="force doubles line calls (outer alleys). Default: "
                               "auto-detect singles vs doubles from on-court player "
@@ -385,6 +476,12 @@ def build_parser() -> argparse.ArgumentParser:
                                          "your mount height costs in line-call accuracy")
     check.add_argument("video", help="input video path")
     check.add_argument("--keypoints", help="court calibration JSON (else auto-detect the court)")
+    check.add_argument("--far-baseline", dest="far_baseline",
+                       choices=["visible", "hidden", "unsure"], default="unsure",
+                       help="what you could see when recording: 'visible' = the far "
+                            "baseline was a separate line below the net, 'hidden' = "
+                            "the net covered it, 'unsure' (default). Same flag and "
+                            "same meaning as `analyze`")
     # NO --court-weights here on purpose. `analyze` has no such flag, and this
     # command's whole job is to predict `analyze`. A checkpoint override that
     # only check honoured would reintroduce exactly the divergence being fixed.
