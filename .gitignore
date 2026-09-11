@@ -20,6 +20,14 @@ backend/weights/*.pth.tar
 !backend/weights/ballnet_v3.pt
 !backend/weights/courtnet_ft.pt
 !backend/weights/courtnet_ft_v0_notready.pt
+# The LEAK-CLEAN court fine-tune (Aug 2026), trained on data/gold/court_split.json.
+# `external-research-reconciled.md` calls it "the ONLY eligible fine-tune" - every
+# other court checkpoint was trained on a pool that overlaps the gold set (trap T06).
+# It was untracked until 2026-09-11 and existed on exactly one disk; a cleanup pass
+# listed it for deletion as if it were a third-party download, which is how an
+# irreproducible training run nearly went. `court_detector.pt` beside it IS upstream's
+# Jun 2023 release and stays ignored.
+!backend/weights/courtnet_split.pt
 # Session I's two 15-epoch A/B arms. NOT SHIPPABLE — undertrained by design, and
 # they score 14-15 solid ghosts against ballnet_v21's 9. Kept because they were
 # trained BEFORE `--seed` existed, so they can never be reproduced, and every

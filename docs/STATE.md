@@ -45,6 +45,7 @@ One number, one home.
 | Ball fallbacks | TrackNet (vendored), WASB | Kept for benchmarking; not the shipped path. |
 | Player pose | YOLO-pose via ultralytics | `fast` preset (yolo11m@1280) default; `accurate` (yolo11x@1920) for the far player. |
 | Court | Classical line-fit + consensus, CourtNet seam | Manual fallback via the setup tool; auto-detect is fragile on low cameras. |
+| Court weights | `court_detector.pt` (upstream Jun 2023 release), `courtnet_ft.pt` and `courtnet_split.pt` (**ours**) | `courtnet_split.pt` is the **leak-clean** fine-tune, trained on `data/gold/court_split.json` - the only court checkpoint not trained on a pool overlapping gold (T06). **Untracked until 2026-09-11**, so it existed on one disk and a cleanup pass listed it for deletion beside the third-party downloads; now in `.gitignore`s in-house exception list. `ballnet_visweighted.pt` is a byte-identical duplicate of `ballnet.pt` (md5 2460e181) and stays untracked. |
 | Geometry | Homography, ballistic fits — closed-form | Never learned. This is a hard architectural boundary. |
 | Smoothing | Constant-acceleration Kalman + RTS smoother | Image space. Interpolates only, never extrapolates. |
 | Backend | Python 3.12, NumPy/SciPy, OpenCV, PyTorch | `backend/.venv` (CPU) and `backend/.venv-train` (CUDA). |
