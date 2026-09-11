@@ -109,11 +109,57 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-RUN-STATE: RUNNING — cleared 2026-09-10 by the founder opening THIS session with a new task.
-The pause read "I want to move on to a diff session first while this phone issue and sideloading has
-problems" — this is that session. **The pause still binds the iOS/sideloading line**: do not re-open
-Sideloadly, Apple ID, or the harness install path here. Everything else in the iOS queue below stays
-parked exactly as written.
+RUN-STATE: RUNNING — cleared 2026-09-11 21:13 by the founder ("ok continue"). Audit resumed at Step 2.
+
+**The iOS/sideloading line stays bound** from the 2026-09-10 pause: do not re-open Sideloadly, Apple ID,
+or the harness install path. Everything in the iOS queue below stays parked exactly as written.
+
+**CURRENT TASK when the pause landed — a FULL PROJECT AUDIT (founder brief, 2026-09-11).** Not feature
+work. "Stop building new features. I want a full audit of this project before we touch anything else."
+Four steps, each needing founder sign-off before the next:
+
+**STEP 2 SIGNED OFF by the founder 2026-09-11 ("Sign off"), with Flags 1, 2 and 5 left UNANSWERED** — so
+Step 3 must show the branches rather than pick for them. The five flags, all still open:
+F1 "records live" = record-then-process (what exists) or real-time on screen? F2 do the five bullets
+REPLACE CLAUDE.md rule 12's scoring/rallies/highlights scope? F3 does "court detection" mean AUTOMATIC
+(closed, 8/20 recall) or the manual four-corner setup flow (works, shipped)? F4 backend defaults to
+BallNet v21 while mobile/ ships TrackNet — never recorded as a decision. F5 TWO shot-speed paths ship
+side by side (`analytics.shot_speed_kmh` and `speedspin.estimate`); `ball_physics/` exists only for the
+second. **Shot type has NO accuracy number anywhere in this project** — the one named feature that was
+never measured.
+
+1. **INVENTORY** — every distinct component: what it does, what it depends on, live-path or orphaned.
+   No judgement. **DELIVERED 2026-09-11, awaiting sign-off.** Not written to disk — it is in the session
+   transcript only, so if this session is gone it must be re-derived (cheap: the scan behind it was
+   `git ls-files` + a stem-reference count across all tracked code and docs). **That scan
+   substring-matches, so it over-counts: `backend/calibrate.py` scored 63 refs purely because
+   "calibrate" sits inside "calibration"/"calibrate_video". Verify any high count before trusting it.**
+2. **RELEVANCE CHECK** — **DONE, signed off.** — classify every item CORE / SUPPORTING / EXPERIMENTAL-UNRESOLVED / DEAD against
+   the founder's restated goal (below). Flag rather than guess. **NOT STARTED.**
+3. **CUT LIST** — superseded by the 3D-engine brief; manifest built, NOT executed. — propose archive/delete vs keep; for each EXPERIMENTAL item an explicit keep-testing or
+   kill with a reason. Propose only, delete nothing. **NOT STARTED.**
+4. **REBUILD THE BRIEF** — **DONE 2026-09-11.** — after sign-off, rewrite `CLAUDE.md` from scratch to cover only what survives,
+   plus an explicit "decided NOT to pursue, and why" list so a future session cannot re-suggest it. Same
+   pass over the markdown estate (**327 tracked .md files**, 125 of them in `docs/evidence/`).
+   **NOT STARTED.**
+
+**The goal as the founder restated it 2026-09-11** — an iPhone app that records a game/rally live and
+gives: court detection; where in the court the ball landed; shot type; shot speed; in/out (singles or
+doubles). Note what is ABSENT from that list versus the scope this repo carries today: match scoring,
+sets/games, rally clips and highlights, the corrections UI, the React web dashboard. Step 2 has to
+classify those against this wording, not against rule 12's 2026-08-27 reopening.
+
+**Founder's stated cut bias, verbatim:** "I'd rather cut something useful and re-add it later than keep
+dragging dead experiments through every future session."
+
+**Three flags raised in Step 1 that Step 2 must resolve, recorded so they are not lost:**
+- Nothing in this repo runs on a phone. `mobile/` is a React-Native/ONNX port of **line calls only**;
+  `ios/` is a latency instrument that has **never been compiled or run**. The shipped product today is a
+  Windows/Python CLI plus a React **web** dashboard.
+- `mobile/` ships **TrackNet** ONNX while `backend/` defaults to **BallNet v21**. That fork is real and
+  was never recorded as a decision.
+- `audio.py`, `calib_score.py` and `profiles.py` sit inside the product package with no caller in the
+  product. `profiles.py` has **zero importers anywhere**, tests included.
 
 **CURRENT TASK (founder brief, 2026-09-10):** attack `smooth_forecast`'s **innovation gate**. It is the
 largest single speed-coverage cost (-11.0 / -8.1 pts under TrackNet, v1's detector) and is a property of
@@ -403,6 +449,72 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-11** — **TARGET SPEC LOCKED. `docs/SPEC.md` created** (10 sections, founder-authored,
+  verbatim). It answers the precision question that was blocking everything: **10 cm landing
+  accuracy, >=90% of near-line contested calls**. Bounce timing **+/-1 frame 90% / +/-2 frames 99%**.
+  Capture floor **60 fps + 1080p, both HARD** (below 60 fps: refuse, do not attempt bounce
+  detection). **Abstention is designed in** — refuse when 1-sigma > 10 cm, target refusal <=5% on
+  contested calls. Latency **2 s**, NOT frame-rate real-time — this materially softens the F1=B
+  reversal and makes it reachable. CLAUDE.md updated to match (148/150 non-blank) and SPEC.md added
+  to the doc map.
+  **THE SPEC REVERSES THIS MORNING'S POSE DECISION:** pose is back IN v1, but FENCED (§9) — native
+  Apple Vision API, 15-20 fps, qualitative output only, and a hard +/-15% confidence-modifier limit
+  that can never turn a refusal into a call nor extend the occlusion budgets. Our **custom** YOLO
+  pose stack goes to v2 instead. So "park pose" is superseded: v1 uses a DIFFERENT pose source.
+  **FOUR CONFLICTS FLAGGED TO THE FOUNDER, NOT RESOLVED HERE:** (1) the spec says "CPU-only
+  on-device" throughout and treats the **ANE as a v2 upgrade** (§8), but the standing project
+  constraint and the whole Core ML/harness line are built on "ANE is the only inference target"
+  (see [[ios-architecture-rules]]: pin `.cpuAndNeuralEngine`, never `.all`). These cannot both hold
+  and it changes what "affordable" means. (2) §9 names **Android ML Kit** — project is iOS-only.
+  (3) §10 blames the shell blocker on **CourtNet**; STATE says CourtNet is Tier 2 and `courtfit`
+  consensus beats it — the shell failure is a SEARCH/proposal problem (recall 8/20), so that
+  wording would send someone to fix the wrong component. (4) §6 uses **racket/arm pose for
+  contact-event detection**, which reads as PRIMARY evidence and sits awkwardly against §9's
+  "confidence modifier only" fence.
+  **Still nothing deleted or moved.** Working tree: CLAUDE.md, docs/SPEC.md, this journal.
+  **NEXT, in order:** (a) resolve the four conflicts; (b) measure monocular 3D against the 10 cm bar
+  using `tools/synth_truth.py` — the rig exists, the bar now exists, nothing downstream is safe
+  without the number; (c) THEN shelve to v2/ and cut the dead. Founder instruction standing:
+  "anything that doesn't serve this target, shelve it into a different folder for v2."
+
+- **2026-09-11** — **AUDIT: v1 SCOPE DECIDED and CLAUDE.md REWRITTEN.** Founder rulings, all this date:
+  **F1 = B, REAL-TIME** (reverses offline-first, the project's founding architecture premise).
+  **F2 = clear the ENTIRE scoring scope** — `scoring.py`, `highlights.py`, `corrections.py` CUT;
+  CLAUDE.md rule 12's 2026-08-27 reopening is REVOKED. **Pose = PARKED, not killed** — `pose.py`,
+  YOLO weights, `classify_shot`, `speedspin`'s player-proximity split, `annotate.py` all stay on
+  disk, out of v1. **Shot SPEED deferred to v2** with shot type.
+  **Then superseded mid-turn by a larger brief:** v1 is an ENGINE, not a feature list — (1) 3D
+  spatial court mapping incl. lines the camera cannot see, from regulation dimensions; (2) 3D
+  trajectory + physics tracking that survives loss of line-of-sight; (3) bounce-point triangulation
+  from the arc's vertical reversal x ground plane. Founder premise: SwingVision does all three from
+  one camera **regardless of mount height**.
+  **TWO LEAD ERRORS CORRECTED, both recorded because both were stated to the founder:**
+  (a) `ball_physics/` was called "a possible 35-file cut", then "dormant". **Wrong twice** — it is
+  the only 3D machinery in the repo and is now v1's centrepiece. `analytics.shot_speed_kmh` and
+  `speedspin` are a FALLBACK CHAIN, not rival paths (`pipeline.py:2023` overrides the former with
+  the latter and sets `speed_confident`), so F5 was never a real fork and is WITHDRAWN.
+  (b) The height evidence (bounce err 3.81 m @1.0 m mount, close calls 54%) was quoted AGAINST the
+  3D brief. It measures the **2D ground-projection estimator** — exactly the method a
+  physics-anchored 3D fit replaces. **It does not transfer.** The objection reduces to "measure it".
+  **CLAUDE.md rewritten from scratch**, 135/150 non-blank lines. Nothing else touched: no file
+  moved, nothing deleted, working tree is CLAUDE.md + this journal only. Baseline before any of it:
+  **781 passed, 1 skipped**.
+  **NOT DONE, and next:** the 5 pillar `CLOSED.md` files; the 59 dead tools + 21 dead eval scripts;
+  the scoring excision (NOT a clean seam — `pipeline.py:227` and `:2079` construct
+  `scoring.TennisScore` directly, so it touches the orchestrator and needs its own test proof);
+  `tools/` foldering (deliberately deferred — lowest value, highest silent-break risk).
+  **THE FIRST REAL TASK IS A MEASUREMENT, NOT A CUT:** monocular 3D has never been evaluated here.
+  `tools/synth_truth.py` already generates known 3D trajectories, so the rig exists. **A precision
+  bar was requested from the founder (5 cm / 20 cm / 50 cm) and NOT yet given.** Do not start
+  without it — rule 2.
+
+- **2026-09-11** — **RESUMED by founder** ("ok continue"). Read as Step 1 sign-off and a go-ahead for
+  Step 2 — stated as an assumption in the reply so it can be corrected. Audit continues.
+
+- **2026-09-11** — **PAUSED by founder** ("Pause first I have to go to work"). Nothing left running.
+  Paused mid-audit: Step 1 (INVENTORY) delivered and awaiting sign-off, Steps 2–4 not started. No code,
+  docs or data were touched this session — it was read-only apart from this journal entry. See NOW.
 
 - **2026-09-10** — **HARD PAUSED by founder** ("Ok this is hard paused ... I want to move on to a diff
   session first while this phone issue and sideloading has problems"). Nothing left running. **The session

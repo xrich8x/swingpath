@@ -10,7 +10,7 @@ the human gold clicks, and it is what experiments are picked on.
 
   backend/.venv/Scripts/python.exe tools/event_audit.py \
       --match data/output/rally2_base.json --clip yt_rally2 \
-      --hud data/gold/hud_yt_rally2.json --arm baseline \
+\
       --json data/output/rally2_base.eventaudit.json
 
 WHY THIS RUNS ON ONE CLIP ONLY
@@ -82,7 +82,6 @@ import cv2  # noqa: E402
 # than re-typed. eval_model_filters is __main__-guarded, so this costs an import
 # of cv2/numpy and runs nothing.
 from eval_model_filters import CLIPS, build_calib, gold, index_of  # noqa: E402
-from hud_compare import match_monotonic  # noqa: E402
 
 HIT_RADIUS_PX = 10.0      # the same tolerance the gold ladder scores recall at
 
@@ -178,7 +177,6 @@ def main() -> None:
                     help="the <match stem>.perception.json holding the RAW track; "
                          "defaults to that path. Without it the localised/coasted "
                          "columns are omitted rather than guessed.")
-    ap.add_argument("--hud", default=None)
     ap.add_argument("--tolerance-frames", type=int, default=3, dest="k",
                     help="max |event frame - nearest decided gold label|. 3 source "
                          "frames is 50 ms at 60 fps, inside MIN_FLIGHT_S, and the "
@@ -291,21 +289,11 @@ def main() -> None:
                       f"(frame {r['src_frame']}, label {r['nearest_label']} "
                       f"{r['d_frames']}f away)")
 
+    # HUD comparison REMOVED 2026-09-11. It read SwingVision's burned-in MPH panel,
+    # which hard rule 12 bars: that is agreement with another estimator, not accuracy.
+    # It was the project's one declared exception and it is now retired.
+    # See docs/measure/CLOSED.md. `tools/synth_truth.py` is the compliant reference.
     hud_block = None
-    if args.hud:
-        readings = json.loads(Path(args.hud).read_text(encoding="utf-8"))["shots"]
-        idx = match_monotonic(shots, readings, -0.25, 2.0)
-        matched = {i for i, _, _ in idx}
-        sur = [s for i, s in enumerate(shots) if i not in matched]
-        hud_block = dict(n_hud=len(readings), n_ours=len(shots), matched=len(idx),
-                         surplus_shots=len(sur),
-                         surplus_confident_shots=sum(
-                             1 for s in sur if s.get("speed_confident")),
-                         coverage_pct=round(100 * len(idx) / max(len(readings), 1), 1),
-                         matcher="monotonic-dp")
-        print(f"\n  HUD (tie-break evidence only): matched {len(idx)}/"
-              f"{len(readings)}, surplus {len(sur)} shots "
-              f"({hud_block['surplus_confident_shots']} confident)")
 
     ghost_block = None
     if args.ghost:
@@ -332,10 +320,7 @@ def main() -> None:
                   f"{ghost_block['fires_coasted']} faded) | " if ghost_block else "")
                + f"phantom hits {h['phantom_ball']}/{h['adjudicable']} | "
                + f"phantom landings {b['phantom_ball']}/{b['adjudicable']}"
-               + (f" | surplus shots {hud_block['surplus_shots']}/"
-                  f"{hud_block['n_ours']} ({hud_block['surplus_confident_shots']} "
-                  f"conf) | HUD {hud_block['matched']}/{hud_block['n_hud']}"
-                  if hud_block else ""))
+               )
     print(f"\nSUMMARY  {summary}")
 
     if args.json_out:
@@ -362,7 +347,7 @@ def main() -> None:
                 f"both sides). An event is adjudicated only if a decided label lies "
                 f"within {args.k} source frames. A 'ball present' verdict means a "
                 f"ball was VISIBLE in that frame, NOT that a stroke occurred.",
-            "hits": h, "bounces": b, "hud": hud_block, "ghost_ball": ghost_block,
+            "hits": h, "bounces": b, "ghost_ball": ghost_block,
             "summary": summary,
             "caveats": [
                 "Single clip. yt_rally2 is one continuous 37 s rally with almost no "

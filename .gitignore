@@ -45,10 +45,16 @@ backend/weights/*.pth.tar
 !backend/weights/pool_old_s0.pt
 !backend/weights/pool_new_s0.pt
 
-# Exported mobile models (regenerate with mobile/export_tracknet.py)
+# Exported mobile models (regenerate with v2/mobile/export_tracknet.py).
+# Path updated 2026-09-11 when mobile/ was shelved to v2/ - the old rule stopped
+# matching and a `git add -A` committed 73 MB of binaries that had been excluded
+# on purpose. Both spellings kept so an old checkout still ignores them.
 mobile/models/*.onnx
 mobile/models/*.onnx.data
 mobile/node_modules/
+v2/mobile/models/*.onnx
+v2/mobile/models/*.onnx.data
+v2/mobile/node_modules/
 
 # Node / frontend
 frontend/node_modules/
