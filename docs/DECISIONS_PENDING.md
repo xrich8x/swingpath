@@ -945,3 +945,57 @@ faithfully reproduce a detector v1's own spec forbids.
 **WHAT I DID INSTEAD OF WAITING:** P1 is in flight with backend-dev; the four items above were
 verified from the code and the git record rather than asked about; and `ios/README.md`'s false
 "nothing here has been built or run" sentence is corrected.
+
+---
+
+## 2026-09-12 — WITHDRAWALS. Four founder asks above are dead or reclassified. Nothing to decide.
+
+**This section takes work OFF the founder's plate. It asks for nothing.** Each item above was
+written before the 2026-09-11 scope lock and survives in this file as apparently shovel-ready.
+Reading it as live would spend founder hours on a cut layer, so each is settled here explicitly
+rather than left to decay.
+
+### WITHDRAWN — the point-boundary labelling session (3-6 hours of founder time). DEAD.
+
+**The single largest founder ask in this file, and it is now for nothing.** It exists to give the
+**score layer** ground truth. **Match scoring, sets and games were CUT from v1** (CLAUDE.md's
+scope table; `scoring.py` named as cut). A gold set for a layer that does not ship is not a
+deferred task, it is a task with no consumer.
+
+- `docs/evidence/point-boundary-label-protocol.md` **stays on disk**, complete and costed — the
+  protocol was good work and re-deriving it if scoring returns in v2 would be waste. Deferred is
+  not dead; **this ask is dead, the artefact is not.**
+- **Do not pick this up as "ready and unblocked" because STATE says so.** That STATE row predates
+  the scope lock and is corrected in the same pass as P3's row.
+- **Where those 3-6 hours should go instead: P2, the occlusion census, ~45 minutes.** With SPEC §6
+  tossed, every occluded bounce is a refusal, so the refusal rate is a property of the FOOTAGE and
+  it decides whether v1 is a product at all. The queue is explicit that the eye-hour goes there.
+
+### MOOT — item 0b, "Shell and Grass have no eligible footage for point-boundary ground truth"
+
+It is a true observation about a layer that no longer ships, so there is nothing left to decide.
+**Its underlying fact got worse and moved somewhere that matters**: P3's capture-floor census
+(2026-09-12) finds **Shell 0 and Grass 0 clips** meeting v1's 60 fps + 1080p floor — all 58 4K
+shell clips are 30 fps. So the recording gap 0b identified on the score layer is now a recording
+gap on the **engine**, and it is answered by P5's court visit rather than by a labelling decision.
+
+### RECLASSIFIED TO v2 — item 0c, "click along court LINES, not corners"
+
+**Still sound, still unmeasured, and no longer on any v1 path.** It falsifies the claim that the
+line detector's ~6.4 px disagreement with truth is near-irreducible — but that closure only binds
+**court AUTO-detection**, which is closed for v1 (v1's court is a manual four-tap, so v1 never
+runs the search). The measurement cannot move a v1 number.
+
+Keep the pre-registered bands exactly as written (>10 px = the closure is wrong; ~5-7 px = it
+stands) so it is not re-derived if auto-detection reopens in v2. **Not a founder minute today.**
+
+### STILL LIVE, AND ALREADY THE v1 ANSWER — item 0d, PROACTIVE court setup
+
+Founder direction 2026-09-06: *"ask the user to set up the court and then the green outlines just
+snap to the lines."* **That is v1's court, exactly.** It is the one item in the court thread the
+scope lock did not kill — because it was never the auto-detection search. `docs/court/CLOSED.md`
+and the v2 parking apply to the SEARCH; a four-tap that snaps is the product answer.
+
+It needs no ruling now — it becomes P4(ii)'s companion (the refuse-and-re-tap drift behaviour) and
+frontend work once P1 and P6 report. Recorded here so the scope lock is not misread as having
+killed it along with the rest of the pillar.

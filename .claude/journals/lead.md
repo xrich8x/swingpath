@@ -210,6 +210,51 @@ PRIMARY arm fits `p0` FREE with `physical_bounds=True`. A striker-pinned launch 
 v1 — so v1 does not have that information. The anchored variant may be reported as a descriptive
 secondary, labelled as needing information v1 does not have.
 
+## NEXT TWO DISPATCHES — drafted 2026-09-12 so a kill loses no design work
+
+The lead holds ONE direct child; `backend-dev` has it (P1). These two go out in this order the
+moment it lands. **Both are pre-registered here, before either runs.**
+
+### NEXT: P5 — the capture protocol. Owner `pm`. NOW TOP OF QUEUE (P3 fired its bar).
+
+Write a protocol + a printed target sheet for ONE court session. **This is not a labelling task**:
+the near-line gold set is not labellable from the footage we own — a human clicking a monocular
+low-mount video cannot resolve a landing to 10 cm, and this project's own height curve puts bounce
+error at **3.81 m** on a 1.0 m mount. **P3 makes the case stricter than "not labellable": the
+footage does not meet the CAPTURE floor either** (7 clips / 2 surfaces; Shell 0, Grass 0; all 58 4K
+clips are 30 fps; no clip is fixed-mount AND >=60 fps AND >=1080p AND high enough for 10 cm). So
+truth at 10 cm is established **BY CONSTRUCTION at capture time** — balls landed on tape-measured
+marks, marks visible in frame, positions recorded on paper.
+- **BAR:** the protocol yields **>=30 landing points known to <=3 cm INDEPENDENT of any video,
+  across >=2 surfaces.**
+- One visit produces all of it at once: spec-compliant 60 fps / 1080p footage at **>=2.5 m**,
+  physically measured landing points, and bounce-timing labels as a by-product.
+- **SAY THIS IN THE PROTOCOL EXPLICITLY — the team will reflexively get it wrong:** a second
+  camera or a tripod phone used ONLY to build the truth set is a **lab instrument, not a product
+  dependency.** It is NOT a scope violation and not a breach of on-device-forever.
+- **Carry P3's two findings in:** shell must be covered by the visit or §7's three-surface split
+  cannot be met at all; and mount fixity, not frame rate, is the floor that actually binds — so
+  the protocol must specify how the mount is secured and verified, not just its height.
+- DEPENDS ON: P3 (done), P4(iii) (lead ruled void; founder confirmation pending).
+
+### THEN: P2 — the occlusion census, the refusal floor. `qa` builds, founder eyes it (~45 min).
+
+How often is the ball hidden at the bounce frame on near-line bounces in footage we already own?
+**qa builds a contact sheet of candidate bounce frames FIRST; the founder does a yes/no pass.
+NEVER ask the founder for an unbuilt artefact.**
+- **BAR, pre-registered:** if **more than 20%** of near-line bounces are occluded, SPEC's **<=5%
+  refusal target is formally WITHDRAWN in writing** and §6's return becomes a live scope question
+  for the founder — not a quiet restore.
+- **NOTE THE DIRECTION, it is what makes this cheap:** our footage is low-mount (1.38-1.74 m),
+  where a player occludes more court. The number is an **UPPER bound** for a proper fence mount.
+  If the upper bound comes in low, the worry evaporates for the price of one sheet.
+- **WHY IT MATTERS NOW:** with §6 tossed, refusal rate is no longer a tuning parameter — it is a
+  property of the footage, and it decides whether v1 is a product at all. Costs no code.
+- **P3 CONSTRAINS THE SHEET, and qa must be told:** the census should be built on the footage we
+  own (it is about occlusion, not about spec compliance), but **it must NOT be quoted as a v1
+  number** — none of that footage meets the capture floor. State the mount height of every clip
+  the sheet draws from.
+
 ## PRE-REGISTRATION — P3, the capture-floor census. Written 2026-09-12 BEFORE ffprobe ran.
 
 Run by the lead rather than qa: it is `ffprobe` over file properties, no model and no tuning, so
