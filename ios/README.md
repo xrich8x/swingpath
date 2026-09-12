@@ -6,12 +6,27 @@ item −1): sustained on-device throughput at thermal steady state, the int8-vs-
 ship call, and the cost half of pose affordability. It has no camera, no court
 overlay, no navigation. One screen: a model list, a Run button, a results log.
 
-**Nothing in this directory has been built or run.** There is no Mac anywhere in
-this project — the only compiler that will ever touch this code is the
-GitHub-hosted `macos-14` runner in `.github/workflows/ios-latency-harness.yml`,
-and that workflow has not been triggered. Everything below is written to the best
-of documented, public Core ML / Xcode behavior; the "What I could not verify"
-section at the bottom says exactly where the risk sits.
+**BUILT, NEVER RUN — corrected 2026-09-12.** This directory previously said "nothing here has
+been built or run", and that was FALSE from 2026-09-10 onward. What is actually true:
+
+- **The app COMPILES.** `.github/workflows/ios-latency-harness.yml` ran **green on the first
+  attempt, 2026-09-10** — XcodeGen generated the project in CI, unsigned `xcodebuild` succeeded,
+  and an `.ipa` exists as a CI artifact. That discharges the build-time unknowns (XcodeGen
+  generation, the `-destination 'generic/platform=iOS'` unsigned pattern).
+- **The models exist.** `coreml-export.yml` ran green the same day, and on **`ubuntu-latest` at
+  1x rather than `macos-14` at 10x** — the "Core ML export requires macOS" finding was half
+  withdrawn, because it reasoned from a *Windows* failure and Linux had never been tried. Real
+  `.mlpackage` bundles, `Manifest.json` verified.
+- **A GREEN BUILD IS NOT A WORKING APP.** The RUNTIME unknowns are untouched and fail on the
+  phone, not in CI: whether `MLModel.compileModel(at:)` accepts a `.mlpackage` directory on
+  device, and whether a model's real input feature type is one `dummyInput(for:)` handles.
+- **The one remaining blocker is the SIDELOAD**, not the code: Sideloadly error -22410 on Apple
+  ID login from Windows. **That line is founder-paused — do not re-open it without the founder.**
+
+There is still no Mac in this project; the only compiler that touches the Swift is the
+GitHub-hosted `macos-14` runner. The "What I could not verify" section at the bottom is still
+the right place to look for where the risk sits — but read it as *runtime* risk now, not build
+risk.
 
 ## What it measures
 

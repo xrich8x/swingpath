@@ -818,3 +818,130 @@ held-out pool and the commissioned human two-line placements as prerequisites, a
 whether the mount-height by-product should be picked up separately. **Nothing is blocked
 meanwhile** — the shipped Court Setup & Trust flow does not depend on any of it. A low-camera
 user can record, review and correct today, and is told plainly what their numbers are worth.
+
+---
+
+## 2026-09-12 — P4: FOUR contradictions inside a LOCKED spec. No code; a written ruling.
+
+**Asked for by the founder's own queue (P4, ~20 min). This is not an unprompted blocker.**
+The queue named three. A fourth turned up while verifying the first, it is the one with real
+build consequences, and it is listed last. `backend-dev` cannot start P7 (the Swift live path)
+until (i), (ii) and (iv) resolve. All four were introduced or exposed by the 2026-09-11 rewrite.
+
+### (i) §8 vs §4 — as written, §8 is unsatisfiable by §4's own method
+
+§8: the call is emitted **"on the bounce frame itself"**, budget **16.7 ms**.
+§4: a bounce **IS** a vertical-velocity **sign reversal**.
+
+A sign reversal cannot be observed on the bounce frame. `vz` is a finite difference of two
+positions, so seeing `vz` go negative -> positive needs **two post-bounce detections** to form
+one post-bounce velocity, and **three** to reject a noise flip. At 60 fps with a *perfect*
+detector that is **33.3 ms (k=2) to 50.0 ms (k=3)** before any compute.
+
+**It is worse than frames, and this is the part to notice: the floor is in DETECTIONS, not
+frames.** `live.py:69` returns early on a missed frame (`if ball_px is None: return None` —
+"gap; bounce logic uses valid points only"), so dropout stretches the wait. At the 30% dropout
+the synthetic rig uses as our detector's real rate, k=2 detections costs **~2.9 frames expected
+(~48 ms)** and the tail is real: **P(>4 frames) = 8.4%, P(>6 frames) = 1.1%** (negative binomial,
+p=0.7). So the worst-case call is several times the mean, which is exactly what a latency bar has
+to be stated against.
+
+**Second, separate defect: 16.7 ms/frame is a THROUGHPUT number and §8 uses it to state a
+LATENCY requirement.** Throughput is the rate the per-frame path must sustain to avoid falling
+behind. Latency is capture + compute + k/fps + emit. They are different quantities and a
+pipeline can hit one while badly missing the other.
+
+- **What the shipped code actually does, for reference:** `live.py:85-97` is **1 valid detection**
+  of latency, not zero — it attributes the bounce to `_valid[-2]` and emits on the arrival of
+  `_valid[-1]`, with the true bounce lying somewhere inside the candidate segment (so ±1 frame of
+  attribution quantisation on top).
+- **RECOMMENDED RULING:** §8 splits into two numbered bars. **Throughput: 16.7 ms/frame on the
+  ANE** (unchanged, P6 costs it). **Latency: bounce + k detections + compute, with k=2 or 3 named
+  in the spec**, giving a floor of ~33-50 ms at 60 fps, stated as detections-not-frames so
+  dropout is visible. "INSTANT" stays the product word; it stops being a number.
+- **WHAT NEEDS YOUR CALL:** the value of k (2 = faster and noisier, 3 = the robust choice), and
+  whether a ~50 ms call still counts as INSTANT for the product. It is under one-twentieth of a
+  second and well inside human reaction time, so I believe it does — but that is a product call.
+
+### (ii) §1 vs the closed court path — the drift CHECK survives, the RECOVERY half has no mechanism
+
+§1 mandates a **"full court re-solve every 10 s"** and holds calls until an **8-frame vote
+(>=6/8)** passes. Court AUTO-detection is CLOSED for v1 and v1's court is a **manual four-tap**.
+There is nothing to re-solve *with*: the vote and the re-solve are both properties of the search
+that v1 does not run.
+
+The optical-flow **drift check** (§1's first bullet, 4-8 tracked intersections, 15 px sustained
+3 frames) is unaffected — it needs no search, only tracking.
+
+- **RECOMMENDED RULING:** when tracked corners drift past tolerance, v1 **REFUSES and asks the
+  user to re-tap.** Strike the forced 10 s re-solve and the 8-frame vote from §1 as v1 text; keep
+  them struck-not-deleted for v2, the way §6 and §9 are kept.
+- **This is a real UX consequence and it is why it is a ruling and not an implementation detail:**
+  a bumped tripod mid-rally ends the automatic calling until the user intervenes. The alternative —
+  calling on a drifted court — is the failure mode the 10 cm bar exists to prevent.
+- **Carried from the old journal queue rather than re-derived:** the right companion is **calibrate
+  LAST** (four-tap on a frame captured *after* the phone is placed and untouched) plus an **IMU
+  stillness gate** (CoreMotion, on-device, zero inference). The measured reason it must be the IMU:
+  **motionless tripods disagree with themselves about the court by more than a wrong-court
+  distance**, so camera movement cannot be detected by watching the court fit wobble.
+
+### (iii) §10's indoor-shell blocker is VOID for v1 — and the evidence is better than "probably"
+
+**Two independent arguments, and SPEC already contains the first one.**
+
+1. **By SPEC's own corrected attribution.** §10's final paragraph, corrected 2026-09-11, says the
+   shell failure is a **SEARCH/proposal** problem: "on 12 of 20 clips the shipped search never once
+   produces a correct court across 8 sampled frames (recall 8/20 = 40%)". **v1 never runs the
+   search.** A blocker attributed to a mechanism v1 does not execute cannot block v1.
+2. **Constructively — manual taps on shell courts already exist and were checked by an
+   independent method.** `7c8b8af` (2026-08-26) committed **ten** shell calibrations across five
+   venues, all `_exact`, fit residuals **0.0-2.5 px — the best band in the repo**, implied camera
+   height reproducing **to 0.02 m** across two independent labels of the same venue.
+
+**THE HONEST LIMITS, because the raw count flatters it and I got this wrong on first reading:**
+- **`_audit: PASS` and "valid ground truth" are DIFFERENT AXES.** Four of the ten stamp PASS, but
+  `mpc_tuesday_p01`/`p07` (2.79 / 2.81 m) are **explicitly excluded as ground truth by their own
+  commit** — their two independent labels disagree by **25.4 px@640**, above the 20 px line that
+  separates a right court from a wrong one. They pass the *camera* audit while being invalid as
+  *truth*. So the usable count is **8 of 10**, and at a spec-relevant mount height it is **2** —
+  `flexi_franz_p01`/`p07`, 2.50 / 2.51 m, which are two labels of **one venue**, not two venues.
+- The other six valid ones sit at **1.36-1.64 m**, below the height where 10 cm is plausible at all.
+- All ten are 3840x2160; **frame rate unknown** — P3 will say whether any meets the 60 fps floor.
+- **T23 applies:** what carries these files is the *repeatability between two independent labels*,
+  not the low residual. A residual certifies nothing.
+
+- **RECOMMENDED RULING:** strike §10's "Ball-calling targets do not apply until that blocker
+  clears". Replace the blocker with the accurate, narrower statement: **shell is unblocked for
+  manual-tap v1; shell AUTO-detection stays closed and is v2.** Cost: zero. This dissolves the
+  largest stated blocker in the project.
+- **Do NOT let it be read as more than it is:** one shell venue at >=2.5 m is not a validated
+  surface split. §7 asks for hard/clay/shell, and P5's court visit is what supplies that.
+
+### (iv) NOT ON YOUR LIST, and it is the one that changes a build: live.py's bounce detector is NOT §4's method
+
+P7 says "port `live.py`'s design". **`live.py` does not implement SPEC §4.** Its own docstring,
+lines 14-16: *"a bounce is a local minimum of the ball's court-plane speed. Single-camera bounces
+have no true height, so this is a court-speed heuristic."*
+
+§4 says: **"Method: vertical-velocity sign reversal. NOT nearest-frame-to-court-plane."** A
+court-plane speed minimum is not sign reversal, and it is *further* from §4 than the method §4
+names as the thing to avoid — it has **no height channel at all**. It is a third method.
+
+**This matters because the evidence for P7 being cheap is evidence about the wrong thing.**
+`v2/mobile/live_calls.js` is a verified bit-parity port of `live.py` — confirmed: it carries the
+same `seg` court-plane-speed structure (`live_calls.js:124-139`). So the parity result is real,
+and it says **a port is cheap**. It says nothing about porting §4's method, which does not exist
+in any language here yet. **A port proves faithfulness, never accuracy** — and here it would
+faithfully reproduce a detector v1's own spec forbids.
+
+- **RECOMMENDED RULING:** P7 ports live.py's **STRUCTURE** — streaming API, court from the manual
+  tap, gap handling, call gating, refusal path — and **replaces the bounce stage** with §4's
+  sign reversal on the 3D fit that P1 is building. `live.py`'s court-speed heuristic becomes the
+  **control arm** for the new detector, not the thing shipped.
+- **CONSEQUENCE FOR SEQUENCING, and it strengthens the existing order:** §4's method needs a
+  **height channel**, which is exactly what P1 is measuring. If P1 fires its bar C kill, there is
+  no §4-compliant bounce detector to port and P7 has nothing to build. **P7 stays last.**
+
+**WHAT I DID INSTEAD OF WAITING:** P1 is in flight with backend-dev; the four items above were
+verified from the code and the git record rather than asked about; and `ios/README.md`'s false
+"nothing here has been built or run" sentence is corrected.

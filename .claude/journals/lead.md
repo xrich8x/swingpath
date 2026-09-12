@@ -109,270 +109,94 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-RUN-STATE: RUNNING — cleared 2026-09-11 21:13 by the founder ("ok continue"). Audit resumed at Step 2.
+RUN-STATE: RUNNING — founder brief 2026-09-12 handed a new seven-item queue. The innovation-gate
+task and the four-step project audit are both CLOSED; their records live in STATE + evidence, and
+the compacted lines are in LOG.
 
-**The iOS/sideloading line stays bound** from the 2026-09-10 pause: do not re-open Sideloadly, Apple ID,
-or the harness install path. Everything in the iOS queue below stays parked exactly as written.
+**The iOS/sideloading line stays bound** (2026-09-10 pause): do not re-open Sideloadly, Apple ID,
+or the harness install path. `ios/` builds green in CI; only the sideload is blocked.
 
-**CURRENT TASK when the pause landed — a FULL PROJECT AUDIT (founder brief, 2026-09-11).** Not feature
-work. "Stop building new features. I want a full audit of this project before we touch anything else."
-Four steps, each needing founder sign-off before the next:
+**THE TASK: v1 is an ENGINE — 3D court mapping + drag+Magnus 3D trajectory + bounce triangulation.**
+Outputs are exactly three: where the ball bounced, in or out, and a REFUSAL. `docs/SPEC.md` is the
+LOCKED bar sheet. **Five of the seven queue items are MEASUREMENTS. Do not reorder a build above a
+measurement without writing down why.**
 
-**STEP 2 SIGNED OFF by the founder 2026-09-11 ("Sign off"), with Flags 1, 2 and 5 left UNANSWERED** — so
-Step 3 must show the branches rather than pick for them. The five flags, all still open:
-F1 "records live" = record-then-process (what exists) or real-time on screen? F2 do the five bullets
-REPLACE CLAUDE.md rule 12's scoring/rallies/highlights scope? F3 does "court detection" mean AUTOMATIC
-(closed, 8/20 recall) or the manual four-corner setup flow (works, shipped)? F4 backend defaults to
-BallNet v21 while mobile/ ships TrackNet — never recorded as a decision. F5 TWO shot-speed paths ship
-side by side (`analytics.shot_speed_kmh` and `speedspin.estimate`); `ball_physics/` exists only for the
-second. **Shot type has NO accuracy number anywhere in this project** — the one named feature that was
-never measured.
+### THE QUEUE — founder order, 2026-09-12
 
-1. **INVENTORY** — every distinct component: what it does, what it depends on, live-path or orphaned.
-   No judgement. **DELIVERED 2026-09-11, awaiting sign-off.** Not written to disk — it is in the session
-   transcript only, so if this session is gone it must be re-derived (cheap: the scan behind it was
-   `git ls-files` + a stem-reference count across all tracked code and docs). **That scan
-   substring-matches, so it over-counts: `backend/calibrate.py` scored 63 refs purely because
-   "calibrate" sits inside "calibration"/"calibrate_video". Verify any high count before trusting it.**
-2. **RELEVANCE CHECK** — **DONE, signed off.** — classify every item CORE / SUPPORTING / EXPERIMENTAL-UNRESOLVED / DEAD against
-   the founder's restated goal (below). Flag rather than guess. **NOT STARTED.**
-3. **CUT LIST** — superseded by the 3D-engine brief; manifest built, NOT executed. — propose archive/delete vs keep; for each EXPERIMENTAL item an explicit keep-testing or
-   kill with a reason. Propose only, delete nothing. **NOT STARTED.**
-4. **REBUILD THE BRIEF** — **DONE 2026-09-11.** — after sign-off, rewrite `CLAUDE.md` from scratch to cover only what survives,
-   plus an explicit "decided NOT to pursue, and why" list so a future session cannot re-suggest it. Same
-   pass over the markdown estate (**327 tracked .md files**, 125 of them in `docs/evidence/`).
-   **NOT STARTED.**
+| # | Item | Kind | Owner | Blocked on |
+|---|---|---|---|---|
+| P1 | Monocular 3D ceiling on synthetic truth | MEASURE | backend-dev | nothing — **IN FLIGHT** |
+| P2 | Occlusion census: the refusal floor | MEASURE | qa builds sheet, founder eyes it | sheet must exist BEFORE the founder is asked |
+| P3 | Does any footage meet the v1 capture floor? | MEASURE | qa | nothing |
+| P4 | **FOUR** contradictions inside a locked SPEC | DECIDE | founder | **WRITTEN AND DELIVERED 2026-09-12** -> `docs/DECISIONS_PENDING.md`. Awaiting the ruling; P7 cannot start without (i)/(ii)/(iv) |
+| P5 | The capture protocol (artefact + target sheet) | BUILD artefact | pm drafts | P3, P4(iii) |
+| P6 | INSTANT on paper, v1-only path | MEASURE | researcher | P4(i) |
+| P7 | The live-path skeleton in Swift | BUILD | backend-dev/frontend-dev | P1 pass, P4, P6 |
 
-**The goal as the founder restated it 2026-09-11** — an iPhone app that records a game/rally live and
-gives: court detection; where in the court the ball landed; shot type; shot speed; in/out (singles or
-doubles). Note what is ABSENT from that list versus the scope this repo carries today: match scoring,
-sets/games, rally clips and highlights, the corrections UI, the React web dashboard. Step 2 has to
-classify those against this wording, not against rule 12's 2026-08-27 reopening.
+**P1 IS IN FLIGHT — backend-dev, dispatched 2026-09-12.** Bars A-G pre-registered in the brief
+below and NOT movable. The 2D ground-projection estimator already in `tools/synth_truth.py` is the
+CONTROL ARM, so the answer says what 3D buys over what ships today.
 
-**Founder's stated cut bias, verbatim:** "I'd rather cut something useful and re-add it later than keep
-dragging dead experiments through every future session."
+**P1's pre-registered bars, recorded here so a kill cannot lose them:**
+- **A PASS:** >=90% of flights place the bounce within 10 cm at pixel_noise=2.0 px, dropout=0.30,
+  60 fps, 3.0 m mount, hfov exact.
+- **B TIMING:** >=90% within +/-1 frame, >=99% within +/-2 frames.
+- **C KILL:** if with PERFECT detections (noise 0, dropout 0) the 10 cm rate is below 50% at EVERY
+  mount height, monocular 3D cannot reach SPEC §3 and the spec is renegotiated before more code.
+- **D HEIGHT AXIS:** 10 cm rate at 1.0 / 1.5 / 2.5 / 4.0 / 8.0 m. CLAUDE.md's founding premise
+  ("works regardless of mount height") HOLDS only if 1.5 m lands within 10 points of 8.0 m.
+- **E NOISE AXIS (descriptive):** pixel noise 0 / 1 / 2 / 4 px. Most actionable output of the run:
+  the detector precision the 10 cm bar demands.
+- **F SELF-GRADING CONTROL, REQUIRED:** simulator and fitter share a physics model, so one arm runs
+  the simulator's `cd` / `cl_max` offset +/-20% from the fitter's, reported separately. Without F,
+  bar A is a ceiling under a perfectly-specified model and will be quoted as an accuracy.
+- **G OUT OF SCOPE, report UNTESTED:** SPEC §5's depth-from-known-ball-size (6.7 cm). The rig emits
+  (u,v) only, no apparent radius — so §5's self-declared weakest channel is NOT exercised here.
 
-**Three flags raised in Step 1 that Step 2 must resolve, recorded so they are not lost:**
-- Nothing in this repo runs on a phone. `mobile/` is a React-Native/ONNX port of **line calls only**;
-  `ios/` is a latency instrument that has **never been compiled or run**. The shipped product today is a
-  Windows/Python CLI plus a React **web** dashboard.
-- `mobile/` ships **TrackNet** ONNX while `backend/` defaults to **BallNet v21**. That fork is real and
-  was never recorded as a decision.
-- `audio.py`, `calib_score.py` and `profiles.py` sit inside the product package with no caller in the
-  product. `profiles.py` has **zero importers anywhere**, tests included.
+**P4 IS WRITTEN — four items, not three, and item (iv) changes a build.** Full text in
+`docs/DECISIONS_PENDING.md`, 2026-09-12. The three the founder named are (i) §8-vs-§4 latency,
+(ii) §1's drift RECOVERY having no mechanism under a manual four-tap, (iii) §10's shell blocker
+being void. **The fourth, found while verifying the first: `live.py`'s bounce detector is NOT
+SPEC §4's method.** Its own docstring calls it "a local minimum of the ball's court-plane speed
+... a court-speed heuristic" with **no height channel at all**, while §4 mandates vertical-velocity
+sign reversal. `v2/mobile/live_calls.js` faithfully ports that same heuristic — so P7's
+"the JS port proves this is cheap" evidence is evidence about a detector v1 forbids. P7 must port
+live.py's STRUCTURE and replace the bounce STAGE with §4 on P1's 3D fit.
 
-**CURRENT TASK (founder brief, 2026-09-10):** attack `smooth_forecast`'s **innovation gate**. It is the
-largest single speed-coverage cost (-11.0 / -8.1 pts under TrackNet, v1's detector) and is a property of
-the STAGE, not the pairing, because the gate deletes **14-17% of surviving real detections in EVERY arm**.
-Suppression is second (-5.2 / -4.4). Ghost behaviour of the stage IS pairing-specific and needs no
-attention under TrackNet — do not conflate `seen_frac` (over hit->landing spans) with per-frame recall.
-Founder constraints: pre-register the bar; a failed bar stays failed; one variable per A/B, seeded; score
-at the CHAIN; never self-grade. Never stop to ask — append to `docs/DECISIONS_PENDING.md`. Update STATE.
-Commit to master, **DO NOT PUSH**.
+**TWO NUMBERS I CORRECTED IN MY OWN DRAFT — do not re-derive them the wrong way:**
+- **Shell calibrations: 2 usable at a spec-relevant height, not 4.** Ten exist (`7c8b8af`), four
+  stamp `_audit: PASS` — but `mpc_tuesday_p01`/`p07` are **excluded as ground truth by their own
+  commit** (two independent labels disagree by 25.4 px@640, past the 20 px wrong-court line).
+  `_audit: PASS` and "valid truth" are DIFFERENT AXES. The usable set is 8 of 10; at >=2.5 m it is
+  `flexi_franz_p01`/`p07` only, which are two labels of **one venue**.
+- **Dropout latency tail: P(>6 frames) = 1.1%, not the 6% I first wrote.** Negative binomial,
+  p=0.7, two detections needed. E = 2.9 frames = 48 ms; P(>4 frames) = 8.4%.
 
-**THE RULE-3 TENSION, STATED UP FRONT.** `docs/evidence/speed-coverage-is-chain-shaped-and-the.md` ends
-with: *"this is the third measured negative in the smoother-gate family, so rule 3 bars a fourth, the
-cross-detector variant included."* The founder has directed an attack on this gate anyway. That is the
-founder's call to make and it is made. It does **not** license re-running a dead idea: the three negatives
-are all **re-admit / widen** moves (`blocked` mask, backward-RTS re-admit, `reset_after`/`max_gap_s`
-sweeps). The line being taken instead is that the gate's **noise model** may never have been calibrated —
-`meas_var=25.0` (sigma 5 px at 720p) is a 2026 tuning guess, the pipeline passes only `fps_eff` and
-`res_scale` (`pipeline.py:1448`), and a chi2 gate at 13.8 (2 dof, 99.9%) claims a **0.1%** false-reject
-rate while measuring **14-17%**. That is a 140-170x gap between the gate's design point and its behaviour.
-Establishing whether R is miscalibrated is a **diagnosis**, not a fourth widening.
+**The one design call the lead made in the brief, recorded because it shapes the answer:** the
+PRIMARY arm fits `p0` FREE with `physical_bounds=True`. A striker-pinned launch was worth -3% in
+`docs/evidence/arc-fit-observability.md`, but it is pinned by POSE, and SPEC §9 tossed all pose from
+v1 — so v1 does not have that information. The anchored variant may be reported as a descriptive
+secondary, labelled as needing information v1 does not have.
 
-## QUEUE FOR THIS TASK
+## THE OLD RESTART QUEUE — SUPERSEDED 2026-09-12 by NOW's P1-P7
 
-- [DONE] **researcher** — family verdict + pre-registration. Wrote
-  `docs/evidence/innovation-gate-noise-calibration.md` §1-§4. Verdict: **the R line is INSIDE
-  the barred family and is dead**, on a census that already existed — the gate's own rejects are
-  **21 real / 28 ghost = 0.75:1 pooled**, a ceiling on EVERY re-admission route at once, against a
-  family bar of >=3:1. My 208-829 px separation argument was a **population swap**: those are chain
-  SURVIVORS; the gate's reject-ghosts sit at 24.0 / 30.3 / 49.8 / 386.2 px. Proposed M1 (are 1-2
-  frame bridges unmeasured?) and M2 (rejection-run coherence) as the only non-family routes.
-- [DONE] **backend-dev** — ran the §3 diagnostic. Wrote §5. `ball.py` NOT modified on disk;
-  instrumented == shipped **6 of 6**; the lost-reject census reproduces the published 18/13/18 and
-  9/9, 6/7, 6/12 **exactly**; seen_frac baselines reproduce 51.1 / 55.0 to 0.05 pt. Three
-  independent cross-checks.
-  - **K1 BAND NOT MET, and the miss is ~12x LOW** — median `d2` pooled **0.113** vs chi2_2's 1.386.
-    The innovations are far SMALLER than the filter's own `S` predicts, so **S is OVER-stated**.
-    The R line dies by the OPPOSITE sign to the one §1 argued: raising `meas_var` moves the
-    statistic further from calibration.
-  - **Leg 2 REFUTED BY MEASUREMENT.** `R/S` median 0.187-0.304 — **P dominates S, not R** (the
-    derivation said R supplies 70-85%). True accept radius **64.4 px** at 1080p, not ~19 px.
-  - **K2 KILL.** Run-length enrichment +60.0 / +10.0 / +10.7 pp, 1 of 3 clips vs 2 required; seeded
-    null p = 0.105 / 0.589 / 0.585, none <= 0.05. M2 dead. **And 19 of 28 pooled ghost rejects (68%)
-    sit in runs >= 2** — the `run_len = 1` ghost signature is ANOTHER population swap.
-  - **K3 PASS, and it is the one number that survives.** Resets 630 / 384 / 34; frames discarded
-    902 / 479 / 47; worth **+6.49 / +4.93 / +3.45 pts** of mean `seen_frac` — a **ceiling worth
-    ~40-60% of this stage's entire cost**, never counted before. A ceiling, not a prize: K2 shows
-    run length cannot say which of them are real.
-  - **M1 KILL.** TrackNet `"1-2"` coast bin median **19.90 px** vs a <=10.0 px bar. The
-    `seen_frac` coast-exclusion rule is empirically RIGHT. (The nine existing coast-by-gap files
-    are all BallNet and would have passed — 6.7 / 11.8 / 5.3.)
-- [DEAD — killed by a session limit, produced nothing] **researcher** — reconcile K1. Its
-  question is answered anyway: qa independently confirmed the sign and reports it survives both
-  alternative explanations it could test. Do NOT re-dispatch to re-derive a confirmed number.
-- [DONE — the journal said parked; its work was already on disk as §6] **qa** — independent
-  verification. **Both headline verdicts stand.** K3 CONFIRMED and **corrected UPWARD**
-  (914/492/48 frames, +6.557/+5.142/+3.534 pts; backend-dev's was a 1.3–2.7% undercount, so the
-  direction was safe), spans verified fixed twice. K1 CONFIRMED to 5 s.f. (0.11272), factor
-  **12.30×**, 238/291 below χ²₂'s median, **sign test p = 1.9e-29**. Two defects found in
-  SUPPORTING claims and left in place per its remit: the frame undercount, and §5.5's
-  "reproduces the baselines within 0.05 pt" which holds on `am_hard_utr` but **not** on
-  `yt_match40`.
+The iOS-harness queue (A/B/C), the court maintenance lanes (D/E/G) and the calibration-provenance
+queue are all superseded. Court AUTO-detection is v2 (`docs/court/CLOSED.md` + CLAUDE.md); the
+sideload line is founder-paused; the provenance/re-placement asks are explicitly **not** to be
+picked up (founder queue 2026-09-12, "do not do these next", item 2). Full text is in git history
+at `79425f3`.
 
-## THIS TASK IS COMPLETE — every proposed route is dead except a ceiling with no separator
-
-Committed `85fdf97`, **not pushed** (founder's standing instruction on this task). 706 tests pass.
-
-- **R line: dead twice.** Family verdict (rejects 21 real / 28 ghost = **0.75:1** against a ≥3:1
-  bar), and then K1 killed it by the **opposite sign** — `S` is OVER-stated ~12×, so raising
-  `meas_var` moves the statistic further from calibration.
-- **M2 / K2: dead.** Run-length coherence cleared the bar on 1 of 3 clips against 2 required;
-  seeded null p = 0.105 / 0.589 / 0.585. And **19 of 28 pooled ghost rejects (68%) sit in runs ≥ 2**,
-  so the `run_len = 1` ghost signature was a population swap.
-- **M1: dead.** TrackNet's `"1-2"` coast bin medians **19.90 px** against a ≤10.0 px bar — the
-  `seen_frac` coast-exclusion rule is empirically RIGHT. (The nine existing coast-by-gap files are
-  all BallNet and would have passed at 6.7 / 11.8 / 5.3 — a population swap of its own.)
-- **K3: the survivor, and it is a CEILING not a prize.** The reset discards frames worth
-  **+6.6 / +5.1 / +3.5 pts** of `seen_frac`, ~40–60% of this stage's whole cost. **Nothing
-  separates the recoverable frames from the rest** — that is exactly what K2 tested and killed.
-
-**So the honest next question is: what WOULD separate them?** Researcher's §2 named M1 and M2 as
-*the only non-family routes*, and both are now measured dead. A new separator is a **new
-hypothesis**, not a continuation — and rule 3 bars a fourth widening of this gate. **Do not
-dispatch another arm on this gate without a founder call**; the finding to hand them is the K3
-ceiling and the fact that nothing yet claims it.
-
-
-
-**T27 CANDIDATE, and it fired TWICE in this one session:** reasoning about the gate's REJECTS from
-properties measured on chain SURVIVORS. First the lead's 208-829 px argument, then researcher's
-`run_len = 1` argument. Both were killed by the same measurement. Append to TRAPS as T27.
-
-## THE QUEUE ON RESTART — ordered, with what each is blocked on
-
-**A. Finish the stopwatch (the iOS latency harness). This is the head of the queue.**
-1. `ios/` sources + `project.yml` + build workflow + README — being written at pause.
-2. Lead reviews, then commits. **Push needs the founder's explicit call** (ruling below).
-3. **Run the Core ML export.** `.github/workflows/coreml-export.yml`, `workflow_dispatch`,
-   **never triggered — no `.mlpackage` exists yet.** ~10-20 min, macOS runner, **10x billing**.
-4. Build the harness. 5-10 min. **Budget 2-3 attempts** — the Swift is written blind and the
-   pose model's input name/type is UNVERIFIED (frontend-dev flagged it itself).
-5. Founder sideloads from Windows (AltStore/Sideloadly, free Apple ID, 7-day re-sign).
-6. Founder taps Run, reads ms/frame.
-
-**B. What A unblocks — three v1 decisions stuck for weeks, all gated on step 6:**
-sustained throughput at thermal steady state (can a 60-90 min match be analysed at all);
-the int8-vs-fp32 ship call (43.0 vs 10.9 MB); the cost half of P0-2 pose affordability.
-**A bad answer is a PRODUCT CUT**, which is why this precedes building any real app.
-
-**C. Cost lever, free to test, do it BEFORE step 3 if minutes are tight.** The export runs on
-`macos-14` at 10x. `docs/evidence/p0-0-coreml-export.md:5` says the `.mlpackage` export "could
-run anywhere and only the Xcode measurement needed a Mac" — it was put on macOS because the
-**Windows** wheel lacked the native lib. **Linux was never tried.** If `ubuntu-latest` works
-that is 1x instead of 10x.
-
-**D. Court — now a maintenance lane, ONE item.** pm's D.1: **nobody has ever rendered a
-gold-pool court onto its frame.** All 28 reviewed sheets were the *references* pool; the
-`data/gold/*.court.labels.json` truth behind the 12/20 gate has never been looked at, and it
-already carries two known defects. One session, bar pre-registered before anything renders.
-Everything else in court is CUT (pm's line): no seventh detection branch, no multi-homography,
-no AGREE_PX normalisation, no court-normalised metric, no second sheet review, nothing touching
-`courtnet_ft.pt`.
-
-**E. The only court item with a v1 consumer.** Setup-time camera motion: **calibrate LAST**
-(the 4-tap on a frame captured after the phone is placed and untouched) + an **IMU stillness
-gate** (CoreMotion, on-device, zero inference) as a refusal. Measured reason it must be the IMU:
-motionless tripods disagree with themselves about the court, so you cannot detect camera
-movement by watching the court fit wobble. ~1 session on frontend-dev's setup-screen brief.
-
-**F. Founder decisions already waiting (not new, not urgent):** match scoring deferred out of
-v1 — confirm or overturn; the 4 confirmed-misplaced calibrations stay un-replaced (all
-multi-shot, unfixable by clicking); `uR5q2cSM6AY` retained as the marginal fifth, revisit only
-with a pre-registered bar.
-
-**G. Parked, do not resume without a reason:** the overnight round-2 briefs (shell 4K refiner
-reach — `eval/reach_ab.py` is committed but INCOMPLETE; search-ranking defect); researcher's
-ALL-SINGLETON specification decision (hold until court reopens).
-
-**UNCOMMITTED AT PAUSE:** `docs/DECISIONS_PENDING.md` (the corrected item -1 / item 1 status),
-plus whatever `ios/` files the harness run lands.
-
-**FOUNDER RULING 2026-09-09, standing:** pushes are ALLOWED but **only on the founder's explicit
-call, per push.** Never automatic at session end; a prior approval does not carry forward.
-
----
-
-**SUPERSEDED 2026-09-09 (kept for context): STOP ALL COURT *FEATURE* WORK. Fix the measuring
-instrument first.** The three overnight court briefs (round 2: shell 4K refiner reach,
-search-ranking defect, amateur-court literature) are PARKED, not cancelled.
-
-**WHY — the finding that stopped everything.** The founder reviewed the 28 rendered corner
-sheets and marked **10 placed wrong**. Git traced 8 of those 10 to `3399d58` / `ac94aab`
-(2026-08-11/12), where **a Claude agent placed the corners AND was its own sole verifier**
-("all 10 were verified by eye"), and that same commit message carries a self-retraction where
-its visual verdict flip-flopped. **9 of the 20 clips in the scoring pool come from that batch.**
-Failure rate inside the batch ~73%, outside it ~12%.
-
-So `_exact: true` — which `eval/run_refs.py` treats as "a human DELIBERATELY placed these" —
-actually only means "the Shape-lock checkbox was off at save time". Agent output entered the
-gold pool wearing a human label. **Every court number scored against that pool is provisional
-until this is settled**, including last night's 40% proposal recall, the 12/20 gate and shell 1/5.
-
-**LIVE, dispatched:** `backend-dev` -> `docs/evidence/calibration-provenance.md`. Make the save
-path record what actually happened (`_provenance` block; persist the `moved_px` that
-`lock_shape` computes and discards), correct run_refs' false docstring, and produce the
-git-derived provenance table for every existing `*_pts.json`. Corner values byte-identical,
-pinned by a test. NOT authorised to re-place corners or backfill existing files.
-
-**QUEUED, in order, one at a time:**
-1. `run_refs` provenance-aware pool reporting (needs the founder's call on whether suspect
-   clips leave the pool — that changes every number, so it is his, not ours).
-2. `render_corner_audit.py`: `--tag` is accepted and IGNORED on the corner path (`main()`
-   never passes it to `render()`, output silently overwrites); and it defaults to frame 0
-   while the eval samples 5-95%.
-3. `eval/candidate_audit.py` docstring still says UNRUN; it has run twice.
-4. Side-by-side re-review of the founder's 10 "wrong" calls — the lead disagrees with at
-   least one (`L73ep7JHiJ4` looks correctly placed), and one reviewer with no disagreement
-   mechanism repeats the failure mode that caused this.
-5. Commit + test `tools/render_ai_court_audit.py` (new this session, untracked).
-6. `docs/TRAPS.md` entry: an agent placing labels AND judging them is self-grading.
-
-**FOUNDER-BLOCKED (do not dispatch):** re-placing the suspect calibrations. Only a human eye
-can do it and rule 9 makes it his. This is the expensive one and it gates F1.
-
-### ALREADY DONE, do not rebuild (checked 2026-09-09)
-- **The synthetic court-centre 15th keypoint** the doc recommends is **already implemented** —
-  `_courtnet.py` outputs 15 heatmaps, `train_courtnet.py:40` builds "14 keypoints + court
-  centre (mean of the 4 corners)".
-- **We fine-tuned from the upstream RELEASED checkpoint**, not their training recipe:
-  `court_detector.pt` is Jun 2023 (theirs); `courtnet_ft.pt` / `courtnet_split.pt` are ours.
-  The doc's issue-#13 worry does not apply, and its Q1 is answered.
-- **Our ~21.6% is a fire-rate on amateur frames**; their 0.963 is per-keypoint at 7 px. Its
-  Q2 is answered: the two were probably never comparable.
-
-### NEXT, when a slot frees (court only)
-- **`EVID_BAND`: does a correct value EXIST at all?** Not the best value — whether ANY value
-  passes the gate (>=12 of 20, zero accepted beyond 20 px). If none does, the scoring
-  FORMULA is wrong and a class of future sweeps is retired. Gated on qa's recall number: if
-  proposal recall binds, EVID_BAND is scoring candidates that were never generated.
-- **Duty-cycle the court detector** (~every 30 frames rather than per frame) — assess against
-  the existing 8-frame vote; may already be equivalent.
-- **Live-clip modelling**, per the founder's overnight wording: the corpus work is on gold
-  FRAMES; running the court path over continuous video is a different and less-tested
-  regime. `tools/eval_court_cleanplate.py` and the parity harnesses are the instruments.
-
-### THE 90% UPDATE
-When the session budget nears exhaustion (or repeated rate-limit kills make progress
-impossible), write the founder ONE consolidated update: what landed, what each agent found,
-what is still open, and what needs them. Do not interrupt before that with routine progress.
-
-### Standing state
-Committed and pushed through `54b23bf`. 586 tests pass. Doorman v1, teams ON, cap 3 across
-the whole tree, `autoContinueAtUsageLimit` true. A 10-minute cron (`98a6a475`) re-checks the
-quota and resumes from THIS section — it is session-only and expires after 7 days.
+**Three things from it are still live and are carried here rather than re-derived:**
+- **Core ML export cost lever, untested:** the `.mlpackage` export runs on `macos-14` at **10x
+  billing**, and `docs/evidence/p0-0-coreml-export.md:5` says only the *Xcode measurement* needs a
+  Mac. **`ubuntu-latest` was never tried.** Worth one attempt before any future export run.
+- **Setup-time camera motion, and it has a measured reason:** calibrate LAST (four-tap on a frame
+  captured after the phone is placed and untouched) plus an **IMU stillness gate** (CoreMotion,
+  on-device, zero inference) as a refusal. The measured reason it must be the IMU: motionless
+  tripods disagree with themselves about the court, so camera movement cannot be detected by
+  watching the court fit wobble. **This is direct input to P4(ii)** — the drift-recovery ruling.
+- **FOUNDER RULING 2026-09-09, standing:** pushes are ALLOWED but **only on the founder's explicit
+  call, per push.** Never automatic at session end; a prior approval does not carry forward.
 
 
 ## PARKED — work that was started and stopped
@@ -449,6 +273,13 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-12** — New founder queue (P1-P7) replaces the audit and innovation-gate tasks. **P1
+  dispatched to backend-dev** (monocular 3D ceiling on synth truth, bars A-G pre-registered).
+  **P4 written and delivered** to `docs/DECISIONS_PENDING.md` — four contradictions, not three.
+  `ios/README.md`'s false "nothing here has been built or run" corrected (it compiled green
+  2026-09-10; only the sideload is blocked). Stale restart queue compacted to its three live
+  carries. Doc-only commit, NOT pushed.
 
 - **2026-09-12** — **NEXT-SESSION QUEUE SET by pm** (agent `a030453975e9d4c47`, 104k tokens). P1 measure
   monocular 3D on synth truth (bars A-G, incl. a MANDATORY self-grading control: simulator and fitter
