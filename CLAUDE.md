@@ -87,23 +87,23 @@ target is provisional — the honest rate may be far higher, and that is a findi
 
 ## Known blockers
 
-- **Monocular 3D has never been measured.** The bar now exists (10 cm, `SPEC.md` §3) and
-  `tools/synth_truth.py` already generates known 3D trajectories, so the rig exists. **This is the
-  first thing to do** — no design decision downstream is safe until there is a number.
-- **Three gold sets in SPEC.md do not exist yet:** near-line contested calls (§7), bounce timing
-  (§7), and the occlusion set (§6 cannot ship without it). Each needs human labelling.
+- **Monocular 3D has never been measured.** The bar exists (10 cm, `SPEC.md` §3) and
+  `tools/synth_truth.py` is the rig. **Do this first** — nothing downstream is safe without it.
+- **The 10 cm gold set CANNOT be labelled from video** (pm, 2026-09-11). A human clicking a monocular
+  low mount cannot resolve a landing to 10 cm. Truth at 10 cm is built AT CAPTURE — tape-measured
+  marks, positions on paper. That is a court visit with lead time, not a labelling session.
 - **No number has ever come from a phone.** The Core ML export ran green on Linux and the iOS latency
   harness compiled green, both 2026-09-10; the `.ipa` and `.mlpackage` exist as CI artifacts. The last
   mile is sideloading, blocked on Apple ID login on Windows (Sideloadly -22410). **Do not re-open that
   line without the founder.**
-- **INSTANT is ~60x away on paper and unmeasured in fact.** 0.7-1.1 s/frame on CPU against a 16.7 ms
-  budget. Nothing here has ever run on the ANE. Dropping §6/§9 leaves ball + court + physics only —
-  exactly `live.py`'s design, which is v1's starting point.
-- **Everything ball-related is blocked behind the indoor-shell court issue** (`SPEC.md` §10): ball
-  targets do not apply until a working court model exists on that surface.
-- **`run.py live` is broken out of the box** — it defaults to `weights/tracknet.pt`, deleted in the
-  2026-09-11 weights cleanup along with `court_detector.pt` and `wasb_tennis_best.pth.tar`. All three
-  are upstream downloads and re-obtainable; nothing in-house was lost.
+- **INSTANT is unmeasured, and the "60x away" figure is MISLEADING** (corrected 2026-09-11): 0.7-1.1
+  s/frame measures the full offline pipeline INCLUDING the pose model v1 tossed. v1's per-frame path
+  is a ~2 MB conv net plus arithmetic. Cost it on paper for an A13 ANE — that needs no phone.
+- **The indoor-shell blocker (`SPEC.md` §10) is PROBABLY VOID for v1 — unruled.** It was written
+  against the auto-detection SEARCH failure; v1's court is a manual four-tap, which works on a shell.
+  Two shell gold calibrations exist. Confirm or deny before letting it block anything.
+- **`run.py live` is broken out of the box** — its default `weights/tracknet.pt` was deleted in the
+  2026-09-11 cleanup (with `court_detector.pt`, `wasb_*`). All upstream, all re-downloadable.
 - **Court auto-detection is closed for v1.** Manual four-corner setup is the product answer, not a
   fallback. Capability 1 above is the route back in, and it is a different mechanism.
 

@@ -450,6 +450,56 @@ affordability) both wait here, and nothing dispatchable is on that path.
 
 ## LOG — newest first
 
+- **2026-09-12** — **NEXT-SESSION QUEUE SET by pm** (agent `a030453975e9d4c47`, 104k tokens). P1 measure
+  monocular 3D on synth truth (bars A-G, incl. a MANDATORY self-grading control: simulator and fitter
+  share a physics model, so bar A without an offset-coefficient arm is a ceiling, not an accuracy) ->
+  P2 occlusion census (refusal FLOOR; >20% occluded WITHDRAWS SPEC's <=5% target) -> P3 does any of
+  the 116 clips meet 60fps+1080p -> P4 three spec self-contradictions needing a founder ruling ->
+  P5 capture protocol -> P6 INSTANT costed on paper -> P7 Swift skeleton. Five of seven are
+  MEASUREMENTS. Prompt written to scratchpad `NEXT_SESSION_PROMPT.txt` and handed to the founder.
+  **pm CORRECTED THE LEAD ON THREE THINGS, all now fixed in CLAUDE.md:**
+  (1) the "INSTANT is ~60x away" blocker measured the FULL OFFLINE pipeline **including the pose
+  model v1 tossed**; v1's per-frame path is a ~2 MB conv net plus arithmetic, and it can be costed on
+  paper for an A13 with **no phone** — so the sideload does NOT block that question.
+  (2) the 10 cm gold set is **NOT LABELLABLE FROM VIDEO AT ALL** — a human clicking a monocular low
+  mount cannot resolve 10 cm (our own height curve: 3.81 m bounce error at a 1.0 m mount). Truth at
+  10 cm must be built **AT CAPTURE** with tape-measured marks. That is a court visit with lead time,
+  not a labelling session, and the lead had it filed as the latter.
+  (3) the indoor-shell blocker is **probably VOID for v1** — written against the auto-detection SEARCH
+  failure, but v1's court is a manual four-tap and two shell gold calibrations exist.
+  **Lead VERIFIED pm's two flagged unknowns** (it had no Bash): `tools/height_curve.py` SURVIVED the
+  cut, and `synth_truth.py` emits **(u,v) only, no apparent radius** — so pm's bar G is right and
+  SPEC §5's depth-from-ball-size channel genuinely cannot be exercised by that rig.
+  **pm caveat carried forward: its Grep/Glob returned nothing in this environment** — it could only
+  read known paths. Dispatch it with explicit file lists until that is understood.
+  CLAUDE.md held at **150/150** non-blank after the three corrections.
+
+- **2026-09-11** — **AUDIT EXECUTED AND COMMITTED** (`59d82a9`, amended; NOT pushed). Founder amended
+  SPEC on four points: latency **INSTANT** not 2 s; **use the Neural Engine** (the "CPU-only" framing
+  is withdrawn, so the ANE conflict resolves in favour of the standing project constraint); **iPhone
+  only** (Android ML Kit struck); **§6 and §9 TOSSED from v1** — read as "both sections out, evaluate
+  later", stated as a reading in the reply so it can be corrected. So v1 has **no pose of any kind**
+  and **no occlusion bridging**, which makes every occluded bounce a refusal and SPEC's <=5% refusal
+  target provisional. §10's CourtNet attribution corrected to the SEARCH/proposal problem (8/20).
+  **The cut:** tools **116 -> 57**, eval **30 -> 9**, backend scripts **21 -> 8**, swingvision
+  **25 -> 22** (`audio.py` never called by the pipeline, `calib_score.py` failed its bar,
+  `profiles.py` zero importers). `mobile/` shelved to `v2/mobile/` + `v2/README.md`. 185 MB of unused
+  YOLO + 8 superseded BallNet checkpoints gone. `event_audit.py` lost its HUD path (rule 12 retires
+  that reference); `test_hud_match.py` went with it. **69 dead ends recorded** across five
+  `docs/<pillar>/CLOSED.md` files, each with the killing number and the `git show <sha>^:<path>`
+  incantation to recover the code.
+  **RULE 9 PROOF:** 781 passed / 1 skipped before -> **702 passed / 4 skipped, ZERO failures** after.
+  Collected test IDs diffed before/after: **every one of the 76 lost tests belongs to a file whose
+  subject was deleted** (test_calib_score 15, far_player_motion_gate 11, p0_3_population 10, audio 9,
+  hud_match 7, audio_streaming_floor 5, audio_floor_chunking 4). **No test in any other file moved.**
+  **ONE LEAD ERROR, CAUGHT AND FIXED IN THE SAME TURN:** `git add -A` committed **73 MB of ONNX
+  binaries** that `.gitignore` had deliberately excluded — shelving `mobile/` to `v2/` moved them out
+  from under `mobile/models/*.onnx`, which silently stopped matching. Untracked and the rule fixed
+  with BOTH spellings (`git rm --cached` + amend); the blobs survive in the reflog until gc.
+  **Lesson worth keeping: a `git mv` of an ignored directory un-ignores its contents.**
+  **NEXT, unchanged and unblocked:** measure monocular 3D against the **10 cm** bar with
+  `tools/synth_truth.py`. The rig exists, the bar exists, and it has never been done.
+
 - **2026-09-11** — **TARGET SPEC LOCKED. `docs/SPEC.md` created** (10 sections, founder-authored,
   verbatim). It answers the precision question that was blocking everything: **10 cm landing
   accuracy, >=90% of near-line contested calls**. Bounce timing **+/-1 frame 90% / +/-2 frames 99%**.
