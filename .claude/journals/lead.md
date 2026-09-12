@@ -127,9 +127,9 @@ measurement without writing down why.**
 |---|---|---|---|---|
 | P1 | Monocular 3D ceiling on synthetic truth | MEASURE | backend-dev | nothing — **IN FLIGHT** |
 | P2 | Occlusion census: the refusal floor | MEASURE | qa builds sheet, founder eyes it | sheet must exist BEFORE the founder is asked |
-| P3 | Does any footage meet the v1 capture floor? | MEASURE | qa | nothing |
+| P3 | Does any footage meet the v1 capture floor? | MEASURE | **DONE by the lead 2026-09-12 — BAR FIRED** | -> `docs/evidence/capture-floor-census.md`. **STATE row still OWED** (see below) |
 | P4 | **FOUR** contradictions inside a locked SPEC | DECIDE | founder | **WRITTEN AND DELIVERED 2026-09-12** -> `docs/DECISIONS_PENDING.md`. Awaiting the ruling; P7 cannot start without (i)/(ii)/(iv) |
-| P5 | The capture protocol (artefact + target sheet) | BUILD artefact | pm drafts | P3, P4(iii) |
+| P5 | The capture protocol (artefact + target sheet) | BUILD artefact | pm drafts | **NOW TOP OF QUEUE — P3 fired its bar.** P4(iii) ruled void by the lead, pending founder confirmation |
 | P6 | INSTANT on paper, v1-only path | MEASURE | researcher | P4(i) |
 | P7 | The live-path skeleton in Swift | BUILD | backend-dev/frontend-dev | P1 pass, P4, P6 |
 
@@ -152,6 +152,38 @@ CONTROL ARM, so the answer says what 3D buys over what ships today.
   bar A is a ceiling under a perfectly-specified model and will be quoted as an accuracy.
 - **G OUT OF SCOPE, report UNTESTED:** SPEC §5's depth-from-known-ball-size (6.7 cm). The rig emits
   (u,v) only, no apparent radius — so §5's self-declared weakest channel is NOT exercised here.
+
+**P3 IS DONE AND ITS BAR FIRED — the v1 validation corpus DOES NOT EXIST.** Full text:
+`docs/evidence/capture-floor-census.md`; raw probe `data/output/capture_floor_census.json` (213
+clips, 0 errors). Run by the lead, not qa: `ffprobe` over file properties is no model and no
+tuning, so it cost no agent slot while P1 held the one child.
+
+- **7 clips** clear >=60.0 fps AND >=1080p (1.3 h), spanning **2 surfaces** — Clay 1, Hardcourt 6.
+  Tolerant (>=59.9, admitting NTSC 59.94) gives 14 clips / 2.5 h, still **2 surfaces**. The bar
+  needs >=5 clips AND >=3 surfaces, so it **FAILS on the SURFACE leg under both readings**.
+- **Shell 0 compliant, Grass 0 compliant** — two of the three surfaces §7's split requires.
+- **THE STRUCTURAL FINDING: resolution and frame rate are ANTI-CORRELATED in this corpus.** All
+  **58** 4K clips are 30 fps; every 60-ish fps clip is **exactly** 1080p. **Not one clip is both.**
+  The 4K material IS the shell footage (4K/30 phone captures); the 60 fps material is broadcast.
+- **THE BINDING FLOOR IS MOUNT FIXITY, NOT FRAME RATE.** Already measured in
+  `docs/evidence/clip-shot-map.md`: a known static tripod reads **0.1-0.4 px@640** background
+  displacement; the best compliant clip reads **6.3 px**, and `A7vXlWIlyrI` reads **188.3 px with
+  40% zoom** (broadcast pan-and-zoom). Four of the 14 are eliminated outright; **9 of 14 have no
+  fixity measurement at all.** No new threshold was invented — both sets of numbers already
+  existed, and putting them in one table is a comparison, not a gate.
+- **So we own no clip that is simultaneously >=60 fps, >=1080p, fixed-mount, AND at a height where
+  10 cm is reachable.** The one amateur fixed clip, `am_hard_utr`, is 59.94 fps at **1.74 m**.
+- **The 59.94 call was pre-registered and it mattered** — it doubles the clip count (7 -> 14) and
+  changes no verdict. Graded strictly, per SPEC §2's "HARD".
+- **P5 therefore goes to the TOP of the queue** (the bar says so). **Nothing here blocks P1** — P1
+  runs on synthetic flights through a real calibration and needs no compliant clip.
+
+**STATE ROW OWED — DO NOT FORGET, and the reason it is deferred is deliberate:** `backend-dev` has
+`docs/STATE.md` open for P1, and two concurrent writers to one file means last-write-wins clobbers
+one of us. **Add the P3 row (and P4's docs row) to STATE the moment backend-dev's commit lands.**
+The row: *P3 capture-floor census - the v1 validation corpus DOES NOT EXIST; 7 clips clear 60 fps +
+1080p across only 2 surfaces against a >=3 bar, shell and grass contribute zero, and mount fixity
+not frame rate is the binding leg -> `docs/evidence/capture-floor-census.md`.*
 
 **P4 IS WRITTEN — four items, not three, and item (iv) changes a build.** Full text in
 `docs/DECISIONS_PENDING.md`, 2026-09-12. The three the founder named are (i) §8-vs-§4 latency,
@@ -177,6 +209,29 @@ PRIMARY arm fits `p0` FREE with `physical_bounds=True`. A striker-pinned launch 
 `docs/evidence/arc-fit-observability.md`, but it is pinned by POSE, and SPEC §9 tossed all pose from
 v1 — so v1 does not have that information. The anchored variant may be reported as a descriptive
 secondary, labelled as needing information v1 does not have.
+
+## PRE-REGISTRATION — P3, the capture-floor census. Written 2026-09-12 BEFORE ffprobe ran.
+
+Run by the lead rather than qa: it is `ffprobe` over file properties, no model and no tuning, so
+it costs no agent slot while P1 holds the one child. **Three specification calls made BEFORE
+seeing any result, because this is exactly where a census gets quietly generous:**
+
+1. **`r_frame_rate` is read as an exact rational and reported as a decimal.** Not `avg_frame_rate`,
+   which is a duration average and can be dragged below the real rate by a container quirk. Both
+   are recorded per clip so a disagreement is visible rather than silently resolved.
+2. **59.94 fps IS THE DECIDING QUESTION and it is pre-registered, not decided after the fact.**
+   SPEC §2 says "60 fps minimum, HARD". NTSC 59.94 (60000/1001) is *below* 60.0. So:
+   **the bar is graded STRICTLY (>= 60.0).** The tolerant count (>= 59.9) is reported ALONGSIDE it
+   as a separate number, because if the two answers differ the founder should rule on it — but the
+   strict number is the one the bar is graded on, and it stays that way whatever it turns out to be.
+3. **Mount fixity is NOT ffprobe-able and will NOT be guessed.** ffprobe gives fps and resolution;
+   "fixed mount" is a property of how the clip was shot. It is reported as its own axis, from
+   provenance only (broadcast footage pans and zooms and is NOT fixed; the shell venues are
+   tripod), with the count of clips whose fixity is genuinely UNKNOWN stated as unknown. An eye
+   check is not being done here and the census will not pretend it was.
+
+**BAR (founder, verbatim):** if fewer than 5 compliant clips spanning at least 3 surfaces exist,
+record in STATE that the v1 validation corpus DOES NOT EXIST, and P5 goes to the top of the queue.
 
 ## THE OLD RESTART QUEUE — SUPERSEDED 2026-09-12 by NOW's P1-P7
 
