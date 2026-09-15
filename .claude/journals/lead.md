@@ -153,6 +153,17 @@ CONTROL ARM, so the answer says what 3D buys over what ships today.
 - **G OUT OF SCOPE, report UNTESTED:** SPEC §5's depth-from-known-ball-size (6.7 cm). The rig emits
   (u,v) only, no apparent radius — so §5's self-declared weakest channel is NOT exercised here.
 
+**IN FLIGHT NOW: `researcher` — routes after P1's conditioning failure** (dispatched 2026-09-15).
+CLAUDE.md routes a surprising RESULT to researcher first, then pm, and P1 is exactly that: bar A
+missed by 15x while bar C says the method is sound. Brief: a RANKED list of candidate routes from a
+2.2 cm noiseless estimator to one that survives 2 px, each naming **what would pin the depth**
+(rule 7) and carrying a **pre-registerable bar measurable on the existing rig**. Barred from
+proposing detector work, pose, stereo/second camera, network, court auto-detection, or a bar A
+re-run. Three specific asks: is SPEC §5's depth-from-ball-size a real channel at 1080p (bar G is
+UNTESTED); is a BOUNDED spin principled or a knob; and **is 90% at 10 cm reachable at all from one
+camera** — a well-argued "no" is more valuable than an optimistic list. Output
+`docs/evidence/monocular-3d-routes.md`, no STATE row, no SPEC edit. **THEN: P5 (pm), then P2 (qa).**
+
 **P1 IS DONE. BAR A FAILED AT 6.1% vs 90%; BAR C DID NOT FIRE.** `backend-dev` was killed by a
 usage limit AFTER the compute finished (all 17 configs on disk) but BEFORE the write-up; the lead
 resumed, recomputed every headline from the raw per-flight JSON rather than the agent's summary,
