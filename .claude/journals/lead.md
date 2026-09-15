@@ -153,6 +153,51 @@ CONTROL ARM, so the answer says what 3D buys over what ships today.
 - **G OUT OF SCOPE, report UNTESTED:** SPEC §5's depth-from-known-ball-size (6.7 cm). The rig emits
   (u,v) only, no apparent radius — so §5's self-declared weakest channel is NOT exercised here.
 
+**DONE — `pm` on the §3 shape, and R1b (its pre-registered check) IS RUN.** 2026-09-15.
+`docs/DECISIONS_PENDING.md` fifth entry, "P5-scope: THE CAMERA IS BLIND IN ONE AXIS".
+
+- **pm's recommended §3 shape: per-LINE, not per-direction, and the METRIC changes first.** Accuracy
+  measured **perpendicular to the line called**, not `dist(true,est)` — for a baseline that selects
+  the HARDER component, so it is not a relaxation. Then: **§3.1 down-court-running lines keep 10 cm
+  at 90% unchanged and are expected to FAIL today** (proxy 49.9%) — keep it and let it fail;
+  **§3.2 across-court lines get NO v1 accuracy bar** (4.1% in the 18-24 m band) — refuse or don't
+  offer; **§3.3 abstention becomes directional** (1σ of the perpendicular error vs the margin —
+  "1σ > 10 cm" has no referent once the error is anisotropic); **§3.4 the <=5% refusal cap is
+  withdrawn with no replacement.** pm deliberately proposed NO relaxed rate: picking one now is
+  picking it after seeing the result.
+- **pm's biggest call — cut "where the ball bounced". v1 outputs a CALL, never a COORDINATE.** The
+  argument is TRUST, not accuracy: a rendered dot sits a metre from the true landing while the call
+  beside it is CORRECT, and the user concludes the app is broken. The compromise fails too — for a
+  sideline call the margin is the good axis and position ALONG the line is the blind one. **This
+  cuts the bounce map / landing dot / placement heatmap on MEASUREMENT, not deferral.**
+- **R1b — pm pre-registered a free re-read to test its own obliquity term, naming the outcome that
+  would hurt its recommendation. THAT is the one that landed. PASS at 3.58x vs a >=2.0x bar.**
+  A sideline is parallel to the camera ray only on the centreline; at the far doubles corner the ray
+  is 10.44° off axis and `sin(10.44°)=0.181` of the blind-axis error leaks ACROSS the sideline.
+  **Monotonic gradient inside one range band: med |dx| 0.049 m on the centreline -> 0.348 m at the
+  doubles sideline; 10 cm rate 72.9% -> 20.0%. A 7x degradation.** Mechanism fully accounted for:
+  predicted `sin(θ)·radial` matches to 5-13% from 2 m offset outward, and floors at the tangential
+  5.4 cm near the axis — a quadrature sum, nothing fitted.
+- **SO THE SIDELINE-FIRST SHAPE IS WORSE THAN THE POOLED NUMBER SUGGESTS.** 49.9% averages a
+  72.9%->20.0% spread, weakest exactly where contested sideline calls happen. **A per-LINE bar must
+  also be per-REGION.** pm's §3 shape is unaffected — it rests on R1's 23.5x, not on this term.
+- **pm's other flags:** a **far-half-court telephoto** capture variant has a feasible band
+  (hfov 21-36°, h>=3.4 m) unlike full-court which has none at any setback — but **iPhone SE 2nd/3rd
+  gen have no telephoto**, so an optical-tele spec narrows the device list BELOW our stated A13
+  floor. Side-mount pre-killed with numbers (29 cm/px vs 36; only swaps which lines are blind).
+  Refusal: **withdraw <=5% NOW, don't wait for P2** (P2 measures an additive source that can only
+  raise the floor); pm offers a kill condition instead — **if >1 in 3 near-line calls inside the
+  declared coverage region is refused, the line-call output is CUT rather than tuned.**
+- **P5 requirement deltas (pm, Q5):** marks at known **offsets from lines**, not just known
+  positions; **matched sideline/baseline pairs at matched ranges**; **>=30 per DIRECTION CLASS**, not
+  30 pooled; and the same marks at **two framings and two mount heights** — that last converts one
+  visit into the real-footage falsifier for the whole geometric diagnosis and **cannot be added
+  after the fact.**
+
+**THE SEQUENCING LINE pm drew and I agree with: the anisotropy is GEOMETRIC and will survive real
+footage; the RATES (6.1%, 49.9%, 83.9%) are properties of an i.i.d. noise model and a uniform
+flight population and WILL move. Rule on the SHAPE now; let P5 set the NUMBERS.**
+
 **DONE — `researcher` on P1's routes, and R1 IS ALREADY RUN AND SETTLED** (2026-09-15).
 `docs/evidence/monocular-3d-routes.md` carries seven ranked routes; R1 was top-ranked at zero
 compute and the lead ran it immediately.
@@ -486,6 +531,11 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-15** — pm delivered the §3 shape options (per-LINE bar; cut the landing coordinate,
+  output a CALL). **R1b run same session, zero compute: pm's obliquity prediction PASSES at 3.58x**
+  — the sideline degrades 7x from centreline to doubles corner, so sideline-first buys less than the
+  pooled 49.9% suggests. STATE row landed. Committed, NOT pushed. **P5 and P2 still queued.**
 
 - **2026-09-15** — researcher returned 7 ranked routes; **R1 run same session at zero compute and
   SETTLED**: the error is one-dimensional (tangential 5.4 cm vs radial 1.28 m), mechanism confirmed
