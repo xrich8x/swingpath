@@ -269,6 +269,20 @@ unreachable. §9's removal is not what is costing this bar.
    noise a real detector has. That is a founder decision, not an engineering one, and it is the
    decision this measurement existed to inform.
 
-**Raw per-flight results:** `data/output/mono3d_ceiling/*.json` (18 configurations, each carrying
-its own provenance block: tool, commit, python, platform, what it was measured against, what pinned
-the depth, the full config, the camera solve, and both aero models).
+## Reproducing it
+
+**Committed:** `data/output/mono3d_ceiling_summary.json` — every per-configuration headline in this
+file, 20 KB, so each number above is auditable in-repo without re-running anything.
+
+**NOT committed:** the full per-flight results, `data/output/mono3d_ceiling/*.json` (~13 MB across
+20 configurations, each carrying its own provenance block: tool, commit, python, platform, what it
+was measured against, what pinned the depth, the full config, the camera solve, and both aero
+models). `data/output/` is gitignored and git does not descend into an ignored directory, so the
+`!data/output/*.json` exception does not reach a subdirectory. They are **exactly reproducible** —
+every arm is seeded at `seed 0`:
+
+```
+cd backend && .venv/Scripts/python.exe ../tools/mono3d_ceiling.py --suite all --n 500 --workers 11
+```
+
+Budget ~3-5 h on 12 cores. `--suite report` re-prints the tables from whatever is already on disk.
