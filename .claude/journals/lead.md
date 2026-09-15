@@ -153,7 +153,40 @@ CONTROL ARM, so the answer says what 3D buys over what ships today.
 - **G OUT OF SCOPE, report UNTESTED:** SPEC §5's depth-from-known-ball-size (6.7 cm). The rig emits
   (u,v) only, no apparent radius — so §5's self-declared weakest channel is NOT exercised here.
 
-**IN FLIGHT NOW: `researcher` — routes after P1's conditioning failure** (dispatched 2026-09-15).
+**DONE — `researcher` on P1's routes, and R1 IS ALREADY RUN AND SETTLED** (2026-09-15).
+`docs/evidence/monocular-3d-routes.md` carries seven ranked routes; R1 was top-ranked at zero
+compute and the lead ran it immediately.
+
+- **THE FINDING: the monocular error is ONE-DIMENSIONAL.** One pixel is `D²/(f·h)` m down-court but
+  `D/f` m lateral — ratio `D/h`. Predicted break-even **9.54 m** past the near baseline vs P1's
+  measured good-fit median **9.85 m**: a **4% match, nothing tuned**. Both R1 bars PASS (median
+  lateral **0.101 m** vs <=0.20; ratio **12.6** vs band 5-20); kill NOT fired.
+- About the camera RAY it is starker: **median tangential 5.4 cm, radial 1.28 m — 23.5x.**
+- **MECHANISM confirmed across 5 mount heights**: radial/tangential tracks `D/h` (69.6 at 1.0 m ->
+  9.9 at 8.0 m) while tangential moves 36% against radial's 5.2x. **Raising the camera buys
+  down-court accuracy and nothing else** — and that re-reads bar D, which "HELD" only because a
+  pooled scalar hid one height-dependent component and one that is not.
+- **I CORRECTED researcher's product conclusion.** Its Pass line said a sideline-only v1 at 10 cm
+  would be "on the table today". It does not follow: **R1's primary is a MEDIAN bar, SPEC §3's is a
+  RATE bar.** Lateral-only is **49.9%** within 10 cm against a 90% requirement (p90 0.611 m); even
+  perfect pixels give 83.9%. A sideline-first v1 is 8x stronger and still not a product.
+  **The pre-registration text was left untouched (rule 2)** — the correction sits below it.
+- Researcher's other headline answers: **depth-from-ball-size (bar G) is DEAD by arithmetic** and
+  should NOT be run on the rig (synthesising a radius means inventing a noise model and grading our
+  own assumption); **bounded spin is a knob, penalised/ridge spin is principled** — and
+  `_spin_parsimonious`'s shipped `max_rpm=3500` against `draw_launch`'s ~3,700 rpm cap is an
+  ANSWER-KEY trap, so λ must come from the literature; **90% at 10 cm is NOT reachable from one
+  camera as written** (confidence 0.88) because at the bounce the ball is already ON the plane,
+  the strongest pin rule 7 permits.
+- **Consequence for the founder: SPEC §3 is not one bar.** Sidelines and the centre service line
+  depend on the well-measured coordinate; baselines and service lines on the blind one. Any
+  renegotiation should be per-DIRECTION, not a single relaxed number.
+- **Caveat researcher flagged and I am carrying: nothing in P1 or R1 has touched real footage.**
+  Synthetic noise is i.i.d. Gaussian; real detector error is correlated and heavy-tailed. And the
+  flight population is uniform, not a tennis distribution — it over-represents the fast/lofted/far
+  flights that fail, so 6.1% may be pessimistic for real rallies by an unknown amount.
+
+**SUPERSEDED — the dispatch brief that produced the above:** (dispatched 2026-09-15).
 CLAUDE.md routes a surprising RESULT to researcher first, then pm, and P1 is exactly that: bar A
 missed by 15x while bar C says the method is sound. Brief: a RANKED list of candidate routes from a
 2.2 cm noiseless estimator to one that survives 2 px, each naming **what would pin the depth**
@@ -453,6 +486,11 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-15** — researcher returned 7 ranked routes; **R1 run same session at zero compute and
+  SETTLED**: the error is one-dimensional (tangential 5.4 cm vs radial 1.28 m), mechanism confirmed
+  across 5 heights. Corrected researcher's "sideline-only v1 on the table" — median bar vs rate bar,
+  lateral-only is 49.9% against 90%. STATE row landed. Committed, NOT pushed.
 
 - **2026-09-15** — Resumed after a usage-limit kill of `backend-dev` (compute had finished; the
   write-up had not). P1 COMPLETE: bar A FAIL 6.1%, bar C NOT FIRED. Added one pre-registered

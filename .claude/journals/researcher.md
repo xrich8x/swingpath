@@ -5,124 +5,90 @@ nothing restarts it automatically. Whatever is below is what survived.
 
 ---
 
-## TASK — 2026-09-10 — INNOVATION GATE / NOISE CALIBRATION
+## TASK — 2026-09-15 — P1 MONOCULAR-3D ROUTES (surprising-result read, pre-pm)
 
-Deliverable: ONE file `docs/evidence/innovation-gate-noise-calibration.md` with FOUR
-sections in order: (1) family verdict on the R-calibration line — in or out of the
-barred smoother-gate family, unambiguous; (2) ranked 2-4 candidate mechanisms OUTSIDE
-the family, each with mechanism / why it separates / falsifier / cost, plus a
-"do not build" entry; (3) a DIAGNOSTIC that must run before any build; (4) a
-PRE-REGISTERED BAR (coverage + ghost guard + per-frame-recall guard), each stated
-against what it is measured on.
-NO code. NO Bash (I have none). NO STATE.md edit. No subagent. Do NOT design the
-implementation — that is backend-dev's run.
-Return in final msg: family verdict, top mechanism, one-line diagnostic.
+Deliverable: ONE file `docs/evidence/monocular-3d-routes.md`. A RANKED list of candidate
+routes from the 2.2 cm noiseless estimator to one that survives 2 px noise. Per candidate:
+(1) what it is; (2) WHAT PINS THE DEPTH (rule 7 — mandatory, no answer = not a candidate);
+(3) a pre-registerable bar measurable on `tools/mono3d_ceiling.py` + `tools/synth_truth.py`
+with config + pass condition, cheap ranks higher; (4) falsifier + cost if wrong; (5) open
+or closed w/ CLOSED.md row.
+Three specific asks: (a) SPEC §5 depth-from-ball-size (6.7 cm) — real channel or arithmetic
+that cannot survive its own measurement error? want back-of-envelope px subtended at
+5/12/23 m + d(depth)/d(radius px). (b) bounded/parsimonious spin (`bridge.py:211
+_spin_parsimonious`) — principled or a knob? (c) IS 90%/10 cm reachable AT ALL monocular?
+A well-argued NO is more valuable than an optimistic list.
+BARRED: detector work (rule 6 + bar E), pose/occlusion (§6/§9 tossed + oracle p0 fails 5x),
+second camera/stereo/network, court auto-detection, re-running bar A.
+NO code. NO STATE row. NO SPEC edit. Separate measurement / published / my-arithmetic.
 
-## STATE — ANALYSIS ESSENTIALLY COMPLETE, file being written. ~7 calls used.
+## DONE — 2026-09-15, ~12 tool calls. If restarted: the work is FINISHED, just report it.
 
-### THE VERDICT I HAVE REACHED (R-calibration line = INSIDE the barred family, DEAD)
+Written: `docs/evidence/monocular-3d-routes.md` (7 sections + ranked table).
+Memory: `.claude/agent-memory/researcher/monocular-3d-geometry.md` + MEMORY.md index line.
+Nothing outside the allowlist. No STATE row, no SPEC edit, no code, no subagent, no commit.
 
-Four independent legs, none needing a new run:
+REPORT LINES: rank order R1 error-decomposition (free) > R2 fit-covariance abstention >
+R3 geometric capability map > R4 MAP fit w/ 2D control as prior > R5 penalised spin >
+R6 joint pre+post-bounce arcs (precursor-gated) > R7 4K (partly undecidable under rule 6).
+Q3 = NO for down-court at 1080p/3 m; YES for lateral. Renegotiate COVERAGE, not 10 cm.
 
-1. **S ≈ R, so scaling R IS a gate_chi2 sweep.** ball.py:815-817,857,862. Q from
-   `sigma_jerk=1.0` gives Q[0,0]=0.05 px²; with near-zero process noise a CA filter
-   converges to least-squares so P[0,0]→small. S = Hm P Hmᵀ + R ≈ R = 25·I.
-   d² ≤ 13.8 → |y| ≤ sqrt(13.8·25) = **18.6 px**, matching the brief's ~19 px.
-   Scaling R by k scales S by ~k and d² by 1/k — arithmetically identical to raising
-   gate_chi2 by k. There is no shape change, only radius. It is a pure WIDEN.
-2. **THE CENSUS KILLS IT, and it is already measured.** smoother-gate-backward-readmit
-   §3: the adjudicated LOST-rejection population is 9R/9G + 6R/7G + 6R/12G =
-   **21 real / 28 ghost pooled = 0.75:1**. That is a HARD CEILING on any widen: admit
-   ALL rejects and you still get 0.75:1, against the family's ~7:1 structural rate and
-   the ≥3:1 pre-registered bar. Founder's "ghosts sit 208-829 px away" is the SESSION I
-   CHAIN-FALSE-LOCK population, a DIFFERENT population from the gate's rejects — §5's
-   table shows reject-ghosts with lock errors of 24.0 / 30.3 / 49.8 px, i.e. squarely
-   inside the 35-45 px widened radius. The separation argument breaks THERE.
-3. **Raising R makes staleness WORSE.** K = P Hmᵀ S⁻¹; bigger R = smaller gain = the
-   filter trusts detections less = the model is slower to catch a direction change,
-   which is the exact condition under which real detections get rejected.
-4. **A gate-widen has been measured in THIS gate already.** Docstring ball.py:686-692,
-   depth-aware Q, median reference: "half the frames get LOOSER ... lets more junk
-   through the innovation gate (**false-fire 19 -> 27%**)"; tighten-only (p10) held
-   false-fire flat at 19.2%. Q≠R mechanically (Q moves bandwidth+gate, R moves
-   gate+gain) — DIFFERENT family — but the gate-widening HALF is shared and its one
-   measured instance cost +7.7 pts of false-fire for a modest widen.
+## STATE — ANALYSIS DONE, arithmetic below is the spine of the deliverable.
 
-### THE CODE-READ RESULT THAT KILLS BRIEF-CANDIDATE (b)
-`seen_frac` excludes coasted frames by construction, and in ball.py every ACCEPTED
-detection is emitted (used[i]=True → accepted_by_seg → emit). Bridged gaps are coasted
-and do not count. Therefore **D_smooth (−11.0/−8.1) IS the gate's rejection rate over
-span frames, minus reset re-seeds** — not a downstream reset cascade. No run needed.
-Consequence: only three routes can move coverage — (i) widen [dead], (ii) make the model
-less often stale, (iii) recover rejections into a NEW segment where they are accepted.
+READ: P1 evidence, SPEC, measure/CLOSED, ball/CLOSED, mono3d_ceiling.py, synth_truth.py,
+trajectory_fit.py (fit_arc full), bridge.py:180-260 (_spin_parsimonious CONFIRMED at :211,
+min_gain 0.30 / max_rpm 3500), gen_synth_camera.draw_launch.
 
-### TOP-RANKED MECHANISM (outside the family): REJECTION-RUN COHERENCE
-`rej` (ball.py:868, 965-970) counts ANY rejection toward `reset_after=3`, and on trip
-re-seeds at the CURRENT frame i, discarding the earlier `reset_after-1 = 2` rejections.
-Two defects, one fix, NO widen anywhere:
-- a coherent run of ≥2-3 mutually-consistent rejections = a real direction change →
-  re-seed RETROSPECTIVELY at the run's FIRST frame, recovering ~2 real frames per reset;
-- an ISOLATED junk lock (all 19 chain false locks have **run_len = 1**, memory
-  ball-negatives.md / 9-solid-ghost-balls) should not increment `rej` at all — today it
-  can force a spurious reset that both EMITS the ghost as a seed (used[i]=True) and
-  throws away a converged model.
-Escapes the §5 confound: the coherence is fit to the REJECTIONS themselves, not to the
-incumbent stale path — the barred signal was distance to the incumbent RTS track.
-Falsifier: run-length × real/ghost contingency on the adjudicated rejects. If run length
-does not separate, it is dead.
+### THE ARITHMETIC THAT CARRIES THE WHOLE ANSWER (mine, re-derivable in 3 lines)
+P1 config: 1920 wide, hfov 100 deg -> f = 960/tan(50) = **805.5 px**. mount h=3.0 m,
+setback 6.0 m, so the far baseline is D = 6 + 23.77 = **29.77 m FROM THE CAMERA**.
+Ground point at range D: row offset below horizon = f*h/D. Exact:
+  |dD/dv| = (D^2 + h^2) / (f*h*sec^2(theta-phi)),  sec^2 <= ~1.9 at frame edge (vfov 67.7)
+So ~D^2/(f*h) = D^2/2416.5 m per pixel:
+  D=10 m -> 4.1 cm/px | D=15 -> 9.3 | D=20 -> 16.6 | **D=29.6 (far baseline) -> 36 cm/px**
+**10 cm at the far baseline = 0.28 px of vertical image error (0.53 px with the sec^2 relief).**
+Break-even range where 10 cm == 1 px: **D_1px = sqrt(0.1*f*h) = sqrt(241.6) = 15.5 m from
+camera = 9.5 m past the near baseline.** P1's measured GOOD-fit median bounce depth is
+**9.85 m** down-court. Independent arithmetic reproduces the measured split. This is the
+finding: the failure is GRAZING GEOMETRY, and it caps ANY estimator, because z=0 at the
+bounce is already the strongest depth pin rule 7 permits.
+Scaling: capability ~ sqrt(f*h). Whole court to 10 cm needs f*h >= D^2/0.1 = 8862 px*m.
+Framing doubles width at setback S needs f <= 175*S. h=3,1080p: NO setback works.
+h=6 m needs S in [12.6, 45] m. 4K (f=1611 @100deg) + h=5.5 m works. 1080p+3 m does not.
 
-### GRAVITY-SEED IDEA — CHECKED AND DROPPED, do not re-derive
-seed() sets a=0 with σ_a²=100 (σ=10 px/frame²). Projected gravity is ~0.44-1.1 px/frame²
-at 720p (9.81/30² m/frame² × 40-100 px/m). Already inside the prior by ~10×. Buys nothing.
-Also checked: seed v0=400 (σ_v=20) → after one propagation P[0,0]=25+400+25=450, S=475,
-so a 40 px/frame post-hit step gives d²=3.4, passes. The seed is fine. Not the defect.
+### BALL SIZE (SPEC 5 / bar G) — KILLED ON PAPER, no run needed
+Apparent diameter s = f*d/Z, d=0.067. f=805.5: Z=5 -> 10.8 px; 12 -> 4.5; 23 -> 2.35;
+29.6 -> 1.82. Depth from size: **dZ/Z = -ds/s — SCALE FREE, focal length cancels.**
+10 cm at Z needs fractional size precision 0.1/Z: 2.0% @5 m, **0.83% @12 m, 0.43% @23 m**.
+In px that is 0.22 / 0.037 / 0.010 px of DIAMETER. Motion blur: 30 m/s at 60 fps = 0.5 m/frame
+= 34 px smear at 12 m (8 px even at 1/250 s shutter) vs a 4.5 px ball. Plus memory:
+int8 quantisation moved blob AREA not peak. VERDICT: not a depth channel; at best a weak
+soft prior (order +/-1-3 m), and testing it on the rig would grade OUR OWN noise model.
 
-### DIAGNOSTIC I WILL PROPOSE (one run, three clips, no video decode)
-One instrumented pass emitting per REJECTED frame: d², consecutive-run length, whether
-the run tripped a reset, whether the frame is inside a hit→landing span, gold label if
-adjudicated. Yields (a) empirical d² vs χ²₂ on gold-real frames [founder's question,
-free], (b) run-length contingency [mechanism falsifier], (c) reset count = prize ceiling,
-(d) share of −11.0 pts inside spans. Reuse the backward-readmit run's source-transform
-instrumentation (inspect.getsource → exec), which proved identical-output on 3 clips.
+### SPIN VERDICT
+BOUNDED spin = a knob (and creates boundary optima that break Jacobian covariance).
+PENALISED spin (ridge lambda|omega|^2, lambda from a PUBLISHED spin distribution) =
+principled. _spin_parsimonious is the crude 0/1 special case. Lit: Nadal avg 3200 rpm,
+peak 4900; Federer slice 5300 (press/Hawk-Eye, not peer-reviewed). draw_launch draws
+|omega| <= ~3700 rpm -> a bound at 3500 WOULD BE THE ANSWER KEY. Must source externally.
 
-### BAR DESIGN NOTE
-Coverage is GAMEABLE by exactly the dead move: seen_frac counts an emitted frame without
-checking accuracy, so admitting locks 24-50 px off a click RAISES seen_frac while
-lowering recall. Therefore bar on MEAN seen_frac (not shot counts crossing 0.5 — that
-line is measured only weakly predictive, does-seen-frac-predict-speed-error.md) AND
-require recall@10px vs human clicks not to fall. yt_match40 inherits T23.
+### RANKED ROUTES (final order)
+A1 fit-COVARIANCE abstention (res.jac -> bounce 1-sigma). SPEC 3 mandates it, NEVER measured,
+   reproj r=0.159 is the broken proxy not the covariance. Cheapest, highest value.
+A2 geometric capability map from the four-tap (D_1px above). Pure arithmetic, no ML, free.
+B1 MAP fit: population priors on (p0,v0,omega) + 2D-control bounce prior. 2D BEATS 3D at
+   >=1 px, so 3D is discarding the incumbent.
+B2 penalised spin (subset of B1, testable alone).
+B3 joint pre+post-bounce arcs sharing a z=0 bounce point. NOT the CLOSED bounce_hypothesis
+   rows (those are the 2D Kalman smoother). Needs rig extension past the bounce.
+C1 4K capture (f x2) — may SELF-CANCEL if px noise scales with blob size.
+D  dead: ball-size, zero spin, pose/oracle p0, aero refinement, reproj gate, detector work.
 
-## DONE — 2026-09-10. ~11 tool calls. If restarted: the work is FINISHED, just report it.
-
-Written: `docs/evidence/innovation-gate-noise-calibration.md` (all 4 sections, in order).
-Memory updated: `.claude/agent-memory/researcher/ball-negatives.md`.
-Nothing outside the allowlist written. No STATE.md edit, no code, no commit, no subagent.
-
-REPORT LINES:
-- VERDICT: R-calibration is INSIDE the barred widen family. Dead. Decisive reason = the
-  reject census (21 real / 28 ghost = 0.75:1 pooled) caps ANY widen below every bar this
-  family has been held to; and the founder's "ghosts at 208-829 px cannot enter" is the
-  wrong population (chain survivors, not gate rejects — reject-ghosts sit at 24-50 px).
-- TOP MECHANISM: are 1-2 frame interpolated bridges actually unmeasured? `seen_frac`
-  excludes all coasted frames by rule; `eval_model_filters.py:201-208` already accumulates
-  `coast_by_gap` ("1-2"/"3-5"/"6-9"/"10+") vs human clicks. Falsifier: `"1-2"` bin median
-  > 10.0 px kills it in one command. Rank 2 = rejection-run coherence.
-- DIAGNOSTIC: one instrumented pass (source-transform, ball.py untouched) recording d² for
-  EVERY detection-bearing frame plus run-length/reset/span/gold-label — and compare the
-  MEDIAN and p90 of d² against chi2_2 (1.386 / 4.605), NOT the 99.9th percentile the brief
-  proposed, which needs >=1000 clean samples and the gold sets carry 175-258 per clip.
-
-VERIFIED THIS RUN (do not re-verify): `tools/eval_speed_coverage_chain.py` exists (Read);
-`tools/eval_model_filters.py` exists, recall = dist<=10.0 px at :199, coast_by_gap at
-:201-208 (Read); `pipeline.py:1448-1460` is the ONE call site, passes only fps_eff +
-res_scale. **Glob is NON-FUNCTIONAL in this session** — returned "no files found" for paths
-I had just read links to. T25. Use Read on known paths only.
-ARTEFACT PATH CONFLICT, unresolved and flagged in the file: eval_speed_coverage_chain.py's
-docstring writes a FLAT `data/output/speed_coverage_amhard_tracknet.json`; the evidence file
-cites a DIRECTORY `data/output/speed_coverage/*.json`. backend-dev must check on disk.
+### ANSWER TO Q3
+NO — not across the whole court at 1080p from a 3 m mount. YES over a computable near band.
+The renegotiation is over COVERAGE/REFUSAL RATE or CAPTURE SPEC, not over 10 cm.
 
 ## LOG
 
-- 2026-09-09 prior task DONE: docs/evidence/court-recall-what-would-actually-move-it.md.
-- 2026-09-10 new task started; journal rewritten. Read the 3 evidence files + ball.py
-  615-1014. Analysis above is complete enough to write the file from.
+- 2026-09-10 prior task DONE: docs/evidence/innovation-gate-noise-calibration.md.
+- 2026-09-15 new task started; journal rewritten. P1 evidence file read in full.
