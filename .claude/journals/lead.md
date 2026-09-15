@@ -129,7 +129,7 @@ measurement without writing down why.**
 | P2 | Occlusion census: the refusal floor | MEASURE | qa builds sheet, founder eyes it | sheet must exist BEFORE the founder is asked |
 | P3 | Does any footage meet the v1 capture floor? | MEASURE | **DONE by the lead 2026-09-12 — BAR FIRED** | -> `docs/evidence/capture-floor-census.md`. **STATE row still OWED** (see below) |
 | P4 | **FOUR** contradictions inside a locked SPEC | DECIDE | founder | **WRITTEN AND DELIVERED 2026-09-12** -> `docs/DECISIONS_PENDING.md`. Awaiting the ruling; P7 cannot start without (i)/(ii)/(iv) |
-| P5 | The capture protocol (artefact + target sheet) | BUILD artefact | pm drafts | **NOW TOP OF QUEUE — P3 fired its bar.** P4(iii) ruled void by the lead, pending founder confirmation |
+| P5 | The capture protocol (artefact + target sheet) | BUILD artefact | **DONE 2026-09-15 — `docs/CAPTURE_PROTOCOL.md`** | Ready to execute. Needs a court booking, ~4 h, and a ball machine or a helper |
 | P6 | INSTANT on paper, v1-only path | MEASURE | researcher | P4(i) |
 | P7 | The live-path skeleton in Swift | BUILD | backend-dev/frontend-dev | P1 pass, P4, P6 |
 
@@ -152,6 +152,61 @@ CONTROL ARM, so the answer says what 3D buys over what ships today.
   bar A is a ceiling under a perfectly-specified model and will be quoted as an accuracy.
 - **G OUT OF SCOPE, report UNTESTED:** SPEC §5's depth-from-known-ball-size (6.7 cm). The rig emits
   (u,v) only, no apparent radius — so §5's self-declared weakest channel is NOT exercised here.
+
+**P5 IS DONE — `docs/CAPTURE_PROTOCOL.md`, 11 sections, printable and executable.** pm, 2026-09-15.
+The lead independently re-derived its load-bearing arithmetic before accepting it.
+
+- **THE DESIGN DECISION EVERYTHING FOLLOWS FROM: truth is made BALL-FIRST, not MARK-FIRST.** Nobody
+  asks a ball to land on a mark — that rejects ~90% of feeds. The ball lands, leaves a print
+  (coloured chalk on hard, the natural mark on clay), and you tape-measure **the print's** offset
+  from the line. **Every fed ball yields a truth point and a "missed" ball is not a miss — the
+  natural scatter IS the margin ladder.** The LINE band is +/-0.60 m because it must span P1's own
+  p90 lateral error of 0.611 m, or the truth set never exercises the boundary it exists to test.
+- **86 fed balls, 13 stations.** ALONG class (sidelines + centre service line) 8 stations / 44 balls,
+  obliquity 0 / 4.115 / 5.485 m. ACROSS class (baselines + service lines) 5 stations / 42 balls.
+  The >=30-clean-per-class bar needs a 68-73% clean-print yield.
+- **The R1b falsifier is designed in:** L1/L4 (centre service line, obliquity 0) vs L3/L6/L8 (doubles
+  sideline, obliquity 5.485) at MATCHED ranges — both ALONG-class, opposite ends of the obliquity
+  axis, predicted 72.9% vs 20.0%. **And the ACROSS class is a control that can REFUTE the quadrature
+  model**: for an across-court line the radial error projects with `cos` = 0.99 at 7.3 deg, so ACROSS
+  must show essentially NO obliquity gradient. If it shows one, the diagnosis is incomplete.
+- **STRUCTURAL FINDING, not a layout gap: there is no centre service line past y = 18.285**, so at
+  the far baseline EVERY along-court line sits at 4.1 or 5.5 m of offset. **There is no low-obliquity
+  sideline call to be had out there** — the far corners are all worst-case by construction.
+- **AUDIO TIMING: ACCEPTED with two mandatory corrections, and pm caught a trap worth the whole
+  task.** Uncorrected, the bias is **RANGE-DEPENDENT — +1.17 frames at the near baseline to +5.23 at
+  the far, a 4.06-frame spread** (lead-verified: 6.71 m and 29.92 m slant at 343 m/s). **P1's bar B
+  measured the fitted arc crossing +3.66 frames LATE, which sits INSIDE that band.** P1 was
+  synthetic so audio cannot be its cause — but anyone timing truth by a raw audio transient would
+  MANUFACTURE that number and then explain it as physics. Corrections: `t = t_audio - d/c` with `d`
+  known by construction, plus a **10-clap slate** (one clap +/-0.5 frame, but phase against the frame
+  clock is random, so ten average to +/-0.05). Residual **+/-0.15 frames against a +/-1 frame bar.**
+- **THE FRAMING ARITHMETIC DECIDES A DEVICE QUESTION** (lead-verified): framing A must be the
+  **0.5x ultra-wide** — the main lens needs ~7.4-7.9 m of setback and a club court has 5.5-6.4 m. So
+  **v1's shipped framing is an ULTRA-WIDE framing, distortion and all, and that is written down
+  nowhere.** Framing A can NEVER reach bar A (`f*h` ~= 5,064 at 3.5 m against 8,862 needed).
+  **Framing B at 2x / 4K / h=3.5 m gives `f*h` ~= 18,000 against ~17,724 required — it clears by
+  about 1%, and it is the ONLY cell in the protocol that clears at all.** A 1% margin is not a
+  margin. **4K is not optional for framing B**, and if framing B wins, the iPhone SE 2nd/3rd gen
+  have no telephoto and the device list narrows BELOW our stated A13 floor.
+- **Framing B cannot be calibrated by the shipped four-tap** (near corners out of frame) — hence 8
+  fiducial tape marks, which also give the **first-ever independent measurement of four-tap
+  accuracy**. Hard rule in the doc: the four-tap uses only the four doubles corners; fiducials are
+  scoring-only, ONE WAY.
+- **SIX GATES, every failure with a same-day remedy. GATE 1.5 is the one that matters: blind
+  re-measure 5 prints after the FIRST 10**, not at the end — it is the only gate that tests the
+  TRUTH itself, and at the end the visit is already spent. **Honest limit written in rather than
+  papered over: fixity cannot be certified at the court, only gross failure excluded** (flipping
+  stills resolves ~2-3 px; reference tripods sit at 0.1-0.4 px), so the mitigation is **6-8 minute
+  takes** — one fixity failure costs one take, not the visit.
+- **Cut ladder if time runs short: framing B first, then the 4.115 m obliquity level, then nothing.
+  NEVER cut below 30 per class — a half-length visit produces no result, not a smaller one.**
+- **Logistics: ~4 h. Alone WITH a ball machine; a helper REQUIRED without one.** There is no
+  90-minute version. **The lever is CAMERAS, not balls** — measuring a print is the bottleneck, so
+  every extra camera on the same bounce is free and makes every comparison paired.
+- **CLAUDE.md doc-map row added by the LEAD as a ZERO-LINE-DELTA amendment** (the file was at exactly
+  150/150): "Running the tool" became "Running the tool, or going to a court to capture". Cap hook
+  re-tested and passes. pm correctly refused to edit CLAUDE.md itself and handed up the exact text.
 
 **DONE — `pm` on the §3 shape, and R1b (its pre-registered check) IS RUN.** 2026-09-15.
 `docs/DECISIONS_PENDING.md` fifth entry, "P5-scope: THE CAMERA IS BLIND IN ONE AXIS".
@@ -541,6 +596,11 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-15** — **P5 DONE**: `docs/CAPTURE_PROTOCOL.md` (ball-first truth, 86 feeds, 13 stations,
+  6 gates, audio timing accepted with a range-dependent-bias correction pm caught). Lead verified the
+  audio and framing arithmetic independently. CLAUDE.md doc-map amended at zero line delta.
+  **Next: qa on P2.** Committed, NOT pushed.
 
 - **2026-09-15** — pm delivered the §3 shape options (per-LINE bar; cut the landing coordinate,
   output a CALL). **R1b run same session, zero compute: pm's obliquity prediction PASSES at 3.58x**

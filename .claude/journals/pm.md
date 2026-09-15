@@ -10,6 +10,24 @@ Durable learnings -> `.claude/agent-memory/pm/`. Findings -> `docs/evidence/`.
 
 ## TASK — what I was asked to do
 
+2026-09-15 (NEW RUN). **P5 — THE CAPTURE PROTOCOL. Build an artefact the founder executes at a
+court.** ONE deliverable: `docs/CAPTURE_PROTOCOL.md` + add a row to CLAUDE.md's doc-map table
+(150 non-blank-line cap — if breached, propose what comes out, do not exceed silently).
+Must contain: (1) printable TARGET SHEET, exact court coords + offsets from lines, from
+`backend/swingvision/court.py` constants — do not invent dimensions; (2) step-by-step run sheet;
+(3) two framings + two mount heights, concrete; (4) pre-registered success criterion FOR THE VISIT
+ITSELF, checkable before packing up; (5) what each artefact feeds.
+BAR: >=30 landing points known to <=3 cm INDEPENDENT of video, >=2 surfaces; my delta supersedes:
+**>=30 per DIRECTION CLASS**. Marks must span BOTH range and lateral offset (R1b: 0.049 m on
+centreline -> 0.348 m at doubles sideline; 72.9% -> 20.0%). Capture floor HARD 60fps AND 1080p.
+Mount fixity is what binds (static tripod 0.1-0.4 px bg displacement; our best "compliant" clip
+6.3 px). Calibrate-LAST. Audio bounce timing: price the 29 ms/10 m = 1.75 frames at 60 fps
+propagation delay, recommend or reject WITH ARITHMETIC. One person, one session, priced in minutes.
+ON-DEVICE CATCH must be stated in plain words: tape measure / chalk / 2nd camera used ONLY to build
+truth is a LAB INSTRUMENT, not a product dependency — NOT a scope violation.
+NOT THIS RUN: no STATE row, no SPEC edit, no code.
+
+### PRIOR RUN (complete, for context only)
 2026-09-15. **SCOPE OPTIONS FOR THE FOUNDER AFTER P1 + R1.** ONE deliverable: APPEND a
 fifth entry to `docs/DECISIONS_PENDING.md` (a 2026-09-12 P4 entry with four contradictions
 already sits there awaiting a ruling — CROSS-REFERENCE it, do not duplicate).
@@ -35,6 +53,38 @@ pessimistic by an unknown amount).
 
 ## STATE — where I got to
 
+**P5 RUN COMPLETE.** `docs/CAPTURE_PROTOCOL.md` WRITTEN (11 sections, target sheet + run sheet +
+gates + artefact map + time budget + open questions). Two memory files written and indexed
+(truth-is-built-at-capture-not-labelled, audio-bounce-timing-accepted-with-slate).
+**CLAUDE.md NOT EDITED — it is on my forbidden list AND it is at exactly 150/150 non-blank lines
+(measured), so any added row breaches the cap.** Handed the lead a ZERO-LINE-DELTA in-place
+amendment instead. No STATE row, no SPEC edit, no code. Remaining: nothing.
+All source docs read (P5-scope entry, P3 census, P1 ceiling, R1+R1b,
+SPEC §1-§9, court.py). Design settled in head; writing `docs/CAPTURE_PROTOCOL.md` now.
+**KEY DESIGN DECISIONS — do not re-derive if killed:**
+1. Truth is made BALL-FIRST, not mark-first: the ball leaves a print (coloured chalk/talc on hard,
+   natural ball mark on clay); you tape-measure the PRINT's offset from the line. Mark-first
+   ("hit the mark") rejects ~90% of balls and is the wrong design. Marks are AIM POINTS + FIDUCIALS.
+2. TRUTH DEFINITION pinned: first contact = the REAR (incoming-side) edge of the print, not centre.
+   A skid print is 6-8 cm long; centre-vs-contact ambiguity alone blows the 3 cm budget.
+3. ITF convention: all court measurements are to the OUTSIDE of the lines (centre service line to
+   its CENTRE). court.py does NOT document this. 5 cm paint = 1.7x the 3 cm budget if got wrong.
+4. THE LEVER IS CAMERAS, NOT BALLS. Measuring a print is the bottleneck; every extra camera on the
+   same bounce is free. 2x2 (2 heights x 2 framings) must be SIMULTANEOUS -> paired tests, and 4
+   devices turn one ball session into four answers. Extra cameras = LAB INSTRUMENT (on-device catch).
+5. FRAMING B (far-half tele) CANNOT BE CALIBRATED BY THE SHIPPED FOUR-TAP — the near corners are out
+   of frame. That is why the F-mark fiducials earn their place.
+6. AUDIO TIMING: ACCEPT, with mandatory correction + a 10-CLAP SLATE. Uncorrected bias is
+   +1.17 frames (near baseline) to +5.28 frames (far corner) at 60 fps — range-dependent, so it
+   would be misread as estimator bias. Corrected residual ~±0.15 frames vs a ±1 bar.
+7. BALL MACHINE at the far baseline is what makes it a ONE-PERSON job. Without one, a helper is
+   REQUIRED (or ~4 h solo).
+8. Station layout: 8 ALONG stations (obliquity 0 / 4.115 / 5.485 m) x 3 range bands, 5 balls each
+   = 40; 5 ACROSS stations x 8 (C2 gets 10) = 42. >=30 clean per class with 20% reject headroom.
+9. CANNOT edit CLAUDE.md (allowlist). Hand the lead the exact doc-map row + the line-count
+   arithmetic instead.
+
+### PRIOR RUN
 **RUN COMPLETE.** Deliverable APPENDED to `docs/DECISIONS_PENDING.md` as
 "2026-09-15 — P5-scope: THE CAMERA IS BLIND IN ONE AXIS" (after the 0d STILL LIVE section,
 end of file). Cross-references P4 without duplicating it, incl. the P4(iv)/bar-B interaction.

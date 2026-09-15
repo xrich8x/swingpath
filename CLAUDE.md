@@ -143,7 +143,7 @@ is the label/train workbench — deleting it leaves the product intact.
 | Any model work (create/train/tune/evaluate) | `ML_PRACTICES.md` — **required** |
 | Diagnosing a model weakness | `ML_PLAYBOOK.md` §for that area |
 | About to repeat a process mistake | `docs/TRAPS.md` |
-| Running the tool | `README.md` / `USER_GUIDE.md` |
+| Running the tool, or going to a court to capture | `README.md` / `USER_GUIDE.md` / **`docs/CAPTURE_PROTOCOL.md`** |
 | Working ON a subsystem | `docs/modules.md` |
 | Why is it like this | `docs/session_log.md`, `docs/archive/` — cold storage, not routine |
 

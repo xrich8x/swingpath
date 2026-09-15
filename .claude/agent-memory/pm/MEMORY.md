@@ -20,5 +20,7 @@ Index. Detail in the topic files. Inherited 2026-08-28 from the prior planning w
 - [Setup-time camera motion is an ordering problem](setup-time-camera-motion-is-an-ordering-problem.md) — calibrate LAST + IMU stillness; never detect movement from the court fit (it self-disagrees by 29.9-37.5 px)
 - [The blind axis splits the accuracy bar](blind-axis-splits-the-accuracy-bar.md) — 23.5x anisotropy; bars go per-LINE perpendicular, and v1 outputs a margin, never a landing coordinate
 - [Capture framing is a scope lever](capture-framing-is-a-scope-lever.md) — "frame the whole court" is a product choice; the far-half telephoto view is the only feasible band, and it costs the SE
+- [Truth is BUILT at capture, not labelled](truth-is-built-at-capture-not-labelled.md) — ball-first (measure the print), not mark-first; the lever on visit cost is CAMERAS, not balls
+- [Audio bounce timing: accepted with a slate](audio-bounce-timing-accepted-with-slate.md) — ±0.15 frames corrected vs a ±1 bar; uncorrected it is a range-dependent +1.2 to +5.3 frame late bias
 
 **Settled, do not reopen:** iOS only, A13+, Core ML only. 100% on-device, no server ever.
