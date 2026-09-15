@@ -10,109 +10,82 @@ Durable learnings -> `.claude/agent-memory/pm/`. Findings -> `docs/evidence/`.
 
 ## TASK — what I was asked to do
 
-2026-09-09. **COURT WORK: TRIAGE AND CUT LINE.** Court only (ball/speed/score/mobile out).
+2026-09-15. **SCOPE OPTIONS FOR THE FOUNDER AFTER P1 + R1.** ONE deliverable: APPEND a
+fifth entry to `docs/DECISIONS_PENDING.md` (a 2026-09-12 P4 entry with four contradictions
+already sits there awaiting a ruling — CROSS-REFERENCE it, do not duplicate).
 
-DELIVERABLE: `docs/evidence/court-triage-2026-09-09.md`, four parts:
-A. SURVIVES — findings independent of the compromised 20-clip gold pool.
-B. PROVISIONAL — scored against the pool; for each say what re-run is needed AND whether
-   re-placing the 4 misplaced calibrations would change the CONCLUSION or only the decimal.
-C. DEAD — exact file paths to move to `docs/archive/resolved/` + one-line reason (LIST only,
-   lead executes).
-D. WHAT NEXT, ranked, with an explicit cut line (what I would NOT do and why). Must cover
-   (i) the AGREE_PX=30 raw-pixel thread, (ii) whether "5 MIXED" clips mean one-homography-
-   per-clip is the wrong data model for clips with cuts/zooms — worth testing? cost?
-   (iii) the founder's product input: "the user moving around to set up the view" — SETUP-time
-   camera motion is a different regime from mid-match drift and is nowhere in scope.
-End with coverage confession: read fully / skimmed / did not open.
+Five questions to answer:
+1. What does v1 CLAIM given a blind axis? Is a per-direction / per-line accuracy floor the
+   honest shape for SPEC §3? Say what I would put in §3.
+2. Rank the three renegotiation shapes (a) refuse by geometry+covariance (b) move the
+   CAPTURE spec (collides with "regardless of mount height") (c) depth-dependent bar or
+   margin-based in/out call. Add any missing.
+3. Does a blind axis change "what v1 outputs, end to end"? (bounce location / in-out /
+   refusal). A margin call is a DIFFERENT PRODUCT from a landing coordinate — I own that.
+4. Refusal rate: honest target, or does P2's occlusion census have to land first?
+5. Does R1 change the REQUIREMENTS of P5 (the court-visit capture protocol)? P5 is top of
+   queue because P3 fired: we own NO clip >=60fps AND >=1080p AND fixed-mount AND high.
 
-CONTEXT GIVEN (do not re-derive): pool provenance never established (`_exact` never meant
-human placement; a Claude agent placed 9-10 clips and verified itself; = T26). Audit
-instrument broken: all 28 corner sheets rendered on frame 0; 7 of 10 founder "wrong"
-verdicts at risk from frame choice alone. RE-REVIEW DONE: 4 MISPLACED (HoHxFSX_gLk_s1/s2/s3,
-bump_ntrp30), 5 MIXED (A7vXlWIlyrI, CYqapSq5llo, UHf0LeMU2pg, uR5q2cSM6AY, bump_ntrp30b),
-1 HOLDS (sAjkpeRq4P4). Camera motion tested: NOT the cause — 0 of 20 clips change acceptance.
-AGREE_PX raw-pixel: 30/10/5 px@640 at 640/1920/3840; normalising = shell 0->2 accepted but
-admits two wrong courts at 1920.
-
-NOT-THIS-RUN: moving/deleting files, docs/STATE.md, code, git commit, re-placing calibrations.
-NO BASH. Grep/Glob unreliable (T25) — Read known paths only.
-STOP-WHEN: doc written, or ~40 tool calls.
+NOT THIS RUN: implementation plan, picking an estimator route (R2-R7 not mine), ANY edit
+to docs/SPEC.md (LOCKED, founder only moves a bar). No code.
+BINDING: Bar A stays FAILED. Do not propose pose/§6 occlusion/stereo/2nd camera/court
+auto-detect/ball-detector work. Label PRODUCT JUDGEMENT vs MEASUREMENT visibly. Carry the
+synthetic caveat (i.i.d. Gaussian noise, uniform flight population -> 6.1% may be
+pessimistic by an unknown amount).
 
 ## STATE — where I got to
 
-**RUN COMPLETE.** `docs/evidence/court-triage-2026-09-09.md` written — all four parts (A
-SURVIVES / B PROVISIONAL / C DEAD+do-not-archive / D ranked next with explicit cut line),
-plus coverage confession and NOT-ESTABLISHED. ~21 tool calls. Nothing left but the report
-and one memory file.
-
-Headline calls in the doc: (1) TWO pools, only the references pool is compromised — STATE's
-"the 12/20 gate inherits it" is not established, flag to lead; (2) only 2 of 20 pool clips
-confirmed misplaced, so 40% proposal recall / SEARCH BINDS survives any correction (worst
-case 10/20 = 50%, still inside the <=60% band); (3) archive list is ONE file
-(`yt-match40-calibration-is-wrong.md`) + a hazard note that withdrawn-guard does not skip
-`docs/archive/resolved/`; (4) D1 = gold-pool archaeology, 1 session, do first; D3 = MIXED
-clips are pool hygiene not a data model change (the product records one continuous take);
-D4 = setup motion answered by CALIBRATE LAST + IMU stillness, not vision; D5 = AGREE_PX
-REJECTED as a ship, court-normalised metric named and parked.
+**RUN COMPLETE.** Deliverable APPENDED to `docs/DECISIONS_PENDING.md` as
+"2026-09-15 — P5-scope: THE CAMERA IS BLIND IN ONE AXIS" (after the 0d STILL LIVE section,
+end of file). Cross-references P4 without duplicating it, incl. the P4(iv)/bar-B interaction.
+All five questions answered; five founder sentences + a definition of done at the end.
+Two memory files written (blind-axis-splits-the-accuracy-bar, capture-framing-is-a-scope-lever)
+and indexed in MEMORY.md. NOTHING written outside my allowlist — no SPEC edit, no STATE row,
+no code. Remaining: report Q1 + Q3 to the lead.
 
 ## LOG — newest first
 
-- **THE BIGGEST FINDING OF THIS RUN — THERE ARE TWO POOLS, AND ONLY ONE IS COMPROMISED.**
-  (a) REFERENCES pool = `data/<clip>_pts.json` with `_exact`, 20 clips, 1920/3840 px,
-  names `A7vXlWIlyrI / flexi_* / mpc_* / hillsborough_* / am_hard_utr`. Read
-  `eval/run_refs.py` lines 1-120 myself: this is the pool `_exact` gates, this is what
-  T26 compromises, this is what the founder's 28 corner sheets rendered.
-  (b) GOLD pool = `data/gold/*.court.labels.json`, 20 clips, all exactly 640 wide, names
-  `am_classB am_college am_fr_sud am_grass1 am_ntrp30 am_ntrp40 am_ntrp45_courtlevel
-  am_rally32short am_rec30 am_usta40 am_usta45 am_usta60` (+8 refused). **This is what the
-  pre-registered >=12/20 + zero-over-20px gate scores against** — qa states the path
-  explicitly in `court-mask-sweep-item-is-already-shipped.md` §2, and
-  `cnn-global-classical-local.md` reports "Gold gate 12/20 -> 2/20" and "References 2/20
-  -> 0/20" as SEPARATE lines.
-  => **STATE row 241's claim that "the 12/20 gate" inherits the provenance defect is
-  NOT established.** Different files, different tool, different resolution, different
-  clips. It is not established CLEAN either — nobody has ever rendered a gold court
-  label onto its frame (`render_corner_audit.py` reads `*_pts.json`). **UNEXAMINED, and
-  that is the #1 item for part D.** Flag as a correction to the lead, do not edit STATE.
-- **The AGREE_PX objection survives its own scrutiny.** Normalising admits `tc8CGFxyRE8`
-  at 58.7 px. tc8CGFxyRE8 is (i) marked CORRECT by the founder and (ii) one of the 13
-  short locked-off tripods with frame-choice spread <0.5 px (STATE:240), so its reference
-  is corroborated by BOTH instruments. A 58.7 px accept against a corroborated reference
-  is a real wrong court => the pre-registered gate forbids it. REJECT as a ship.
-- **The principled alternative already exists in the repo, untested:** an agreement metric
-  normalised in COURT terms not image pixels, which is resolution-independent by
-  construction AND can weight width separately — the disagreement is `w_near`/`w_far` on
-  13 of 18 clips (`court-detection-frames-that-each-find-the.md`). That is the right
-  version of the AGREE_PX idea and it is NOT the one already in "What has not worked".
-- **The SURVIVES spine is already visible and it is large.** Court findings that never
-  touched the 20-clip pool: (a) least-squares-court-fit — FAILS <=10 px bar, control exact
-  0.00 px vs committed corr_attrib, and the ceiling is the DETECTED LINES (6.4 px) not the
-  fitter; (b) net-baseline-solve — synthetic solve-back exact 0.0000 m, truth-fed control
-  reproduces far baseline to 0.007 px median on all 40 clips => geometry exact, DETECTION is
-  what fails; availability binds (all four lines coexist on only 10/40); (c) the net-tape
-  occlusion crossover ~2.0-2.2 m — derived from court geometry, not the pool; (d) camera
-  motion NOT the cause — decisive control is self-disagreement on MOTIONLESS 4K tripods
-  (29.9-37.5 px@640) + 0.01 px no-op on static clips; (e) CNN-global mechanism: CourtNet
-  returns None because only 2-3 of 14 peaks clear 0.40 (min_points 6, homography needs 4) —
-  a code/behaviour reading, pool-independent; (f) A13 cost of the court CNN (~300 GFLOPs x 8
-  frames ONCE per video, all ANE-native ops); (g) T26 itself + the frame-0 audit defect.
-- **The PROVISIONAL list is short but load-bearing:** 40% proposal recall (8/20), the 12/20
-  gate itself, shell 1/5 recordings, CNN arm 2/20 vs classical 12/20, verify_court 3/25
-  false rejects, composite calibration score 57%, and `courtnet_ft.pt` (trained on a pool
-  holding 17 of 20 gold clips — that is a LEAK finding, separate from provenance).
-- **Rule 3 hazard found:** "Widening / height-scaling AGREE_PX" is ALREADY a row in
-  "What has not worked" (STATE:141). Any AGREE_PX recommendation must be framed as a
-  CORRECTNESS/scale-invariance fix, not a recall recovery — and the new evidence file says
-  normalising admits TWO WRONG COURTS at 1920, which the pre-registered gate forbids
-  (zero accepted court >20 px). Leaning REJECT-as-shipped-change.
-- (start 2026-09-09)
+- **MY THREE PIECES OF ARITHMETIC** (label them PM-ARITHMETIC, not measurement; all
+  re-derivable in 3 lines; if wrong the conclusions go with them):
+  (1) OBLIQUITY LEAK. Camera on centreline 6 m behind near baseline. Far doubles corner =
+  lateral 5.485 m, 29.77 m down-ray -> ray sits 10.44 deg off the court long axis ->
+  sin = 0.181 of the BLIND (radial) error lands ACROSS the sideline -> 0.181 x 1.28 m =
+  ~23 cm median at the far corner, vs the pooled court-frame lateral median of 10.1 cm.
+  => the sideline is NOT uniformly safe; it is worst exactly at the far corner where the
+  contested calls are. => the right BAR frame is PER-LINE PERPENDICULAR, not researcher's
+  radial/tangential (that is the right MECHANISM frame; they differ by this obliquity term
+  and coincide only on the centreline).
+  (2) TELEPHOTO / FAR-HALF FRAMING — the only capture variant with a feasible band.
+  Framing only the far baseline width (10.97 m at 29.77 m) allows hfov <= 20.9 deg =>
+  f <= 5209 px at 1920 wide. Need f.h >= 8862 (1 px) => f >= 2954 at h=3 m. BAND EXISTS
+  (hfov 21-36 deg). At bar A's 2 px the requirement doubles to 17,724 => f >= 5908 > the
+  5209 cap at h=3 => needs h >= 3.4 m. So MARGINAL, not impossible — unlike the wide
+  full-court config which has NO solution at any setback. Costs the near half of the
+  court and most of the arc (fewer observations = worse conditioning: must be measured).
+  DEVICE CONSEQUENCE: SE 2nd/3rd gen have NO tele lens -> optical version narrows the A13
+  device floor. The 4K-digital-crop alternative works on any device but re-raises R7's
+  undecidable detector-noise question.
+  (3) SIDE MOUNT is not a rescue. Camera 6 m outside the sideline level with the net ->
+  worst point (opposite far corner) 20.7 m not 29.8 m, BUT framing 23.77 m of length from
+  6 m setback needs hfov ~126 deg => f ~489 px => f.h = 1467 at 3 m => 29 cm/px vs the
+  end-mount's 36 cm. ~20% better and it merely SWAPS which lines are blind.
+- **THE CAVEAT, carried the cleanest way:** the ANISOTROPY is geometric and survives real
+  correlated/heavy-tailed noise. The RATES (49.9% / 83.9% / 6.1%) are properties of the
+  i.i.d. noise model and the uniform flight population and WILL move. => rule on the
+  SHAPE now, on the NUMBERS after P5. That is the whole argument.
+- (start 2026-09-15) P1+R1 absorbed. Load-bearing: tangential 5.4 cm vs radial 1.28 m
+  (23.5x); lateral-only 10 cm RATE 49.9% vs 90% bar, p90 0.611 m; lateral PERFECT pixels
+  still 83.9%; f.h >= 8862 px.m vs f <= 175.S framing cap => no 1080p/3m solution at any
+  setback; 6 m mount needs 12.6 m setback; 4K needs ~5.5 m. Tangential error moves only
+  36% across an 8x height change.
+
+- (start 2026-09-15) P1+R1 absorbed. The load-bearing numbers I will build on:
+  lateral median 5.4 cm tangential / 1.28 m radial (23.5x); lateral-only 10 cm RATE 49.9%
+  vs 90% bar, p90 0.611 m; lateral PERFECT pixels still only 83.9%; f·h >= 8862 px·m needed
+  vs f <= 175·S framing cap => no 1080p/3m solution at any setback; 6 m mount needs 12.6 m
+  setback; 4K needs ~5.5 m. Tangential error moves only 36% across an 8x height change.
 
 ### Carried forward from prior runs (still binding on my recommendations)
 - Manual 4-tap calibration IS v1's setup story; court auto-detect is NO for v1 and v1.x.
-  Court port cut ~15-20 sessions. Scoring deferred, rally clips kept.
-- The mount crossover (~2.2 m) splits v1 outputs: below it, warn at capture, ship
-  shots/rallies, WITHHOLD speed and bounce map. Ball PIXEL numbers provably safe (the ball
-  chain does not consume the calibration — `--no-gate` is byte-identical).
-- Project owns NO confirmed metric footage; all four named mounts 1.36-1.74 m. Top founder
-  ask: record ONE clip above 2.5 m, ~15 min.
 - Human asks are scarce — batch into ONE update, ranked by leverage.
+- Project owns NO confirmed metric footage; all four named mounts 1.36-1.74 m.

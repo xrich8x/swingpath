@@ -742,3 +742,88 @@ available product today, and the routes document should not be read as saying it
    per-line**, not a single relaxed number: sidelines and the centre service line depend on the
    well-measured coordinate; baselines and service lines depend on the blind one.
 4. **Bar A remains FAILED** (rule 2). Nothing here re-opens it.
+
+
+---
+
+# R1b — THE SIDELINE IS NOT UNIFORMLY SAFE. pm's obliquity prediction PASSES at 3.58x.
+
+**Run 2026-09-15 by the lead. Pre-registered by pm in `docs/DECISIONS_PENDING.md` §7 BEFORE it ran,
+with both outcomes named.** Same class as R1: a re-read of the existing `barA_noise2px_3.0m`
+per-flight JSON, **zero new compute, no refitting**.
+
+**The prediction.** R1 established a blind axis along the camera ray. pm observed that a sideline is
+only *parallel* to that ray on the centreline: at the far doubles corner the ray sits **10.44°** off
+the court's long axis, so `sin(10.44°) = 0.181` of the blind-axis error leaks **across** the
+sideline — the very component that decides a sideline call.
+
+## The bar, exactly as pre-registered
+
+| | Required | Measured | Verdict |
+|---|---|---|---|
+| Far-corner band, `y > 18 m` and lateral offset `> 4 m` | median sideline-perpendicular error **>= 2.0x** the pooled lateral 0.101 m | **0.362 m = 3.58x** (n=66) | **PASS** |
+| REFUTED if | near **1.0x** | 3.58x | not refuted |
+
+**The leak is real and larger than pm predicted** (3.58x against an expected ~2.3x).
+
+## The gradient is monotonic in off-axis angle — the mechanism, not just the symptom
+
+Far band (`y > 18 m`), binned by lateral offset from the centreline:
+
+| Offset from centreline | n | ray off axis | median `\|Δx\|` | <=10 cm rate |
+|---|---|---|---|---|
+| 0-1 m | 70 | 0.8° | **0.049 m** | **72.9%** |
+| 1-2 m | 65 | 2.4° | 0.118 m | 49.2% |
+| 2-3 m | 50 | 3.9° | 0.134 m | 42.0% |
+| 3-4 m | 30 | 5.7° | 0.208 m | 26.7% |
+| **4-6 m** (the doubles corners) | 50 | **7.3°** | **0.348 m** | **20.0%** |
+
+**A 7x degradation from the centreline to the doubles sideline, inside the same range band.**
+
+## The quadrature model accounts for all of it
+
+Predicted leak is `sin(θ) × radial error in band` (median radial in the far band is **1.955 m**, not
+the pooled 1.280 m — radial error grows with range):
+
+| Offset | predicted `sin(θ)·radial` | measured `\|Δx\|` | ratio |
+|---|---|---|---|
+| 0-1 m | 0.018 m | 0.049 m | 2.66 |
+| 1-2 m | 0.068 m | 0.118 m | 1.75 |
+| 2-3 m | 0.140 m | 0.134 m | **0.95** |
+| 3-4 m | 0.199 m | 0.208 m | **1.04** |
+| 4-6 m | 0.309 m | 0.348 m | **1.13** |
+
+**From 2 m of offset outward the prediction matches to 5-13%.** Near the centreline the measured
+error *exceeds* the leak term because there the leak is negligible and the genuine tangential error
+(~5.4 cm) dominates — exactly as it should. The total is the quadrature sum
+`sqrt(tangential² + (sin θ · radial)²)`: at 0-1 m that gives 0.057 m against 0.049 m measured, and at
+4-6 m it gives 0.314 m against 0.348 m. **The whole gradient is accounted for by two terms, neither
+of them fitted.**
+
+## Per-line summary, by range band
+
+| Bounce range | n | ALONG-court lines (sidelines, centre service): med `\|Δx\|` | <=10 cm | ACROSS-court lines (baselines, service): med `\|Δy\|` | <=10 cm |
+|---|---|---|---|---|---|
+| 0-6 m | 11 | 0.039 m | 63.6% | 0.187 m | 36.4% |
+| 6-12 m | 86 | 0.067 m | 62.8% | 0.256 m | 23.3% |
+| 12-18 m | 63 | 0.092 m | 52.4% | 0.498 m | 7.9% |
+| 18-24 m | 73 | 0.085 m | 53.4% | **0.855 m** | **4.1%** |
+
+## WHAT IT MEANS — it makes the sideline-first shape WORSE, not better
+
+pm named this outcome in advance as the one that would hurt its own recommendation, and it is the
+one that landed.
+
+1. **The "good axis" is good only near the centreline.** The pooled lateral figure of 49.9% within
+   10 cm is an average across a **72.9% -> 20.0%** spread. A sideline-only v1 would be at its
+   weakest precisely at the far corners, which is where contested sideline calls actually occur.
+2. **A per-line bar must also be per-REGION**, or it will promise at the corners what it can only
+   deliver near the middle. Any §3 rewrite that says "sidelines: 10 cm" without a range-and-offset
+   qualifier is making a claim this measurement does not support.
+3. **pm's §3 SHAPE recommendation still stands**, exactly as it said it would: the shape rests on
+   R1's 23.5x anisotropy, not on the obliquity term. What moves is how much coverage shape (a)
+   actually buys — less than the pooled number suggests.
+4. **Bar A remains FAILED** (rule 2). Nothing here re-opens it.
+
+**Same standing caveat as R1: synthetic, i.i.d. Gaussian noise, uniform flight population. The
+geometry will survive real footage; the rates will move.**

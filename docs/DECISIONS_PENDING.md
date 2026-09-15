@@ -999,3 +999,353 @@ and the v2 parking apply to the SEARCH; a four-tap that snaps is the product ans
 It needs no ruling now — it becomes P4(ii)'s companion (the refuse-and-re-tap drift behaviour) and
 frontend work once P1 and P6 report. Recorded here so the scope lock is not misread as having
 killed it along with the rest of the pillar.
+
+---
+
+## 2026-09-15 — P5-scope: THE CAMERA IS BLIND IN ONE AXIS. What v1 claims, and what it outputs.
+
+**pm. This is the FIFTH question on this file and the biggest.** It does not duplicate the
+2026-09-12 **P4** entry above (four contradictions *inside* the locked spec — §8 vs §4, §1 vs the
+closed court path, §10's shell blocker, and live.py's bounce method). **P4 asks whether the spec is
+self-consistent. This asks whether its central bar is achievable at all, and what the product is if
+it is not.** P4's four rulings are still needed and are unaffected by this one, with a single
+interaction noted in §6 below.
+
+**Everything here is downstream of two measurements, neither of which is mine:**
+`docs/evidence/monocular-3d-ceiling.md` (**P1**, `backend-dev` built and ran it, the lead recomputed
+every headline) and `docs/evidence/monocular-3d-routes.md` (**researcher**, plus the lead's **R1**
+run at the end of that file). **I did not measure anything.** Below, every claim is tagged
+**[MEASURED]** (someone else's number, with the file), **[PM-ARITHMETIC]** (mine, closed-form,
+re-derivable in three lines — if the arithmetic is wrong the conclusion goes with it), or
+**[PRODUCT JUDGEMENT]** (mine, and yours to overrule).
+
+**Bar A is FAILED at 6.1% and stays failed (hard rule 2). Nothing in this entry re-opens it**, and
+nothing here proposes pose, occlusion prediction, stereo, a second camera in the product path, court
+auto-detection, or ball-detector work — P1 independently re-kills the detector and pose routes on
+measurement. I have checked `docs/measure/CLOSED.md`, `docs/ball/CLOSED.md` and
+`docs/platform/CLOSED.md`; **nothing in any of them touches optical framing or a per-line error
+metric**, which are the two new things below.
+
+---
+
+### 0. The one-paragraph version
+
+**[MEASURED]** The estimator is not inaccurate. It is accurate in two dimensions and blind in the
+third: median error **5.4 cm** perpendicular to the camera ray and **1.28 m** along it, a factor of
+**23.5**, confirmed across five mount heights and predicted to within 4% by closed-form geometry
+before it was run. **[PRODUCT JUDGEMENT]** A spec that states one accuracy number for all calls is
+therefore measuring something that does not exist. **My recommendation is to split §3 by the
+direction of the line being called, to change the error metric from a scalar distance to the error
+perpendicular to that line, and to stop v1 outputting a landing coordinate at all** — v1 emits a
+line, a signed margin, an uncertainty on that margin, or a refusal. The bounce map is cut.
+
+---
+
+### 1. QUESTION 1 — what does v1 CLAIM? A per-LINE floor, not a per-direction one.
+
+**[MEASURED]** R1 decomposes the error two ways. In court axes: lateral `|Δx|` **0.101 m** vs
+down-court `|Δy|` **1.270 m**. About the camera ray: tangential **0.054 m** vs radial **1.280 m**.
+
+**[PRODUCT JUDGEMENT] Neither of those is the bar's frame, and this is the correction I most want
+you to read.** The camera-ray frame (radial/tangential) is the right frame for the *mechanism* — it
+is where the physics lives. The product does not speak in camera rays; it speaks in **lines**. And
+the only error that can change a call is the component **perpendicular to the line being called**.
+An error of a metre *along* a sideline changes no call. An error of 3 cm *across* it changes a call
+at a 2 cm margin. **So the honest metric is per-line perpendicular error, and nobody has ever
+computed it.**
+
+Those two frames coincide only on the court's centreline, and here is what the difference costs:
+
+> **[PM-ARITHMETIC] The far corner leaks the blind axis into the sideline.** The camera sits on the
+> centreline, 6 m behind the near baseline. A far *doubles* corner is 5.485 m across and 29.77 m
+> down-ray, so the camera ray there sits **10.44°** off the court's long axis. That puts
+> `sin(10.44°) = 0.181` of the blind-axis error **across the sideline**: `0.181 × 1.28 m ≈ **23 cm**`
+> median, against the pooled court-frame lateral median of **10.1 cm**.
+
+**The sideline is not uniformly safe. It is roughly 2x worse exactly at the far corner — which is
+where contested calls actually happen.** This is arithmetic, not a measurement, and §7 below
+pre-registers the free re-read that confirms or refutes it.
+
+#### What I would put in §3 — the SHAPE. I am not proposing a number.
+
+I am deliberately **not** offering a relaxed rate, because I would be picking it after seeing the
+result, which is the thing rule 2 exists to prevent. What I am proposing is that §3 stops being one
+bar and becomes four, and that **the surviving number does not move**:
+
+- **§3.0 — the metric changes.** Accuracy is measured **perpendicular to the line being called**
+  (equivalently: the error in the signed margin), not as `dist(true_landing, est_landing)`. **This
+  is not a relaxation** — for a baseline call it selects the *harder* of the two components.
+- **§3.1 — lines that RUN DOWN-COURT** (both singles sidelines, both doubles sidelines, the centre
+  service line). **Bar unchanged: ≥90% within 10 cm, perpendicular.** **[MEASURED]** It is expected
+  to fail today — the nearest proxy is a lateral-only rate of **49.9%**, and even at *zero* pixel
+  noise **83.9%**. **Keep the bar and let it fail.** A failed bar with a known mechanism is worth
+  more than a passed bar chosen to be passable.
+- **§3.2 — lines that RUN ACROSS COURT** (both baselines, both service lines). **No accuracy bar is
+  offered for v1.** **[MEASURED]** In the 18-24 m band the down-court ≤10 cm rate is **4.1%**. These
+  calls depend on the axis a single camera does not observe. v1 refuses them, or does not offer
+  them. Whether they ever return is decided by P5's real footage and by the capture spec, **not** by
+  an estimator result.
+- **§3.3 — abstention becomes directional.** §3 today refuses when a scalar 1σ exceeds 10 cm. There
+  is no scalar to take a 1σ of. Refuse when **the 1σ of the perpendicular error exceeds the
+  estimated margin** — the decision-relevant test.
+- **§3.4 — the ≤5% refusal target is WITHDRAWN,** with no replacement number. See §4.
+
+**The hazard in this, named because you should hold me to it:** *narrowing what a bar applies to is
+a way of moving a bar.* Three reasons it is not that here, and if you do not accept all three you
+should reject the split: (i) the direction split was derived from closed-form geometry
+**independently of the result** and reproduced P1's measured failure boundary — 9.54 m predicted vs
+9.85 m measured, **4%**; (ii) R1's ratio test was **pre-registered in a 5-20 band before it ran** and
+came back 12.6; (iii) **the number 10 cm does not move, and the 90% does not move.** Only the
+population each applies to changes, on a mechanism established before the split was proposed.
+
+---
+
+### 2. QUESTION 3 — what v1 outputs, end to end. **This is the biggest change and I lead with it.**
+
+CLAUDE.md today: *"where the ball bounced, whether it was in or out, and a refusal when it cannot
+tell."*
+
+**[PRODUCT JUDGEMENT] My call: cut "where the ball bounced". v1 outputs a CALL, never a
+COORDINATE.**
+
+> **Proposed replacement line:** *What v1 outputs, end to end: for a bounce near a line, which line,
+> which side of it, by what margin, with an uncertainty on that margin — or a refusal. It does not
+> output a landing position, and it does not draw one.*
+
+**Why, and it is a trust argument, not an accuracy one.** A landing coordinate is a claim in two
+dimensions. We can honestly make a claim in one. If we render a dot on a court map, that dot will
+sit **over a metre** from where the ball actually landed while the *call attached to it is correct*.
+The user does not see two numbers with two error bars; they see a dot in the wrong place next to the
+word IN, and they conclude the app is broken. **The dot destroys the trust that the call earns.**
+That is the failure mode I am avoiding, and it is worse than being wrong — it is being visibly wrong
+about the thing we did not measure, in a way that discredits the thing we did.
+
+**And it kills the obvious compromise before someone proposes it.** "Show the margin, and also show
+where along the line it landed" does not work: for a sideline call the margin is the *well-measured*
+axis and the position *along* the line is the *blind* one. **[PM-ARITHMETIC]** There is no view that
+places the bounce in space that is not mostly guess.
+
+**What this buys, beyond honesty.** SPEC §3's abstention clause becomes implementable for the first
+time — "1σ > 10 cm" has no referent once the error is anisotropic, but "1σ of the margin > the
+margin" is a well-posed test with a covariance behind it (researcher's R2 is exactly that object,
+and it is unmeasured).
+
+**What this costs, and I will not soften it.** Refusing when uncertainty exceeds margin means
+**the calls we refuse are precisely the near-line contested ones** — which is the population SPEC §7
+validates against. So §7's *validation set* and §3's *abstention rule* select for opposite things.
+**That is a fifth spec contradiction**, of a different kind from P4's four: it is invisible until you
+accept the blind axis, and it needs the same written ruling. It does not change P4's four.
+
+---
+
+### 3. QUESTION 2 — the three shapes, ranked, plus two researcher did not name
+
+**Ranked by what they cost against what they buy, and I have priced each in sessions.**
+
+**RANK 1 — (a) Keep 10 cm; refuse by geometry and covariance; and DECLARE the coverage region up
+front.** The variant matters more than the shape. Researcher's (a) refuses *per call*; I want the
+callable region **drawn for the user at setup, before they record**, from the four-tap calibration
+alone. **[PRODUCT JUDGEMENT]** Those are the same mechanism and two completely different promises:
+a declared region is a promise we keep, a per-call refusal is a promise we break unpredictably and
+silently. "Your camera cannot resolve that end of the court from here — move it back or up" is a
+sentence a user can act on. A call that just never arrives is not.
+- **Cost: ~5 sessions** (geometric map ~1; covariance measurement ~1 and wiring ~1; setup-time
+  coverage overlay and the call card ~2). Most of it is work the setup flow needs regardless.
+- **What it does not buy:** the far half of the court. Under a 1080p / 3 m mount that is everything
+  past ~9.5 m from the near baseline. **[MEASURED]** That boundary is P1's own measured good-fit
+  median of 9.85 m.
+
+**RANK 2 — (c) The margin-based call.** I do **not** rank this as an alternative; **it is the
+output change in §2 and it should be folded into (a), not chosen against it.** A depth-dependent
+*accuracy bar* I would reject — it is a sliding number with no natural value and it will be tuned.
+A *margin* test has a natural value (the margin itself) and cannot be tuned.
+- **Cost: net NEGATIVE.** It removes the bounce-map view rather than adding anything. ~1 session for
+  the call card.
+
+**RANK 3 — (b) Move the capture spec — but only one of its three variants is worth pricing.**
+- **(b1) Wide-angle, full court, higher and further back.** **[MEASURED, researcher]** A 6 m mount
+  with 12.6 m of setback, or 4K with ~5.5 m. **[PRODUCT JUDGEMENT] Reject.** This project already
+  owns the answer: **all four of our confirmed mounts are 1.36-1.74 m**, and the standing top ask —
+  record *one* clip above 2.5 m — has been open for ten days. A spec that requires 6 m and 12.6 m of
+  clear space behind the baseline is not a spec an amateur satisfies; it is a spec that means we
+  ship to nobody. It also collides head-on with CLAUDE.md's founding premise, and **[MEASURED]** bar
+  D passed that premise *only because every height failed equally*.
+- **(b2) Telephoto, far half only — the one variant with a feasible band, and it is mine, so check
+  it.** Researcher held the field of view at the full-court framing, where `f ≤ 175·S` binds. **That
+  framing requirement is a scope decision, not a physical one.**
+  > **[PM-ARITHMETIC]** If the camera frames only the **far** half-court, the binding width is
+  > 10.97 m at 29.77 m, so `hfov ≤ 20.9°` and `f ≤ 5209 px` at 1920 wide. The requirement is
+  > `f·h ≥ 8862`, i.e. `f ≥ 2954` at h = 3 m. **A feasible band exists** (hfov 21-36°) — unlike the
+  > full-court configuration, which has **no solution at any setback**. At bar A's 2 px the
+  > requirement doubles to 17,724, so `f ≥ 5908` exceeds the 5209 cap at 3 m and the mount must rise
+  > to **h ≥ 3.4 m**.
+  **So: marginal, not impossible.** That is a genuinely different status from (b1) and it is the
+  only reason (b) is still on this page. **Three things it costs, all of which must be stated
+  together:** (i) the near half of the court is out of frame entirely, so you call one end at a time;
+  (ii) fewer observations of the arc, which **[PRODUCT JUDGEMENT]** may make P1's conditioning
+  problem *worse* rather than better — this must be measured, not assumed; (iii) **a device
+  consequence three steps out: the iPhone SE 2nd and 3rd generation have no telephoto camera at
+  all.** An optical-tele capture spec narrows the supported device list below our stated A13 floor.
+  The 4K-digital-crop alternative runs on any device but re-raises researcher's R7 caveat — whether
+  detector noise scales with resolution is a **detector measurement, closed by rule 6** — so it is
+  undecidable here, and saying so is the right answer rather than guessing.
+  - **Cost to decide: ~0.5 session** (one seeded rig configuration — it is a camera config, not an
+    estimator change), plus P5 capturing the framing (see §5, marginal cost ≈ 0 at the visit).
+- **(b3) Side mount — pre-killed, because someone will propose it.** Turning the camera to the side
+  makes the blind axis run *across* the court, which would make baselines callable and sidelines
+  blind.
+  > **[PM-ARITHMETIC]** Camera 6 m outside the sideline, level with the net: the worst point (the
+  > opposite far corner) is 20.7 m away instead of 29.8 m — but framing 23.77 m of court length from
+  > 6 m of setback needs `hfov ≈ 126°`, so `f ≈ 489 px` and `f·h = 1467` at 3 m. That gives **29 cm
+  > per pixel** against the end-mount's **36 cm**.
+  **~20% better, and it only swaps which lines are blind.** Not a rescue. Recorded so no session is
+  spent rediscovering it.
+
+**RANK 4 — (d), which researcher did not name: cut the line-call output and ship the engine as
+something else.** I am not recommending it and I do not think we are there. It belongs on the list
+because it is the honest floor if §4's kill condition fires, and because naming it now is cheaper
+than discovering it at session 45.
+
+---
+
+### 4. QUESTION 4 — the refusal rate. Withdraw ≤5% NOW. Do not wait for P2, and do not replace it.
+
+**[MEASURED] ≤5% is not merely provisional, it is arithmetically unreachable, and that conclusion
+does not need P2.** Under a truthful abstention rule, refusals on across-court lines approach 100%
+at the current capture spec (4.1% within 10 cm in the 18-24 m band), and on down-court lines run
+near half (49.9%). No occlusion census is required to see that.
+
+**P2 measures a different and ADDITIVE source.** Occlusion refusals and geometry refusals compound:
+`total ≈ 1 − (1−r_occlusion)(1−r_geometry)`. **[PM-ARITHMETIC]** P2 can only raise the floor, never
+lower it — so P2 is still worth its ~45 minutes, but it is **not a precondition for withdrawing
+≤5%**, and holding the withdrawal for it would leave a number in a locked spec that we already know
+is impossible.
+
+**[PRODUCT JUDGEMENT] I will not name a replacement target, and I think naming one now would be
+dishonest** — it would be picked after the result. What I will pre-register instead is a **kill
+condition**, which *can* be fixed before the data:
+
+> **PROPOSED PRE-REGISTRATION (needs your approval to become binding):** measured on P5's real
+> footage, within the **declared coverage region**, if more than **one in three** near-line calls is
+> refused, v1's line-call output is **cut** rather than tuned. Reasoning, and it is a judgement:
+> a user who is refused a third of the time stops asking, and an app that is silent when it matters
+> is worse than an app that does not claim the feature.
+
+And the reporting shape, which I *would* fix now: **refusal rate is reported per line class and per
+court region, never pooled.** A pooled 40% hides "5% near, 95% far", and that single pooled number
+is how a product ships a promise it cannot keep.
+
+---
+
+### 5. QUESTION 5 — does R1 change what P5's court visit must capture? **Yes, in four ways.**
+
+I will brief P5 itself separately. These are the **requirement deltas only**, and every one of them
+costs near-zero extra at the visit but cannot be recovered afterwards.
+
+1. **The marks must be placed at KNOWN OFFSETS FROM LINES, not just at known positions.** P5 as
+   written asks for "≥30 landing points known to ≤3 cm". If the output becomes a margin (§2), the
+   truth set must contain balls at known margins — tape-measured marks at, say, ±2, ±5, ±10, ±20 cm
+   from each line type. Positions alone cannot validate a margin claim.
+2. **Matched pairs across the two directions, at matched ranges.** Marks on **sidelines** (the
+   well-measured axis) and on **baselines and service lines** (the blind axis) at the *same*
+   down-court distances, so per-direction error can actually be separated. Without pairing, one
+   pooled number comes back and we are exactly where we started.
+3. **≥30 points is now too few.** It was sized for one pooled bar. Split by two line directions and
+   at least two range bands and it is ~7 per cell. **[PRODUCT JUDGEMENT] The bar should rise to ≥30
+   per direction class** — raising a bar is safe, and a visit that comes back unable to separate the
+   two axes has not answered the question that made it top of the queue.
+4. **Capture the same marks under two framings and at two mount heights.** The second framing is
+   (b2)'s telephoto far-half view; the second height (e.g. ~2.5 m and ~3.5 m) tests the predicted
+   `1/h` scaling **on real footage**, which is currently synthetic-only. **[PRODUCT JUDGEMENT] This
+   is the highest-value addition on this list.** It converts one visit into the falsifier for the
+   entire geometric diagnosis, and a court visit has days of lead time — a second visit to collect a
+   variable we could have recorded on the first is the expensive mistake here.
+
+**Also carry in, unchanged:** the mount height and setback must be **tape-measured and written
+down**, not estimated — every conclusion in this entry is `D²/(f·h)` and `h` is the lever.
+
+---
+
+### 6. What this costs, and what does not get built
+
+**Cut from v1, and this is the something-else that the yes above is a no to:**
+- **The bounce map / landing dot / shot-placement heatmap.** Not deferred as a nice-to-have —
+  **cut on measurement**, because we cannot place a bounce in two dimensions.
+- **The far half of the court**, under shape (a), at the current capture spec.
+- **Across-court line calls** (baselines, service lines) get no v1 accuracy claim.
+
+**Sessions:** ~0.5 for the free re-read in §7; ~5 for shape (a) built; ~0.5 to decide (b2); and
+shape (c) is a net saving. **The re-read is the only thing that should start before your ruling.**
+
+**Interaction with P4, stated so the two rulings are not made in conflict:** P4(iv) rules that P7
+replaces `live.py`'s bounce stage with §4's sign reversal *on the 3D fit P1 was building*. **[MEASURED]**
+P1's bar B failed that timing badly (29.5% within ±1 frame against 90%, and biased **+3.66 frames
+late**). §2's margin output does not need a landing coordinate, but it still needs a *bounce frame*,
+so P4(iv) and this entry both depend on a bounce detector whose timing is currently failing its bar.
+**P7 still stays last.** Nothing here changes P4's four recommended rulings.
+
+**ON-DEVICE CATCH:** nothing in this entry adds a network dependency, and I checked each item
+specifically. The coverage map is closed-form geometry evaluated **once at calibration** — zero
+per-frame cost. The margin covariance is a small matrix inverse per arc, CPU-side, microseconds.
+**The two real on-device risks are both pre-existing and both unmeasured:** (i) **[MEASURED,
+researcher]** `fit_arc`'s per-arc latency on an A13 has never been measured against the 16.7 ms
+throughput budget, and no number in this repo covers it; (ii) shape (b2)'s 4K-crop variant raises a
+sustained-capture thermal question that **no number in this project has ever come from a phone** to
+answer. Neither is created by this ruling; both are made more load-bearing by it.
+
+---
+
+### 7. The one thing that should run before you rule — pre-registered here, BEFORE it runs
+
+**A per-line perpendicular decomposition of the error already on disk.** Same class as R1: a re-read
+of `data/output/mono3d_ceiling/*.json`, **zero new compute, no refitting**. Project each flight's
+error onto the **normal of the nearest line**, and report the ≤10 cm rate and p90 per line type and
+per range band.
+
+**PRE-REGISTERED PREDICTION, written before the run, testing §1's obliquity arithmetic:**
+- **PASS (my arithmetic holds):** in the far-corner band (bounce >18 m down-court, lateral offset
+  >4 m from the centreline), the median **sideline-perpendicular** error is **≥ 2x** the pooled
+  court-frame lateral median of 0.101 m.
+- **REFUTED:** it comes back near **1x**. Then the sideline is uniformly safe, my far-corner leak is
+  wrong, and shape (a) gets **better**, not worse — a good outcome I would be happy to be handed.
+- **Either way the §3 SHAPE recommendation stands**, because it rests on R1's measured 23.5x
+  anisotropy, not on my obliquity term.
+
+> **RUN 2026-09-15 (lead). RESULT: PASS at 3.58x** against the >=2.0x bar — the far-corner leak is
+> real and larger than predicted. The gradient is monotonic in off-axis angle (median `|Δx|`
+> **0.049 m on the centreline -> 0.348 m at the doubles sideline**, <=10 cm rate **72.9% -> 20.0%**)
+> and a two-term quadrature model accounts for it to 5-13% with nothing fitted. **Consequence: the
+> sideline-first shape buys LESS coverage than the pooled 49.9% suggests, and a per-line bar must
+> also be per-REGION.** Full result: `docs/evidence/monocular-3d-routes.md`, section "R1b".
+
+**Caveat carried into every line above, and it is the reason to rule on shape now and numbers
+later: nothing here has touched real footage.** P1 and R1 are synthetic; the noise is i.i.d.
+Gaussian where a real detector's error is correlated and heavy-tailed; and **[MEASURED]** the flight
+population is *uniform* rather than a tennis distribution, which over-represents exactly the
+fast/lofted/far flights that fail — **so 6.1% may be pessimistic by an unknown amount.**
+**[PRODUCT JUDGEMENT]** The split that matters: **the anisotropy is geometric and will survive real
+noise; the rates (49.9%, 83.9%, 6.1%) are properties of the noise model and the flight population
+and will move.** Rule on the shape today. Let P5 set the numbers.
+
+---
+
+### WHAT YOU ARE ASKED FOR — five sentences, and the definition of done, written before the work
+
+1. **Split §3 by line direction, with the metric changed to perpendicular error** — yes or no?
+   (§1. The 10 cm and the 90% do not move.)
+2. **Does v1 output a margin-and-call, with no landing coordinate and no bounce map** — yes or no?
+   (§2. This is the one with the largest build consequence.)
+3. **Is a DECLARED half-court coverage region an acceptable v1** — yes or no? (§3, rank 1.)
+4. **Confirm ≤5% refusal is withdrawn with no replacement, and approve or amend the one-in-three
+   kill condition.** (§4.)
+5. **Approve P5 capturing two framings, two mount heights, and line-referenced marks** — yes or no?
+   (§5. This one has lead time and cannot be added later.)
+
+**Definition of done for this item:** the five answers above are written into this file; CLAUDE.md's
+"what v1 outputs, end to end" line is updated by the lead to match answer 2; and P5's brief is
+rewritten against answers 1, 2 and 5 **before the visit is scheduled**. **No SPEC edit is made by
+anyone but you** — SPEC is LOCKED and I have written options, not an amendment.
+
+**WHAT WAS DONE INSTEAD OF WAITING:** P1 and R1 both ran and landed; researcher's seven routes are
+written and ranked with pre-registered bars; and the §7 re-read above needs no ruling and no
+compute, so it can start today whatever you decide.

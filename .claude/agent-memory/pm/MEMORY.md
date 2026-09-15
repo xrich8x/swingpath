@@ -18,5 +18,7 @@ Index. Detail in the topic files. Inherited 2026-08-28 from the prior planning w
 - [No confirmed metric footage exists](project-owns-no-confirmed-metric-footage.md) — all four named mounts are 1.36-1.74 m; per-clip status, and the 15-min recording ask that is now top of the queue
 - [Two court pools, only one compromised](two-court-pools-only-one-compromised.md) — the 12/20 gate scores against GOLD, not the `_exact` REFERENCES that T26 broke; only 2 of 20 confirmed misplaced
 - [Setup-time camera motion is an ordering problem](setup-time-camera-motion-is-an-ordering-problem.md) — calibrate LAST + IMU stillness; never detect movement from the court fit (it self-disagrees by 29.9-37.5 px)
+- [The blind axis splits the accuracy bar](blind-axis-splits-the-accuracy-bar.md) — 23.5x anisotropy; bars go per-LINE perpendicular, and v1 outputs a margin, never a landing coordinate
+- [Capture framing is a scope lever](capture-framing-is-a-scope-lever.md) — "frame the whole court" is a product choice; the far-half telephoto view is the only feasible band, and it costs the SE
 
 **Settled, do not reopen:** iOS only, A13+, Core ML only. 100% on-device, no server ever.
