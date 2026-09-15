@@ -406,6 +406,16 @@ NEVER ask the founder for an unbuilt artefact.**
 - **NOTE THE DIRECTION, it is what makes this cheap:** our footage is low-mount (1.38-1.74 m),
   where a player occludes more court. The number is an **UPPER bound** for a proper fence mount.
   If the upper bound comes in low, the worry evaporates for the price of one sheet.
+- **CLIP SELECTION IS FIXED HERE, BEFORE THE RUN, so the sample cannot be chosen after seeing the
+  answer.** Cross-referenced 2026-09-15 (`docs/evidence/capture-floor-census.md` addendum):
+  **only THREE clips in the corpus have a perception cache** — `am_hard_utr` (1.74 m), `demo30`
+  (1.38 m), `yt_match40` (1.64 m) — and all three are LOW-CAMERA. Running perception on a fresh clip
+  costs 0.7-1.1 s/frame, so a census on cached clips is cheap and one on the compliant clips is not.
+  **The sheet is built from those three unless qa states a reason to add another BEFORE building it.**
+  `yt_match40`'s calibration is KNOWN BAD (T23, grossly wrong corners at a 0.9 px residual), so
+  "near-line" cannot be derived from it — use it for occlusion visibility only, or drop it and say so.
+  **Every clip's mount height must be stated beside its number**, because the whole reading of this
+  census depends on these being low mounts.
 - **WHY IT MATTERS NOW:** with §6 tossed, refusal rate is no longer a tuning parameter — it is a
   property of the footage, and it decides whether v1 is a product at all. Costs no code.
 - **P3 CONSTRAINS THE SHEET, and qa must be told:** the census should be built on the footage we
