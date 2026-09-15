@@ -125,7 +125,7 @@ measurement without writing down why.**
 
 | # | Item | Kind | Owner | Blocked on |
 |---|---|---|---|---|
-| P1 | Monocular 3D ceiling on synthetic truth | MEASURE | backend-dev | nothing — **IN FLIGHT** |
+| P1 | Monocular 3D ceiling on synthetic truth | MEASURE | **DONE 2026-09-15 — BAR A FAIL, BAR C NOT FIRED** | -> `docs/evidence/monocular-3d-ceiling.md`. STATE row landed |
 | P2 | Occlusion census: the refusal floor | MEASURE | qa builds sheet, founder eyes it | sheet must exist BEFORE the founder is asked |
 | P3 | Does any footage meet the v1 capture floor? | MEASURE | **DONE by the lead 2026-09-12 — BAR FIRED** | -> `docs/evidence/capture-floor-census.md`. **STATE row still OWED** (see below) |
 | P4 | **FOUR** contradictions inside a locked SPEC | DECIDE | founder | **WRITTEN AND DELIVERED 2026-09-12** -> `docs/DECISIONS_PENDING.md`. Awaiting the ruling; P7 cannot start without (i)/(ii)/(iv) |
@@ -152,6 +152,37 @@ CONTROL ARM, so the answer says what 3D buys over what ships today.
   bar A is a ceiling under a perfectly-specified model and will be quoted as an accuracy.
 - **G OUT OF SCOPE, report UNTESTED:** SPEC §5's depth-from-known-ball-size (6.7 cm). The rig emits
   (u,v) only, no apparent radius — so §5's self-declared weakest channel is NOT exercised here.
+
+**P1 IS DONE. BAR A FAILED AT 6.1% vs 90%; BAR C DID NOT FIRE.** `backend-dev` was killed by a
+usage limit AFTER the compute finished (all 17 configs on disk) but BEFORE the write-up; the lead
+resumed, recomputed every headline from the raw per-flight JSON rather than the agent's summary,
+added one pre-registered diagnostic arm, and wrote it up. Full text
+`docs/evidence/monocular-3d-ceiling.md`; raw `data/output/mono3d_ceiling/*.json` (18 configs).
+
+- **A FAIL 6.1%** (median 1.32 m). Re-verified at shipped `dt=2e-3`: 5.9%. **B FAIL** (B1 29.5/46.0,
+  B2 11.3/19.5), timing biased **+3.66 frames LATE**.
+- **C NOT FIRED — the constructive half.** Perfect detections give **59.6-72.1% at every height,
+  median 2.2-3.1 cm.** Geometry, frames, camera solve and ground intersection are all CORRECT. The
+  spec is NOT automatically renegotiated. This is also the control that makes the run credible: an
+  inverted `g` or a frame-conversion bug (both shipped here before) would fail here too.
+- **E is the actionable one: ONE pixel costs 44x** (2.2 cm -> 95.9 cm), and **zero noise still gives
+  only 71.4%** — so no detector reaches bar A. **The 3D fit LOSES to the 2D control at >=1 px.**
+- **D premise HOLDS (5.9 pt gap) but only because every height fails.** **F: +/-20% aero
+  mis-specification has NO effect** — bar A is not flattered by the shared model. **G UNTESTED.**
+- **ORACLE p0 anchor** (what pose would have given, and better): median 4.6x better at 0.29 m,
+  **still fails bar A by 5x — restoring §9 would NOT rescue it.**
+- **Spin-zero diagnostic, pre-registered, came back NEGATIVE**: paired median 1.32 -> 3.31 m. The
+  Magnus term carries real signal; "just constrain the fit" is not free. A *bounded* /
+  parsimonious spin (`bridge.py:211 _spin_parsimonious`) is untested — a hypothesis, not a plan.
+- **Suite 709 passed / 4 skipped, 0 failures** (baseline 702+4; +7 from `test_mono3d_ceiling.py`).
+- **Rule 9 check done by the lead:** `trajectory_fit.py` gained only a `dt` kwarg with the default
+  UNCHANGED; `synth_truth.py`'s refactor is inert by inspection (`xyz[i,idx]` == the old
+  `xyz[i,m][keep][alive]`, `control_bounce_xy` returns the same two values `track[-1]` held, rng
+  draw order preserved) and backend-dev also proved it byte-identical.
+
+**THE OPEN QUESTION FOR THE FOUNDER (P1's whole point):** SPEC §3's 10 cm is not reachable by
+SPEC §5's mandated method at realistic detector noise. Bar C says the approach is sound and the
+CONDITIONING is what fails. That is a spec decision, not an engineering one.
 
 **P3 IS DONE AND ITS BAR FIRED — the v1 validation corpus DOES NOT EXIST.** Full text:
 `docs/evidence/capture-floor-census.md`; raw probe `data/output/capture_floor_census.json` (213
@@ -209,6 +240,44 @@ PRIMARY arm fits `p0` FREE with `physical_bounds=True`. A striker-pinned launch 
 `docs/evidence/arc-fit-observability.md`, but it is pinned by POSE, and SPEC §9 tossed all pose from
 v1 — so v1 does not have that information. The anchored variant may be reported as a descriptive
 secondary, labelled as needing information v1 does not have.
+
+## PRE-REGISTRATION — P1 addendum, the SPIN-ZERO diagnostic. Written 2026-09-15 BEFORE it ran.
+
+**BAR A IS FAILED AND STAYS FAILED (rule 2). This arm CANNOT un-fail it and is not permitted to.**
+It is DIAGNOSIS of the failure mechanism, reported separately and never as a retry of bar A. The
+brief required the rejects to be characterised; this is that work continuing.
+
+**WHY IT IS NOT "TUNING TO REACH A BAR":** `fit_arc`'s own docstring already warned about this
+exact failure, in the code, before any of this ran: *"spin is the softest parameter in the model -
+over a short arc the optimiser buys a cheap residual reduction by pinning all three components at
+their bound (|omega| = 750*sqrt(3) rad/s = 12,405 rpm, which is exactly what real arcs kept
+reporting). Fitting spin-free first and only accepting spin when it clearly earns its residual is
+how the caller tells a measured curve from an excuse."* The sweep ran with spin FREE throughout.
+
+**THE DIAGNOSTIC THAT SAYS IT IS BITING** (measured, bar A config, n=441):
+- fitted spin p90 **7,244 rpm** against a TRUE p90 of **3,116 rpm**; fitted max **12,375 rpm**,
+  which is the optimiser sitting on the **12,405 rpm bound the docstring predicted**.
+- **4.1% of fits exceed 10,000 rpm.** Real tennis topspin tops out near 5,000.
+So the optimiser is absorbing pixel noise into unphysical spin, and three of the nine free
+parameters exist only to do it.
+
+**THE TEST:** identical seeded flights and identical noisy pixels, ONE variable changed -
+`spin_free=True -> False` (omega held at zero) - at bar A's exact config (2.0 px, dropout 0.30,
+60 fps, 3.0 m mount, 1920x1080, hfov exact, dt 6e-3, p0 free).
+
+**PRE-REGISTERED READING, fixed now:**
+- Whatever it returns, **bar A remains FAILED at 6.1%**. This arm changes the EXPLANATION, never
+  the verdict, and must never be quoted as bar A's number.
+- If the <=10 cm rate rises **materially (>=20%)**: over-parameterisation is named as a dominant
+  mechanism, and a spin-constrained or spin-parsimonious fit becomes the obvious v2 route.
+  `bridge.py:211 _spin_parsimonious` already implements the two-stage policy the docstring
+  recommends, so the route exists and is not new code.
+- If it does **not** move: depth ambiguity is intrinsic to the monocular arc, no estimator
+  reparameterisation rescues it, and that is the stronger and more useful finding.
+- **CONFOUND STATED UP FRONT:** omega=0 MIS-SPECIFIES the physics, because the simulator really
+  does apply Magnus with spin up to 3,633 rpm. So this trades noise absorption against model bias
+  and is NOT a clean "better fit" - it is a bias/variance probe. Bar F is the reason to expect the
+  bias half to be small: +/-20% aero mis-specification moved nothing.
 
 ## NEXT TWO DISPATCHES — drafted 2026-09-12 so a kill loses no design work
 
@@ -373,6 +442,11 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-15** — Resumed after a usage-limit kill of `backend-dev` (compute had finished; the
+  write-up had not). P1 COMPLETE: bar A FAIL 6.1%, bar C NOT FIRED. Added one pre-registered
+  spin-zero diagnostic (negative). STATE rows for P1 and P3 landed; the point-boundary ask
+  withdrawn in STATE. Suite 709/4/0. Committed, NOT pushed.
 
 - **2026-09-12** — New founder queue (P1-P7) replaces the audit and innovation-gate tasks. **P1
   dispatched to backend-dev** (monocular 3D ceiling on synth truth, bars A-G pre-registered).

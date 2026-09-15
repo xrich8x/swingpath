@@ -36,8 +36,8 @@ class FitResult:
     readout: MotionReadout
 
 
-def _forward(p0, v0, omega, times, drag, lift, t_pad=0.05):
-    tr = simulate(p0, v0, omega, dt=2e-3, t_max=float(times[-1]) + t_pad,
+def _forward(p0, v0, omega, times, drag, lift, t_pad=0.05, dt=2e-3):
+    tr = simulate(p0, v0, omega, dt=dt, t_max=float(times[-1]) + t_pad,
                   drag=drag, lift=lift, bounces=0)
     return tr.sample(times)
 
@@ -56,6 +56,7 @@ def fit_arc(
     physical_bounds: bool = False,
     anchor: Optional[tuple] = None,
     spin_free: bool = True,
+    dt: float = 2e-3,
 ) -> FitResult:
     """Fit (p0, v0, omega) to one arc.
 
@@ -75,6 +76,11 @@ def fit_arc(
                what real arcs kept reporting). Fitting spin-free first and only
                accepting spin when it clearly earns its residual is how the
                caller tells a measured curve from an excuse.
+        dt:    RK4 step of the forward model, seconds. The whole cost of a fit is
+               (t_max / dt) integrator steps per residual evaluation, so this is
+               the only speed lever a batch study has. DEFAULT IS UNCHANGED at
+               2e-3; raise it only with a paired A/B showing the fitted answer
+               did not move (tools/mono3d_ceiling.py --dt-ab does that one).
     """
     drag = drag or DragModel()
     lift = lift or LiftModel()
@@ -110,7 +116,7 @@ def fit_arc(
 
     def residuals(x):
         p0, v0, omega = unpack(x)
-        pred3d = _forward(p0, v0, omega, times, drag, lift)
+        pred3d = _forward(p0, v0, omega, times, drag, lift, dt=dt)
         if use_2d:
             pred = camera.project(pred3d)
         else:

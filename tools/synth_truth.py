@@ -98,7 +98,48 @@ def to_court_xy(fw_xy):
     return (5.485 - float(fw_xy[1]), float(fw_xy[0]))
 
 
-def simulate(kp, hfov, w, h, n, fps, horizon_s, seed, truth_fps=None):
+def noisy_pixels(uv_i, t, i_bounce, stride, width, height, rng, *,
+                 pixel_noise, dropout, min_len):
+    """What the detector would hand downstream for ONE flight.
+
+    The in-air (up to the bounce sample), in-frame pixels, jittered and thinned
+    exactly as our real detector is. `stride` decimates the fine truth grid to
+    the frame rate under test (1 when truth_fps is off).
+
+    Returns `(px, tm, idx)` — pixels, their times, and the rows of the fine truth
+    grid they came from — or None if the flight is unusable. Extracted from
+    measure() so a SECOND estimator arm (tools/mono3d_ceiling.py's monocular 3D
+    fit) scores the identical noisy track: a paired comparison is only paired if
+    both arms share this code AND this rng draw order, and re-typing it in the
+    comparison tool would silently unpair them the first time either changed.
+    """
+    m = np.arange(0, i_bounce + 1, stride)
+    px = uv_i[m].astype(np.float64).copy()
+    keep = (np.isfinite(px).all(axis=1) & (px[:, 0] >= 0) & (px[:, 0] < width)
+            & (px[:, 1] >= 0) & (px[:, 1] < height))
+    px, tm, idx = px[keep], t[m][keep], m[keep]
+    if len(px) < min_len:
+        return None
+    px += rng.normal(0, pixel_noise, px.shape)
+    alive = rng.random(len(px)) >= dropout
+    if alive.sum() < min_len:
+        return None
+    return px[alive], tm[alive], idx[alive]
+
+
+def control_bounce_xy(court_xy):
+    """THE 2D CONTROL ARM's bounce estimate: the last ground-projected point.
+
+    One line, but it is the incumbent that every 3D number has to beat, so it
+    lives in one place rather than being re-typed in the comparison tool. The
+    shipped pipeline anchors on a detected bounce; here we take the track's end,
+    which is the same information a PERFECT bounce detector would have.
+    """
+    return [float(court_xy[-1][0]), float(court_xy[-1][1])]
+
+
+def simulate(kp, hfov, w, h, n, fps, horizon_s, seed, truth_fps=None, *,
+             cd=None, cl_max=None, cl_sat=None):
     """Known-truth flights, projected through the clip's real camera.
 
     `truth_fps` decouples the TRUTH grid from the MEASUREMENT grid, and it exists
@@ -111,6 +152,14 @@ def simulate(kp, hfov, w, h, n, fps, horizon_s, seed, truth_fps=None):
     truth is then computed once on the fine grid and each fps is an exact
     DECIMATION of it, so the runs are strictly nested and perfectly paired.
     Returns the stride; it is 1 and the behaviour is unchanged when unset.
+
+    `cd` / `cl_max` / `cl_sat` override the SIMULATOR's aerodynamic
+    coefficients. They exist for one experiment and it is not an optimisation:
+    the simulator and `trajectory_fit.fit_arc` share a physics model (verified —
+    both use CD 0.55, CL_MAX 1.0, CL_SAT 2.0), so a fit scored against this
+    simulator is a ceiling under a PERFECTLY SPECIFIED model, not an accuracy.
+    Offsetting them here mis-specifies the truth on purpose. Left unset, every
+    one of them falls through to the simulator's own default and nothing changes.
     """
     import torch
     from tennis_tracker.bridge import camera_from_court_corners
@@ -137,11 +186,14 @@ def simulate(kp, hfov, w, h, n, fps, horizon_s, seed, truth_fps=None):
 
     query = torch.arange(0, horizon_s, 1.0 / grid_fps, device=dev)
     v0, omega, p0 = draw_launch(rng, n)
+    aero = {k: float(v) for k, v in (("cd", cd), ("cl_max", cl_max),
+                                     ("cl_sat", cl_sat)) if v is not None}
     with torch.no_grad():
         pos, _, tg = simulate_batch(torch.tensor(p0, device=dev),
                                     torch.tensor(v0, device=dev),
                                     torch.tensor(omega, device=dev),
-                                    n_steps=int(horizon_s / 2.5e-3), dt=2.5e-3)
+                                    n_steps=int(horizon_s / 2.5e-3), dt=2.5e-3,
+                                    **aero)
         q = sample_at(pos, tg, query)                 # (B,T,3) true 3D, metres
         uv = project_batch(q, K, R, tc).cpu().numpy()  # (B,T,2) true pixels
     return q.cpu().numpy(), uv, query.cpu().numpy(), v0, rng, stride
@@ -181,7 +233,8 @@ def truth_of(xyz, t):
 
 def measure(kp, *, hfov=93.46, width=1280, height=720, n=400, fps=30.0,
             horizon_s=2.0, pixel_noise=2.0, dropout=0.30, min_len=5,
-            low_z=1.0, seed=0, truth_fps=None) -> list:
+            low_z=1.0, seed=0, truth_fps=None,
+            cd=None, cl_max=None, cl_sat=None) -> list:
     """Simulate `n` flights through this calibration and MEASURE them our way.
 
     Returns one row per usable flight, each carrying the exact truth alongside
@@ -200,7 +253,8 @@ def measure(kp, *, hfov=93.46, width=1280, height=720, n=400, fps=30.0,
 
     H = calibration.homography_from_landmarks({c: kp[c] for c in CORNERS})
     xyz, uv, t, v0, rng, stride = simulate(kp, hfov, width, height, n, fps,
-                                           horizon_s, seed, truth_fps)
+                                           horizon_s, seed, truth_fps,
+                                           cd=cd, cl_max=cl_max, cl_sat=cl_sat)
 
     rows = []
     for i in range(len(xyz)):
@@ -210,21 +264,12 @@ def measure(kp, *, hfov=93.46, width=1280, height=720, n=400, fps=30.0,
         launch_kmh = float(np.linalg.norm(v0[i])) * MS_TO_KMH
         j = tr["i_bounce"]
 
-        # What the detector would hand downstream: the in-air, in-frame pixels,
-        # jittered and thinned exactly as our real one is. `stride` decimates the
-        # fine truth grid to the frame rate under test (1 when truth_fps is off).
-        m = np.arange(0, j + 1, stride)
-        px = uv[i, m].astype(np.float64).copy()
-        keep = (np.isfinite(px).all(axis=1) & (px[:, 0] >= 0) & (px[:, 0] < width)
-                & (px[:, 1] >= 0) & (px[:, 1] < height))
-        px, tm = px[keep], t[m][keep]
-        if len(px) < min_len:
+        got = noisy_pixels(uv[i], t, j, stride, width, height, rng,
+                           pixel_noise=pixel_noise, dropout=dropout,
+                           min_len=min_len)
+        if got is None:
             continue
-        px += rng.normal(0, pixel_noise, px.shape)
-        alive = rng.random(len(px)) >= dropout
-        if alive.sum() < min_len:
-            continue
-        px, tm = px[alive], tm[alive]
+        px, tm, idx = got
 
         # Back-project to the court plane, then measure — the "approx" path.
         court_xy = calibration.image_to_court(H, px)
@@ -242,16 +287,15 @@ def measure(kp, *, hfov=93.46, width=1280, height=720, n=400, fps=30.0,
         # high ones. Re-measuring on only the genuinely low samples isolates how
         # much of the error is the FLAT-PROJECTION ASSUMPTION rather than noise,
         # and shows where the assumption stops being usable.
-        z_true = xyz[i, m][keep][alive][:, 2]
+        z_true = xyz[i, idx][:, 2]
         low = z_true <= low_z
         est_low = 0.0
         if low.sum() >= min_len:
             est_low = analytics.shot_speed_kmh([track[k] for k in np.where(low)[0]])
 
-        # Line call: our bounce estimate is the last projected point (the shipped
-        # pipeline anchors on a detected bounce; here we take the track's end,
-        # which is the same information a perfect bounce detector would have).
-        est_bounce = [track[-1][1], track[-1][2]]
+        # Line call: our bounce estimate is the last projected point — see
+        # control_bounce_xy, which is now the single definition of this arm.
+        est_bounce = control_bounce_xy(court_xy)
         rows.append({
             "launch_kmh": launch_kmh,
             "avg3d_kmh": tr["avg3d_kmh"],
