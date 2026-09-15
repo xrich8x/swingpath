@@ -126,6 +126,39 @@ gold clips, which is fine for validation (they are test-only by rule) but says n
 height where 10 cm is physically reachable.** The floor that binds is not frame rate and not
 resolution — it is that we own no spec-compliant *camera setup*, on any surface.
 
+## ADDENDUM 2026-09-15 — which clip is CLOSEST, and a nuance P1 changed
+
+The headline above is "no clip is simultaneously >=60 fps, >=1080p, fixed-mount AND at a height
+where 10 cm is reachable". That remains true, but **P1 changed why the last clause is true, and the
+original emphasis was misleading.** This census implied the height problem was our *low* mounts.
+P1 then measured that **no mount height reaches 10 cm at realistic noise** — 3.0 m gives 6.1%, and
+even perfect pixels give only 71.7%. So the height clause is now trivially satisfied by every clip,
+and **the leg that actually disqualifies our compliant clips is FIXITY.**
+
+Cross-referencing the census against the committed calibrations and their `_audit` camera heights:
+
+| Clip | Surface | fps | Resolution | Fitted camera | Audit | Background drift |
+|---|---|---|---|---|---|---|
+| **`sAjkpeRq4P4`** | **Clay** | 59.94 | 1920x1080 | **3.33 m** | PASS | **6.3 px** — best in the corpus |
+| `UHf0LeMU2pg` | Hardcourt | 60.00 | 1920x1080 | 3.35 m | PASS | 28.2 px |
+| `uR5q2cSM6AY` | Hardcourt | 60.00 | 1920x1080 | 3.32 m | PASS | 20.5 px |
+| `L73ep7JHiJ4` | Hardcourt | 59.94 | 1920x1080 | 2.89 m | PASS | not measured |
+| `tc8CGFxyRE8` | Hardcourt | 59.94 | 1920x1080 | 2.00 m | PASS | not measured |
+
+**`sAjkpeRq4P4` is the single closest clip we own** — Clay, 1080p, a 3.33 m fitted camera, a PASS
+audit, and by far the tightest background drift at 6.3 px (against 0.1-0.4 px for a known tripod).
+Its only hard failure is **59.94 fps against a strict 60.0 floor**, which is the NTSC question this
+census pre-registered and left for the founder.
+
+**That does not soften the verdict** — the bar failed on the surface leg (2 of 3 required), and one
+clip on one surface is not a validation corpus. But "we have nothing usable at all" would overstate
+it, and both P2 and P5 need to know which clips are worth pointing at.
+
+**For P2 specifically:** only **three** clips in the whole corpus have a perception cache —
+`am_hard_utr` (1.74 m), `demo30` (1.38 m) and `yt_match40` (1.64 m), all LOW-CAMERA. Running
+perception on a fresh clip costs 0.7-1.1 s/frame, so an occlusion census built on cached clips is
+cheap and one built on the compliant clips is not.
+
 ## Consequences
 
 1. **P5 (the capture protocol) goes to the top of the queue**, per the bar. A court visit is the
