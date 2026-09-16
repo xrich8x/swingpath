@@ -22,7 +22,9 @@ OUT = os.path.join(ROOT, "data", "output")
 SEED = 20260916
 N_BATCHES = 2
 # per batch (AMENDMENT A2): 110+20 am_hard_utr, 35+15 yt_match40 = 180 items
-COMPOSITION = {"am_hard_utr": dict(pool=110, neg=20), "yt_match40": dict(pool=35, neg=15)}
+# AMENDMENT A4 (founder, 2026-09-16, pre-label): negative-space items DOUBLED, pool unchanged:
+# 110+40 am_hard_utr, 35+30 yt_match40 = 215 items per batch.
+COMPOSITION = {"am_hard_utr": dict(pool=110, neg=40), "yt_match40": dict(pool=35, neg=30)}
 # AMENDMENT A1 (2026-09-16, pre-label): pre-reg used centre = onset - 0.04 s and an A/V
 # match window [-0.05, +0.15]. The measured audio excess over a random-time null sits at
 # +0.10..+0.20 s after the pipeline's bounce times, so that window split real events.

@@ -353,6 +353,28 @@ Everything below describes the candidate pool. **None of it is a label or an occ
   evidence file because qa does not write to `tools/`. Moving it to `tools/` would be a lead or
   backend-dev change.
 
+## AMENDMENT A4 — negative-space items doubled (founder, 2026-09-16, BEFORE any label)
+
+**Founder instruction:** "add negative space items and rebuild sheet data." Applied by the lead; no
+label existed, so this is a pre-label amendment in the same class as A1-A3.
+
+- **Change, one variable:** negative-space items per batch **20 -> 40** (`am_hard_utr`) and **15 -> 30**
+  (`yt_match40`). Candidate counts unchanged (110 + 35). **Each batch is now 215 items (~54 min at
+  15 s), 430 in total.** The founder did not give a number; doubling is the lead's default and can be
+  changed before labelling starts.
+- **Why it helps:** negatives are the only estimate of what the candidate sources MISSED (A2), so
+  more of them tightens the residual-bias figure.
+- **Rule 9:** before the change, the unmodified builder was re-run and reproduced every committed
+  output byte-for-byte.
+- **Side effect, stated:** the builder draws candidates and negatives from one seeded RNG, so more
+  `am_hard_utr` negatives shift the draw order. `am_hard_utr` shows the **same 220 candidates**;
+  `yt_match40` now shows a **different seeded selection** (15 of 70 unchanged). Still seeded, still
+  never hand-picked.
+- **Checked:** blinding holds (items carry no source field); negatives never overlap each other.
+  "Overlaps" with candidate windows are **touching edges only, at most 0.5 ms deep** — a 3-decimal
+  rounding artefact already present in the A2 sheet (12 cases, now 33) and far below one frame, so
+  no bounce can be counted twice.
+
 ## RESULT
 
 **EMPTY — NO LABELS EXIST YET.** No occlusion rate, no verdict and no bias figure may be quoted from

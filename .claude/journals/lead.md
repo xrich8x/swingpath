@@ -134,8 +134,8 @@ turn, then work the RESTART LIST below in order.
    pinhole only), and a design for the blind non-corner click set that a runnable P8 C2 needs.
 
 **Founder items (batch into ONE update, do not interrupt for them one by one):**
-- Label the blocked-view sheet: `docs/evidence/occlusion-census/sheet.html` (batch 1 ~45 min; both
-  batches ~90-120 min for a verdict). Do NOT open `source_key.json` first.
+- Label the blocked-view sheet: `docs/evidence/occlusion-census/sheet.html` (batch 1 = 215 items,
+  ~54 min, after A4; both batches ~2 h). Do NOT open `source_key.json` first.
 - Book the court visit: `docs/CAPTURE_PROTOCOL.md` (~4 h; ball machine or a helper).
 - Were the 2026-09-06 edits to `data/gold/am_beginner` and `am_usta45final` court labels theirs
   (commit `2e49f38`)? Nothing reverted.
@@ -725,6 +725,13 @@ And: "Do not just give up and pivot from my clear instruction in regards to what
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-16 ~23:30** — founder: "there's something running - add negative space items and rebuild
+  sheet data". **Nothing of ours was running** (the 4 node.exe are the app's PDF-viewer MCP server).
+  Done in the FOREGROUND during the pause, as a founder-directed exception, nothing left running:
+  P2 amendment **A4** — negative-space items doubled (40 + 30 per batch), sheet rebuilt to 430 items
+  (215/batch, ~54 min). Determinism proven before the change; yt_match40's seeded candidate
+  selection shifted as a side effect. RUN-STATE stays PAUSED.
 
 - **2026-09-16 23:13** — PAUSED by founder ("I mean I cant have anything running im turning the PC off
   - can save all the tasks needed to be doen so we can retstart tom"). Left running: NOTHING. H1 agent
