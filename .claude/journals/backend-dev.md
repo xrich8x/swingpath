@@ -4,63 +4,25 @@
 
 ---
 
-## TASK - CURRENT (2026-09-12) P1 MONOCULAR 3D CEILING ON SYNTHETIC TRUTH
+## TASK - CURRENT (2026-09-16) H1 HIDDEN-BOUNCE BRIDGE (RESUMED after kill at start)
 
-MEASUREMENT ONLY. Do NOT tune anything to reach a bar. Deliverables:
-1. `tools/mono3d_ceiling.py` + tests under `tests/`
-2. `docs/evidence/monocular-3d-ceiling.md`
-3. one row in `docs/STATE.md`
-4. commit to master, DO NOT PUSH.
+Spec = docs/evidence/swingvision-teardown.md s4 + lead addendum. MEASUREMENT, no tuning.
+Deliverables: tools/hidden_bounce_bridge.py + tests; docs/evidence/hidden-bounce-bridge.md;
+STATE row; commit master, DO NOT PUSH. Suite baseline 713 passed 4 skipped.
+Arms G0/G9/G24 (+ audio sensitivity t*=t_true+N(0,.15fr)). Bar-A config, seed 0, n=500.
+Bands near<=12 (PRIMARY) mid 12-20 far>20 by bounce range from camera.
+Precursor FIRST: share >=5 in-frame post-bounce obs per band (<60% overall -> R6 dies).
+PRIMARY near G9 med <= 1.5x G0; SECONDARY G24 <= 3x G0; KILL G9 > 3x G0.
+Report SPEC6: near G9 within 10cm, G24 within 25cm vs 90%.
+LEAD ARM (descriptive, no bar): near-line population (rejection-sample to within .30 m of
+singles line, seed 0), >=150 within 10cm; IN/OUT correctness in 10cm & 30cm bands, Wilson 95%,
+H1 AND 2D control; unfittable = wrong.
+Do NOT add perturbed-calib / corrupted-edge arms - name as next.
 
-Pre-registered bars (FIXED, do not move):
-A PASS: >=90% of flights bounce within 10 cm @ noise 2.0px, dropout 0.30, 60fps, 3.0 m, hfov exact
-B TIMING: >=90% within +/-1 frame, >=99% within +/-2. BRACKET: B1 (seg GIVEN, fit to true
-  last in-air frame) AND B2 (withhold last 3 obs, extrapolate to z=0). PASS only if BOTH.
-  B1 alone = PARTIAL (explicitly NOT a pass).
-C KILL: perfect detections (noise 0, dropout 0) -> if 10cm rate <50% at EVERY height, monocular
-  3D cannot reach SPEC 3. Report FIRED / NOT FIRED.
-D HEIGHT: 10cm rate at 1.0/1.5/2.5/4.0/8.0 m, noise2/drop0.30/60fps. Premise HOLDS only if
-  1.5 m within 10 points of 8.0 m.
-E NOISE: 0/1/2/4 px at 3.0 m, descriptive. Output = the detector precision the 10cm bar demands.
-F SELF-GRADING CONTROL: simulator cd & cl_max offset +20% and -20% from the fitter's, reported
-  separately. FIRST report whether the two physics models already agree.
-G SPEC 5 depth-from-ball-size: UNTESTED, rig emits (u,v) only. Say so.
+## STATE
+- [ ] read rig sources (synth_truth, mono3d_ceiling, numpy simulator, R1 decomposition)
 
-Design calls from the lead (do not re-litigate): p0 FREE + physical_bounds=True is PRIMARY;
-PAIRED arms (same seeded flights + same noisy pixels) vs the 2D ground-projection control in
-synth_truth.measure; truth_fps=240 everywhere; non-converged/dropped count as FAILURES and the
-rejects must be characterised.
-
-## STATE - SWEEP LAUNCHED (background), writing evidence file while it runs
-
-- [x] read CLAUDE.md / SPEC / rig sources
-- [x] bar F premise check (see F1) -> premise TRUE, models agree exactly
-- [x] refactor synth_truth (noisy_pixels + control_bounce_xy + cd/cl passthrough)
-      PROVEN INERT: --keypoints yt_rally2 --n 120 --seed 7 JSON + stdout byte-identical
-      before/after. Also pinned by test_the_two_arms_score_the_identical_noisy_pixels.
-- [x] fit_arc gained an optional `dt` (default 2e-3 UNCHANGED) - the only speed lever
-- [x] tools/mono3d_ceiling.py written
-- [x] backend/tests/test_mono3d_ceiling.py - 7 passed
-- [x] dt A/B (n=40, seed 0, paired): 2e-3 34.0 s/fit; 6e-3 11.8 s (2.9x) paired
-      |delta| median 0.0014 m max 0.092 m; 1e-2 6.9 s median 0.0029 max 0.123 m.
-      Median ERROR is 1.41 m, so a 1.4 mm shift cannot decide anything ->
-      SWEEP RUNS AT dt=6e-3, and bar A gets re-verified at the shipped 2e-3.
-      data/output/mono3d_ceiling/dt_ab.json
-- [x] TRAP HIT + FIXED: first sweep launch CRASHED after finishing config 1's fits
-      (25 min of compute lost) on `TypeError: Object of type float32 is not JSON
-      serializable` for `true_t_b` - the truth grid is a float32 torch tensor.
-      Fixed by float()-casting at source AND `default=float` on both json.dumps.
-      SMOKE-TESTED at --n 14 before relaunching. Do this first next time.
-- [x] SMOKE (n=12 presented, 3.0 m, 2 px, .30, 60 fps): 3D b1 median err 1.168 m,
-      b2 2.131 m, 2D control 0.996 m, 0.0% within 10 cm on ALL THREE.
-      Bar A is heading for a clear FAIL and 3D is NOT beating the 2D control.
-- [ ] RUNNING (relaunched 2 h mark, OMP_NUM_THREADS=1): --suite all --n 500
-      --workers 11 -> 17 configs, est 3-5 h.
-      log C:\Users\richm\AppData\Local\...\scratchpad\sweep.log ; each config writes
-      data/output/mono3d_ceiling/<tag>.json AS IT COMPLETES, so a kill loses <=1 config.
-- [ ] bar A re-verify at dt=2e-3
-- [ ] evidence md + STATE row + commit
-
+## P1 (DONE, committed) key results kept for reference
 ## RESULTS AS THEY LAND (data/output/mono3d_ceiling/<tag>.json)
 All: 1920x1080, 60 fps, truth_fps 240, hfov 100 exact, setback 6.0, n=500 sim,
 seed 0, dt 6e-3, p0 free, spin free, physical_bounds. n = PRESENTED flights.

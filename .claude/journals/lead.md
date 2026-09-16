@@ -109,9 +109,47 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-RUN-STATE: RUNNING — founder brief 2026-09-12 handed a new seven-item queue. The innovation-gate
-task and the four-step project audit are both CLOSED; their records live in STATE + evidence, and
-the compacted lines are in LOG.
+RUN-STATE: PAUSED-BY-FOUNDER — 2026-09-16 23:13 — "I mean I cant have anything running im turning the PC off - can save all the tasks needed to be doen so we can retstart tom" — still running: NOTHING (H1 agent stopped by the lead, stale lock cleared, no python processes).
+
+**ONLY THE FOUNDER CLEARS THIS.** When they say continue, set RUN-STATE back to RUNNING in the same
+turn, then work the RESTART LIST below in order.
+
+### RESTART LIST — written 2026-09-16 at the pause. Work it top to bottom.
+
+**Team work (no founder needed) — one direct child at a time:**
+1. **H1, the hidden-bounce test — backend-dev, RE-DISPATCH FRESH.** Killed twice by usage limits
+   and then stopped for the pause; it produced NO code (its journal only recorded the task). The full
+   spec is `docs/evidence/swingvision-teardown.md` §4, plus the lead's added arm (a near-line-weighted
+   flight population, >=150 flights within 10 cm, reporting SwingVision-style IN/OUT call correctness
+   for H1 and the 2D control, descriptive only, no bar). Bars: near-band G9 median <= 1.5x G0 = PASS;
+   > 3x = KILL; G24 <= 3x secondary; precursor (>=5 post-bounce obs) reported first. The brief text is
+   in the 2026-09-16 session; re-issue it from those two sources. Tell it to smoke-test first.
+2. **When H1 lands:** verify its numbers from the raw output, then — founder directive — plan the
+   next H-routes toward making the call, NOT scope cuts. Named follow-up arms: perturbed calibration
+   (P8 C1 says four-tap is not exact) and corrupted gap-edge frames (real clips showed 19.9 px).
+3. **Restore SPEC §6** (calling through occlusion) now that the founder has ruled it back in — but its
+   contact detector uses POSE, which §9 still excludes. Put that single question to the founder;
+   do not resolve it by team decision.
+4. **Optional, cheap:** C1-style check of how much the ultra-wide lens distortion adds (C1 was
+   pinhole only), and a design for the blind non-corner click set that a runnable P8 C2 needs.
+
+**Founder items (batch into ONE update, do not interrupt for them one by one):**
+- Label the blocked-view sheet: `docs/evidence/occlusion-census/sheet.html` (batch 1 ~45 min; both
+  batches ~90-120 min for a verdict). Do NOT open `source_key.json` first.
+- Book the court visit: `docs/CAPTURE_PROTOCOL.md` (~4 h; ball machine or a helper).
+- Were the 2026-09-06 edits to `data/gold/am_beginner` and `am_usta45final` court labels theirs
+  (commit `2e49f38`)? Nothing reverted.
+- Rule on SwingVision's levers: a higher required mount (Swing Stick ~60 cm above the fence), a second
+  phone (v2 today), player/swing tracking (§9, out of v1 today).
+- Carried spec rulings (`docs/DECISIONS_PENDING.md`): P4's four contradictions (INSTANT vs bounce
+  detection — a hidden bounce needs ~170 ms after reappearance; drift -> refuse and re-tap; indoor
+  shell blocker void; live.py's bounce detector is not §4's method), whether §3 should measure CALL
+  correctness (as SwingVision's 97% does) or landing POSITION, and the 59.94 vs 60 fps question.
+
+**Standing facts for tomorrow:** suite 713 passed / 4 skipped / 0 failed at `9d94d91`. Nothing pushed —
+pushes only on the founder's explicit call.
+
+**PAUSE RULES IN FORCE:** no agents, no background jobs, no experiments, no commits beyond logging this.
 
 **The iOS/sideloading line stays bound** (2026-09-10 pause): do not re-open Sideloadly, Apple ID,
 or the harness install path. `ios/` builds green in CI; only the sideload is blocked.
@@ -687,6 +725,10 @@ And: "Do not just give up and pivot from my clear instruction in regards to what
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-16 23:13** — PAUSED by founder ("I mean I cant have anything running im turning the PC off
+  - can save all the tasks needed to be doen so we can retstart tom"). Left running: NOTHING. H1 agent
+  stopped, stale lock cleared. RESTART LIST written into NOW.
 
 - **2026-09-16 late** — backend-dev's H1 run was killed by a usage limit at startup (no artefacts);
   **RESUMED** via SendMessage on the founder's instruction ("Restart ... finish the run"). Founder going
