@@ -136,6 +136,11 @@ this agent's system prompt — read it first; it is the authoritative copy.
   91.28 vs 26.43) between 2026-09-02 and 2026-09-10 — so its "reproduces the published
   baseline" claim is false and every span-derived number on that clip is in question.
 
+- **P2 occlusion census sheet built 2026-09-16, UNLABELLED.**
+  [occlusion-census-sheet-lessons.md](occlusion-census-sheet-lessons.md) — demo30 is a slice of
+  yt_match40; demo30.perception.json is not demo30's; yt_match40 HUD shows SwingVision bounce dots
+  (mask it); audio A/V membership is chance-level -> negative-space audit, not capture-recapture.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is

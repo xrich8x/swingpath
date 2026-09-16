@@ -23,8 +23,10 @@ NEVER fix/tune anything. yt_match40 calibration KNOWN BAD (T23) - no near-line f
   _audio_from_git.py,audio_am_hard_utr_raw.json,pool.json,source_key.json}. 360 items
   (2 batches of 180). Rebuild byte-identical (items.js sha1 6d588d33). Headless Chrome:
   video decodes from file://, zone lights, HUD masks correct, page makes 0 network calls.
-- NEXT: write amendments A1-A3 + §9 build record into evidence file, commit [no-state],
-  update memory, report. DO NOT PUSH.
+- DONE 2026-09-16: evidence file finalised (A1-A3, §8, §9, RESULT empty), committed
+  2cd476f [no-state], NOT pushed. Memory updated. Task complete pending founder's pass.
+- WHEN THE FOUNDER'S CSV ARRIVES: compute §6 + §4.2 exactly as registered (weighted H,
+  H_low/H_high, stratified bootstrap seed 20260916 x2000, negative-space M/F), fill RESULT.
 - WRITE-LOCATION DECISION: qa may not write tools/ or data/. Builder scripts go in
   docs/evidence/occlusion-census/ (sheet + form + the script that made them), NOT tools/.
   So no state-guard trip expected. Say so in report.
