@@ -91,7 +91,18 @@ restitution_set`, or `bounce_reset` in `docs/ball/CLOSED.md`, nor STATE.md:170. 
 are 2D Kalman SMOOTHER changes in `backend/swingvision/ball.py` with no 3D model.** Different
 subsystem. It is also the only candidate route that ADDS observations rather than re-conditioning.
 
+## HIDDEN BOUNCES (2026-09-16, `docs/evidence/swingvision-teardown.md`)
+- A bridged bounce is at best as good as a seen one: allowed inferred-pixel error for 10 cm is
+  `0.1·f·h/D²` = 6.7 px @6 m, 2.4 @10, 1.7 @12, 0.6 @20. Near player hides `Dp..Dp·h/(h−H)` (2.5·Dp
+  at h=3) = near court, the forgiving zone. Net tape puts far service boxes BEHIND THE MESH at h=3
+  (7.8 m past net); clearing far service line needs h ≥ 3.47 m (centre) / 4.06 m (posts).
+- Phone mic array = bearing only (~3°/sample), no range. Audio is a CLOCK, not a locator.
+- Cheapest test = 2D two-sided quadratic intersection with G0/G9/G24 hidden frames, near band primary
+  (bar: G9 ≤ 1.5×G0; kill > 3×). Needs rig to emit post-bounce frames.
+
 ## RIG FACTS worth not re-reading the code for
+- **`synth_truth.simulate` uses `simulator_torch` = FLIGHT ONLY.** Post-bounce truth needs numpy
+  `ball_physics/tennis_tracker/physics/simulator.py simulate(bounces=N)` (`_bounce` e_n/e_t/mu, :59).
 - `tools/mono3d_ceiling.py` scores `math.dist` only (line ~293) — no error decomposition exists yet.
 - Per-flight JSONs `data/output/mono3d_ceiling/*.json` (~13 MB) are **gitignored, not committed**;
   only `mono3d_ceiling_summary.json` is. Regenerating one config is a seeded ~1,050 s run.

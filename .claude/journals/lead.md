@@ -688,6 +688,17 @@ And: "Do not just give up and pivot from my clear instruction in regards to what
 
 ## LOG — newest first
 
+- **2026-09-16** — **researcher's SwingVision teardown landed** (`docs/evidence/swingvision-teardown.md`).
+  No public source says how SwingVision calls a hidden bounce; it admits it sometimes cannot call
+  (Tennis.com 2024-12). Its disclosed 3D method is a NN trained on radar/lidar/multi-camera truth
+  (patent US11893808B2, lead-verified); its accuracy path is HEIGHT (Swing Stick ~60 cm above the
+  fence; fence mount = half-court calls only) and a SECOND PHONE (founder: "above 99%"). Its 97% is
+  self-reported. Ranked hidden-bounce routes H1-H8; **H1 = join the pre- and post-bounce arcs**, test
+  pre-registered (researcher §4). **Lead found a metric mismatch:** SwingVision's 97% is CALL
+  correctness on near-line balls, SPEC's 10 cm is POSITION error. On P1 data that metric has n=4 at
+  10 cm — unmeasurable; at 30 cm (n=15) both methods call 60% at 2 px. Next test needs a
+  near-line-weighted population. **Dispatching backend-dev on H1.**
+
 - **2026-09-16** — **FOUNDER RULING: the app calls blocked bounces; do not pivot away from the goal.**
   §6 intent back in scope (SPEC edit held for the pose question). researcher dispatched on SwingVision.
 
