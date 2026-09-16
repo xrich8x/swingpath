@@ -126,7 +126,7 @@ measurement without writing down why.**
 | # | Item | Kind | Owner | Blocked on |
 |---|---|---|---|---|
 | P1 | Monocular 3D ceiling on synthetic truth | MEASURE | **DONE 2026-09-15 — BAR A FAIL, BAR C NOT FIRED** | -> `docs/evidence/monocular-3d-ceiling.md`. STATE row landed |
-| P2 | Occlusion census: the refusal floor | MEASURE | qa builds sheet, founder eyes it | sheet must exist BEFORE the founder is asked |
+| P2 | Occlusion census: the refusal floor | MEASURE | **SHEET BUILT 2026-09-16 (qa), UNLABELLED** | **Waiting on the founder's pass**: `docs/evidence/occlusion-census/sheet.html`, batch 1 = 180 items ~45 min; batch 2 likely needed for a verdict |
 | P3 | Does any footage meet the v1 capture floor? | MEASURE | **DONE by the lead 2026-09-12 — BAR FIRED** | -> `docs/evidence/capture-floor-census.md`. **STATE row still OWED** (see below) |
 | P4 | **FOUR** contradictions inside a locked SPEC | DECIDE | founder | **WRITTEN AND DELIVERED 2026-09-12** -> `docs/DECISIONS_PENDING.md`. Awaiting the ruling; P7 cannot start without (i)/(ii)/(iv) |
 | P5 | The capture protocol (artefact + target sheet) | BUILD artefact | **DONE 2026-09-15 — `docs/CAPTURE_PROTOCOL.md`** | Ready to execute. Needs a court booking, ~4 h, and a ball machine or a helper |
@@ -482,6 +482,10 @@ metres.** Already designed; no extra work beyond the visit.
 the court when the phone moves). It waits on the founder's P4(ii) ruling (refuse and re-tap vs
 recover), because the test depends on which behaviour v1 has.
 
+**REAL-FOOTAGE INPUT FROM P2 (qa, 2026-09-16):** `demo30` is a slice of `yt_match40`, one static
+camera, yet its calibrations fit **1.38 m vs 1.64 m**. C2 should report whether the four-tap
+explains a 0.26 m height disagreement on one camera — a court-mapping inconsistency already in hand.
+
 **Owner:** C1 is lead or backend-dev (pure geometry, fast); C2 is qa (independent scoring);
 C3 is the founder's visit. **Order: P2 finishes first**, per the founder.
 
@@ -658,6 +662,13 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-16** — **P2 sheet BUILT (qa), unlabelled**: 360 blind items in two 180-item batches,
+  offline HTML player, overlays masked (rule 12), sealed source key. Lead verified: commits present,
+  no URLs + CSP, RESULT empty, items carry no source field (blinding holds). qa's registered bias
+  estimate was uninformative (chance coincidence 75.8% vs 78.0% observed) and was replaced BEFORE any
+  label by random uncovered windows. qa warns batch 1 alone is likely UNDERPOWERED. demo30 found to
+  be a slice of yt_match40 (P3 addendum corrected). **Moving to P8 C1.**
 
 - **2026-09-16** — qa's P2 run was killed at startup by a usage limit (no artefacts); resumed.
   Founder asked for a court-mapping test after P2: **P8 pre-registered** (C1 synthetic, C2 against

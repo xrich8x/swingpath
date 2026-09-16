@@ -154,8 +154,13 @@ census pre-registered and left for the founder.
 clip on one surface is not a validation corpus. But "we have nothing usable at all" would overstate
 it, and both P2 and P5 need to know which clips are worth pointing at.
 
-**For P2 specifically:** only **three** clips in the whole corpus have a perception cache —
-`am_hard_utr` (1.74 m), `demo30` (1.38 m) and `yt_match40` (1.64 m), all LOW-CAMERA. Running
+**For P2 specifically:** only **three** files in the whole corpus have a perception cache —
+`am_hard_utr` (1.74 m), `demo30` (1.38 m) and `yt_match40` (1.64 m), all LOW-CAMERA. **CORRECTED
+2026-09-16 (qa, P2): that is TWO recordings, not three.** `demo30` is `yt_match40` frames
+2552-3421, and `data/output/demo30.perception.json` was not computed from `demo30.mp4` (1,108
+entries for 870 frames; `demo30.json` names `yt_rally2.mp4`). **The same static camera is
+calibrated at 1.38 m in one file and 1.64 m in the other** — a 0.26 m disagreement that P8 (court
+mapping) should explain. Running
 perception on a fresh clip costs 0.7-1.1 s/frame, so an occlusion census built on cached clips is
 cheap and one built on the compliant clips is not.
 
