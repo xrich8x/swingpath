@@ -131,7 +131,7 @@ measurement without writing down why.**
 | P4 | **FOUR** contradictions inside a locked SPEC | DECIDE | founder | **WRITTEN AND DELIVERED 2026-09-12** -> `docs/DECISIONS_PENDING.md`. Awaiting the ruling; P7 cannot start without (i)/(ii)/(iv) |
 | P5 | The capture protocol (artefact + target sheet) | BUILD artefact | **DONE 2026-09-15 — `docs/CAPTURE_PROTOCOL.md`** | Ready to execute. Needs a court booking, ~4 h, and a ball machine or a helper |
 | P6 | INSTANT on paper, v1-only path | MEASURE | researcher | P4(i) |
-| P8 | **Does 3D COURT MAPPING work?** (founder ask 2026-09-16) | MEASURE | **C1 DONE 2026-09-16 (lead) — KILL FIRED.** C2 qa, C3 founder visit | -> `docs/evidence/court-map-ceiling.md`. C2 next |
+| P8 | **Does 3D COURT MAPPING work?** (founder ask 2026-09-16) | MEASURE | **C1 DONE — KILL FIRED. C2 VOID (gold keypoints are derived).** C3 founder visit | C2 needs a new blind click set (founder time, not yet designed). C3 is the only metric test |
 | P7 | The live-path skeleton in Swift | BUILD | backend-dev/frontend-dev | P1 pass, P4, P6 |
 
 **P1 IS IN FLIGHT — backend-dev, dispatched 2026-09-12.** Bars A-G pre-registered in the brief
@@ -464,6 +464,11 @@ the 16 `court.LANDMARKS` and every line, **including off-frame ones**, as ground
   not a model change. If it does NOT hold, my geometry is wrong somewhere and that is worth knowing.
 
 **C2 — REAL FOOTAGE, IMAGE SPACE. No founder. Measured against INDEPENDENT HUMAN CLICKS.**
+> **WRONG, found 2026-09-16 by qa and verified by the lead: the gold's non-corner keypoints are
+> NOT independent clicks.** `gold_label_server.py::cornersToLabel()` derives them as a homography of
+> the four clicked corners, so this stage as written is self-graded (rule 1) and returned VOID
+> (median 0.048 px@640 = save rounding). The bar text below is left as registered. A runnable C2
+> needs a new blind click set of non-corner landmarks.
 Use `data/gold/*.court.labels.json` — the **20-file, 640-wide pool that the provenance review found
 UNCOMPROMISED** (STATE, "court gold pool's provenance" row: the compromised pool is the separate
 `data/<clip>_pts.json` references). Take the four human corner clicks -> build the model -> project
@@ -662,6 +667,13 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-16** — **P8 C2 VOID (qa, lead-verified).** The gold's non-corner keypoints are computed by
+  the label tool from the four corners, so C2 would self-grade; my pre-registration wrongly called them
+  independent clicks. Needs a blind click set (founder time). Side check: demo30/yt_match40 height gap
+  is a CORNER disagreement, not hfov; demo30's quad is off the paint. **Found an unrecorded gold edit:
+  agent commit `2e49f38` re-saved am_beginner (corners moved <=27 px) and added 15 am_usta45final
+  frames.** Reported, not reverted (rule 10) — founder to rule. STATE row landed.
 
 - **2026-09-16** — **P8 C1 DONE (lead): KILL FIRED.** The four-tap court model exceeds 10 cm on every
   line, every mount, both maps at human tap precision (worst 14.1 m / 7.2 m at 3 m; best line 0.26 m).

@@ -1349,3 +1349,26 @@ anyone but you** — SPEC is LOCKED and I have written options, not an amendment
 **WHAT WAS DONE INSTEAD OF WAITING:** P1 and R1 both ran and landed; researcher's seven routes are
 written and ranked with pre-registered bars; and the §7 re-read above needs no ruling and no
 compute, so it can start today whatever you decide.
+
+---
+
+## 2026-09-16 — Two court-truth items from P8 C2. One labelling ask, one edit to rule on.
+
+**1. An unrecorded edit to court gold (rule 10).** Agent commit `2e49f38` (2026-09-06), whose message
+is about the composite calibration score, also re-saved `data/gold/am_beginner.court.labels.json` —
+all four corners of frame 3904 moved, by up to 27 px — and added 15 labelled frames to
+`data/gold/am_usta45final.court.labels.json` (+1,312 / -97 lines). **Nothing records who made the
+edits or why.** It may be your own labelling session swept into an agent's commit, or an agent
+editing gold. It touches the 12/20 court gate. **Nothing has been reverted.** Needed from you: were
+those your edits? If yes, they stand and get recorded as such; if not, the gate is re-scored on the
+pre-edit files.
+
+**2. C2 needs clicks that don't exist yet.** The court gold's non-corner landmarks are computed by the
+labelling tool from your four corner clicks, so they cannot test the four-tap court model — that
+would grade it against its own output. A real C2 needs **you to click the T's and service-line
+junctions directly, with no court overlay shown, on ~20 gold frames** (a new tool mode and a
+pre-registered bar first; not yet built). **Lower priority than the court visit**: C1 already showed
+human clicks are ~200x too coarse to settle the question, and only the visit's tape marks can measure
+the court model in metres. It would still catch lens distortion or non-regulation courts on real
+footage.
+
