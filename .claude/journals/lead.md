@@ -131,7 +131,7 @@ measurement without writing down why.**
 | P4 | **FOUR** contradictions inside a locked SPEC | DECIDE | founder | **WRITTEN AND DELIVERED 2026-09-12** -> `docs/DECISIONS_PENDING.md`. Awaiting the ruling; P7 cannot start without (i)/(ii)/(iv) |
 | P5 | The capture protocol (artefact + target sheet) | BUILD artefact | **DONE 2026-09-15 — `docs/CAPTURE_PROTOCOL.md`** | Ready to execute. Needs a court booking, ~4 h, and a ball machine or a helper |
 | P6 | INSTANT on paper, v1-only path | MEASURE | researcher | P4(i) |
-| P8 | **Does 3D COURT MAPPING work?** (founder ask 2026-09-16) | MEASURE | lead/backend-dev C1, qa C2, founder C3 | **After P2.** Pre-registered below |
+| P8 | **Does 3D COURT MAPPING work?** (founder ask 2026-09-16) | MEASURE | **C1 DONE 2026-09-16 (lead) — KILL FIRED.** C2 qa, C3 founder visit | -> `docs/evidence/court-map-ceiling.md`. C2 next |
 | P7 | The live-path skeleton in Swift | BUILD | backend-dev/frontend-dev | P1 pass, P4, P6 |
 
 **P1 IS IN FLIGHT — backend-dev, dispatched 2026-09-12.** Bars A-G pre-registered in the brief
@@ -662,6 +662,13 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-16** — **P8 C1 DONE (lead): KILL FIRED.** The four-tap court model exceeds 10 cm on every
+  line, every mount, both maps at human tap precision (worst 14.1 m / 7.2 m at 3 m; best line 0.26 m).
+  Error is linear in tap noise; the far baseline needs **0.07-0.11 px** taps at 3 m. The 3D camera
+  beats the flat map but a 5° hfov error alone costs ~40 cm, and P1 assumed the exact hfov. The line-
+  refinement remedy is already CLOSED (250-2,000x short) and not re-proposed. Suite 713/4/0.
+  New `tools/court_map_ceiling.py` + 4 tests. Committed, NOT pushed. **Next: C2 (qa).**
 
 - **2026-09-16** — **P2 sheet BUILT (qa), unlabelled**: 360 blind items in two 180-item batches,
   offline HTML player, overlays masked (rule 12), sealed source key. Lead verified: commits present,
