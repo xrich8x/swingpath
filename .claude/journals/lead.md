@@ -131,6 +131,7 @@ measurement without writing down why.**
 | P4 | **FOUR** contradictions inside a locked SPEC | DECIDE | founder | **WRITTEN AND DELIVERED 2026-09-12** -> `docs/DECISIONS_PENDING.md`. Awaiting the ruling; P7 cannot start without (i)/(ii)/(iv) |
 | P5 | The capture protocol (artefact + target sheet) | BUILD artefact | **DONE 2026-09-15 — `docs/CAPTURE_PROTOCOL.md`** | Ready to execute. Needs a court booking, ~4 h, and a ball machine or a helper |
 | P6 | INSTANT on paper, v1-only path | MEASURE | researcher | P4(i) |
+| P8 | **Does 3D COURT MAPPING work?** (founder ask 2026-09-16) | MEASURE | lead/backend-dev C1, qa C2, founder C3 | **After P2.** Pre-registered below |
 | P7 | The live-path skeleton in Swift | BUILD | backend-dev/frontend-dev | P1 pass, P4, P6 |
 
 **P1 IS IN FLIGHT — backend-dev, dispatched 2026-09-12.** Bars A-G pre-registered in the brief
@@ -423,6 +424,67 @@ parameters exist only to do it.
   and is NOT a clean "better fit" - it is a bias/variance probe. Bar F is the reason to expect the
   bias half to be small: +/-20% aero mis-specification moved nothing.
 
+## PRE-REGISTRATION — "P8": DOES 3D COURT MAPPING WORK? Founder ask 2026-09-16, runs AFTER P2.
+
+**Founder, verbatim:** "after its done we need to test to see if the 3d spatial mapping of the court
+works." This is capability 1. **Nothing this session tested it** — P1/R1/R1b tested the BALL, and
+every one of them was handed a PERFECT court (exact corners, exact hfov). Written before any run.
+
+**What capability 1 claims:** from a four-corner tap plus regulation dimensions, place EVERY line
+— including lines outside the frame — and solve a 3D camera. **What pins it:** four coplanar
+corners, the regulation doubles rectangle, and the focal length.
+
+**A GAP FOUND WHILE WRITING THIS, and it qualifies every P1 number:**
+`bridge.camera_from_court_corners` takes `hfov_deg` as an **INPUT (default 70°)**. Four coplanar
+taps do not reliably determine focal length, so the 3D camera is only as good as the hfov it is
+given. **P1 handed it the EXACT hfov.** A real app must read it from the device, and framing A is
+the 0.5x ultra-wide (P5), which is distorted. **P1's results are conditional on a perfect hfov and
+perfect corners — this test is what removes that condition.**
+
+### THREE STAGES, cheapest first. Each is measured against something independent of the model.
+
+**C1 — SYNTHETIC. No footage, no founder. Measured against EXACT geometry.**
+Known camera -> true corner pixels -> add TAP noise and HFOV error -> solve -> score every one of
+the 16 `court.LANDMARKS` and every line, **including off-frame ones**, as ground error in metres
+**perpendicular to each line** (the §3 metric pm proposed), plus camera height and pose error.
+- Tap noise sweep at 1920x1080: **0 / 1 / 2 / 4 px**, plus the **measured human corner-click spread,
+  ~5.8 px @640 (~17 px @1920)** as the realistic rung. That figure is already published (STATE, court
+  auto-detection row) and is used as-is, not re-picked.
+- hfov error: **0 / ±5° / ±10°**. Mounts 1.5 / 3.0 / 8.0 m; framing A (ultra-wide) and framing B
+  (2x far-half) from P5.
+- **BAR (PASS):** at realistic tap noise with exact hfov, **p90 perpendicular error <= 5 cm on every
+  line.** Reason for 5 cm: court error ADDS to ball error at the call, so the court may spend at most
+  half of SPEC §3's 10 cm budget.
+- **KILL:** if **any** line exceeds **10 cm at p90** at realistic tap noise, the court model alone
+  can spend the whole call budget there, and capability 1 cannot support SPEC §3 on that line.
+- **PREDICTION, written down so it can be wrong:** the FAR lines fail. The same `D²/(f·h)` geometry
+  as R1 says one pixel of far-corner tap error moves the far baseline ~**37 cm** along the ray at
+  1080p / 3 m. If that holds, realistic tapping cannot place the far baseline to 5 cm, and the
+  **setup screen needs a magnified (loupe) tap for the far corners** — a concrete UI requirement,
+  not a model change. If it does NOT hold, my geometry is wrong somewhere and that is worth knowing.
+
+**C2 — REAL FOOTAGE, IMAGE SPACE. No founder. Measured against INDEPENDENT HUMAN CLICKS.**
+Use `data/gold/*.court.labels.json` — the **20-file, 640-wide pool that the provenance review found
+UNCOMPROMISED** (STATE, "court gold pool's provenance" row: the compromised pool is the separate
+`data/<clip>_pts.json` references). Take the four human corner clicks -> build the model -> project
+the OTHER labelled landmarks -> pixel distance to where the human clicked them.
+- **BAR:** median error **<= 5.8 px @640**, i.e. the four-tap model places the unseen-by-the-model
+  lines as well as a human places them.
+- **Limits, stated now:** pixels not metres; only lines visible in the frame (so it cannot test
+  the "lines the camera cannot see" half); both ends are human clicks, so it measures agreement;
+  **8 court gold frames are known mislabelled — recorded, never fixed (rule 10).**
+
+**C3 — THE COURT VISIT (P5). The only METRIC truth.** The 8 fiducial tape marks in
+`docs/CAPTURE_PROTOCOL.md` give the **first-ever independent measurement of four-tap accuracy in
+metres.** Already designed; no extra work beyond the visit.
+
+**OUT OF THIS TEST, named so it is not forgotten:** the §1 **drift** half of capability 1 (tracking
+the court when the phone moves). It waits on the founder's P4(ii) ruling (refuse and re-tap vs
+recover), because the test depends on which behaviour v1 has.
+
+**Owner:** C1 is lead or backend-dev (pure geometry, fast); C2 is qa (independent scoring);
+C3 is the founder's visit. **Order: P2 finishes first**, per the founder.
+
 ## NEXT TWO DISPATCHES — drafted 2026-09-12 so a kill loses no design work
 
 The lead holds ONE direct child; `backend-dev` has it (P1). These two go out in this order the
@@ -596,6 +658,10 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-16** — qa's P2 run was killed at startup by a usage limit (no artefacts); resumed.
+  Founder asked for a court-mapping test after P2: **P8 pre-registered** (C1 synthetic, C2 against
+  the uncompromised court gold, C3 the court visit). Found that P1 assumed an exact hfov.
 
 - **2026-09-15** — **P5 DONE**: `docs/CAPTURE_PROTOCOL.md` (ball-first truth, 86 feeds, 13 stations,
   6 gates, audio timing accepted with a range-dependent-bias correction pm caught). Lead verified the
