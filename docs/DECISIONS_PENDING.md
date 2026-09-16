@@ -1372,3 +1372,14 @@ human clicks are ~200x too coarse to settle the question, and only the visit's t
 the court model in metres. It would still catch lens distortion or non-regulation courts on real
 footage.
 
+---
+
+## 2026-09-16 — FOUNDER RULING: the app makes a call even when the ball is blocked.
+
+Founder: "the idea is for the app to still make a call even though it is blocked" — and not to pivot
+away from that instruction. **This settles the direction of the P5-scope entry above: its narrowing
+options (per-line bars that drop across-court lines, a call without a coordinate) are NOT adopted.**
+They stay on file as analysis only. SPEC §6 (calling through occlusion) returns to scope; its formal
+restoration waits on researcher's SwingVision report, because §6's contact detector relies on pose,
+which §9 still excludes — that one question will come back to the founder with the research.
+

@@ -637,6 +637,26 @@ affordability) both wait here, and nothing dispatchable is on that path.
 8. **Is a Mac weeks or months away?** A sequencing input, not a nudge — pm would build a
    different plan for a months-long gap.
 
+## FOUNDER RULING 2026-09-16 — THE APP MAKES A CALL EVEN WHEN THE BALL IS BLOCKED. Binding.
+
+**Founder, verbatim:** "the idea is for the app to still make a call even though it is blocked."
+And: "Do not just give up and pivot from my clear instruction in regards to what I want."
+
+- **The goal is NOT narrowed.** A call on blocked bounces is required. pm's per-line narrowing and
+  "output a call, never a coordinate" (DECISIONS_PENDING, P5-scope) are OPTIONS the founder has not
+  adopted — **do not treat them as the plan, and do not present scope cuts as the answer.** Research
+  and engineering now aim at HOW to reach the goal. A measured obstacle is a problem to solve, not a
+  reason to change the product.
+- **SPEC §6's intent (calling through occlusion) is back in scope.** CLAUDE.md says restore §6
+  verbatim if it returns; the SPEC/CLAUDE.md edit is held ONLY until researcher reports, because
+  §6's contact-event detector uses racket/arm POSE and §9 (pose) has not been re-scoped. That
+  conflict goes to the founder with the research, not resolved by the team.
+- **P2 changes meaning, not method.** The labelling sheet now measures how often the app must
+  PREDICT through a blocked view (the demand on §6), not how often it must refuse. Founder agreed to
+  label it.
+- **Dispatched: researcher — what SwingVision actually does**, especially on blocked bounces and on
+  single-camera depth, and which methods make the call through occlusion.
+
 ## DECIDED — binds everyone, do not reopen
 
 - **iOS/iPadOS only, A13+**, Core ML/ANE the only inference target. **100% on-device
@@ -667,6 +687,9 @@ affordability) both wait here, and nothing dispatchable is on that path.
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-16** — **FOUNDER RULING: the app calls blocked bounces; do not pivot away from the goal.**
+  §6 intent back in scope (SPEC edit held for the pose question). researcher dispatched on SwingVision.
 
 - **2026-09-16** — **P8 C2 VOID (qa, lead-verified).** The gold's non-corner keypoints are computed by
   the label tool from the four corners, so C2 would self-grade; my pre-registration wrongly called them
