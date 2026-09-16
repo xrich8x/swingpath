@@ -18,7 +18,39 @@ NEVER fix/tune anything. yt_match40 calibration KNOWN BAD (T23) - no near-line f
 ## STATE
 - Read: CLAUDE.md, SPEC §3/§6, capture-floor-census.md (+2026-09-15 addendum),
   lead.md P2 pre-registration. Journal reset from prior (2026-09-10) task, which is DONE.
-- NEXT: inventory caches/audio/court constants, then pre-register defs.
+- RESUMED 2026-09-16 after kill. Inventory done (below). NEXT: audio onsets for
+  am_hard_utr, court.py constants, then write pre-reg into evidence file BEFORE building.
+- WRITE-LOCATION DECISION: qa may not write tools/ or data/. Builder scripts go in
+  docs/evidence/occlusion-census/ (sheet + form + the script that made them), NOT tools/.
+  So no state-guard trip expected. Say so in report.
+
+## INVENTORY (2026-09-16)
+- am_hard_utr.mp4 1920x1080 59.94fps 28998 fr 483.8s, AUDIO yes. perception.json
+  frame_step 1, ballnet v21, cuda. match.json fps 29.97 (shipped step 2), 120 shots.
+- demo30.mp4 1280x720 29fps 870 fr 30s, no audio. perception tracknet. demo30.json's
+  video.filename says "yt_rally2.mp4" -> check source identity (eval/recordings.py).
+- yt_match40.mp4 1280x720 29fps 354s, no audio. NO yt_match40.perception.json; only
+  _fusion/_tracknet/_v1/_v2 variants. Calibration KNOWN BAD (T23).
+- Ball gold (data/gold/*.labels.json) is UNIFORM every ~116 frames -> useless as a bounce
+  candidate source.
 
 ## LOG
 - 2026-09-15: task recorded. Prior cleanup-verification task from 2026-09-10 archived/closed.
+- 2026-09-16 FINDING: demo30 == yt_match40 frames 2552..3421 (thumb match 48x27 gray,
+  mean abs diff 0.09-0.12 vs median 7.6-10.5; offset constant). ONE recording, not two.
+  Yet fitted mounts differ (1.38 vs 1.64) on the same static camera -> calibration
+  disagreement. Dedupe demo30 candidates into yt_match40 frame space.
+- audio: shipped detect_impacts (git 7570a2a^, defaults) on am_hard_utr -> 811 events /
+  483.8 s. Saved docs/evidence/occlusion-census/audio_am_hard_utr_raw.json.
+- STATE l.197: net tape covers FAR BASELINE on all 3 clips (mounts < 2.0-2.2 m) ->
+  far-baseline bounces structurally net-occluded; mount-specific, report separately.
+- FINDING: demo30.perception.json has 1108 entries vs demo30.mp4's 870 frames; demo30.json
+  names yt_rally2.mp4 (36.9s*30=1107). The "demo30 cache" is NOT from demo30.mp4. Moot for
+  P2 since demo30 is a slice of yt_match40 -> use yt_match40 caches for that span.
+- am perception ball_px len 14499 = 30fps-eff index (t=i/29.97). yt_match40 has 4 Jul-6
+  tracks (v1/v2 ours-early, fusion, tracknet), none is BallNet v21; yt_match40.json (Aug 8)
+  196 shots all with bounce_t_s; am_hard_utr.json 120 shots all with bounce_t_s.
+- DESIGN: HTML viewer plays SOURCE video in-browser (h264, file://) looping a 0.55 s window
+  at 0.25x — no media copied into git. Founder blind to source. 160 items batch 1
+  (120 am + 40 yt), seeded permutation so any prefix is a random sample; batch 2 optional.
+- NEXT: write evidence pre-reg (defs+bar+bias method) BEFORE building candidates.
