@@ -688,6 +688,11 @@ And: "Do not just give up and pivot from my clear instruction in regards to what
 
 ## LOG — newest first
 
+- **2026-09-16 late** — backend-dev's H1 run was killed by a usage limit at startup (no artefacts);
+  **RESUMED** via SendMessage on the founder's instruction ("Restart ... finish the run"). Founder going
+  to sleep — this is NOT a pause (the founder asked for the run to finish), so RUN-STATE stays RUNNING.
+  When H1 lands: verify its numbers from the raw output, add nothing new, report in plain terms.
+
 - **2026-09-16** — **researcher's SwingVision teardown landed** (`docs/evidence/swingvision-teardown.md`).
   No public source says how SwingVision calls a hidden bounce; it admits it sometimes cannot call
   (Tennis.com 2024-12). Its disclosed 3D method is a NN trained on radar/lidar/multi-camera truth
