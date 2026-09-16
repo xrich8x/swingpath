@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- P2 occlusion census - founder's blind labelling sheet. Built by qa, 2026-09-16.
+     100% local: no network request of any kind. Plays the SOURCE videos from data/incoming
+     via relative paths, so open this file from inside the repo (double-click, Chrome/Edge). -->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self' 'unsafe-inline' file: blob:; connect-src 'none'">
+<title>P2 occlusion census - labelling sheet</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 0; background: #1b1b1b; color: #eee; }
+  header { padding: 8px 14px; background: #2a2a2a; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  header b { font-size: 16px; }
+  main { display: flex; gap: 14px; padding: 10px 14px; align-items: flex-start; }
+  #left { flex: 1 1 auto; min-width: 0; }
+  #right { flex: 0 0 390px; }
+  #frame { position: relative; overflow: hidden; border: 8px solid #444; background: #000; cursor: crosshair; }
+  #frame.lit { border-color: #1fd15a; }
+  #stage { position: relative; transform-origin: 50% 50%; }
+  #vid { display: block; width: 100%; }
+  .hudmask { position: absolute; background: #3c3c3c; }
+  #zonebadge { position: absolute; top: 6px; left: 8px; padding: 2px 8px; font-weight: 700;
+               background: #1fd15a; color: #000; display: none; }
+  #frame.lit #zonebadge { display: block; }
+  #bar { position: relative; height: 22px; background: #333; margin-top: 6px; }
+  #barzone { position: absolute; top: 0; bottom: 0; background: #1fd15a55; border-left: 2px solid #1fd15a; border-right: 2px solid #1fd15a; }
+  #barhead { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #fff; }
+  .row { margin: 6px 0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  button { background: #3a3a3a; color: #eee; border: 1px solid #555; padding: 4px 9px; cursor: pointer; }
+  button.on { background: #1f6fd1; border-color: #1f6fd1; }
+  fieldset { border: 1px solid #555; margin: 8px 0; padding: 6px 10px; }
+  fieldset[disabled] { opacity: .35; }
+  legend { font-weight: 700; }
+  label.opt { display: inline-block; margin: 2px 8px 2px 0; padding: 2px 6px; border: 1px solid #555; cursor: pointer; }
+  label.opt:has(input:checked) { background: #1f6fd1; border-color: #1f6fd1; }
+  .hint { color: #aaa; font-size: 12px; }
+  #help { background: #262626; border: 1px solid #444; padding: 8px 12px; margin-top: 10px; font-size: 13px; }
+  #help h3 { margin: 6px 0 2px; font-size: 14px; }
+  .done { color: #1fd15a; }
+  input[type=text] { width: 95%; background: #111; color: #eee; border: 1px solid #555; }
+  #err { color: #ff6b6b; font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <b>P2 occlusion census</b>
+  <span id="pos"></span>
+  <span id="prog"></span>
+  <span class="row">
+    <button id="prev">&larr; prev</button>
+    <button id="next">next &rarr;</button>
+    <button id="nextOpen">next unanswered</button>
+    <label>go to <input id="goto" size="5" placeholder="P2-001"></label>
+  </span>
+  <span class="row">
+    <button id="dl">Download answers (CSV)</button>
+    <label class="hint">resume from CSV <input type="file" id="load" accept=".csv"></label>
+  </span>
+</header>
+<main>
+  <div id="left">
+    <div id="frame"><div id="stage"><video id="vid" preload="auto" playsinline></video></div><div id="zonebadge">TARGET ZONE</div></div>
+    <div id="bar"><div id="barzone"></div><div id="barhead"></div></div>
+    <div class="row">
+      <button id="play">play / pause (space)</button>
+      <button id="back">&minus;1 frame (,)</button>
+      <button id="fwd">+1 frame (.)</button>
+      speed:
+      <button class="spd" data-r="0.1">0.1x</button>
+      <button class="spd on" data-r="0.25">0.25x</button>
+      <button class="spd" data-r="0.5">0.5x</button>
+      <button class="spd" data-r="1">1x</button>
+      <button id="mute">sound: off</button>
+      zoom:
+      <button class="zm on" data-z="1">1x</button>
+      <button class="zm" data-z="2">2x</button>
+      <button class="zm" data-z="3">3x</button>
+      <span class="hint">(zoom centres on where you last clicked the picture)</span>
+    </div>
+    <div class="row hint" id="tinfo"></div>
+    <div id="err"></div>
+    <div id="help">
+      <h3>What you are doing</h3>
+      Each item loops about half a second of match video. <b>Only judge a bounce whose ground contact happens
+      while the picture has a GREEN border</b> (the green "target zone" on the bar). Ignore anything outside it -
+      a neighbouring item covers that. Some items contain nothing at all; that is by design. Answer from what you
+      see (and, on the clip that has it, hear). <b>"Cannot tell" is a real answer - use it rather than guessing.</b>
+      <h3>Q1 - Is there a ball bounce (ground contact) inside the green zone?</h3>
+      A hidden bounce still counts if it is evident: the ball falls into a player/the net and comes back up,
+      or you hear it. A racquet hit is NOT a bounce.
+      <b>Only IN-PLAY bounces count</b> - from a serve or a shot, until the point ends. Answer "no" for a server
+      bouncing the ball before serving, a ball being fed, knocked back or collected between points, and a
+      ball from another court.
+      <h3>Q2 - At the contact moment (give or take one frame), can you see the ball well enough to say where it touched?</h3>
+      VISIBLE, or the cause it is hidden: <b>PLAYER</b> (body or racquet) - <b>NET</b> (net, tape or post) -
+      <b>FRAME</b> (outside the picture) - <b>BLUR</b> (there, but blurred or too small to recognise) -
+      <b>OTHER</b> (say what: fence, umpire, ball kid, graphic...). Partly hidden but you can still place the
+      contact point = VISIBLE.
+      <h3>Q3 - Did it land within about 0.5 m of any painted line?</h3>
+      Any line: both pairs of sidelines (doubles alley counts), baselines, service lines, centre service line.
+      <b>0.5 m is about a third of the doubles-alley width, or a bit less than a racquet's length.</b>
+      If the ball was hidden you may still answer from where it went in and came out; otherwise "cannot tell".
+      <h3>Q4 - Which half of the court?</h3>
+      NEAR = the camera's side of the net.
+      <h3>Grey boxes</h3>
+      Scoreboards and the SwingVision panels (its mini-court shows its own bounce dots) are covered on purpose, so
+      that nobody else's call leaks into your answer. If the ball is behind a grey box at contact, answer OTHER
+      and write "graphic".
+      <h3>Pace</h3>
+      About 15 s an item. <b>Batch 1 = items P2-001 to P2-180 (~45 min).</b> Stop at the end of a batch, not in
+      the middle, if you can. Answers save automatically in this browser; press <b>Download answers</b> when
+      you finish (and whenever you stop) and send the CSV to qa.
+    </div>
+  </div>
+  <div id="right">
+    <fieldset id="f1"><legend>Q1 - bounce in the green zone?</legend>
+      <label class="opt"><input type="radio" name="q1" value="Y"> yes (1)</label>
+      <label class="opt"><input type="radio" name="q1" value="N"> no (2)</label>
+      <label class="opt"><input type="radio" name="q1" value="?"> cannot tell (3)</label>
+    </fieldset>
+    <fieldset id="f2" disabled><legend>Q2 - ball at contact</legend>
+      <label class="opt"><input type="radio" name="q2" value="VISIBLE"> VISIBLE (v)</label><br>
+      <label class="opt"><input type="radio" name="q2" value="PLAYER"> hidden: PLAYER (p)</label>
+      <label class="opt"><input type="radio" name="q2" value="NET"> hidden: NET (t)</label>
+      <label class="opt"><input type="radio" name="q2" value="FRAME"> out of FRAME (f)</label>
+      <label class="opt"><input type="radio" name="q2" value="BLUR"> BLUR / too small (b)</label>
+      <label class="opt"><input type="radio" name="q2" value="OTHER"> OTHER (o)</label>
+      <label class="opt"><input type="radio" name="q2" value="?"> cannot tell (x)</label>
+      <div class="row">OTHER = <input type="text" id="other" placeholder="what hid it"></div>
+    </fieldset>
+    <fieldset id="f3" disabled><legend>Q3 - within ~0.5 m of a line?</legend>
+      <label class="opt"><input type="radio" name="q3" value="Y"> yes (7)</label>
+      <label class="opt"><input type="radio" name="q3" value="N"> no (8)</label>
+      <label class="opt"><input type="radio" name="q3" value="?"> cannot tell (9)</label>
+    </fieldset>
+    <fieldset id="f4" disabled><legend>Q4 - which half?</legend>
+      <label class="opt"><input type="radio" name="q4" value="NEAR"> NEAR (4)</label>
+      <label class="opt"><input type="radio" name="q4" value="FAR"> FAR (5)</label>
+      <label class="opt"><input type="radio" name="q4" value="?"> cannot tell (6)</label>
+    </fieldset>
+    <fieldset><legend>note (optional)</legend><input type="text" id="note"></fieldset>
+    <div class="row"><button id="saveNext">save &amp; next (Enter)</button><span id="state"></span></div>
+  </div>
+</main>
+
+<script src="items.js"></script>
+<script>
+// Burned-in overlays are MASKED (rule 12: truth comes from the game, not the video). yt_match40
+// carries SwingVision's HUD - a mini-court with its own bounce dots, a shot-type/speed panel and a
+// scoreboard; am_hard_utr carries a scoreboard. A score change or a bounce dot would leak somebody
+// else's call into the founder's label. Boxes measured by qa on rendered frames at 4-12 times per
+// clip (layout static across each clip), in source pixels [x0, y0, x1, y1].
+const HUD_MASKS = {
+  am_hard_utr: { w: 1920, h: 1080, boxes: [[0, 0, 600, 185]] },
+  yt_match40:  { w: 1280, h: 720,  boxes: [[0, 0, 310, 170], [1075, 0, 1280, 335]] },
+};
+</script>
+<script>
+"use strict";
+const KEY = "p2_occlusion_census_v1";
+const items = P2_ITEMS;
+let store = JSON.parse(localStorage.getItem(KEY) || "{}");
+let idx = 0, rate = 0.25, zoom = 1, zx = 50, zy = 50, openedAt = Date.now();
+const $ = (id) => document.getElementById(id);
+const vid = $("vid");
+vid.muted = true;
+
+function persist() { localStorage.setItem(KEY, JSON.stringify(store)); }
+function complete(a) {
+  if (!a || !a.q1) return false;
+  if (a.q1 !== "Y") return true;
+  return !!(a.q2 && a.q3 && a.q4);
+}
+function progress() {
+  const b1 = items.filter(i => i.batch === 1), b2 = items.filter(i => i.batch === 2);
+  const c = (arr) => arr.filter(i => complete(store[i.item])).length;
+  $("prog").innerHTML = `batch 1: <b>${c(b1)}/${b1.length}</b> &nbsp; batch 2 (optional): ${c(b2)}/${b2.length}`;
+}
+function enableFollowups() {
+  const y = document.querySelector('input[name=q1]:checked')?.value === "Y";
+  ["f2", "f3", "f4"].forEach(f => $(f).disabled = !y);
+}
+function readForm() {
+  const g = (n) => document.querySelector(`input[name=${n}]:checked`)?.value || "";
+  const a = store[items[idx].item] || {};
+  a.q1 = g("q1");
+  a.q2 = a.q1 === "Y" ? g("q2") : "";
+  a.q3 = a.q1 === "Y" ? g("q3") : "";
+  a.q4 = a.q1 === "Y" ? g("q4") : "";
+  a.other = $("other").value.trim();
+  a.note = $("note").value.trim();
+  a.secs = Math.round(((a.secs || 0) + (Date.now() - openedAt) / 1000) * 10) / 10;
+  openedAt = Date.now();
+  a.saved = new Date().toISOString();
+  store[items[idx].item] = a;
+  persist(); progress();
+  $("state").innerHTML = complete(a) ? '<span class="done">saved</span>' : "incomplete";
+}
+function writeForm() {
+  const a = store[items[idx].item] || {};
+  document.querySelectorAll("#right input[type=radio]").forEach(r => {
+    r.checked = (a[r.name] === r.value);
+  });
+  $("other").value = a.other || ""; $("note").value = a.note || "";
+  enableFollowups();
+  $("state").innerHTML = complete(a) ? '<span class="done">answered</span>' : "";
+}
+function load(i) {
+  idx = Math.max(0, Math.min(items.length - 1, i));
+  const it = items[idx];
+  $("pos").innerHTML = `<b>${it.item}</b> &middot; batch ${it.batch}` + (it.batch === 2 ? " (optional)" : "");
+  $("err").textContent = "";
+  const want = new URL(it.video, location.href).href;
+  if (vid.src !== want) { vid.src = want; applyMasks(it.clip); }
+  vid.currentTime = it.t0;
+  vid.playbackRate = rate;
+  vid.muted = !it.audio || $("mute").dataset.on !== "1";
+  $("mute").disabled = !it.audio;
+  $("mute").title = it.audio ? "" : "this clip has no sound track";
+  const span = it.t1 - it.t0;
+  $("barzone").style.left = (100 * (it.zone0 - it.t0) / span) + "%";
+  $("barzone").style.width = (100 * (it.zone1 - it.zone0) / span) + "%";
+  openedAt = Date.now();
+  writeForm();
+  vid.play().catch(() => {});
+}
+vid.addEventListener("error", () => {
+  $("err").textContent = "The video did not load. Open this page from inside the repo folder " +
+    "(docs/evidence/occlusion-census/sheet.html) so that ../../../data/incoming/Hardcourt/ resolves. " +
+    "Chrome or Edge recommended.";
+});
+function tick() {
+  const it = items[idx];
+  if (it && vid.readyState >= 1) {
+    const t = vid.currentTime;
+    if (t >= it.t1 || t < it.t0 - 0.02) { vid.currentTime = it.t0; }
+    const lit = t >= it.zone0 && t <= it.zone1;
+    $("frame").classList.toggle("lit", lit);
+    $("barhead").style.left = (100 * (t - it.t0) / (it.t1 - it.t0)) + "%";
+    $("tinfo").textContent = `frame ${Math.floor(t * it.fps + 1e-6)}  (t = ${t.toFixed(3)} s)  ` +
+      `window ${it.t0.toFixed(2)}-${it.t1.toFixed(2)} s, green zone ${it.zone0.toFixed(2)}-${it.zone1.toFixed(2)} s`;
+  }
+  requestAnimationFrame(tick);
+}
+function step(d) { vid.pause(); vid.currentTime = Math.max(items[idx].t0, Math.min(items[idx].t1 - 1e-3, vid.currentTime + d / items[idx].fps)); }
+function applyZoom() { const st = $("stage"); st.style.transformOrigin = `${zx}% ${zy}%`; st.style.transform = `scale(${zoom})`; }
+function applyMasks(clip) {
+  document.querySelectorAll(".hudmask").forEach(m => m.remove());
+  const m = HUD_MASKS[clip]; if (!m) return;
+  for (const [x0, y0, x1, y1] of m.boxes) {
+    const d = document.createElement("div"); d.className = "hudmask";
+    Object.assign(d.style, { left: 100 * x0 / m.w + "%", top: 100 * y0 / m.h + "%",
+      width: 100 * (x1 - x0) / m.w + "%", height: 100 * (y1 - y0) / m.h + "%" });
+    $("stage").appendChild(d);
+  }
+}
+
+$("frame").addEventListener("click", (e) => {
+  const r = $("frame").getBoundingClientRect();
+  zx = 100 * (e.clientX - r.left) / r.width; zy = 100 * (e.clientY - r.top) / r.height; applyZoom();
+});
+document.querySelectorAll(".zm").forEach(b => b.onclick = () => {
+  zoom = +b.dataset.z; document.querySelectorAll(".zm").forEach(x => x.classList.toggle("on", x === b)); applyZoom();
+});
+document.querySelectorAll(".spd").forEach(b => b.onclick = () => {
+  rate = +b.dataset.r; vid.playbackRate = rate;
+  document.querySelectorAll(".spd").forEach(x => x.classList.toggle("on", x === b));
+});
+$("mute").onclick = () => {
+  const on = $("mute").dataset.on !== "1"; $("mute").dataset.on = on ? "1" : "0";
+  $("mute").textContent = "sound: " + (on ? "on" : "off"); $("mute").classList.toggle("on", on);
+  vid.muted = !on || !items[idx].audio;
+};
+$("play").onclick = () => (vid.paused ? vid.play() : vid.pause());
+$("back").onclick = () => step(-1);
+$("fwd").onclick = () => step(1);
+$("prev").onclick = () => load(idx - 1);
+$("next").onclick = () => load(idx + 1);
+$("nextOpen").onclick = () => {
+  for (let k = 1; k <= items.length; k++) {
+    const j = (idx + k) % items.length;
+    if (!complete(store[items[j].item])) { load(j); return; }
+  }
+};
+$("saveNext").onclick = () => { readForm(); if (complete(store[items[idx].item])) load(idx + 1); };
+$("goto").onchange = () => {
+  const j = items.findIndex(i => i.item.toUpperCase() === $("goto").value.trim().toUpperCase());
+  if (j >= 0) load(j);
+};
+document.querySelectorAll("#right input").forEach(el => el.addEventListener("change", () => { enableFollowups(); readForm(); }));
+$("other").addEventListener("input", readForm);
+$("note").addEventListener("input", readForm);
+
+const KEYMAP = { "1": ["q1", "Y"], "2": ["q1", "N"], "3": ["q1", "?"],
+  "v": ["q2", "VISIBLE"], "p": ["q2", "PLAYER"], "t": ["q2", "NET"], "f": ["q2", "FRAME"],
+  "b": ["q2", "BLUR"], "o": ["q2", "OTHER"], "x": ["q2", "?"],
+  "7": ["q3", "Y"], "8": ["q3", "N"], "9": ["q3", "?"],
+  "4": ["q4", "NEAR"], "5": ["q4", "FAR"], "6": ["q4", "?"] };
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" && e.target.type === "text") { if (e.key === "Enter") $("saveNext").click(); return; }
+  if (e.key === " ") { e.preventDefault(); $("play").click(); return; }
+  if (e.key === ",") { step(-1); return; }
+  if (e.key === ".") { step(1); return; }
+  if (e.key === "Enter") { $("saveNext").click(); return; }
+  const m = KEYMAP[e.key.toLowerCase()];
+  if (m) {
+    const r = document.querySelector(`input[name=${m[0]}][value="${m[1]}"]`);
+    if (r && !r.closest("fieldset").disabled) { r.checked = true; enableFollowups(); readForm(); }
+  }
+});
+
+const COLS = ["item", "batch", "clip", "t_center_s", "zone_s", "Q1_bounce", "Q2_visibility",
+              "Q2_other_text", "Q3_near_line", "Q4_half", "note", "seconds_on_item", "saved_utc"];
+function csvCell(v) { v = (v ?? "").toString(); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+$("dl").onclick = () => {
+  const lines = [COLS.join(",")];
+  for (const it of items) {
+    const a = store[it.item] || {};
+    lines.push([it.item, it.batch, it.clip, it.t_center, `${it.zone0}-${it.zone1}`, a.q1, a.q2, a.other,
+                a.q3, a.q4, a.note, a.secs, a.saved].map(csvCell).join(","));
+  }
+  const blob = new Blob([lines.join("\n") + "\n"], { type: "text/csv" });
+  const el = document.createElement("a");
+  el.href = URL.createObjectURL(blob);
+  el.download = `p2_occlusion_answers_${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "")}.csv`;
+  el.click();
+};
+function parseCsv(text) {
+  const rows = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ",") { row.push(cur); cur = ""; }
+    else if (ch === "\n") { row.push(cur.replace(/\r$/, "")); rows.push(row); row = []; cur = ""; }
+    else cur += ch;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+$("load").onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const rows = parseCsv(rd.result); const h = rows.shift();
+    const col = (n) => h.indexOf(n);
+    for (const r of rows) {
+      if (!r[col("item")]) continue;
+      store[r[col("item")]] = { q1: r[col("Q1_bounce")], q2: r[col("Q2_visibility")], other: r[col("Q2_other_text")],
+        q3: r[col("Q3_near_line")], q4: r[col("Q4_half")], note: r[col("note")],
+        secs: +r[col("seconds_on_item")] || 0, saved: r[col("saved_utc")] };
+    }
+    persist(); progress(); writeForm();
+  };
+  rd.readAsText(f);
+};
+
+progress();
+const fromHash = items.findIndex(i => "#" + i.item === decodeURIComponent(location.hash).toUpperCase());
+load(fromHash >= 0 ? fromHash : Math.max(0, items.findIndex(i => !complete(store[i.item]))));
+tick();
+</script>
+</body>
+</html>

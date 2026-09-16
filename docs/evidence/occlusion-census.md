@@ -5,6 +5,8 @@
 > **before** any candidate was built. The definitions below are frozen from that commit on.
 
 **STATUS: SHEET BUILT, NOT LABELLED. No number exists yet. See §RESULT.**
+**Three pre-label amendments (A1-A3, §4.2) were made after the pre-registration commit and before
+any label existed. Each one was triggered by a property of the instrument, never by an answer.**
 
 **THIS IS NOT A v1 FIGURE, AND MUST NEVER BE QUOTED AS ONE.** No clip here meets the v1 capture
 floor (P3, `capture-floor-census.md`). Both recordings are low standing mounts (1.64-1.74 m), and at
@@ -137,12 +139,88 @@ labelled bounce fraction by its pool size gives estimated bounce counts. Then:
    makes Lincoln-Petersen **under**-estimate N̂, so this fraction is a **lower bound on the residual
    bias**. Stated as such.
 
+### 4.2 Pre-label amendments (the registered text above is left as it was; these supersede it)
+
+**A1 — the A/V merge rule was wrong for this audio.** I histogrammed audio onsets against the
+pipeline's own bounce times (±1 s, 0.05 s bins). The audio excess over a random-time null sits at
+**+0.10 to +0.20 s**, outside the registered [−0.05, +0.15] window, so that rule split one event into
+two pool items. A split event gets sampled twice. The events split this way are the ones BOTH sources
+saw, which means the visible ones, so the headline would have been biased LOW.
+
+Replacement:
+- Every A and V event goes into one greedy, **start-anchored** clustering (span ≤ 0.35 s, no chaining).
+- Audio times are first moved to onset − **0.12 s**, the measured peak (it includes propagation).
+- An item's centre is its median V time, or its median A time if it has no V event.
+- **Each item gets a TARGET ZONE**: the Voronoi cell between neighbouring item centres, clipped to
+  ±0.175 s. The founder judges only a bounce whose contact falls inside the zone, which the viewer
+  lights green. Zones never overlap, so no bounce can be counted twice.
+
+**A2 — cluster membership cannot say which source found a bounce, so §4.1 is replaced.** I built a
+null by shifting the audio circularly against the vision events (5 shifts: −37.3, −19.1, +11.7,
++23.9, +41.3 s) and re-clustering:
+
+| | By chance (null) | Observed |
+|---|---|---|
+| An A event lands in a V-bearing item | **0.758** | **0.780** |
+| A V event lands in an A-bearing item | **0.484** | **0.496** |
+
+At 1.68 audio events per second, cluster membership is essentially chance. The A∩V / A-only / V-only
+cells and the Lincoln-Petersen estimate in §4.1 therefore **cannot be computed meaningfully**.
+
+**Replacement — audit what the candidate source REJECTED.** Each batch blind-mixes **negative-space
+items**: windows drawn uniformly (seeded) from video time that **no** target zone covers. Each zone is
+±0.175 s clipped to its uncovered stretch; a draw shorter than 0.05 s, or one overlapping another
+negative, is redrawn. The founder labels these exactly like any other item. Then, per clip:
+- missed bounces M̂ = (bounces found in negative items ÷ negative-zone seconds labelled) × uncovered
+  seconds;
+- found bounces F̂ = (bounces per labelled pool item) × pool size;
+- **residual bias = M̂ / (M̂ + F̂)**, the fraction of bounces the candidate source could not have
+  offered;
+- **the occlusion rate among missed bounces against found ones**, which measures the trap directly.
+
+This needs no independence assumption. It also works for `yt_match40`, whose vision-only source is
+the one under suspicion.
+
+**The verdict (§6) now uses the population estimate.**
+- Pool and negative bounces are weighted by inverse sampling rate: pool = pool size ÷ pool items
+  labelled; negative = uncovered seconds ÷ negative seconds labelled.
+- The unweighted pool-only H is reported beside it.
+- The weights are unequal, so the interval is a seeded (20260916), stratified bootstrap of 2000
+  resamples instead of Wilson.
+- The H_low / H_high bound rules are unchanged.
+
+**A3 — in-play bounces only.** Rendering items P2-001 and P2-003 showed a server bouncing the ball
+before serving, and the audio source picks that up. Q1 now says **only in-play bounces count**: from a
+serve or a shot until the point ends. The founder answers "no" for a pre-serve bounce, a ball being
+fed, knocked back or collected, and a ball from another court.
+
+**A viewer change, not a definition change: burned-in overlays are masked (rule 12).** `yt_match40`
+carries SwingVision's HUD: a **mini-court with its own bounce dots**, a shot-type/speed panel and a
+scoreboard. `am_hard_utr` has a scoreboard. A bounce dot or a score change would leak somebody else's
+call into the founder's label. Masked boxes, in source pixels:
+- `am_hard_utr`: [0,0,600,185]
+- `yt_match40`: [0,0,310,170] and [1075,0,1280,335]
+
+No mask covers the court surface.
+
 ## 5. Sampling — seeded, never hand-picked
 - Pool per clip = the merged candidate list. **Seeded permutation, seed 20260916**, per clip.
   Items are dealt 3 `am_hard_utr` : 1 `yt_match40` down the two permutations, so **any prefix of
   the sheet is a random sample** and the founder can stop at a batch boundary without biasing it.
 - **Batch 1 = 160 items (120 `am_hard_utr` + 40 `yt_match40`)**, sized to ~45 min at ~15-17 s per item.
   Batch 2 (optional, the next 160) exists on the same page for extending the sample without a rebuild.
+- **Superseded by A2:** each batch is **180 items**:
+
+  | Stratum | Items per batch |
+  |---|---|
+  | `am_hard_utr` pool | 110 |
+  | `am_hard_utr` negative | 20 |
+  | `yt_match40` pool | 35 |
+  | `yt_match40` negative | 15 |
+
+  Items are shuffled WITHIN the batch (seed 20260916), so a **batch boundary** is the clean stopping
+  point. A mid-batch stop is still unbiased within each stratum, but leaves the strata unequally
+  filled. A batch takes ~45 min at 15 s/item, ~60 min at 20 s/item.
 - `demo30` contributes no items of its own (§2).
 
 ## 6. How the bar will be evaluated (pre-registered)
@@ -168,6 +246,15 @@ near-line, batch 1's 120 `am_hard_utr` items give ~21 near-line bounces, a Wilso
 **Batch 1 alone will very likely read UNDERPOWERED unless H is far from 20%.** These are
 assumptions, not measurements; the real bounce and near-line fractions come from the labels.
 
+**After A2 and A3 the power is worse, not better.** Batch 1 now carries 110 `am_hard_utr` pool items,
+not 120. Both `am_hard_utr` items I rendered while building were pre-serve bounces, so the in-play
+yield per item may be well under 50%. At a 30% yield and 35% near-line:
+- batch 1 gives ~12 near-line bounces, a half-width of about ±23 pp;
+- both batches give ~23.
+
+**Expect UNDERPOWERED from batch 1 alone. A verdict likely to resolve needs both batches, ~90-120
+min.**
+
 ## 7. What makes the 20% bar hard to evaluate as written
 1. **"Near-line" has no number in SPEC.** 0.5 m is adopted from the repo's existing contested band.
    pm's line-call margin work recommended a **0.20 m** band; a 0.20 m population would be smaller still
@@ -179,15 +266,92 @@ assumptions, not measurements; the real bounce and near-line fractions come from
    truth at capture). Q3 is therefore more reliable for sideline bounces than for baseline and
    service-line bounces, and the near-line population will lean toward sidelines.
 4. **Power** (§6): the 45-minute budget and the 20% bar are not jointly sized.
-5. **The bar pools causes.** A `NET` occlusion at a 1.7 m mount is a mount-height artefact that a
+5. **Pre-serve bounces take a large share of the audio source's items** (A3). They are excluded by
+   definition, but labelling them still costs founder time, so 45 minutes buys fewer counted bounces.
+6. **v1 would refuse every bounce on `yt_match40` anyway.** At 29 fps it is below the 60 fps floor,
+   where v1 does not attempt bounce detection, so that clip's rate describes the footage, not v1's
+   refusals.
+7. **The bar pools causes.** A `NET` occlusion at a 1.7 m mount is a mount-height artefact that a
    fence mount largely removes; a `PLAYER` occlusion is the §6 question. The cause split is reported
    so the founder can see how much of H belongs to each.
 
-## 8. Where the sheet lives
-`docs/evidence/occlusion-census/` (filled in at build time, §9).
+## 8. Where the sheet lives, and how the founder runs it
+
+**Open `docs/evidence/occlusion-census/sheet.html` in Chrome or Edge from inside the repo**
+(double-click). The page plays the two source videos in place from `data/incoming/Hardcourt/`. That
+folder is gitignored, so the page only works on a machine that has both files at those paths; this
+machine does.
+
+**What the founder sees:**
+- One item at a time: a ~0.55 s window looping at 0.25x (0.1x, 0.5x and 1x also available). Sound
+  is available on `am_hard_utr` only.
+- **The picture border turns green while the playhead is inside the target zone.**
+- Four questions per item, each with a "cannot tell" option. Q2-Q4 unlock only when Q1 = yes.
+
+**Batch 1 is P2-001 to P2-180 (~45 min at 15 s/item). Batch 2, P2-181 to P2-360, is optional.**
+
+**Keys:**
+
+| Key | Action |
+|---|---|
+| `1` / `2` / `3` | Q1 |
+| `v` `p` `t` `f` `b` `o` `x` | Q2 |
+| `7` / `8` / `9` | Q3 |
+| `4` / `5` / `6` | Q4 |
+| Enter | save and next |
+| `,` / `.` | step one frame back / forward |
+| Space | play / pause |
+
+Clicking the picture sets the zoom centre; the zoom buttons are 1x, 2x and 3x.
+
+**Saving:**
+- Answers autosave in the browser (localStorage).
+- **"Download answers (CSV)"** writes the tally, including seconds spent per item as a pace check.
+- "Resume from CSV" reloads a saved tally, e.g. in another browser.
+- `tally_form.csv` is the same form as a plain spreadsheet, for use without a browser.
+
+**`source_key.json` records which items are negatives and which source offered each item. The
+founder must not open it before labelling.** The page never shows it.
+
+**No network.** The page source contains no URL, and its Content-Security-Policy sets
+`connect-src 'none'`. I logged network traffic during a headless Chrome page load: the only requests
+were Chrome's own browser-process traffic (time sync, account check), none started by the page.
 
 ## 9. Build record
-*(filled in after the build)*
+
+Everything below describes the candidate pool. **None of it is a label or an occlusion figure.**
+
+| | `am_hard_utr` (1.74 m) | `yt_match40` (1.64 m) |
+|---|---|---|
+| Audio onsets (shipped `detect_impacts`, git `7570a2a^`, defaults) | **811** in 483.8 s (1.68/s) | none (no audio track) |
+| Vision events after the 0.15 s pre-merge | 471 (120 pipeline bounces plus image-y reversals) | 549 (196 pipeline bounces plus reversals from 4 tracks) |
+| Pool items after A1 clustering | **756** (A-only 334, V-only 93, both 329; membership ≈ chance, see A2) | **443** (all V) |
+| Items with a bracketed (gap-spanning) reversal | 30 | 51 |
+| Video time inside target zones | 258.8 s (**53.5%**) | 155.0 s (**43.8%**) |
+| Video time the candidate source cannot offer (negative stratum) | 225.0 s | 199.1 s |
+| Items on the sheet, both batches | 220 pool + 40 negative | 70 pool + 30 negative |
+
+**Files**, all in `docs/evidence/occlusion-census/`:
+
+| File | What it is |
+|---|---|
+| `sheet.html` | the viewer and form |
+| `items.js` | the 360 blind items |
+| `tally_form.csv` | the same form as a spreadsheet |
+| `source_key.json` | **sealed:** which items are negatives and which source offered each one |
+| `pool.json` | the full pools, the negatives and the chance-coincidence null |
+| `build_sheet.py` | the builder |
+| `_audio_from_git.py` | loads the cut `audio.py` from git without restoring it to the tree |
+| `audio_am_hard_utr_raw.json` | the 811 onsets |
+
+- **Reproducible.** `backend/.venv/Scripts/python.exe docs/evidence/occlusion-census/build_sheet.py`
+  re-ran byte-identical: `items.js` sha1 `6d588d33`, `source_key.json` `886c9db8`, `pool.json`
+  `7045ba70`, `tally_form.csv` `eb3750a8`.
+- **Checked before hand-off.** In headless Chrome, items P2-001, P2-002, P2-003 and P2-005 loaded,
+  decoded, looped, lit the zone and masked the HUD.
+- **No code under `tools/`, `backend/` or any test was added or changed.** The builder sits beside its
+  evidence file because qa does not write to `tools/`. Moving it to `tools/` would be a lead or
+  backend-dev change.
 
 ## RESULT
 
