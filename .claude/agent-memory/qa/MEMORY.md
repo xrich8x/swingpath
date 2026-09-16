@@ -141,6 +141,11 @@ this agent's system prompt — read it first; it is the authoritative copy.
   yt_match40; demo30.perception.json is not demo30's; yt_match40 HUD shows SwingVision bounce dots
   (mask it); audio A/V membership is chance-level -> negative-space audit, not capture-recapture.
 
+- **P8 C2 NOT RUNNABLE, 2026-09-16 — court gold keypoints are homography-derived.**
+  [court-gold-keypoints-are-derived.md](court-gold-keypoints-are-derived.md) — only the 4 corners
+  are human; C2 median 0.048 px = rounding (void). demo30/yt_match40 height gap is a quad
+  disagreement, demo30's is off the paint. Read the label WRITER before scoring.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is
