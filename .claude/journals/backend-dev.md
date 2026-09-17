@@ -4,7 +4,7 @@
 
 ---
 
-## TASK - CURRENT (2026-09-17) CP1 STAGE 1 - seeded whole-court line fit (R1)
+## TASK - DONE (2026-09-17) CP1 STAGE 1 - committed, not pushed; stage 2 NOT started - seeded whole-court line fit (R1)
 
 H1 hidden-bounce bridge (previous TASK) is PARKED: founder ruling 2026-09-17, court only.
 
@@ -140,3 +140,9 @@ Readouts: M = C1-style back-project true pixel via fitted cam, perp ground err, 
   ~26 min at 400 < 60 -> P = 400. A3 (no codec) faster -> 400. Controls: ctl1 n=20,
   ctl2 n=400, ctl3a n=20, ctl3b n=100 (paired with ctl2 trials 0-99, seed 0), ctl2s0 n=100
   descriptive. All scored runs seed 0. FREEZE commit next, then scored runs.
+- SCORED controls launched (bg, seed 0, commit 4ac52fc): ctl1 20, ctl3a 20, ctl2 400, ctl3b 100, ctl2s0 100 -> data/output/court_fit_cp1/<arm>_seed0_n<n>.json + log_<arm>.txt
+- SCORED ctl1 n=20: max M 0.12 mm, max L 0.57 mm -> PASS (<5 mm). ctl2 n=400: worst p90 5.6 mm (far svc L), 0 failures -> PASS (<=2 cm). 665 s.
+- SCORED ctl3a n=20: L offset 0.0997..0.1001 all in 0.10+-0.02 PASS; ctl3b paired n=100: L mean 0.0993 sd 0.0023 (M 0.1003) PASS. ctl2s0 (descr) far svc L p90 5.3 mm. ALL CONTROLS PASS -> launching P (6 workers) then A3 (10 workers), seed 0, n=400.
+- SCORED P n=400 (1363 s, 0 failures): ALL 14 lines PASS both readouts. worst L p90 far BL 3.58 cm, far svc 3.42 cm; M p90 far BL 0.97 cm. capture 0. kbps p50 19.9k. Waiting A3.
+- SCORED A3 n=400 (676 s, 0 failures): ALL PASS; far BL L p90 0.93 cm, far svc 0.74. Route kill NOT fired (P passes). Codec costs far BL L +1.2 cm paired median; kappa est +1.4% under codec. NEXT: evidence doc, STATE row, memory, commit.
+- DONE: evidence docs/evidence/court-fit-cp1.md, STATE row, memory file; committed (no push). VERDICT: P PASS all 14 lines; route kill not fired.
