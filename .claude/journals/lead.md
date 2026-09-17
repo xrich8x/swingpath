@@ -235,6 +235,14 @@ C3 is the founder's visit. **Order: P2 finishes first**, per the founder.
 
 ## LOG — newest first (court only; older entries are in the archived journal)
 
+- **2026-09-17** — **qa audit of CP1: PASS QUALIFIED** (`b308396`, `docs/evidence/court-fit-cp1-qa.md`). No truth
+  leak, bit-identical reproduction, seed-1 spot check passes. Qualified: one dev=score camera pose; undeclared
+  shared assumptions (blur on the fitter's grid, linear sensor, flat chroma, step at outer paint edge); far
+  margin ~1.4 cm vs a 2.65 cm codec cost; 1% of trials past 5 cm on the far lines. **Before stage 2,
+  backend-dev must:** pass `cx` as W/2 (latent A9 leak), fix the duplicate `seed` stamp key and stamp the
+  commit at run START, key the render cache on code, add an undeveloped camera pose, run a real-phone-bitrate
+  arm. STATE row and CLAUDE.md updated. Founder said "push to https://github.com/xrich8x/swingpath-court".
+
 - **2026-09-17** — **CP1 stage 1 reported PASS** (backend-dev; frozen `4ac52fc`, results `99e1812`): all 14
   lines within 5 cm p90 on arm P, worst far baseline 3.58 cm (L) / 0.97 cm (M); codec off 0.93 cm; route kill
   not fired; suite 721/4. **NOT relayed as settled yet: qa dispatched to audit it** — one agent wrote both

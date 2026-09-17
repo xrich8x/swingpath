@@ -40,7 +40,7 @@ Do NOT "ML-ify" geometry. Regulation dimensions are exact; use them as constrain
 - **Routes (researcher):** a whole-court fit to sub-pixel line measurements can plausibly reach that;
   what survives averaging is BIAS (surface flatness x10, paint-edge convention, ultra-wide
   distortion, thermal lens drift, video compression, net tape near the far baseline).
-- **CP1 (in progress):** that fit tested on rendered courts with exact truth.
+- **CP1 (stage 1, PASS QUALIFIED by qa):** that fit places every line within 5 cm p90 on a rendered 1080p/3 m court; far-line margin ~1.4 cm, one camera pose, undeclared shared assumptions.
 - **Automatic finding:** the 2026-09-09 open item — a court model trained on AMATEUR low-mount
   footage — is now the founder's chosen direction. Synthetic training data from a renderer is a
   candidate lever. Each branch in `docs/court/CLOSED.md` stays dead individually.
