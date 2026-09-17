@@ -1,0 +1,31 @@
+# researcher memory
+
+Index. Detail in the topic files. Inherited 2026-08-28.
+
+**Before proposing any investigation, read `docs/STATE.md` "What has not worked"** — ~50
+rows, each measured here under a pre-registered gate. Nine were re-proposed at least once.
+
+## The existing pipeline
+
+- [Court detection negatives](court-detection-negatives.md) — ~20 rejected approaches; CLOSED 2026-09-05: line detector's ~6.4px vs truth is the ceiling, near-order-of-magnitude with click noise (~5.8px) — manual calibration is the product answer for v1
+- [Player detection negatives](player-detection-negatives.md) — far-player: pose-quality, body_relative, foot-gate (x3, motion incl.) all dead; SEARCH-limited, crop+upscale works, weak link is crop centring (26.3px)
+- [Ball negatives](ball-negatives.md) — detector work is CLOSED; chain work is open; far ball is DISCRIMINATION-limited, NOT the same problem as the far player (2026-08-29)
+- [Monocular 3D geometry](monocular-3d-geometry.md) — the one equation (down-court vs lateral error = D/h), depth-from-ball-size dead on paper, what P1 closed, and this rig's answer-key trap (2026-09-15)
+- [Amateur court literature](amateur-court-literature.md) — the 6 published court/field-registration methods ranked against OUR regime, each with its rule-3 verdict, plus the unreachable-source list (2026-09-09)
+- [External research reconciled](external-research-reconciliation.md) — HF/GitHub claims verified first-hand 2026-09-09; upstream's 0.963 is in-distribution broadcast, the 15th keypoint is upstream's own, CourtSide cannot calibrate, Gholamreza = upstream's own training set
+- [Court precision, sub-pixel](court-precision-sub-pixel.md) — far BL = 0.14 px line; bias not noise binds; closed line-fit rows can't see sub-px; CP1 test; iOS GDC/intrinsics facts (2026-09-17)
+- [SwingVision public method](swingvision-public-method.md) — mount ladder gates line calls by height; 97% self-reported; 2 phones >99%; no public hidden-bounce method; fetch tips (2026-09-16)
+- [Project method rules](project-method-rules.md) — gold discipline, threshold scaling, the screening proxy that does not predict the gate
+- [Open questions](open-questions.md) — what is genuinely unresolved
+
+## iOS / on-device
+
+- [Mobile port split](mobile-port-split.md) — what ports, what is a rebuild, what is blocked
+- [iOS background compute](ios-background-compute.md) — no multi-hour background job exists; ANE-only is mandatory
+- [Core ML / A13 ANE budget](coreml-ane-budget.md) — the desktop ball-vs-pose cost ratio INVERTS on ANE; int8 buys no speed on A13
+- [Sensor court priors](sensor-court-priors.md) — gravity usable, yaw useless, LiDAR does not reach the far baseline; 1 deg pitch = 6 px
+- [Point-boundary ground truth](point-boundary-ground-truth.md) — boundaries are LOGIC, so labels are evaluation-only; audio is the strongest compliant signal; priced 2026-08-28: 3-6h, Hardcourt+Clay only, Shell/Grass have no eligible footage
+- [macOS + A13 device access](macos-and-device-access-options.md) — GH Actions CI for Core ML export; Xcode Performance Report needs a local USB device
+- [Audio hit detection mobile port](audio-hit-detection-mobile-port.md) — corpus audio-track presence unverified since Session E3b; rolling-median floor is O(n·win), vDSP has no equivalent; this session had no exec tool at all
+
+**Settled:** iOS only, A13+, Core ML/ANE only. No Android, no TFLite, no NNAPI.

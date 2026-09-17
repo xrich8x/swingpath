@@ -1,0 +1,255 @@
+# User Guide
+
+A practical guide to running this tennis match analyzer and driving it forward
+with Claude Code. Scope: tennis only.
+
+## 1. What you have
+
+Two halves that meet at one file, match.json:
+- Backend (Python) — turns a tennis video into match.json: shots, speeds,
+  bounces, line calls, rallies, and a running score.
+- Frontend (React) — a dashboard that renders match.json: a top-down court with
+  shot landings, stat tiles, shot-mix and line-call breakdowns, rally playback.
+
+It runs two ways: on synthetic demo data with no AI models (instant, for trying
+the dashboard), and on real footage through the full pipeline — court
+auto-calibration, ball tracking (TrackNet/WASB), and player pose (YOLO-pose) are
+all real and wired end to end (see §5). What to work on next lives in
+[docs/STATE.md](docs/STATE.md).
+
+## 2. Before you start
+
+- Python 3.12+
+- Node.js 18+ (20+ recommended) and npm
+- git
+- Later, for real footage: a phone/camera and a way to mount it behind the court.
+
+Check: `py --version` on Windows, `python3 --version` on macOS/Linux, and `node --version`.
+
+> **Command convention for the whole guide.** Examples below are written `python ...`.
+> **On Windows type `py` instead** — `python` there is usually a Microsoft Store stub
+> that prints "Python was not found" and installs nothing. Once `backend/.venv` exists,
+> the most reliable form on any OS is to call its interpreter directly and skip
+> activation entirely: `backend\.venv\Scripts\python.exe ...` (Windows) or
+> `backend/.venv/bin/python ...` (macOS/Linux). That is what every command in CLAUDE.md
+> and `tools/` uses.
+
+## 3. Setup (the easy way)
+
+Open the folder in Claude Code and paste the prompt from SETUP_PROMPT.md. It
+detects your OS, installs everything, runs the tests, and starts the dashboard.
+
+## 3b. Setup (manual)
+
+macOS / Linux:
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python run.py demo --out ../frontend/src/data/sample_match.json
+python -m pytest tests/
+cd ../frontend
+npm install
+npm run dev                      # open the printed http://localhost:5173
+
+Windows (PowerShell) — use `py`, NOT `python`:
+cd backend
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+py run.py demo --out ..\frontend\src\data\sample_match.json
+py -m pytest tests\
+cd ..\frontend
+npm install
+npm run dev
+
+On most Windows machines `python` is a Microsoft Store stub: it prints
+"Python was not found..." and installs nothing. `py` is the real launcher.
+
+Once the venv exists, the most reliable way to run anything is the venv's
+interpreter directly, with no activation step at all:
+backend\.venv\Scripts\python.exe run.py demo --out ..\frontend\src\data\sample_match.json
+backend\.venv\Scripts\python.exe -m pytest tests\
+That is the form every command in CLAUDE.md and tools/ uses, and it is immune to
+which shell you are in or whether activation worked.
+
+If PowerShell blocks the activate script, run
+Set-ExecutionPolicy -Scope Process RemoteSigned once, then retry.
+
+## 4. Using the dashboard
+
+- Broadcast view — empty state on demo data (no video). With a real analyzed
+  clip it becomes the video + overlay.
+- Court — top-down court. Nothing selected shows every shot landing (green = in,
+  red = out). Click a rally to trail that point and scrub the ball.
+- Statistics — shot count, rally count, average and top speed, shot mix, line-call split.
+  Court-derived figures carry the setup's trust state: labelled approximate when
+  the camera was low, and withheld outright when the net hid the far baseline.
+- Setup quality chip (top right) + banner — always on screen, on every tab. Click
+  it for what still works, why the setup is rated as it is, and how to improve it.
+- Rallies — click any rally to focus it; click again to deselect.
+- Load match (top right) — drop in any match.json you've produced.
+
+The Court Setup tab is a guided flow: it asks whether the far baseline was
+visible below the net, names each corner in plain language ("Far end, left
+corner"), lets you hide the overlay to check your clicks against the real paint,
+and only records a calibration as user-confirmed once you have ticked all four.
+Moving any corner clears the ticks — a confirmation is about one placement.
+
+Regenerate demo data anytime:
+cd backend && python run.py demo --out ../frontend/src/data/sample_match.json
+
+## 5. Analyzing real footage (this works now)
+
+1. Record. Mount the camera behind a baseline, a little above the player, so both
+   baselines and both alleys are visible. A FIXED camera is essential — if it
+   pans/zooms, calibration breaks. A phone clamped to the back fence is fine; you
+   do NOT need a TV angle. Player selection and the near/far split are computed in
+   court metres from the calibration, so amateur angles work.
+2. Install the ML deps once (CPU is fine; see backend/requirements-ml.txt):
+   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+   pip install -r requirements-ml.txt
+3. Calibrate. Click the court corners on the first frame:
+   python calibrate.py match.mp4 --out my_court_pts.json --overlay check.png
+   Open check.png — the drawn court lines should sit on the real lines. (A fixed
+   camera means you calibrate once per clip.)
+   Then audit it — a bad calibration breaks the overlay and ball gating with no
+   error message, and some committed data/*_pts.json files are degenerate:
+   python ../tools/validate_new_clip.py --audit my_court_pts.json
+   The fit residual is the number that matters: under 2.5 px is good, over 10 px
+   is unusable. Don't name your file court_pts.json — that one is a known-bad one.
+3b. Check what your camera position is worth, BEFORE you spend an analysis run:
+   python run.py check match.mp4 --keypoints my_court_pts.json
+   Add --far-baseline visible|hidden|unsure to record what YOU could see when
+   you filmed: whether the far baseline was a separate line below the top of the
+   net, or the net covered it. Same flag on `analyze`. It never refuses a clip,
+   and where the fitted court disagrees with your answer the measurement wins —
+   but the disagreement is written down rather than quietly resolved.
+   It runs the same calibration `analyze` runs — so if it refuses here, analyze
+   refuses too — and then tells you the one thing that decides whether the
+   recording was worth making: what share of CLOSE line calls a mount at your
+   height actually gets right. Read it against the floor it prints. Always
+   answering "in" scores 56%, so a phone on a 1 m tripod (54%) is worth LESS
+   than guessing; on a fence at 2.5 m it is ~68%, and at 6 m ~80%. Height is
+   the biggest accuracy lever you control, and it is free.
+4. Analyze. One command runs ball (TrackNet) + players (YOLO-pose), projects to
+   court metres, and writes match.json:
+   python run.py analyze match.mp4 --keypoints my_court_pts.json --out ../data/output/match.json
+   It prints throughput (fps). Defaults are tuned for speed (~1 fps on CPU):
+     --pose-quality fast|balanced|accurate   (accurate resolves a small far
+        player on TV-style footage; fast is ~6x quicker and fine for most clips)
+     --frame-step auto                        (auto targets ~30fps; halves work
+        on 60fps phone clips)
+     --full-rate                              (process EVERY frame. If you shot
+        at 60fps this is the biggest accuracy gain available and it costs you
+        twice the processing time: bounces land 24-35% closer to the truth, the
+        ball's flight path fits more than twice as tightly, and speeds get
+        noticeably nearer the radar figure. It does NOT find the ball more
+        often — it measures what it finds more precisely. Nothing changes on
+        30fps footage, so the flag is free to leave off there.)
+     --max-frames N                           (analyze a segment, not the whole
+        match — full matches are long on CPU)
+   Re-runs reuse a cached perception file, so tuning the output is instant.
+5. View. In the dashboard, click "Load match" (top right) and pick that
+   match.json, or drop it at frontend/src/data/analyzed_match.json and use the
+   "Analyzed clip" toggle.
+
+Everything after perception — speed, line calls, scoring, stats — runs on the
+real trajectories. Speed is average ball speed; bounce height is a single-camera
+heuristic; vision scoring is best-effort (correct points by hand when it matters).
+
+## 5b. If your camera was low — you can still record, and here is what changes
+
+A tennis net is 0.914 m tall. Below roughly a 2.0–2.2 m mount, the white net tape
+projects OVER the far baseline in the image, so the two lines cannot be told
+apart — not by you, not by a detector, not by any check run afterwards. That is
+the normal amateur case: 16 of the 28 real calibrations in this repo are below
+that line.
+
+**Nothing stops you recording, and nothing is deleted.** Both `check` and
+`analyze` print a Setup quality block, and the same state is written into your
+match.json under `setup`, so the dashboard shows it too:
+
+  Setup quality  [CLEAR]    the far baseline is well clear of the net tape
+                 [LIMITED]  separable but close — court figures are approximate
+                 [OVERLAP]  the net hides the far baseline
+                 [UNKNOWN]  never measured (e.g. a match.json from before this)
+
+What you keep at every one of them: video review and the annotated overlay,
+rally clips and highlights, the shot list and shot types, and manual corrections.
+
+What changes on LIMITED and OVERLAP: court-derived figures are labelled
+approximate, and on OVERLAP the headline average/top speed and the in/out
+percentage are shown as **Not available** rather than as a precise number with a
+disclaimer underneath. Individual calls are still plotted and still correctable.
+
+There is a second, independent line in that block: **court corners**. It reads
+`user confirmed` only when somebody ticked all four corners by name in the setup
+tool, and `provisional` otherwise — including for every auto-detected court and
+every keypoints file made before that step existed. Good framing and a confirmed
+court are different claims, and only both together let the app present court
+measurements as verified.
+
+The fix, in order of payoff: clamp the phone to the back fence (~2.5 m) instead
+of standing it on a tripod (~1.5 m); record at the highest resolution your phone
+offers; keep all four outer corners in frame (the 0.5x ultrawide is fine); then
+re-check framing and set the corners again, because a calibration describes one
+camera position only.
+
+An older match.json with no `setup` block still opens — it reads as UNKNOWN. To
+give it one, derived from the corners it already stores:
+  python tools/backfill_setup_state.py path/to/match.json
+
+## 6. Driving it with Claude Code
+
+1. claude from the repo root (it auto-reads CLAUDE.md).
+2. First time on a fresh machine, paste SETUP_PROMPT.md → get it installed,
+   tested, and running.
+3. **All the session briefs in [docs/archive/sessions/](docs/archive/sessions/) have now run** —
+   each is stamped at the top with what happened to it (SHIPPED / GATE FAILED /
+   STOPPING RULE FIRED). They are kept for their pre-registered gates, not as a
+   queue. **For what to work on next, read [docs/STATE.md](docs/STATE.md)** —
+   "Open, and what each is waiting on" is the live list.
+
+Keep these rules in front of the agent (they're in CLAUDE.md):
+- Models go in the perception layer only.
+- Never replace the geometry (homography, speed, line calls) or scoring with a
+  model — it adds error to exact answers.
+- match.json (schema.py) is the single source of truth for the data shape.
+- Court constants in backend/.../court.py and frontend/src/lib/court.js must stay in sync.
+- Before any model work, the agent must read ML_PRACTICES.md + ML_PLAYBOOK.md
+  (CLAUDE.md requires it) — measure honestly, never let a model grade itself.
+
+What's next, highest value first, lives in **docs/STATE.md** — not here and not in
+docs/archive/sessions/, both of which go stale. As of 2026-08-26 two things are closed
+and one is open. **The ball detector is closed** (Session L's stopping rule fired) and
+so is **court auto-detection** (closed again 2026-08-25 after five branches were
+measured and none survived). The open target is that the processing chain discards
+ball the detector already found: on the amateur test clip the detector clears the
+coverage bar needed for a trusted speed on 106 of 120 shots and only 69 survive.
+Three attempts at that have failed.
+
+## 7. Troubleshooting
+
+- "Python was not found... Microsoft Store" (Windows) → that is the Store stub, not
+  Python. Use `py` instead, or call `backend\.venv\Scripts\python.exe` directly.
+- python: command not found (macOS/Linux) → try python3; ensure Python 3.12+ on PATH.
+- No module named pytest → activate the venv, then pip install -r requirements.txt.
+- Dashboard blank / "failed to fetch" → regenerate sample_match.json (see §4).
+- npm run dev fails on install → delete frontend/node_modules and re-run npm install on Node 18+.
+- PowerShell won't activate venv → Set-ExecutionPolicy -Scope Process RemoteSigned, then retry.
+- Court lines don't match the video → recalibrate; check the camera didn't move and all baselines/alleys are visible.
+
+## 8. Project map
+
+CLAUDE.md         agent context + doc map (auto-loaded by Claude Code)
+docs/STATE.md     THE LIVING RECORD — what has and has not worked, and what is
+                  open. Read this for current state; everything else goes stale.
+README.md         architecture overview + quickstart
+SETUP_PROMPT.md   paste-in prompt to install + run (fresh machine)
+docs/archive/sessions/    session briefs — ALL RUN; kept for their pre-registered gates
+ML_PRACTICES.md   how to conduct ML work honestly (required before model work)
+ML_PLAYBOOK.md    how to diagnose/technique the ML (required before model work)
+docs/archive/HANDOFF.md        historical evidence log (paper trail, not current state)
+backend/          Python: video -> match.json  (+ tests)
+frontend/         React dashboard
+data/             your videos and analysis output

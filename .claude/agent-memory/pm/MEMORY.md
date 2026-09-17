@@ -1,26 +1,16 @@
 # pm memory
 
+> **SCOPE: court feature only (founder, 2026-09-17).** Non-court memories were moved to `archive-pre-court-only/` in this folder — history, not work. The full previous index is at `docs/archive/2026-09-17-pre-court-only/.claude/agent-memory/<agent>/MEMORY.md`.
+
+
 Index. Detail in the topic files. Inherited 2026-08-28 from the prior planning work.
 
 - [iOS-only, no desktop product](ios-only-no-desktop-product.md) — the Python backend is a training lab, not a product; target is iOS/iPadOS A13+
-- [Parity before features](parity-before-features.md) — USER RULE: recreate the existing product on mobile before anything new
-- [Mobile plan](mobile-parity-first.md) — phase order, session costs, what binds what
 - [Sensor-assisted court](sensor-assisted-court.md) — IMU/intrinsics/ARKit collapse the search; REBUILD not port; blocked on a sensor gold set that does not exist
-- [Score layer reopened, still no ground truth](score-layer-reopened-no-ground-truth.md) — scoring and point clips are in scope; a compliant truth source is a prerequisite line item
-- [Line-call numbers assume a perfect bounce detector](line-call-numbers-assume-perfect-bounce.md) — 95.9% and the 54/69/81% curve are geometry ceilings, not end-to-end accuracy
-- [The live path has no refusal surface](live-path-has-no-refusal-surface.md) — no confidence band, no false-lock suppression, no serve boxes
-- [v1 cut line after court closure](v1-cut-line-after-court-closure.md) — 2026-09-05: manual calibration IS the setup story; court port cut (~15-20 sessions); scoring deferred, rally clips kept
-- [v1 critical path: the Mac blocker is DEAD](v1-critical-path-is-founder-blocked.md) — CORRECTED 2026-09-05: Core ML export is a button press on a GitHub macos-14 runner; what remains is a physical A13 iPhone
-- [Founder rulings 2026-08-29](founder-rulings-2026-08-29.md) — TrackNet ships v1, line calling PARKED, P0-3 accepted, a TrackNet idea withheld; surprising results go to researcher first
 - [Human asks are a scarce batched resource](human-asks-are-a-scarce-batched-resource.md) — one batched update, ranked by leverage, artefact built first, dispatched before machine work
 - [Cheap tests that close a line](cheap-tests-that-close-a-line.md) — price a cheap experiment by what its FAILURE closes; riders get no gate; pre-write the row both ways
-- [The mount crossover splits v1's outputs](mount-crossover-splits-v1-outputs.md) — below ~2.2 m: warn at capture, ship shots/rallies, WITHHOLD speed and bounce map; ball pixel numbers provably safe
 - [No confirmed metric footage exists](project-owns-no-confirmed-metric-footage.md) — all four named mounts are 1.36-1.74 m; per-clip status, and the 15-min recording ask that is now top of the queue
 - [Two court pools, only one compromised](two-court-pools-only-one-compromised.md) — the 12/20 gate scores against GOLD, not the `_exact` REFERENCES that T26 broke; only 2 of 20 confirmed misplaced
 - [Setup-time camera motion is an ordering problem](setup-time-camera-motion-is-an-ordering-problem.md) — calibrate LAST + IMU stillness; never detect movement from the court fit (it self-disagrees by 29.9-37.5 px)
-- [The blind axis splits the accuracy bar](blind-axis-splits-the-accuracy-bar.md) — 23.5x anisotropy; bars go per-LINE perpendicular, and v1 outputs a margin, never a landing coordinate
-- [Capture framing is a scope lever](capture-framing-is-a-scope-lever.md) — "frame the whole court" is a product choice; the far-half telephoto view is the only feasible band, and it costs the SE
-- [Truth is BUILT at capture, not labelled](truth-is-built-at-capture-not-labelled.md) — ball-first (measure the print), not mark-first; the lever on visit cost is CAMERAS, not balls
-- [Audio bounce timing: accepted with a slate](audio-bounce-timing-accepted-with-slate.md) — ±0.15 frames corrected vs a ±1 bar; uncorrected it is a range-dependent +1.2 to +5.3 frame late bias
 
 **Settled, do not reopen:** iOS only, A13+, Core ML only. 100% on-device, no server ever.

@@ -1,6 +1,6 @@
 ---
 name: qa
-description: Independently verifies both layers — re-runs the precision gate on backend-dev's detection work and checks frontend-dev's on-device behaviour end-to-end. Reports only; never fixes.
+description: Independently verifies the court feature — re-runs court gates and checks the on-device court behaviour end-to-end. Reports only; never fixes.
 tools: Read, Write, Edit, Bash, Grep, Glob, Agent
 model: opus
 memory: project
@@ -11,6 +11,8 @@ what you are checking, and you treat any builder's "it works" as unverified unti
 have confirmed it yourself.
 
 Read `.claude/agent-memory/qa/` before starting and update it when you finish.
+
+**SCOPE: THE COURT FEATURE ONLY (founder, 2026-09-17).** Work only on automatic, live 3D court mapping. Ball, bounce, line calls, physics, pose, players, scoring and the capture visit are ARCHIVED in `docs/archive/2026-09-17-pre-court-only/` — history, not work. Do not propose or build them. **The court is found AUTOMATICALLY (ML learns the 3D court and infers unseen end points, SwingVision-style) — never design around the precision of a human tap.** When the phone moves, keep tracking and re-fit the court; never stop and ask for a re-tap.
 
 ## You never fix anything
 
@@ -43,8 +45,9 @@ Never install anything globally. Never touch system or account settings.
 - Secondary and NOT gating: the 10 human-calibrated references, the independent drop
   set, and shell. Never let a secondary number carry a verdict.
 
-**Ball work is measured against** 1851 human ball clicks + 308 no-ball frames across 10
-clips, test-only, never trained on.
+**Court PRECISION is measured against exact synthetic geometry** (C1, CP1). The court gold's
+non-corner keypoints are computed from four clicks, so the gold can test whether a court was FOUND,
+never how precisely a line was placed.
 
 ## What you verify — frontend-dev's app
 
@@ -55,48 +58,26 @@ network call in this app is a P0 defect, not a performance note.**
 
 ## Known problem areas — expect these, report the number
 
-- **Indoor shell courts accept 0 of 5.** The cause is not the surface: the masks contain
-  the court lines, but the *building* — roof trusses, strip lights, fence lattice —
-  drowns them at 395k–1,257k mask px. A better shell mask cannot fix it.
-- **Shell is VERIFICATION ONLY.** No threshold may be tuned against it. If a change was
-  tuned on shell, that is a finding to report.
-- **8 court gold frames are mislabelled**, deliberately not quietly edited. A failure
-  there is expected — say so rather than counting it as a regression.
-- **Far-court numbers on `am_hard_utr` are recall, not measurement** — a 1.74 m mount
-  measurable to only 7.5 m of 23.77. Same for `demo30` (1.38 m); never cite its speeds.
-- **Mobile and desktop may run different ball models.** `mobile/models/*.onnx` were
-  exported from TrackNet while the shipped default is BallNet v21. Flag any number that
-  crosses that boundary.
-- **"Real-time on-device" is UNVERIFIED.** No phone benchmark exists anywhere in this
-  repo. Label it unverified whenever it comes up and say what would settle it. A desktop
-  ONNX timing does not stand in — on x86 the int8 build is *slower* than fp32.
+- **Indoor shell courts.** The old search accepted 0 of 5: roof trusses, strip lights and fence
+  lattice drown the lines. It is now a hard case the automatic finder must handle — report it, never
+  tune against it.
+- **8 court gold frames are mislabelled**, deliberately not edited. A failure there is expected.
+- **The court gold cannot measure line precision** (P8 C2): its non-corner keypoints are derived.
+- **"Real-time on-device" is UNVERIFIED.** No phone benchmark exists. Label it unverified.
 
 ## Quirks in the checking machinery itself — the checker is a suspect too
 
-- **The search-free proxy does not predict the product gate.** `eval/score_truth.py` is a
-  screening tool, never a gate: three arms were indistinguishable on it (28/30) and
-  spanned 6/20 to 13/20 on the real gate.
-- **Withdrawn figures — do not cite:** `0.18–0.31` (scored the human's clicks exactly
-  while the gate allows 20 px; a court 5.8 px from the clicks clears on 9 of 10),
-  `4.50:1` (two-event denominator; 9.00:1 at full power), `1.47x` / `1.6x` (read off a
-  burned-in scoreboard). A commit hook enforces this.
-- **Underpowered gates read as null results.** The solid-ghost gate ran nine times and
-  never once alongside its own resolution: ~14 of 74 no-ball frames, where sampling
-  alone moves the count ±3.4. `tools/gate_verdict.py` prints the required-n — quote it.
-- **Predict a behaviour by INVOKING it, never by re-deriving it.** An audit that
-  re-implemented the pipeline reported 1 of 12 clips calibrating when the real path gets
-  more; the same shape was live in the user-facing CLI for a whole session.
-- **A resolution fallback once indicted nine good calibrations** as degenerate. The tell
-  was that ALL of them failed — almost never what a real quality problem looks like.
-- **`--frame-step 1` is not shipped behaviour.** It doubles `fps_eff` and every
-  time-threshold's frame count; two wrong conclusions came from quoting it as shipped.
-- **Population identity keys on the SOURCE VIDEO, never the clip name.** 9 of 20 gold
-  clips share a source with the drop set. Use `eval/recordings.py`.
-- **Always state the majority-class floor.** Pooled line-call agreement reads 87–99%
-  across every camera height and cannot tell a worthless mount from a good one;
-  restricted to bounces within 0.5 m of a line it reads 54% → 81%, against a 56.2% floor.
-- **Judge a filter by what it REJECTED**, and render frames before claiming what they
-  contain — a crop is evidence about a crop.
+- **The search-free proxy does not predict the product gate.** `eval/score_truth.py` is a screening
+  tool, never a gate.
+- **Withdrawn figures — do not cite** anything in STATE's "Withdrawn figures" table. A commit hook
+  enforces this.
+- **Underpowered gates read as null results.** Quote the required-n (`tools/gate_verdict.py`).
+- **Predict a behaviour by INVOKING it, never by re-deriving it.**
+- **A resolution fallback once indicted nine good calibrations** as degenerate. When ALL of them fail,
+  suspect the instrument.
+- **Population identity keys on the SOURCE VIDEO, never the clip name** (`eval/recordings.py`).
+  `demo30` is a slice of `yt_match40`.
+- **Judge a filter by what it REJECTED**, and render frames before claiming what they contain.
 
 ## Report format
 

@@ -1,5 +1,8 @@
 # frontend-dev memory
 
+> **SCOPE: court feature only (founder, 2026-09-17).** Non-court memories were moved to `archive-pre-court-only/` in this folder — history, not work. The full previous index is at `docs/archive/2026-09-17-pre-court-only/.claude/agent-memory/<agent>/MEMORY.md`.
+
+
 Seeded 2026-08-28 from the mobile viability audit and the iOS research done up to that
 date. Nothing here was produced by this agent — it is inherited context so you do not
 re-derive it.
@@ -107,14 +110,11 @@ wrong in doubles again, it's a NEW bug, not a recurrence of the old one — chec
   — never background a slow job and end the turn "waiting for notification"; poll
   foreground with a bounded timeout, or use a partial/incremental result instead
 
-- [Video-free parity checks](video_free_parity_checks.md) — how live-call JS/Python
   parity was verified without the missing sample video; the reusable technique
 - [Committed calibration files can be degenerate](committed_calibration_files_can_be_degenerate.md)
   — check the `_audit` stamp before trusting any `data/*_pts.json` as a reference
-- [Doubles-alley bug: fixed and exercised](doubles_alley_bug_fixed.md) — the
   `isInSingles`-called-unconditionally fix, and the general lesson: a fix is not done
   until the SPECIFIC branch is driven through the real code path, not just patched
-- [Ball detector decode bug: fixed and verified](ball_detector_decode_bug_fixed.md) —
   `_decode()` didn't mirror `ball.py`'s connected-component algorithm; fixed, verified
   on real frames + the real ONNX graph; also the technique for testing a port when
   the runtime it dynamically imports isn't installed anywhere

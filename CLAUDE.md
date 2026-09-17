@@ -2,185 +2,138 @@
 
 Orientation for Claude Code. Read this file; read the others **only when the doc map sends you there.**
 
-## What this is
+## SCOPE: THE COURT FEATURE ONLY (founder, 2026-09-17)
 
-A single-camera **tennis** analyzer for iPhone. **v1 is an ENGINE, not a feature list** — a metric
-3D reconstruction of court and ball. In/out, landing position and speed are its *outputs*, and fall
-out of it rather than being built separately.
+**This repo is working on ONE feature: automatic, live 3D court mapping.** Everything else — ball
+detection and tracking, bounce detection, line calls, trajectory physics, speed, spin, pose, players,
+occlusion, scoring, highlights, the capture-visit protocol — is **ARCHIVED** in
+`docs/archive/2026-09-17-pre-court-only/`. It is history, not instructions. **Do not work on it, do
+not propose it, and do not read the archive for tasks.** Only the founder reopens anything there.
+`docs/evidence/` keeps every past result as a read-only record; only court files there are live.
 
-**The three v1 capabilities** (founder brief 2026-09-11):
+## What the court feature is
 
-1. **3D spatial court mapping** — map the full court, *including lines the camera cannot see*, from
-   visible markers plus the universal regulation dimensions. Known geometry substitutes for sight.
-2. **3D trajectory & physics tracking** — the ball's continuous 3D arc from velocity, spin, launch
-   angle and gravity, so the track survives loss of line-of-sight instead of breaking at it.
-3. **Bounce point triangulation** — find the frame where the downward arc reverses, and intersect it
-   with the ground plane to place a landing the camera never directly observed.
+An iPhone app (A13+, 100% on-device, Core ML / Neural Engine) that, from one fixed camera:
 
-**Target: the call is INSTANT** — budget **one frame at 60 fps = 16.7 ms** end-to-end, emitted on the
-bounce frame (`docs/SPEC.md` §8). Capture floor **60 fps and 1080p, both hard**: below 60 fps, refuse
-to attempt bounce detection. Fence-mount or tripod only. **iPhone only, A13+, Neural Engine —
-hardware acceleration is a v1 tool, not a v2 upgrade.** 100% on-device forever; a proposed network
-dependency is a scope violation, not an optimisation. `schema.py` is the only backend/frontend contract.
+1. **Finds the court AUTOMATICALLY.** Machine learning learns the court's 3D layout, locates the near
+   and far lines itself, and **infers end points that are out of view** from the regulation
+   dimensions — SwingVision-style. **Never design around the precision of a human tap.**
+2. **Places every line precisely**, doubles alley included, as a 3D court with a solved camera.
+3. **Keeps tracking the court live.** When the phone moves, the court is still there, just shaped
+   differently in the image: track and re-fit it. **Never stop and ask the user to re-tap.**
 
-**`docs/SPEC.md` is the LOCKED v1 target spec.** Every bar in it is pre-registered under rule 2 and
-does not move to fit a result. The headline: **10 cm landing accuracy on ≥90% of near-line contested
-calls**, bounce timing within **±1 frame 90% of the time**, and an **abstention** path — refusing a
-call when 1σ uncertainty exceeds 10 cm is correct behaviour, not failure.
-
-**The founding premise, unmeasured:** these work from one camera *regardless of mount height*. Every
-height-dependent number here was measured on the 2D ground-projection estimator — the very method a
-physics-anchored 3D fit replaces — so those numbers do not transfer. Monocular 3D is unevaluated.
+Rulings are verbatim in `docs/DECISIONS_PENDING.md` and `docs/SPEC.md`.
 
 ## The one principle: learn what you can't compute, compute what you can
 
-Every stage is one of three kinds. The boundary IS the architecture.
+- **Perception (ML)** — finding the court and its lines in the image.
+- **Geometry (math)** — camera solve, homography, lens model, inferring unseen lines from dimensions.
+- **Logic (rules)** — tracking bookkeeping, when to re-fit.
 
-- **Perception (ML)** — court keypoints, ball detection
-- **Geometry (math)** — homography, 6-DOF camera, ballistic fits, ground-plane intersection, line calls
-- **Logic (rules)** — deterministic bookkeeping
+Do NOT "ML-ify" geometry. Regulation dimensions are exact; use them as constraints, never learn them.
 
-Do NOT "ML-ify" geometry or logic. It adds error to exact answers.
+## Where the court work stands — read `docs/STATE.md` for the numbers
 
-## Scope — decided 2026-09-11, do not silently widen
-
-| | What |
-| --- | --- |
-| **IN v1** | live 3D court mapping + drift recalibration · ball detection/tracking · drag+Magnus trajectory · bounce by vertical-velocity sign reversal · in/out incl. **doubles alley (required)** · abstention when 1σ > 10 cm |
-| **DEFERRED to v2** — built or specced, out of scope | **ALL pose** (`pose.py`, the 187 MB YOLO weights, Apple Vision — SPEC §9 tossed) · **occlusion prediction and proxy spin** (SPEC §6 tossed) · `events.classify_shot` · shot **speed** as a shown number · spin RPM · stereo depth · handheld · let/net-cord · multi-ball |
-| **CUT** — do not rebuild | match scoring, sets/games (`scoring.py`) · highlights + rally clips (`highlights.py`) · manual corrections (`corrections.py`) · the ONNX / React-Native port (`mobile/`) — wrong runtime |
-
-**Deferred is not dead** — do not delete it, do not build on it. **v1 uses NO pose of any kind.**
-`SPEC.md` §6 and §9 are struck through rather than deleted: their bars were reasoned, and the ±15%
-fence in §9 is what stops body language becoming evidence. Restore them verbatim if they return.
-
-**What v1 outputs, end to end:** where the ball bounced, whether it was in or out, and a REFUSAL when
-it cannot tell. Nothing else. With §6 gone every occluded bounce is a refusal, so SPEC's ≤5% refusal
-target is provisional — the honest rate may be far higher, and that is a finding, not a failure.
+- **C1 (measured):** a court pinned from four corner points misplaces the far lines by metres unless
+  those corners are right to ~0.1 px at 1080p/3 m — **whoever or whatever finds them, an ML
+  model included.** So the court must be fitted to the WHOLE painted lines, not to four points.
+- **Routes (researcher):** a whole-court fit to sub-pixel line measurements can plausibly reach that;
+  what survives averaging is BIAS (surface flatness x10, paint-edge convention, ultra-wide
+  distortion, thermal lens drift, video compression, net tape near the far baseline).
+- **CP1 (in progress):** that fit tested on rendered courts with exact truth.
+- **Automatic finding:** the 2026-09-09 open item — a court model trained on AMATEUR low-mount
+  footage — is now the founder's chosen direction. Synthetic training data from a renderer is a
+  candidate lever. Each branch in `docs/court/CLOSED.md` stays dead individually.
+- **Live tracking exists only offline:** `pipeline.analyze_video` snaps the court onto the paint per
+  frame (`calibration.court_lock_step`) with a watchdog (`courtfit.CourtWatchdog`); its precision is
+  unmeasured and its big-change recovery calls the closed search. `live.py` does not track at all.
+- **No court code runs on a phone yet.** The iOS latency harness compiled green; sideloading is
+  blocked (Sideloadly -22410) — **do not reopen that without the founder.**
 
 ## Hard rules
 
-1. **Never let a model grade its own homework.** Score only against independent human/gold labels.
-   State in one sentence what every number was measured against.
+1. **Never let a model grade its own homework.** Score only against independent truth. State in one
+   sentence what every number was measured against.
 2. **Pre-register the gate before running the experiment.** A failed gate stays failed.
-3. **Check the CLOSED record before proposing anything.** Nine distinct ideas have been re-proposed
-   at least once. See the doc map.
-4. **Ball/court gold is TEST-only, one-way, enforced.** `assert_no_gold_leak`,
-   `assert_no_court_gold_leak`, `assert_no_swingvision_leak`. Check each new model for its guard.
-5. **Score ball work at the CHAIN, not the detector.** Four detector gains each cut detector error
-   substantially and delivered nothing to the rendered output.
-6. **Ball-DETECTOR work is closed** by the Session L stopping rule. Chain work is open.
-7. **A single camera does not OBSERVE depth — it IMPOSES it.** 3D is recovered only by assuming a
-   ballistic arc with known `g` and anchoring on the ground plane or known court dimensions. Every 3D
-   number must name what pinned it. A reprojection residual does not certify an arc (a 23.8x span
-   error passes), and a single amateur-mount arc's apparent-`g` fit is worth only ±15-25%.
-8. **One variable per A/B, seeded.** `--seed` on both arms; `recipe_stamp` on every checkpoint.
-9. **A refactor must prove it changed nothing.** Re-run and diff, or pin with a test.
-10. **Never quietly edit human ground truth.** Mislabels get recorded, not fixed.
-11. **Always inspect the rejects**, not what a filter kept.
-12. **Truth comes from the GAME, not the VIDEO.** Court, ball, physics — never a scoreboard, HUD or
-    burned-in graphic. That is somebody's data entry *about* the game: barred as training target,
-    ground-truth reference AND tuning signal. A diligently-kept WRONG board is self-consistent, and
-    nothing leaning on an overlay generalises to a phone clip. Compliant: human clicks,
-    `tools/synth_truth.py`, geometry we derive. The one live exception, `tools/hud_ocr.py`, is
-    **capped and being retired** — add no new ones.
+3. **Check `docs/court/CLOSED.md` before proposing anything.** Ideas get re-proposed here.
+4. **Court gold is TEST-only, one-way, enforced** (`backend/train_courtnet.py::assert_no_court_gold_leak`). Check each model.
+   **Its non-corner keypoints are COMPUTED from four clicks** — never a test of line placement.
+5. **A single camera does not OBSERVE depth — it IMPOSES it.** Every 3D number names what pinned it.
+   A reprojection residual certifies nothing.
+6. **One variable per A/B, seeded.** `--seed` on both arms; `recipe_stamp` on every checkpoint.
+7. **A refactor must prove it changed nothing.** Re-run and diff, or pin with a test.
+8. **Never quietly edit ground truth.** Mislabels get recorded, not fixed.
+9. **Always inspect the rejects**, not what a filter kept.
+10. **Truth comes from the GAME, not the VIDEO.** Never a scoreboard, HUD or burned-in graphic as
+    training target, truth or tuning signal.
+11. **iOS only, A13+, on-device forever.** A network dependency is a scope violation.
 
 ## Known blockers
 
-- **Monocular 3D has never been measured.** The bar exists (10 cm, `SPEC.md` §3) and
-  `tools/synth_truth.py` is the rig. **Do this first** — nothing downstream is safe without it.
-- **The 10 cm gold set CANNOT be labelled from video** (pm, 2026-09-11). A human clicking a monocular
-  low mount cannot resolve a landing to 10 cm. Truth at 10 cm is built AT CAPTURE — tape-measured
-  marks, positions on paper. That is a court visit with lead time, not a labelling session.
-- **No number has ever come from a phone.** The Core ML export ran green on Linux and the iOS latency
-  harness compiled green, both 2026-09-10; the `.ipa` and `.mlpackage` exist as CI artifacts. The last
-  mile is sideloading, blocked on Apple ID login on Windows (Sideloadly -22410). **Do not re-open that
-  line without the founder.**
-- **INSTANT is unmeasured, and the "60x away" figure is MISLEADING** (corrected 2026-09-11): 0.7-1.1
-  s/frame measures the full offline pipeline INCLUDING the pose model v1 tossed. v1's per-frame path
-  is a ~2 MB conv net plus arithmetic. Cost it on paper for an A13 ANE — that needs no phone.
-- **Court tracking must CONTINUE when the phone moves** (founder 2026-09-17): re-fit from the known
-  court, never refuse. The indoor-shell blocker is VOID for v1 (founder 2026-09-17, `SPEC.md` §10).
-- **`run.py live` is broken out of the box** — its default `weights/tracknet.pt` was deleted in the
-  2026-09-11 cleanup (with `court_detector.pt`, `wasb_*`). All upstream, all re-downloadable.
-- **The court is found AUTOMATICALLY — ML learns the 3D court, finds near and far lines, infers
-  unseen end points (founder 2026-09-17, overrides "manual setup is the answer").** Never design
-  around finger taps. The old search branches in `docs/court/CLOSED.md` stay dead individually.
+- **No metric real-court truth.** The founder cannot do a court visit yet. Court work runs on
+  synthetic truth; look for real-footage checks that need no one on site.
+- **No footage meets the capture floor** (`docs/evidence/capture-floor-census.md`): mount fixity
+  binds. The best clip is `sAjkpeRq4P4` (Clay, 1080p, 3.33 m, 59.94 fps).
+- **The field of view is an INPUT to the 3D camera** (`bridge.camera_from_court_corners`, default
+  70°); a 5° error costs ~40 cm. iOS gives calibration data only with distortion correction OFF.
+- **`run.py live` is broken out of the box** — its default weights were deleted 2026-09-11.
 
 ## Commands
 
 ```bash
-# Backend (Python 3.12). Windows: backend\.venv\Scripts\python.exe (CPU), .venv-train (CUDA).
-python run.py demo --out ../frontend/src/data/sample_match.json   # synthetic, no weights
-python run.py check <video> --keypoints pts.json                  # pre-flight: grade the mount
-python run.py analyze <video> --keypoints pts.json --out out.json # full pipeline
-python run.py live <video> --keypoints pts.json                   # streaming calls — v1's seed
-python -m pytest tests/ && cd ../frontend && npm install && npm run dev
+# Python 3.12. Windows: backend\.venv\Scripts\python.exe (CPU), .venv-train (CUDA). `python` is a broken shim.
+python tools/court_setup_server.py --video clip.mp4            # court overlay setup tool
+python run.py check <video> --keypoints pts.json               # grade a mount / calibration
+python ../tools/court_map_ceiling.py --n 400 --seed 0          # C1 (from backend/)
+python -m pytest tests/                                        # from backend/
 ```
-
-`run.py correct` and `run.py highlights` still exist and are **out of scope** — pending removal.
-`tools/court_setup_server.py` is the manual calibration tool and is load-bearing. `tools/lab_server.py`
-is the label/train workbench — deleting it leaves the product intact.
 
 ## Conventions
 
-- `schema.py` is the single source of truth for `match.json`. Don't fork the format.
-- Court constants: `backend/swingvision/court.py` -> `frontend/src/lib/court.js`; call-accuracy table
-  -> `calls.js`. Both enforced by `tests/test_js_mirror_parity.py`.
-- One module per pipeline stage; independently testable. Add a test for any new geometry or logic.
-- Metres for all real-world measurement; km/h for speeds.
-- Every pixel threshold scales by `frame_height/720` — except `static_radius_px` (measured).
-- No new dependencies for what stdlib/numpy/scipy already do.
+- Court constants: `backend/swingvision/court.py` -> `frontend/src/lib/court.js`, enforced by
+  `tests/test_js_mirror_parity.py`. `schema.py` is the only data contract.
+- One module per stage; independently testable. Add a test for any new geometry.
+- Metres for real-world measurement. Every pixel threshold scales by `frame_height/720`.
+- No new dependencies for what stdlib/numpy/scipy/opencv already do.
 
 ## Doc map — read the ONE that matches your task
 
 | Task | Read |
 | --- | --- |
-| What v1 must hit, and what is deferred | **`docs/SPEC.md`** — the locked bars |
-| About to propose a change | `docs/STATE.md` — the verdict tables, **first** |
-| About to propose something that may already be dead | that pillar's `docs/<court\|ball\|measure\|data\|platform>/CLOSED.md` |
-| A row looks wrong, or you need the mechanism | that row's file in `docs/evidence/` — one, not all |
-| Any model work (create/train/tune/evaluate) | `ML_PRACTICES.md` — **required** |
-| Diagnosing a model weakness | `ML_PLAYBOOK.md` §for that area |
+| What the court feature must do | **`docs/SPEC.md`** |
+| About to propose a change | `docs/STATE.md`, **first** |
+| About to propose something that may already be dead | `docs/court/CLOSED.md` |
+| The court measurements so far | `docs/evidence/court-map-ceiling.md`, `court-precision-routes.md`, `court-fit-cp1.md`, `court-map-gold.md`, `capture-floor-census.md` |
+| Any model work | `ML_PRACTICES.md` (**required**), `ML_PLAYBOOK.md` |
 | About to repeat a process mistake | `docs/TRAPS.md` |
-| Running the tool, or going to a court to capture | `README.md` / `USER_GUIDE.md` / **`docs/CAPTURE_PROTOCOL.md`** |
-| Working ON a subsystem | `docs/modules.md` |
-| Why is it like this | `docs/session_log.md`, `docs/archive/` — cold storage, not routine |
+| Working on court code | `docs/modules.md`, `docs/calibration.md` |
+| What is waiting on the founder | `docs/DECISIONS_PENDING.md` |
 
-**`docs/STATE.md` is the only live record of state.** If another doc disagrees, that doc is wrong.
-A STATE entry is **one line**: what changed, the number, the evidence path.
+**`docs/STATE.md` is the only live record of state.** A STATE entry is **one line**.
 
 ## Which doc moves with which change
 
 | You changed | Update | Enforced by |
 | --- | --- | --- |
-| Any code | **`docs/STATE.md`** — the number it moved, or the negative and why | `.claude/hooks/state-guard.sh` (`[no-state]` opts out) |
-| `run.py`'s argument parser | `README.md` / `USER_GUIDE.md` / `SETUP_PROMPT.md` | `.claude/hooks/docs-guard.sh` (`[no-docs]` opts out) |
-| `court.py` constants or the call table | the JS mirrors | `test_js_mirror_parity.py` |
-| A process mistake hit **twice** | `docs/TRAPS.md` — append a new ID, never renumber | judgement |
+| Any code | **`docs/STATE.md`** | `.claude/hooks/state-guard.sh` (`[no-state]` opts out) |
+| `run.py`'s argument parser | `README.md` or this file | `.claude/hooks/docs-guard.sh` |
+| `court.py` constants | the JS mirror | `test_js_mirror_parity.py` |
+| A process mistake hit **twice** | `docs/TRAPS.md` | judgement |
 | This file | keep it under **150 non-blank lines** | `.claude/hooks/claude-md-cap.sh` |
 
-## The team — `tennis-team`
+## The team — `tennis-team`, court work only
 
-Five teammates in `.claude/agents/`, memory in `.claude/agent-memory/<name>/`. **Announce a teammate
-by name before invoking it** and label its output — never present its work as your own.
-
-| Teammate | Owns | Writes code |
+| Teammate | Owns (court only) | Writes code |
 | --- | --- | --- |
-| **pm** | Scope, sequencing, the cut line, accuracy floors | no |
-| **researcher** | ML/CV for court and ball; on-device iOS inference | no |
-| **backend-dev** | On-device logic: inference pipeline, 3D geometry, porting `backend/swingvision/` | yes |
-| **frontend-dev** | The iPhone app: UI, camera capture, calling the pipeline, rendering results | yes |
-| **qa** | Independent verification. Runs gates, reports numbers, **never fixes** | no |
+| **pm** | Court scope, sequencing, accuracy floors | no |
+| **researcher** | ML/CV for automatic court finding, line precision, lens, tracking | no |
+| **backend-dev** | Court detection, fitting, tracking; the renderer; porting to iOS | yes |
+| **frontend-dev** | The iPhone court setup and overlay screens, camera capture | yes |
+| **qa** | Independent verification of court gates. **Never fixes** | no |
 
-**THREE LIVE AGENTS PROJECT-WIDE** — `.claude/hooks/agent-cap.sh` counts the whole tree, so a teammate
-calling a teammate spends the same quota. **A refusal is PARKED, not lost.** The lead holds **one**
-direct child at a time, one task per brief. A surprising RESULT goes to `researcher` first, then `pm`.
+**Announce a teammate by name** and label its output. **THREE LIVE AGENTS PROJECT-WIDE**
+(`.claude/hooks/agent-cap.sh`); the lead holds **one** direct child at a time. A refusal is PARKED.
+A surprising RESULT goes to `researcher`, then `pm`. **Batch founder asks into ONE update.**
 
-**A task needs a human when** only an eye can invalidate it, or it fires a stopping rule, is
-irreversible, is a product decision, needs absent hardware, or would edit ground truth (rule 10).
-**Batch paused tasks into ONE update.**
-
-**`.claude/journals/` — one per agent plus `lead.md`, written DURING work, not after.** Read yours
-FIRST on restart. **A KILL IS NOT A PAUSE — resume without asking.** Only the founder pauses, via
-`lead.md`'s `RUN-STATE:`; they alone clear it, and a stale PAUSED line stops the next session too.
+**`.claude/journals/` — one per agent plus `lead.md`, written DURING work.** Read yours FIRST on
+restart. **A KILL IS NOT A PAUSE.** Only the founder pauses, via `lead.md`'s `RUN-STATE:`.

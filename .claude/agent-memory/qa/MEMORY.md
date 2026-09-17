@@ -1,5 +1,8 @@
 # qa memory
 
+> **SCOPE: court feature only (founder, 2026-09-17).** Non-court memories were moved to `archive-pre-court-only/` in this folder — history, not work. The full previous index is at `docs/archive/2026-09-17-pre-court-only/.claude/agent-memory/<agent>/MEMORY.md`.
+
+
 Inherited 2026-08-28. The gate definitions, known-hard areas and checker quirks are in
 this agent's system prompt — read it first; it is the authoritative copy.
 
@@ -17,7 +20,6 @@ this agent's system prompt — read it first; it is the authoritative copy.
   Actions macOS runner; untested end-to-end as of 2026-08-28.
 
 - **Line-call margin curve measured, 2026-08-28** (pm queue item 5).
-  [line_call_margin_curve.md](line_call_margin_curve.md) — real amateur mounts are at/
   below the majority floor under 10 cm from a line, clear it from ~20 cm; recommended
   band 0.20 m, refuses 39% of close (0.5 m) calls. Not built, measurement only.
 
@@ -44,19 +46,16 @@ this agent's system prompt — read it first; it is the authoritative copy.
   intervene.
 
 - **int8 ball-graph parity headline verified 2026-09-03, close-race mechanism corrected.**
-  [int8_parity_verified_but_close_race_threshold_is_post_hoc.md](int8_parity_verified_but_close_race_threshold_is_post_hoc.md)
   — 5/528, 3/6 clips CONFIRMED exactly; Arm B/C mitigation rejections CONFIRMED from
   hashes+op counts+blob dumps; but the "close race" 0.15px threshold was picked after
   seeing the 5 failures — "all 5 are close races" is NOT threshold-robust (2/5 at 0.05),
   while "0 close races in the 2 clean clips" IS robust across 0.05-0.30.
 
 - **seen_frac gate evidence verified 2026-09-03, positive control partially passes.**
-  [seen-frac-gate-positive-control.md](seen-frac-gate-positive-control.md) — headline
   (gate doesn't predict error, INDETERMINATE, accept-precision≈base-rate) CONFIRMED via
   independent rebuild; positive control shows the harness responds to an injected true
   correlation on all 3 clips but weakly/saturates on 2 of 3 camera geometries; band-ratio
   DIGITS diverge from backend-dev's (one clip flips sign) — see
-  [synth-truth-harness-reproducibility.md](synth-truth-harness-reproducibility.md) for
   the general lesson (classifier-shape numbers reproduce, fine per-clip ratios don't).
 
 - **Ground-plane-blindness claim tested via synthetic corruption, 2026-09-05.**
@@ -128,7 +127,6 @@ this agent's system prompt — read it first; it is the authoritative copy.
   Bar has an all-singleton specification gap; flagged, not patched.
 
 - **Innovation-gate diagnostic §5 (K3 + K1) independently verified 2026-09-10.**
-  [gate-noise-diag-k1-k3-verified.md](gate-noise-diag-k1-k3-verified.md) — both verdicts
   CONFIRMED (K3 discarded 914/492/48 and +6.557/+5.142/+3.534 pts, higher than the reported
   902/479/47 and +6.492/+4.926/+3.450; K1 pooled median 0.11272 on n=291, 12.30x below
   chi2_2, sign-test p=1.9e-29). TWO DEFECTS: a post-hoc run-reconstruction undercount, and
@@ -137,7 +135,6 @@ this agent's system prompt — read it first; it is the authoritative copy.
   baseline" claim is false and every span-derived number on that clip is in question.
 
 - **P2 occlusion census sheet built 2026-09-16, UNLABELLED.**
-  [occlusion-census-sheet-lessons.md](occlusion-census-sheet-lessons.md) — demo30 is a slice of
   yt_match40; demo30.perception.json is not demo30's; yt_match40 HUD shows SwingVision bounce dots
   (mask it); audio A/V membership is chance-level -> negative-space audit, not capture-recapture.
 
