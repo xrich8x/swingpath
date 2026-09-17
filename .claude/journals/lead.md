@@ -749,6 +749,15 @@ And: "Do not just give up and pivot from my clear instruction in regards to what
 
 ## LOG — newest first
 
+- **2026-09-17** — **FOUNDER RULING (repeated, and the lead had not absorbed it): the court is found
+  AUTOMATICALLY by ML, SwingVision-style, inferring unseen end points. NEVER frame court work around
+  finger/tap precision again.** Applied to CLAUDE.md, SPEC §1, STATE, court/CLOSED.md. CP1 stays valid:
+  its "seed" is re-labelled as an automatic detector's rough first guess (backend-dev told mid-run,
+  no variable changed). **Queued next (one child at a time): researcher on the AUTOMATIC court route**
+  — amateur-footage court model (the 2026-09-09 named remedy), SYNTHETIC training data from the CP1
+  renderer (unlimited exactly-labelled courts), inferring off-frame end points, SwingVision's learned
+  approach, and a rule-3 check against every closed auto-detection branch.
+
 - **2026-09-17** — **Founder answers:** (1) `2e49f38` gold edits were theirs — stand; (2) far-end tape
   strips OK in principle but no in-person session; (3) **court visit not possible yet — no metric real
   truth for now**; (4) **P4(ii) RULED: live court tracking continues, re-fit never refuse** (SPEC §1 +

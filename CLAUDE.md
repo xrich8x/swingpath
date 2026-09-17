@@ -103,8 +103,9 @@ target is provisional — the honest rate may be far higher, and that is a findi
   court, never refuse. The indoor-shell blocker is VOID for v1 (founder 2026-09-17, `SPEC.md` §10).
 - **`run.py live` is broken out of the box** — its default `weights/tracknet.pt` was deleted in the
   2026-09-11 cleanup (with `court_detector.pt`, `wasb_*`). All upstream, all re-downloadable.
-- **Court auto-detection is closed for v1.** Manual four-corner setup is the product answer, not a
-  fallback. Capability 1 above is the route back in, and it is a different mechanism.
+- **The court is found AUTOMATICALLY — ML learns the 3D court, finds near and far lines, infers
+  unseen end points (founder 2026-09-17, overrides "manual setup is the answer").** Never design
+  around finger taps. The old search branches in `docs/court/CLOSED.md` stay dead individually.
 
 ## Commands
 

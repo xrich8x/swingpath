@@ -19,6 +19,8 @@ here is not moved to fit a result.
 
 ## 1. Live 3D court mapping
 
+**FOUNDER RULING 2026-09-17 — the court is found AUTOMATICALLY.** Verbatim: "dont use finger level accuracy - I keep saying that it must be the machine learning the 3d space and determining the far and close lines and assuming where the end points are if they are not visible similar to swing vision". Court setup must not depend on the precision of a human tap. The system learns the court's 3D layout, locates the near and far lines itself, and infers end points that are out of view from the regulation dimensions.
+
 **FOUNDER RULING 2026-09-17 — court tracking CONTINUES; the app does not stop.** Verbatim: "must
 continue, its essentially live court tracking so the app should know that the court is still there
 but just shaped differently because the phone moved". When the phone moves, v1 keeps tracking the

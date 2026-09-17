@@ -1419,3 +1419,11 @@ widths and surface height at the far baseline on the day. This is an amendment t
 5. **Indoor shell: "yes".** P4(iii) is RULED: the §10 blocker is void for v1. Applied to SPEC §10 and
    CLAUDE.md.
 
+---
+
+## 2026-09-17 — FOUNDER RULING: automatic court detection (ML), not taps.
+
+Verbatim: "dont use finger level accuracy - I keep saying that it must be the machine learning the 3d space and determining the far and close lines and assuming where the end points are if they are not visible similar to swing vision".
+
+Applied to CLAUDE.md, SPEC §1, STATE and `docs/court/CLOSED.md` (annotated, not deleted). This settles the 2026-09-09 open item "a CourtNet trained on AMATEUR low-mount footage, on a leak-clean split — founder call": the founder has made that call in favour of an automatic, learned court. Carried forward from C1, and it applies to ML exactly as to taps: any method that pins the court from four corner points needs ~0.1 px corners for the far lines, so the automatic system must fit the WHOLE painted lines (what CP1 tests).
+
