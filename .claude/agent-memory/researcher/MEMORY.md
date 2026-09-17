@@ -13,6 +13,7 @@ rows, each measured here under a pre-registered gate. Nine were re-proposed at l
 - [Monocular 3D geometry](monocular-3d-geometry.md) — the one equation (down-court vs lateral error = D/h), depth-from-ball-size dead on paper, what P1 closed, and this rig's answer-key trap (2026-09-15)
 - [Amateur court literature](amateur-court-literature.md) — the 6 published court/field-registration methods ranked against OUR regime, each with its rule-3 verdict, plus the unreachable-source list (2026-09-09)
 - [External research reconciled](external-research-reconciliation.md) — HF/GitHub claims verified first-hand 2026-09-09; upstream's 0.963 is in-distribution broadcast, the 15th keypoint is upstream's own, CourtSide cannot calibrate, Gholamreza = upstream's own training set
+- [Court precision, sub-pixel](court-precision-sub-pixel.md) — far BL = 0.14 px line; bias not noise binds; closed line-fit rows can't see sub-px; CP1 test; iOS GDC/intrinsics facts (2026-09-17)
 - [SwingVision public method](swingvision-public-method.md) — mount ladder gates line calls by height; 97% self-reported; 2 phones >99%; no public hidden-bounce method; fetch tips (2026-09-16)
 - [Project method rules](project-method-rules.md) — gold discipline, threshold scaling, the screening proxy that does not predict the gate
 - [Open questions](open-questions.md) — what is genuinely unresolved

@@ -749,6 +749,17 @@ And: "Do not just give up and pivot from my clear instruction in regards to what
 
 ## LOG — newest first
 
+- **2026-09-17** — **researcher's court-precision routes landed** (`docs/evidence/court-precision-routes.md`),
+  after a resume. Answer to Q2: a whole-court fit to sub-pixel-measured paint can plausibly reach the
+  far-baseline precision C1 demands (target ~0.14 px of line position, not C1's per-tap 0.07-0.11);
+  a visible line decides its own call; what survives is BIAS (surface flatness x10, paint-edge
+  convention, ultra-wide distortion, thermal principal-point drift, codec erasure, net tape 4 px
+  away at a 2.5 m mount). Closed rows do not speak to sub-pixel precision (rule 3). Lead verified the
+  arithmetic and Apple's calibration-data condition (GDC off). **Pre-run CP1 fixes: 400 trials every
+  arm (200 only if >60 min, decided pre-run); staged build, P + A3 first.** Two court founder items
+  batched in DECISIONS_PENDING (drift tolerance; far-end tape strips). **Dispatching backend-dev on
+  CP1 stage 1.**
+
 - **2026-09-17** — RESUMED by founder ("Continue - remember only court related things"). Scope
   restricted to COURT work; ball items parked. researcher dispatched on the court-precision mechanism.
 

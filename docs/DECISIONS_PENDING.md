@@ -1383,3 +1383,21 @@ They stay on file as analysis only. SPEC §6 (calling through occlusion) returns
 restoration waits on researcher's SwingVision report, because §6's contact detector relies on pose,
 which §9 still excludes — that one question will come back to the founder with the research.
 
+---
+
+## 2026-09-17 — Two court items from researcher's court-precision routes
+
+**1. SPEC §1's drift trigger is far too loose for the court v1 needs.** Researcher: "SPEC §1's
+15 px drift trigger is ~5 m at the far baseline at 1080p/3 m; a sub-5 cm court needs a per-line
+re-fit tolerance of ~0.1 px on far lines" (lead-checked: 15 px x ~0.37 m/px ~ 5.5 m). Researcher
+also found the phone's motion sensor cannot see drift that small (~0.01° of tilt) and recommends
+BOTH an IMU bump trigger and a periodic image re-fit of the court. This bears on your pending P4(ii)
+ruling (refuse-and-re-tap vs recover) and would change §1's number. Needed: a ruling, after CP1
+reports on whether the re-fit reaches that precision.
+
+**2. The court visit should add long tape strips at the far end.** A 10 cm fiducial square 30 m
+away is only ~0.27 px tall on screen, too small to check the far baseline. Researcher proposes long
+strips laid down-court near the far baseline, plus measuring the court's real dimensions, paint
+widths and surface height at the far baseline on the day. This is an amendment to
+`docs/CAPTURE_PROTOCOL.md` (pm owns it). Needed: your OK before pm changes the protocol.
+
