@@ -235,6 +235,17 @@ C3 is the founder's visit. **Order: P2 finishes first**, per the founder.
 
 ## LOG — newest first (court only; older entries are in the archived journal)
 
+- **2026-09-17** — **Court-only GitHub repo `swingpath-court`: BUILT LOCALLY, NOT YET ON GITHUB.** Founder
+  asked for "a clone of the feature in github that we can push to only for this feature, call it
+  swingpath - court" (GitHub forbids spaces, so `swingpath-court`, private like `swingpath`). One commit
+  `0a40e67`, 334 files, at the session scratchpad `.../scratchpad/swingpath-court` — **the scratchpad is
+  session-scoped; if it is gone, rebuild with `.../scratchpad/build_court_repo.py`** (then delete the six
+  ball tests and two ball evidence files as that commit did). Court camera helpers lifted verbatim into
+  `tools/court_camera.py`; C1 reproduces BYTE-IDENTICALLY there. Suite 315 pass / 10 skip / 5 fail (the 5
+  need local footage). **Blocked on creating the empty GitHub repo:** `gh` is not installed, the GitHub
+  connector needs sign-in, and Claude in Chrome is not connected. Project settings deny writes outside
+  this folder, so no sibling working folder was made. CP1 resumed after a usage-limit kill.
+
 - **2026-09-17** — **Scope cut to the court feature** at the founder's instruction. Non-court
   instructions archived from CLAUDE.md, SPEC, STATE, DECISIONS_PENDING, this journal, the five agent
   definitions, four agent journals, the agent memory indexes, the ball/measure/data/platform CLOSED
