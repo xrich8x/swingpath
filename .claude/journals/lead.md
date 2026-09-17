@@ -109,10 +109,33 @@ Then, before doing anything else, read in this order:
 
 ## NOW — what is running
 
-RUN-STATE: PAUSED-BY-FOUNDER — 2026-09-16 23:13 — "I mean I cant have anything running im turning the PC off - can save all the tasks needed to be doen so we can retstart tom" — still running: NOTHING (H1 agent stopped by the lead, stale lock cleared, no python processes).
+RUN-STATE: RUNNING — cleared 2026-09-17 by the founder ("Continue - remember only court related things"). **SCOPE FOR THIS RUN: COURT ONLY** (see the ruling below). The pause line that stood here: PAUSED-BY-FOUNDER 2026-09-16 23:13, nothing left running.
 
 **ONLY THE FOUNDER CLEARS THIS.** When they say continue, set RUN-STATE back to RUNNING in the same
 turn, then work the RESTART LIST below in order.
+
+### FOUNDER RULING 2026-09-17 — COURT-RELATED WORK ONLY, until the founder says otherwise.
+
+**Verbatim:** "Continue - remember only court related things". Work capability 1 (3D court mapping)
+and nothing else. **PARKED, not cancelled:** H1 hidden-bounce test (ball), any P2 analysis (ball
+occlusion; the founder may still label the sheet on their own time), SPEC §6 restoration, all other
+ball/physics work. The restart list below is re-read through that filter; its ball items wait.
+
+**The court question, as C1 left it:** a four-corner tap cannot place the lines to SPEC §3 precision —
+the far baseline needs ~0.1 px, human taps are ~15 px. CLAUDE.md's capability 1 is a DIFFERENT
+mechanism from the four-tap: "map the full court ... from visible markers plus the universal
+regulation dimensions". **Live court work, in order:**
+1. **researcher — what mechanism can pin the court to the precision C1 demands** (whole-court fit to
+   the painted lines with sub-pixel edge localisation, as capability 1 describes; device intrinsics
+   and lens distortion on iOS for the hfov problem; how SwingVision sets up its court). **Rule 3:**
+   the line-fit rows in `docs/court/CLOSED.md` were scored against ~5.8 px human clicks and so cannot
+   speak to sub-pixel precision — researcher must state that distinction, not assume either way.
+2. Then a **pre-registered synthetic test of that mechanism** on rendered court images with exact
+   truth (backend-dev), scored per line against C1's required precision.
+3. **Drift** (SPEC §1): optical-flow tracking of court points once set up — waits on P4(ii) ruling.
+4. **C3 fiducials** at the court visit; **C2 blind click set** design.
+5. Founder items that are court-related: P4(ii) drift behaviour, P4(iii) indoor shell, the
+   `2e49f38` gold edit.
 
 ### RESTART LIST — written 2026-09-16 at the pause. Work it top to bottom.
 
@@ -725,6 +748,9 @@ And: "Do not just give up and pivot from my clear instruction in regards to what
   anchor distance. The crop finds the far player.
 
 ## LOG — newest first
+
+- **2026-09-17** — RESUMED by founder ("Continue - remember only court related things"). Scope
+  restricted to COURT work; ball items parked. researcher dispatched on the court-precision mechanism.
 
 - **2026-09-16 ~23:30** — founder: "there's something running - add negative space items and rebuild
   sheet data". **Nothing of ours was running** (the 4 node.exe are the app's PDF-viewer MCP server).
