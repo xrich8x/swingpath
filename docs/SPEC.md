@@ -19,6 +19,17 @@ here is not moved to fit a result.
 
 ## 1. Live 3D court mapping
 
+**FOUNDER RULING 2026-09-17 — court tracking CONTINUES; the app does not stop.** Verbatim: "must
+continue, its essentially live court tracking so the app should know that the court is still there
+but just shaped differently because the phone moved". When the phone moves, v1 keeps tracking the
+court and re-fits it; it does not refuse and ask for a re-tap. The drift CHECK above stands. The
+RECOVERY below is re-read accordingly: court auto-detection (search) is still closed for v1, so
+recovery is **tracking and re-fitting from the court already known**, not a fresh search. The
+bullets below are kept as written; where they say "full re-solve" or "8-frame vote", they now
+describe a re-fit from the tracked court. **The numbers here (15 px, 10 s, 6/8) are unmeasured for
+this mechanism** and researcher found 15 px is ~5 m at the far baseline at 1080p / 3 m; they are
+the founder's to reset once a measurement exists.
+
 - **Drift check:** every frame, track 4–8 court line-intersection points by optical flow. Trigger a
   full recalibration if mean reprojection error on those tracked points exceeds **15 px sustained
   for 3 consecutive frames** — single-frame spikes are noise, not camera movement.
@@ -169,7 +180,11 @@ becomes primary evidence.
   single-court.
 - **Doubles alley:** the court model must include doubles lines. **Required for v1**, not optional —
   it is the same court-detection output already in place.
-- **Surface/lighting robustness:** blocked on the indoor-shell-court issue. Ball-calling targets
+- **Surface/lighting robustness:** ~~blocked on the indoor-shell-court issue.~~ **FOUNDER RULING
+  2026-09-17: the indoor-shell blocker does NOT apply to v1** — it was a failure of the automatic
+  court SEARCH, which v1 does not run; v1's court comes from the user's setup, which works on a
+  shell (ten shell calibrations exist). Shell auto-detection stays closed (v2). Original text:
+  blocked on the indoor-shell-court issue. Ball-calling targets
   above **do not apply until that blocker clears**, since ball-calling is downstream of a working
   court model. **Attribution corrected 2026-09-11:** the original spec named *CourtNet*. That is the
   wrong component — CourtNet is the Tier-2 proposer and the classical `courtfit` consensus already

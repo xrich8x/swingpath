@@ -1401,3 +1401,21 @@ strips laid down-court near the far baseline, plus measuring the court's real di
 widths and surface height at the far baseline on the day. This is an amendment to
 `docs/CAPTURE_PROTOCOL.md` (pm owns it). Needed: your OK before pm changes the protocol.
 
+---
+
+## 2026-09-17 — FOUNDER ANSWERS to the court items. Recorded, applied where they decide something.
+
+1. **The 2026-09-06 gold edits (commit `2e49f38`) were the founder's.** They stand, unchanged. The
+   STATE row that flagged them is updated. No re-score.
+2. **Far-end tape strips for the court visit: "can do but not in person".** Read as: approved in
+   principle, but the founder cannot do an in-person court session. The protocol amendment waits
+   until a visit is possible (pm owns it).
+3. **Court visit: "can not do yet".** So **no metric real-court truth is available for now.** Court
+   work proceeds on synthetic truth (C1, CP1) and must look for real-footage checks that need no one
+   at a court.
+4. **Phone movement: "must continue, its essentially live court tracking".** P4(ii) is RULED:
+   **track and re-fit, never refuse.** Applied to SPEC §1 (ruling block added, original bullets
+   kept) and to CLAUDE.md. This overturns the lead's refuse-and-re-tap recommendation.
+5. **Indoor shell: "yes".** P4(iii) is RULED: the §10 blocker is void for v1. Applied to SPEC §10 and
+   CLAUDE.md.
+

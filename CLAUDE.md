@@ -99,9 +99,8 @@ target is provisional — the honest rate may be far higher, and that is a findi
 - **INSTANT is unmeasured, and the "60x away" figure is MISLEADING** (corrected 2026-09-11): 0.7-1.1
   s/frame measures the full offline pipeline INCLUDING the pose model v1 tossed. v1's per-frame path
   is a ~2 MB conv net plus arithmetic. Cost it on paper for an A13 ANE — that needs no phone.
-- **The indoor-shell blocker (`SPEC.md` §10) is PROBABLY VOID for v1 — unruled.** It was written
-  against the auto-detection SEARCH failure; v1's court is a manual four-tap, which works on a shell.
-  Two shell gold calibrations exist. Confirm or deny before letting it block anything.
+- **Court tracking must CONTINUE when the phone moves** (founder 2026-09-17): re-fit from the known
+  court, never refuse. The indoor-shell blocker is VOID for v1 (founder 2026-09-17, `SPEC.md` §10).
 - **`run.py live` is broken out of the box** — its default `weights/tracknet.pt` was deleted in the
   2026-09-11 cleanup (with `court_detector.pt`, `wasb_*`). All upstream, all re-downloadable.
 - **Court auto-detection is closed for v1.** Manual four-corner setup is the product answer, not a

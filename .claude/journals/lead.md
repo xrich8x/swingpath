@@ -749,6 +749,16 @@ And: "Do not just give up and pivot from my clear instruction in regards to what
 
 ## LOG — newest first
 
+- **2026-09-17** — **Founder answers:** (1) `2e49f38` gold edits were theirs — stand; (2) far-end tape
+  strips OK in principle but no in-person session; (3) **court visit not possible yet — no metric real
+  truth for now**; (4) **P4(ii) RULED: live court tracking continues, re-fit never refuse** (SPEC §1 +
+  CLAUDE.md updated); (5) **P4(iii) RULED: shell blocker void** (SPEC §10 + CLAUDE.md). Found while
+  checking code: `pipeline.analyze_video` ALREADY tracks the court per frame (`calibration.
+  court_lock_step` snaps the running homography onto the paint; `courtfit.CourtWatchdog` catches big
+  changes) — but only in the offline pipeline, its precision is unmeasured, and its big-change
+  recovery calls `courtfit.autodetect`, the CLOSED search. `live.py` does not track at all. **Next
+  court test after CP1: measure that tracking under simulated phone movement.**
+
 - **2026-09-17** — **researcher's court-precision routes landed** (`docs/evidence/court-precision-routes.md`),
   after a resume. Answer to Q2: a whole-court fit to sub-pixel-measured paint can plausibly reach the
   far-baseline precision C1 demands (target ~0.14 px of line position, not C1's per-tap 0.07-0.11);
