@@ -235,6 +235,14 @@ C3 is the founder's visit. **Order: P2 finishes first**, per the founder.
 
 ## LOG — newest first (court only; older entries are in the archived journal)
 
+- **2026-09-17** — **CP1 stage 1 reported PASS** (backend-dev; frozen `4ac52fc`, results `99e1812`): all 14
+  lines within 5 cm p90 on arm P, worst far baseline 3.58 cm (L) / 0.97 cm (M); codec off 0.93 cm; route kill
+  not fired; suite 721/4. **NOT relayed as settled yet: qa dispatched to audit it** — one agent wrote both
+  renderer and fitter, and a docstring near line 274 says f and principal point are "held at truth". Findings
+  for stage 2: far baseline sits on the surface/run-off boundary, so paint contrast (kappa) must come from the
+  near lines (5% kappa error ~1.3 cm); A5 (10 cm baseline paint) is the highest-risk next arm. When the court
+  repo is pushed, CP1 must be added there with its `height_curve` import repointed to `court_camera`.
+
 - **2026-09-17** — **Court-only GitHub repo `swingpath-court`: BUILT LOCALLY, NOT YET ON GITHUB.** Founder
   asked for "a clone of the feature in github that we can push to only for this feature, call it
   swingpath - court" (GitHub forbids spaces, so `swingpath-court`, private like `swingpath`). One commit
