@@ -126,3 +126,17 @@ Readouts: M = C1-style back-project true pixel via fitted cam, perp ground err, 
   band, concentrated on edge rows), GN converged. KAPPA SENSITIVITY: kappa +5% -> far BL
   -0.034 px (~1.3 cm) -> evidence must list "paint contrast identical near/far" as flattering.
   -> adding 2x2 jitter per 1/16 cell (sub=2, 32x32 effective) to halve render noise.
+- RESUMED after kill (2026-09-17). sub=2 render built (117 s ctl geometry); far BL noiseless
+  per-station sd 0.023 -> 0.006 px. Next: ctl1 dev smoke (seed 1000, n=6), then P geometry build.
+- ctl1 dev n=6: M passes (far BL p90 4.1 mm) but L far BL 15 mm / far svc 19 mm. Cause: uint8
+  rounding of NOISE-FREE frames = undithered structured error. Fix: noise=False yields float
+  frames (no quantisation) - my reading of "zero noise"; state in evidence.
+- DEV (seed 1000): ctl1 n=12 worst 0.6 mm; ctl2 n=30 worst p90 6.2 mm (far svc L); ctl3a n=10
+  recovered +0.1000 px. All would pass. Next: P dev smoke (codec) n=10.
+- x265 plain ABR overshot (25.9 Mbps on 30 frames) -> added vbv-maxrate/bufsize 16000 ->
+  18.1 Mbps achieved (dev). P dev n=10 (seed 1000): every line PASS, worst L far BL 3.9 cm p90.
+- Tests: backend/tests/test_court_fit_cp1.py 8 tests; suite 721 passed 4 skipped (713+8).
+- TRIAL-COUNT DECISION (before any scored run): P measured 18.4 s/trial p50, 5 workers ->
+  ~26 min at 400 < 60 -> P = 400. A3 (no codec) faster -> 400. Controls: ctl1 n=20,
+  ctl2 n=400, ctl3a n=20, ctl3b n=100 (paired with ctl2 trials 0-99, seed 0), ctl2s0 n=100
+  descriptive. All scored runs seed 0. FREEZE commit next, then scored runs.
