@@ -143,6 +143,9 @@ this agent's system prompt — read it first; it is the authoritative copy.
   are human; C2 median 0.048 px = rounding (void). demo30/yt_match40 height gap is a quad
   disagreement, demo30's is off the paint. Read the label WRITER before scoring.
 
+- **CP1 stage 1 audited 2026-09-17: PASS QUALIFIED.** [cp1-stage1-audit-pass-qualified.md](cp1-stage1-audit-pass-qualified.md)
+  — no leak, bit-identical repro; one dev=score pose, sigma on-grid, codec margin ~1.4 cm, tail 1% >5 cm.
+
 ## Standing
 
 Never fix what you are checking. Never move a gate to fit a result. A borderline pass is

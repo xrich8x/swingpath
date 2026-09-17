@@ -7,14 +7,14 @@ automatically. Whatever is below is what survived.
 
 ---
 
-## TASK — verify CP1 stage 1 (commits 4ac52fc code freeze, 99e1812 results)
+## TASK — DONE 2026-09-17: verify CP1 stage 1 (commits 4ac52fc code freeze, 99e1812 results)
 Checks: 1 freeze integrity, 2 truth leakage (fn near line 274 "f and pp held at truth"), 3 shared
 assumptions, 4 recompute tables from data/output/court_fit_cp1/, 5 rerun control1+3a, arm P n=50 seed 1
 (>10 cm any line = reproduction concern; descriptive only), 6 encode realism from existing A3 vs P.
 Output: docs/evidence/court-fit-cp1-qa.md, commit (no push). Verdict: PASS STANDS / QUALIFIED / DOES NOT STAND.
 
 ## STATE
-- started 2026-09-17
+- COMPLETE: docs/evidence/court-fit-cp1-qa.md written, verdict PASS QUALIFIED; committed, not pushed. Resumed once after a usage-limit kill.
 
 ## LOG
 - 2026-09-17: journal reset to court scope.
