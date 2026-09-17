@@ -235,6 +235,12 @@ C3 is the founder's visit. **Order: P2 finishes first**, per the founder.
 
 ## LOG — newest first (court only; older entries are in the archived journal)
 
+- **2026-09-17** — **PUSHED `swingpath-court` to https://github.com/xrich8x/swingpath-court** (founder's explicit
+  call), branch `main`, one commit `b3af0ca`, 340 files, including CP1 and its qa audit. Verified in the
+  rebuilt repo: C1 byte-identical; CP1 control 1 identical in every result value; suite 323/10/5 (5 need
+  footage); CP1 + C1 test files 12 pass. The local working copy lives in the session scratchpad and may be
+  cleared — clone from GitHub to continue there. Future pushes still need the founder's per-push call.
+
 - **2026-09-17** — **qa audit of CP1: PASS QUALIFIED** (`b308396`, `docs/evidence/court-fit-cp1-qa.md`). No truth
   leak, bit-identical reproduction, seed-1 spot check passes. Qualified: one dev=score camera pose; undeclared
   shared assumptions (blur on the fitter's grid, linear sensor, flat chroma, step at outer paint edge); far
